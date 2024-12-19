@@ -11,7 +11,7 @@ enum FileType(val extensions: List[String], val mimeType: String):
 
   def getExtension: String = this.extensions.head
   def getMimeType: String = this.mimeType
-  def supportsExtension(ext: String): Boolean = this.extensions.contains(ext.toLowerCase)
+  private def supportsExtension(ext: String): Boolean = this.extensions.contains(ext.toLowerCase)
 
 object FileType:
   def fromExtension(ext: String): Option[FileType] =

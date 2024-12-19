@@ -2,16 +2,17 @@ package com.tjclp.xlcr
 package parser
 
 import types.FileType
+
 import org.apache.tika.Tika
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata, TikaCoreProperties}
 import org.apache.tika.parser.{AutoDetectParser, ParseContext}
 import org.apache.tika.sax.{BodyContentHandler, ToXMLContentHandler, WriteOutContentHandler}
-
-import java.io.{ByteArrayInputStream, File, InputStream}
-import java.nio.file.Path
-import scala.util.{Try, Success, Failure}
 import org.slf4j.LoggerFactory
+
+import java.io.{ByteArrayInputStream, InputStream}
+import java.nio.file.Path
+import scala.util.Try
 
 
 object FileParser:
@@ -43,15 +44,15 @@ object FileParser:
       getFileTypeFromMimeType(mimeType)
     }
 
-  def getExtension(fileName: String): Option[String] =
+  def parseFromExtension(fileName: String): Option[FileType] =
+    getExtension(fileName).flatMap(FileType.fromExtension)
+
+  private def getExtension(fileName: String): Option[String] =
     val lastDotIndex = fileName.lastIndexOf('.')
     if lastDotIndex > 0 && lastDotIndex < fileName.length - 1 then
       Some(fileName.substring(lastDotIndex + 1).toLowerCase)
     else
       None
-
-  def parseFromExtension(fileName: String): Option[FileType] =
-    getExtension(fileName).flatMap(FileType.fromExtension)
 
   def extractContent(path: Path, enableXMLOutput: Boolean = false, writeLimit: Int = -1): Try[TikaContent] =
     Try {
