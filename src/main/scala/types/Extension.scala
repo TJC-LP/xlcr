@@ -1,0 +1,27 @@
+package com.tjclp.xlcr
+package types
+
+enum Extension(val extension: String):
+  case DOCX extends Extension("docx")
+  case DOC extends Extension("doc")
+  case XLSX extends Extension("xlsx")
+  case XLS extends Extension("xls")
+  case XLSB extends Extension("xlsb")
+  case XLSM extends Extension("xlsm")
+  case PPTX extends Extension("pptx")
+  case PPT extends Extension("ppt")
+  case PDF extends Extension("pdf")
+  case EML extends Extension("eml")
+  case MSG extends Extension("msg")
+  case ZIP extends Extension("zip")
+  case TXT extends Extension("txt")
+  case JPG extends Extension("jpg")
+  case JPEG extends Extension("jpeg")
+  case PNG extends Extension("png")
+  case GIF extends Extension("gif")
+  case BMP extends Extension("bmp")
+  case HTML extends Extension("html")
+  case HTM extends Extension("htm")
+  case XML extends Extension("xml")
+  case JSON extends Extension("json")
+  case MD extends Extension("md")
