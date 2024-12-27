@@ -3,9 +3,15 @@ package utils
 
 import types.MimeType
 
+import org.apache.tika.config.TikaConfig
+import org.apache.tika.io.TikaInputStream
+import org.apache.tika.metadata.{HttpHeaders, Metadata}
+import org.slf4j.LoggerFactory
+
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardOpenOption}
-import scala.util.Try
+import scala.util.{Failure, Success, Try, Using}
 
 /**
  * A central utility object for file operations (reading, writing,
@@ -13,6 +19,9 @@ import scala.util.Try
  * helps reduce boilerplate and code duplication.
  */
 object FileUtils:
+  private lazy val tikaConfig = new TikaConfig()
+  private lazy val detector = tikaConfig.getDetector
+  private val logger = LoggerFactory.getLogger(getClass)
 
   /**
    * Write the given byte array to the specified path, overwriting if necessary.
@@ -23,25 +32,15 @@ object FileUtils:
    * @return A Try indicating success or failure.
    */
   def writeBytes(path: Path, data: Array[Byte]): Try[Unit] = Try:
-    // If parent directory doesn't exist, create it (optional behavior)
     val parent = path.getParent
-    if (parent != null && !Files.exists(parent)) {
+    if parent != null && !Files.exists(parent) then
       Files.createDirectories(parent)
-    }
 
     Files.write(path, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
 
   /**
    * Execute a function with a temporary file, ensuring the file
    * is deleted afterward, regardless of success or failure.
-   *
-   * Example usage:
-   * {{{
-   *   FileUtils.withTempFile("myPrefix", ".txt") { tempPath =>
-   *     // use tempPath
-   *     // automatically deleted after the function completes or throws
-   *   }
-   * }}}
    *
    * @param prefix Prefix string to be used in generating the file's name.
    * @param suffix Suffix string to be used in generating the file's name (e.g. ".xlsx").
@@ -51,11 +50,8 @@ object FileUtils:
    */
   def withTempFile[T](prefix: String, suffix: String)(f: Path => T): T =
     val tempFile = Files.createTempFile(prefix, suffix)
-    try
-      f(tempFile)
-    finally
-      // Attempt cleanup
-      Files.deleteIfExists(tempFile)
+    try f(tempFile)
+    finally Files.deleteIfExists(tempFile)
 
   /**
    * Read a JSON file and return its content as a String.
@@ -64,7 +60,7 @@ object FileUtils:
    * @return A Try containing the JSON string, or a Failure with the exception.
    */
   def readJsonFile(path: Path): Try[String] =
-    readBytes(path).map(bytes => new String(bytes, "UTF-8"))
+    readBytes(path).map(bytes => new String(bytes, StandardCharsets.UTF_8))
 
   /**
    * Read all bytes from a file into memory, wrapped in a Try for error handling.
@@ -74,9 +70,8 @@ object FileUtils:
    */
   def readBytes(path: Path): Try[Array[Byte]] =
     Try {
-      if (!fileExists(path)) {
+      if !fileExists(path) then
         throw new IOException(s"File does not exist: $path")
-      }
       Files.readAllBytes(path)
     }
 
@@ -90,7 +85,7 @@ object FileUtils:
     Files.exists(path)
 
   /**
-   * Write a JSON string to a file.
+   * Write a JSON string to a file with UTF-8 encoding.
    *
    * @param path        The Path where JSON should be written.
    * @param jsonContent The JSON string to write.
@@ -98,31 +93,72 @@ object FileUtils:
    */
   def writeJsonFile(path: Path, jsonContent: String): Try[Unit] =
     Try {
-      // If parent directory doesn't exist, create it
       val parent = path.getParent
-      if (parent != null && !Files.exists(parent)) {
+      if parent != null && !Files.exists(parent) then
         Files.createDirectories(parent)
-      }
 
-      Files.write(path, jsonContent.getBytes("UTF-8"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
+      // Ensure UTF-8 encoding
+      val utf8Bytes = jsonContent.getBytes(StandardCharsets.UTF_8)
+      Files.write(path, utf8Bytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
     }
 
+  /**
+   * Detect MIME type using Tika. If Tika returns text/plain,
+   * fallback to extension-based detection for known file types.
+   */
   def detectMimeType(path: Path): MimeType =
-    import types.FileType
-    FileType.fromExtension(getExtension(path.toString))
-      .map(_.getMimeType)
-      .getOrElse(MimeType.TextPlain)
+    detectMimeTypeWithTika(path) match
+      case Success(mimeType) =>
+        logger.debug(s"Tika detected MIME type: ${mimeType.mimeType} for file: $path")
+        if mimeType == MimeType.TextPlain then
+          val extMime = detectMimeTypeFromExtension(path)
+          if extMime != MimeType.TextPlain then extMime else mimeType
+        else mimeType
+      case Failure(exception) =>
+        logger.warn(s"Tika detection failed for $path, falling back to extension-based detection", exception)
+        detectMimeTypeFromExtension(path)
 
   /**
-   * Safely retrieve the lowercase extension of a file path.
-   *
-   * @param filePath The file path as a string (e.g. "/my/folder/data.json").
-   * @return The extension without the dot (e.g. "json"), or "" if none found.
+   * Detect MIME type by extension, throwing an exception if none is found and strict mode is true.
+   */
+  def detectMimeTypeFromExtension(path: Path, strict: Boolean = false): MimeType =
+    val extension = getExtension(path.toString)
+    import types.FileType
+
+    FileType.fromExtension(extension).map(_.getMimeType).getOrElse {
+      if strict then
+        throw UnknownExtensionException(path, extension)
+      else
+        logger.debug(s"No MIME type found for extension of $path, defaulting to text/plain")
+        MimeType.TextPlain
+    }
+
+  /**
+   * Retrieves the lowercase extension without the dot. Returns an empty string if none is found.
    */
   def getExtension(filePath: String): String =
     val name = filePath.toLowerCase
     val lastDotIndex = name.lastIndexOf('.')
     if lastDotIndex > 0 && lastDotIndex < name.length - 1 then
       name.substring(lastDotIndex + 1)
-    else
-      ""
+    else ""
+
+  /**
+   * Try to use Tika to detect the MIME type. Returns Success or Failure.
+   */
+  private def detectMimeTypeWithTika(filePath: Path): Try[MimeType] = Try {
+    if !Files.exists(filePath) then
+      throw new IOException(s"File does not exist: $filePath")
+
+    val metadata = new Metadata()
+    metadata.set(HttpHeaders.CONTENT_LOCATION, filePath.getFileName.toString)
+
+    Using.resource(TikaInputStream.get(filePath)) { tikaStream =>
+      val mediaType = detector.detect(tikaStream, metadata)
+      val mimeString = mediaType.toString
+      MimeType.values.find(_.mimeType == mimeString).getOrElse {
+        logger.debug(s"Unrecognized MIME type from Tika: $mimeString, falling back to text/plain")
+        MimeType.TextPlain
+      }
+    }
+  }

@@ -1,8 +1,8 @@
 package com.tjclp.xlcr
 package parsers.excel
 
+import parsers.Parser
 import types.MimeType
-import com.tjclp.xlcr.parsers.Parser
 
 trait ExcelParser extends Parser:
   def supportedInputTypes: Set[MimeType] = Set(

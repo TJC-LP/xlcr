@@ -1,14 +1,13 @@
 package com.tjclp.xlcr
-package parser
+package parsers.excel
 
-import com.tjclp.xlcr.parsers.excel.JsonToExcelWriter
+import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.nio.file.{Files, Paths}
-import java.io.{FileOutputStream, PrintWriter}
+import java.io.PrintWriter
+import java.nio.file.Files
 import scala.util.{Failure, Success}
-import org.apache.poi.ss.usermodel.WorkbookFactory
 
 class JsonToExcelWriterSpec extends AnyFlatSpec with Matchers {
 

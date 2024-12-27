@@ -31,7 +31,7 @@ enum FileType(val extension: Extension, val mimeType: MimeType):
   case TextTxt extends FileType(Extension.TXT, MimeType.TextPlain)
 
   // Image File Types
-  case ImageJpg extends FileType(Extension.JPG, MimeType.ImageJpg)
+  case ImageJpg extends FileType(Extension.JPG, MimeType.ImageJpeg)
   case ImageJpeg extends FileType(Extension.JPEG, MimeType.ImageJpeg)
   case ImagePng extends FileType(Extension.PNG, MimeType.ImagePng)
   case ImageGif extends FileType(Extension.GIF, MimeType.ImageGif)
@@ -45,6 +45,7 @@ enum FileType(val extension: Extension, val mimeType: MimeType):
   case XML extends FileType(Extension.XML, MimeType.ApplicationXml)
   case JSON extends FileType(Extension.JSON, MimeType.ApplicationJson)
   case MD extends FileType(Extension.MD, MimeType.TextMarkdown)
+  case SVG extends FileType(Extension.SVG, MimeType.ImageSvgXml)
 
   def getExtension: Extension = this.extension
 

@@ -80,14 +80,32 @@ object SheetData:
 
   /**
    * Create a SheetData from an Apache POI Sheet by extracting relevant fields
-   * and building a list of CellData.
+   * and building a list of CellData. We scan all rows and cells to determine
+   * the maximum bounding box for this sheet.
    */
   def fromSheet(sheet: Sheet, evaluator: FormulaEvaluator): SheetData =
     val formatter = new DataFormatter()
 
-    val cellList = sheet.rowIterator().asScala.toList.flatMap: row =>
-      row.cellIterator().asScala.toList.map: cell =>
-        CellData.fromCell(cell, sheet.getSheetName, evaluator, formatter)
+    // Convert rowIterator to a list for consistent iteration
+    val rowList = sheet.rowIterator().asScala.toList
+
+    // Determine the actual rowCount by scanning all rows
+    val rowCount =
+      if rowList.isEmpty then 0
+      else rowList.map(_.getRowNum).max + 1
+
+    // Determine the actual columnCount by scanning for the highest column index in any row
+    val colCount =
+      if rowList.isEmpty then 0
+      else rowList.flatMap(row => row.cellIterator().asScala.map(_.getColumnIndex)).max + 1
+
+    // Build a list of CellData from each cell in each row
+    val cellList: List[CellData] =
+      rowList.flatMap { row =>
+        row.cellIterator().asScala.map { cell =>
+          CellData.fromCell(cell, sheet.getSheetName, evaluator, formatter)
+        }
+      }
 
     val mergedRegions = sheet.getMergedRegions.asScala.map(_.formatAsString()).toList
     val protectionStatus = sheet.getProtect
@@ -105,8 +123,8 @@ object SheetData:
       name = sheet.getSheetName,
       index = sheet.getWorkbook.getSheetIndex(sheet),
       isHidden = sheet.getWorkbook.isSheetHidden(sheet.getWorkbook.getSheetIndex(sheet)),
-      rowCount = sheet.getLastRowNum + 1,
-      columnCount = Option(sheet.getRow(0)).map(_.getLastCellNum.toInt).getOrElse(0),
+      rowCount = rowCount,
+      columnCount = colCount,
       cells = cellList,
       mergedRegions = mergedRegions,
       protectionStatus = protectionStatus,

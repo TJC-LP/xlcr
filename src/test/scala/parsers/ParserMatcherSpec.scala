@@ -1,11 +1,12 @@
 package com.tjclp.xlcr
 package parsers
 
+import parsers.excel.{ExcelJsonParser, ExcelMarkdownParser, ExcelSvgParser, JsonToExcelParser}
+import parsers.tika.{StandardTikaParser, XMLTikaParser}
+import types.MimeType
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import types.MimeType
-import parsers.excel.{ExcelJsonParser, ExcelMarkdownParser, JsonToExcelParser}
-import parsers.tika.{StandardTikaParser, XMLTikaParser}
 
 class ParserMatcherSpec extends AnyFlatSpec with Matchers {
 
@@ -14,7 +15,7 @@ class ParserMatcherSpec extends AnyFlatSpec with Matchers {
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       MimeType.ApplicationJson
     )
-    
+
     parser shouldBe defined
     parser.get shouldBe ExcelJsonParser
   }
@@ -24,7 +25,7 @@ class ParserMatcherSpec extends AnyFlatSpec with Matchers {
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       MimeType.TextMarkdown
     )
-    
+
     parser shouldBe defined
     parser.get shouldBe ExcelMarkdownParser
   }
@@ -34,7 +35,7 @@ class ParserMatcherSpec extends AnyFlatSpec with Matchers {
       MimeType.ApplicationJson,
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
     )
-    
+
     parser shouldBe defined
     parser.get shouldBe JsonToExcelParser
   }
@@ -44,7 +45,7 @@ class ParserMatcherSpec extends AnyFlatSpec with Matchers {
       MimeType.ApplicationPdf,
       MimeType.TextPlain
     )
-    
+
     parser shouldBe defined
     parser.get shouldBe StandardTikaParser
   }
@@ -54,9 +55,19 @@ class ParserMatcherSpec extends AnyFlatSpec with Matchers {
       MimeType.ApplicationPdf,
       MimeType.ApplicationXml
     )
-    
+
     parser shouldBe defined
     parser.get shouldBe XMLTikaParser
+  }
+
+  it should "find SVG parser for Excel to SVG conversion" in {
+    val parser = ParserMatcher.findParser(
+      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
+      MimeType.ImageSvgXml
+    )
+
+    parser shouldBe defined
+    parser.get shouldBe ExcelSvgParser
   }
 
   it should "return None for unsupported conversion" in {
@@ -64,7 +75,7 @@ class ParserMatcherSpec extends AnyFlatSpec with Matchers {
       MimeType.ImageJpeg,
       MimeType.ApplicationVndMsPowerpoint
     )
-    
+
     parser shouldBe empty
   }
 
@@ -74,7 +85,7 @@ class ParserMatcherSpec extends AnyFlatSpec with Matchers {
       MimeType.ApplicationVndMsExcel,
       MimeType.ApplicationJson
     )
-    
+
     parser shouldBe defined
     parser.get.priority should be > StandardTikaParser.priority
   }

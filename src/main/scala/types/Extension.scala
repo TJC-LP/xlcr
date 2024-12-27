@@ -25,3 +25,4 @@ enum Extension(val extension: String):
   case XML extends Extension("xml")
   case JSON extends Extension("json")
   case MD extends Extension("md")
+  case SVG extends Extension("svg")

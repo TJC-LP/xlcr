@@ -17,4 +17,12 @@ object ExcelUtils:
     loop(col.value)
 
   def stringToColumn(s: String): ExcelReference.Col =
-    ExcelReference.Col(s.toUpperCase.foldLeft(0)((acc, c) => acc * 26 + c.toInt - 'A'.toInt + 1) - 1)
+    require(s.nonEmpty && s.forall(_.isLetter), s"Column reference must contain only letters, got '$s'")
+
+    val upperS = s.toUpperCase
+    require(upperS.forall(c => c >= 'A' && c <= 'Z'),
+      s"Column reference must contain only A-Z letters, got '$s'")
+
+    ExcelReference.Col(
+      upperS.foldLeft(0)((acc, c) => acc * 26 + c.toInt - 'A'.toInt + 1) - 1
+    )

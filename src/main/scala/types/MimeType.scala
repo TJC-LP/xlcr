@@ -10,7 +10,6 @@ enum MimeType(val mimeType: String):
   case MessageRfc822 extends MimeType("message/rfc822")
   case ApplicationZip extends MimeType("application/zip")
   case TextPlain extends MimeType("text/plain")
-  case ImageJpg extends MimeType("image/jpeg")
   case ImageJpeg extends MimeType("image/jpeg")
   case ImagePng extends MimeType("image/png")
   case ImageGif extends MimeType("image/gif")
@@ -20,3 +19,4 @@ enum MimeType(val mimeType: String):
   case ApplicationJson extends MimeType("application/json")
   case ApplicationVndOpenXmlFormatsSpreadsheetmlSheet extends MimeType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
   case TextMarkdown extends MimeType("text/markdown")
+  case ImageSvgXml extends MimeType("image/svg+xml") // newly added

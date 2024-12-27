@@ -18,32 +18,11 @@ enum ExcelReference:
 object ExcelReference:
   opaque type Row = Int
   opaque type Col = Int
+  private val MaxRows = 1_048_576 // 2^20
+  private val MaxCols = 16_384 // 2^14, column "XFD"
+
   private val CellPattern: Regex = """(?:([^!]+)!)?([A-Z]+)(\d+)""".r
   private val RangePattern: Regex = """(?:([^!]+)!)?([A-Z]+)(\d+):([A-Z]+)(\d+)""".r
-
-  extension (cell: Cell)
-    def shift(rowOffset: Int, colOffset: Int): Cell =
-      Cell(cell.sheet, Row(cell.row.value + rowOffset), Col(cell.col.value + colOffset))
-    def relative(other: Cell): (Int, Int) =
-      (other.row.value - cell.row.value, other.col.value - cell.col.value)
-    def isLeftOf(other: Cell): Boolean =
-      cell.sheet == other.sheet && cell.col.value < other.col.value
-    def isAbove(other: Cell): Boolean =
-      cell.sheet == other.sheet && cell.row.value < other.row.value
-
-  extension (range: Range)
-    def sheet: String = range.start.sheet
-    def contains(cell: Cell): Boolean =
-      cell.sheet == range.sheet &&
-        cell.row.value >= range.start.row.value && cell.row.value <= range.end.row.value &&
-        cell.col.value >= range.start.col.value && cell.col.value <= range.end.col.value
-    def cells: Iterator[Cell] = for
-      r <- (range.start.row.value to range.end.row.value).iterator
-      c <- (range.start.col.value to range.end.col.value).iterator
-    yield Cell(range.sheet, Row(r), Col(c))
-    def width: Int = range.end.col.value - range.start.col.value + 1
-    def height: Int = range.end.row.value - range.start.row.value + 1
-    def size: Int = width * height
 
   def parseA1(reference: String): Option[ExcelReference] =
     reference.trim match
@@ -67,26 +46,67 @@ object ExcelReference:
 
       case _ => None
 
-  // Helper method to create a Cell with an optional sheet name
+  // Validation helpers
+  private def validateRow(value: Int): Int =
+    require(value >= 0, s"Row index must be non-negative, got $value")
+    require(value < MaxRows, s"Row index must be less than $MaxRows, got $value")
+    value
+
+  extension (cell: Cell)
+    def shift(rowOffset: Int, colOffset: Int): Cell =
+      Cell(
+        cell.sheet,
+        Row(validateRow(cell.row.value + rowOffset)),
+        Col(validateCol(cell.col.value + colOffset))
+      )
+    def relative(other: Cell): (Int, Int) =
+      (other.row.value - cell.row.value, other.col.value - cell.col.value)
+    def isLeftOf(other: Cell): Boolean =
+      cell.sheet == other.sheet && cell.col.value < other.col.value
+    def isAbove(other: Cell): Boolean =
+      cell.sheet == other.sheet && cell.row.value < other.row.value
+
+  extension (range: Range)
+    def sheet: String = range.start.sheet
+    def contains(cell: Cell): Boolean =
+      cell.sheet == range.sheet &&
+        cell.row.value >= range.start.row.value && cell.row.value <= range.end.row.value &&
+        cell.col.value >= range.start.col.value && cell.col.value <= range.end.col.value
+    def cells: Iterator[Cell] = for
+      r <- (range.start.row.value to range.end.row.value).iterator
+      c <- (range.start.col.value to range.end.col.value).iterator
+    yield Cell(range.sheet, Row(r), Col(c))
+    def width: Int = range.end.col.value - range.start.col.value + 1
+    def height: Int = range.end.row.value - range.start.row.value + 1
+    def size: Int = width * height
+
+  private def validateCol(value: Int): Int =
+    require(value >= 0, s"Column index must be non-negative, got $value")
+    require(value < MaxCols, s"Column index must be less than $MaxCols, got $value")
+    value
+
   private def createCell(sheet: Option[String], col: Col, row: Row): Cell =
     Cell(sheet.getOrElse(""), row, col)
 
   object Row:
     def fromString(s: String): Option[Row] =
-      s.toIntOption.filter(_ > 0).map(Row(_))
+      s.toIntOption.filter(_ >= 0).map(Row(_))
 
-    def apply(value: Int): Row = value
+    def apply(value: Int): Row =
+      validateRow(value)
 
     extension (row: Row)
       def value: Int = row
       def next: Row = Row(row + 1)
-      def prev: Row = Row(math.max(1, row - 1))
+      def prev: Row = Row(math.max(0, row - 1))
 
   object Col:
-    def apply(value: Int): Col = value
+    def apply(value: Int): Col =
+      validateCol(value)
 
     def fromString(s: String): Option[Col] =
-      Some(ExcelUtils.stringToColumn(s))
+      val colValue = ExcelUtils.stringToColumn(s)
+      Some(validateCol(colValue))
 
     extension (col: Col)
       def value: Int = col

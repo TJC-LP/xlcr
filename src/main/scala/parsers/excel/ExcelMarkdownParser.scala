@@ -1,10 +1,9 @@
 package com.tjclp.xlcr
 package parsers.excel
 
+import models.{CellData, Content, SheetData}
 import types.MimeType
 import types.MimeType.TextMarkdown
-import com.tjclp.xlcr.models.{CellData, Content, SheetData}
-import com.tjclp.xlcr.parsers.Parser
 
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
@@ -82,25 +81,25 @@ object ExcelMarkdownParser extends ExcelParser:
   end generateColumnHeaders
 
   private def formatCellContent(cellData: CellData): String =
-    val value = escapeMarkdown(cellData.value.getOrElse(""))
-    val details = List(
-      Some(cellData.referenceA1),
-      Some(cellData.cellType),
-      cellData.formula.map(f => s"FORMULA:$f"),
-      cellData.dataFormat.map(s => s"STYLE:$s"),
+    val value = escapeMarkdown(cellData.formattedValue.getOrElse(cellData.value.getOrElse("")))
+    val otherDetails = List(
+      Some(s"REF:``${cellData.referenceA1}``"),
+      Some(s"TYPE:``${cellData.cellType}``"),
+      cellData.formula.map(f => s"FORMULA:``$f``"),
+      cellData.dataFormat.map(s => s"STYLE:``$s``"),
       cellTypeDetails(cellData)
-    ).flatten.mkString(", ")
-    s"$value<sup>$details</sup>"
+    ).flatten.mkString("<br>")
+    s"VALUE:``$value``<br>$otherDetails"
 
   private def cellTypeDetails(cellData: CellData): Option[String] =
     cellData.cellType match
       case "NUMERIC" =>
         cellData.value.flatMap { v =>
-          try Some(s"DOUBLE:${v.toDouble}")
+          try Some(s"DOUBLE:``${v.toDouble}``")
           catch case _: NumberFormatException => None
         }
       case "DATE" =>
-        cellData.value.map(v => s"DATE:$v")
+        cellData.value.map(v => s"DATE:``$v``")
       case _ => None
 
   private def escapeMarkdown(s: String): String =
