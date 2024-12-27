@@ -5,8 +5,8 @@ import scopt.OParser
 @main
 def main(args: String*): Unit =
   val builder = OParser.builder[Config]
-  val parser = {
-    import builder._
+  val parser =
+    import builder.*
     OParser.sequence(
       programName("xlcr"),
       head("xlcr", "1.0"),
@@ -21,7 +21,6 @@ def main(args: String*): Unit =
         .action((x, c) => c.copy(output = x))
         .text("output file path")
     )
-  }
 
   OParser.parse(parser, args, Config()) match
     case Some(config) =>

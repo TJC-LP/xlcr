@@ -1,11 +1,13 @@
 package com.tjclp.xlcr
 
-import parser.FileParser
-import types.OutputFormat
+import models.Content
+import parsers.ParserMatcher
+import utils.FileUtils
+
+import org.slf4j.LoggerFactory
 
 import java.nio.file.{Files, Paths}
 import scala.util.{Failure, Success}
-import org.slf4j.LoggerFactory
 
 object Pipeline:
   private val logger = LoggerFactory.getLogger(getClass)
@@ -20,36 +22,34 @@ object Pipeline:
       logger.error(s"Input file '$inputPath' does not exist.")
       sys.exit(1)
 
-    val outputFormat = detectOutputFormat(outputPath)
-    logger.info(s"Detected output format: $outputFormat")
+    // Detect input and output MIME types
+    val inputMimeType = FileUtils.detectMimeType(input)
+    val outputMimeType = FileUtils.detectMimeType(output)
 
-    val enableXMLOutput = outputFormat == OutputFormat.XML
+    // Find appropriate parser
+    ParserMatcher.findParser(inputMimeType, outputMimeType) match
+      case Some(parser) =>
+        parser.extractContent(input) match
+          case Success(content) =>
+            try
+              Files.write(output, content.data)
+              logger.info(s"Content successfully extracted and saved to '$outputPath'.")
+              logger.info(s"Content type: ${content.contentType}")
+              logger.debug("Metadata:")
+              content.metadata.foreach:
+                case (key, value) =>
+                  logger.debug(s"  $key: $value")
+            catch
+              case e: Exception =>
+                logger.error(s"Error writing to output file: ${e.getMessage}", e)
+                sys.exit(1)
 
-    FileParser.extractContent(input, enableXMLOutput) match
-      case Success(tikaContent) =>
-        try
-          Files.write(output, tikaContent.content.getBytes)
-          logger.info(s"Content successfully extracted and saved to '$outputPath'.")
-          logger.info(s"Content type: ${tikaContent.contentType}")
-          logger.debug("Metadata:")
-          tikaContent.metadata.foreach { case (key, value) =>
-            logger.debug(s"  $key: $value")
-          }
-        catch
-          case e: Exception =>
-            logger.error(s"Error writing to output file: ${e.getMessage}", e)
+          case Failure(exception) =>
+            logger.error(s"Error extracting content: ${exception.getMessage}", exception)
             sys.exit(1)
 
-      case Failure(exception) =>
-        logger.error(s"Error extracting content: ${exception.getMessage}", exception)
+      case None =>
+        logger.error(s"No parser found for input type $inputMimeType and output type $outputMimeType")
         sys.exit(1)
 
     logger.info("Extraction process completed successfully.")
-
-  private def detectOutputFormat(outputPath: String): OutputFormat =
-    val lowercasePath = outputPath.toLowerCase
-    if lowercasePath.endsWith(".xml") then OutputFormat.XML
-    else if lowercasePath.endsWith(".txt") then OutputFormat.TXT
-    else
-      logger.warn(s"Unrecognized output format for '$outputPath'. Defaulting to TXT.")
-      OutputFormat.TXT
