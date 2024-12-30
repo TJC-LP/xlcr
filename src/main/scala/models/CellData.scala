@@ -4,6 +4,7 @@ package models
 import models.ExcelReference.{Col, Row, Cell as RefCell}
 
 import io.circe.*
+import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
 import io.circe.generic.semiauto.*
 import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.{XSSFCellStyle, XSSFColor, XSSFFont}
@@ -23,12 +24,16 @@ final case class CellData(
                            dataFormat: Option[String],
                            formattedValue: Option[String],
                            font: Option[FontData] = None,
-                           style: Option[com.tjclp.xlcr.models.CellStyle] = None
+                           style: Option[com.tjclp.xlcr.models.CellStyle] = None,
+                           hidden: Boolean = false
                          )
 
 object CellData:
-  implicit val encoder: Encoder[CellData] = deriveEncoder[CellData]
-  implicit val decoder: Decoder[CellData] = deriveDecoder[CellData]
+  given Configuration = Configuration.default.withDefaults
+
+  given Encoder[CellData] = ConfiguredEncoder.derived[CellData]
+
+  given Decoder[CellData] = ConfiguredDecoder.derived[CellData]
 
   /**
    * Convert a POI cell to our CellData representation.
@@ -91,6 +96,13 @@ object CellData:
     val style = cell.getCellStyle
     val dataFormatOpt = Option(style).map(_.getDataFormatString)
 
+    // Check if cell, row, or column is hidden
+    val row = cell.getRow
+    val isCellHidden = Option(style).exists(_.getHidden)
+    val isRowHidden = row != null && (row.getZeroHeight || Option(row.getRowStyle).exists(_.getHidden))
+    val isColumnHidden = cell.getSheet.isColumnHidden(cell.getColumnIndex)
+    val overallHidden = isCellHidden || isRowHidden || isColumnHidden
+
     // Extract font
     val fontData = Option(style).map { st =>
       val font = cell.getSheet.getWorkbook.getFontAt(st.getFontIndex)
@@ -117,7 +129,8 @@ object CellData:
       dataFormat = dataFormatOpt,
       formattedValue = formattedOpt,
       font = fontData,
-      style = styleData
+      style = styleData,
+      hidden = overallHidden
     )
 
   /**

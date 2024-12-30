@@ -1,12 +1,60 @@
 package com.tjclp.xlcr
 package models
 
-import io.circe.parser.decode
-import io.circe.syntax.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class SheetDataSpec extends AnyFlatSpec with Matchers {
+
+  "SheetData" should "identify hidden cells" in {
+    import org.apache.poi.xssf.usermodel.XSSFWorkbook
+
+    val workbook = new XSSFWorkbook()
+    val sheet = workbook.createSheet("HiddenTestSheet")
+
+    // Create row 0
+    val row0 = sheet.createRow(0)
+    val cell0 = row0.createCell(0)
+    cell0.setCellValue("VisibleCell")
+
+    // Create row 1 (hidden row)
+    val row1 = sheet.createRow(1)
+    row1.setZeroHeight(true)
+    val cell1 = row1.createCell(0)
+    cell1.setCellValue("HiddenCellByRow")
+
+    // Create row 2
+    val row2 = sheet.createRow(2)
+    val cell2 = row2.createCell(0)
+    cell2.setCellValue("HiddenCellByStyle")
+
+    // Mark cell style as hidden
+    val style = workbook.createCellStyle()
+    style.setHidden(true)
+    cell2.setCellStyle(style)
+
+    // Create row 3
+    val row3 = sheet.createRow(3)
+    val cell3 = row3.createCell(1)
+    cell3.setCellValue("HiddenByColumn")
+    sheet.setColumnHidden(1, true)
+
+    // Evaluate all cells
+    val evaluator = workbook.getCreationHelper.createFormulaEvaluator()
+
+    val sheetData = SheetData.fromSheet(sheet, evaluator)
+    val cellDataByAddress = sheetData.cells.map(cd => cd.address -> cd).toMap
+
+    // row 0, col 0 => A1
+    cellDataByAddress("A1").hidden shouldBe false
+    // row 1, col 0 => A2
+    cellDataByAddress("A2").hidden shouldBe true // hidden by row
+    // row 2, col 0 => A3
+    cellDataByAddress("A3").hidden shouldBe true // hidden by cell style
+    // row 3, col 1 => B4
+    cellDataByAddress("B4").hidden shouldBe true // hidden by column
+    workbook.close()
+  }
 
   val sampleCellData = CellData(
     referenceA1 = "Sheet1!A1",
