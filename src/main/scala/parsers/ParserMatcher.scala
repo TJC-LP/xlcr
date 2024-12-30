@@ -1,8 +1,8 @@
 package com.tjclp.xlcr
 package parsers
 
-import excel.{ExcelJsonParser, ExcelMarkdownParser, JsonToExcelParser}
-import tika.{StandardTikaParser, XMLTikaParser}
+import parsers.excel.{ExcelJsonParser, ExcelMarkdownParser, ExcelSvgParser, JsonToExcelParser}
+import parsers.tika.{StandardTikaParser, XMLTikaParser}
 import types.MimeType
 
 import org.slf4j.LoggerFactory
@@ -18,6 +18,7 @@ object ParserMatcher:
     ExcelJsonParser,
     ExcelMarkdownParser,
     JsonToExcelParser,
+    ExcelSvgParser, // newly added
     StandardTikaParser,
     XMLTikaParser
   )

@@ -1,13 +1,13 @@
 package com.tjclp.xlcr
 package parsers.excel
 
+import models.{Content, SheetData}
 import types.MimeType
-import com.tjclp.xlcr.models.{Content, SheetData}
-import com.tjclp.xlcr.parsers.Parser
 
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.slf4j.LoggerFactory
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import scala.util.Try
 
@@ -18,7 +18,7 @@ object ExcelJsonParser extends ExcelParser:
     Try {
       val workbook = WorkbookFactory.create(input.toFile)
       val evaluator = workbook.getCreationHelper.createFormulaEvaluator()
-      
+
       try
         val sheets = (0 until workbook.getNumberOfSheets).map { idx =>
           val sheet = workbook.getSheetAt(idx)
@@ -26,9 +26,9 @@ object ExcelJsonParser extends ExcelParser:
         }.toList
 
         val jsonContent = SheetData.toJsonMultiple(sheets)
-        
+
         Content(
-          jsonContent.getBytes,
+          jsonContent.getBytes(StandardCharsets.UTF_8),
           MimeType.ApplicationJson.mimeType,
           Map("sheets" -> sheets.length.toString)
         )

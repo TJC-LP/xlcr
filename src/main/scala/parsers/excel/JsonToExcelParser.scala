@@ -1,9 +1,9 @@
 package com.tjclp.xlcr
 package parsers.excel
 
+import models.Content
+import parsers.Parser
 import types.MimeType
-import com.tjclp.xlcr.models.Content
-import com.tjclp.xlcr.parsers.Parser
 
 import java.nio.file.Path
 import scala.util.Try

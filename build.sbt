@@ -11,10 +11,10 @@ lazy val root = (project in file("."))
 val circeVersion = "0.14.10"
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.19" % Test,
+  "org.apache.tika" % "tika" % "3.0.0" pomOnly(),
   "org.apache.tika" % "tika-core" % "3.0.0",
   // This provides a POM that aggregates all parser modules, but you need the actual parser modules you want:
   "org.apache.tika" % "tika-parsers" % "3.0.0",
-
   // Include the standard parser package if you need general file format support
   "org.apache.tika" % "tika-parsers-standard-package" % "3.0.0",
 
@@ -31,5 +31,8 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser" % circeVersion,
 
   // Kotlin MCP
-  "io.modelcontextprotocol" % "kotlin-sdk" % "0.1.0"
+  "io.modelcontextprotocol" % "kotlin-sdk" % "0.1.0",
+
+  // PDF
+  "org.apache.pdfbox" % "pdfbox" % "3.0.3"
 )

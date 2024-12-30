@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import com.tjclp.xlcr.models.SheetData
+import models.SheetData
+
 import org.apache.poi.ss.usermodel.CellType
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
