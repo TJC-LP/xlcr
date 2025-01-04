@@ -2,6 +2,7 @@ package com.tjclp.xlcr
 package models
 
 import models.ExcelReference.{Col, Row, Cell as RefCell}
+import utils.excel.ExcelUtils
 
 import io.circe.*
 import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
@@ -11,28 +12,27 @@ import org.apache.poi.xssf.usermodel.{XSSFCellStyle, XSSFColor, XSSFFont}
 
 final case class CellData(
                            referenceA1: String,
-                           rowIndex: Int,
-                           columnIndex: Int,
-                           address: String,
                            cellType: String,
-                           value: Option[String],
-                           formula: Option[String],
-                           errorValue: Option[Byte],
-                           comment: Option[String],
-                           commentAuthor: Option[String],
-                           hyperlink: Option[String],
-                           dataFormat: Option[String],
-                           formattedValue: Option[String],
+                           value: Option[String] = None,
+                           formula: Option[String] = None,
+                           errorValue: Option[Byte] = None,
+                           comment: Option[String] = None,
+                           commentAuthor: Option[String] = None,
+                           hyperlink: Option[String] = None,
+                           dataFormat: Option[String] = None,
+                           formattedValue: Option[String] = None,
                            font: Option[FontData] = None,
                            style: Option[com.tjclp.xlcr.models.CellStyle] = None,
                            hidden: Boolean = false
-                         )
+                         ):
+  def rowIndex: Int = ExcelUtils.a1ToReference(referenceA1)._1.value
+  def columnIndex: Int = ExcelUtils.a1ToReference(referenceA1)._2.value
+  def sheetName: Option[String] = ExcelUtils.a1ToSheetAndAddress(referenceA1)._1
+  def address: String = ExcelUtils.a1ToSheetAndAddress(referenceA1)._2
 
 object CellData:
   given Configuration = Configuration.default.withDefaults
-
   given Encoder[CellData] = ConfiguredEncoder.derived[CellData]
-
   given Decoder[CellData] = ConfiguredDecoder.derived[CellData]
 
   /**
@@ -116,9 +116,6 @@ object CellData:
 
     CellData(
       referenceA1 = ref.toA1,
-      rowIndex = cell.getRowIndex,
-      columnIndex = cell.getColumnIndex,
-      address = cell.getAddress.formatAsString,
       cellType = cellTypeName,
       value = valueOpt,
       formula = formulaOpt,

@@ -38,6 +38,10 @@ lazy val core = (project in file("core"))
       "org.apache.tika" % "tika-parsers" % "3.0.0",
       "org.apache.tika" % "tika-parsers-standard-package" % "3.0.0",
 
+      // JAI
+      "com.github.jai-imageio" % "jai-imageio-core" % "1.4.0",
+      "com.github.jai-imageio" % "jai-imageio-jpeg2000" % "1.4.0",
+
       // PDF
       "org.apache.pdfbox" % "pdfbox" % "3.0.3"
     )
