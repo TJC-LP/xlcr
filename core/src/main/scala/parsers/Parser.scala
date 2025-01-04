@@ -1,47 +1,23 @@
-package com.tjclp.xlcr
-package parsers
+package com.tjclp.xlcr.parsers
 
-import models.Content
-import types.MimeType
-
-import java.nio.file.Path
-import scala.util.Try
+import com.tjclp.xlcr.models.FileContent
+import com.tjclp.xlcr.models.Model
+import com.tjclp.xlcr.types.MimeType
+import com.tjclp.xlcr.ParserError
 
 /**
- * Base trait for all content parsers in the XLCR system.
- * Defines the core contract that all parsers must implement.
+ * A Parser transforms an input file content of type I (MimeType) into a model M.
+ *
+ * @tparam I input MimeType
+ * @tparam M output model type
  */
-trait Parser:
+trait Parser[I <: MimeType, M <: Model]:
   /**
-   * Extract content from the input file and return it in the desired format
+   * Parse input file content into model
    *
-   * @param input The path to the input file
-   * @param output Optional output path for diffMode analysis
-   * @return A Try[Content] containing the extracted content or a failure
+   * @param input The file content to parse
+   * @return The parsed model
+   * @throws ParserError if parsing fails
    */
-  def extractContent(input: Path, output: Option[Path] = None): Try[Content]
-  /**
-   * Get the primary MIME type this parser produces
-   *
-   * @return The MimeType that this parser outputs
-   */
-  def outputType: MimeType
-  /**
-   * Get all supported input MIME types for this parser
-   *
-   * @return Set of supported input MimeTypes
-   */
-  def supportedInputTypes: Set[MimeType]
-  /**
-   * Get the priority level for this parser
-   * Higher numbers indicate higher priority
-   *
-   * @return The priority level (default is 0)
-   */
-  def priority: Int = 0
-  /**
-   * Whether this parser supports diffing operations between an input and existing output
-   *
-   * @return Boolean indicating if diff mode is supported
-   */
-  def supportsDiffMode: Boolean = false
+  @throws[ParserError]
+  def parse(input: FileContent[I]): M

@@ -14,20 +14,13 @@ object OpenAction {
             val session = ExcelSession.get(sessionId)
                 ?: return ActionHandlerResult.Error("Failed to create session")
 
-            val markdown = session.getMarkdown()
-            val svg = session.getSvg()
-
-            if (markdown.isSuccess && svg.isSuccess) {
-                ActionHandlerResult.Success(
-                    mapOf(
-                        "sessionId" to sessionId,
-                        "markdown" to (markdown.getOrNull() ?: ""),
-                        "svg" to (svg.getOrNull() ?: "")
-                    )
+            ActionHandlerResult.Success(
+                mapOf(
+                    "sessionId" to sessionId,
+                    "markdown" to "TODO",
+                    "svg" to "TODO"
                 )
-            } else {
-                ActionHandlerResult.Error("Failed to get content")
-            }
+            )
         } catch (e: Exception) {
             ActionHandlerResult.Error(e.message ?: "Unknown error")
         }

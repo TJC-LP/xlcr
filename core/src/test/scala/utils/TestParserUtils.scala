@@ -1,15 +1,10 @@
 package com.tjclp.xlcr
 package utils
 
-import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.pdmodel.PDPage
-import org.apache.pdfbox.pdmodel.PDPageContentStream
-import org.apache.pdfbox.pdmodel.font.PDType1Font
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts
+import org.apache.pdfbox.pdmodel.{PDDocument, PDPage, PDPageContentStream}
+import org.apache.pdfbox.pdmodel.font.{PDType1Font, Standard14Fonts}
 
-import java.io.FileOutputStream
 import java.nio.file.{Files, Path}
-import scala.jdk.CollectionConverters.*
 
 object TestParserUtils {
 

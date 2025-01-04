@@ -10,7 +10,7 @@ val ktorVersion  = "3.0.3"
 lazy val commonSettings = Seq(
   organization := "com.tjclp.xlcr",
   idePackagePrefix := Some("com.tjclp.xlcr"),
-
+  resolvers += "Aspose Java Repository" at "https://releases.aspose.com/java/repo/",
   libraryDependencies ++= Seq(
     // Common logging
     "org.slf4j" % "slf4j-api" % "2.0.16",
@@ -28,18 +28,41 @@ lazy val core = (project in file("core"))
     libraryDependencies ++= Seq(
       // Scala-specific dependencies
       "org.scalatest" %% "scalatest" % "3.2.19" % Test,
+      "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0" % Test,
+      "org.scalacheck" %% "scalacheck" % "1.18.1" % Test,
       "com.github.scopt" %% "scopt" % "4.1.0",
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
 
       // Apache Tika
-      "org.apache.tika" % "tika-core" % "3.0.0",
-      "org.apache.tika" % "tika-parsers" % "3.0.0",
-      "org.apache.tika" % "tika-parsers-standard-package" % "3.0.0",
+      "org.apache.tika" % "tika-core" % "3.1.0",
+      "org.apache.tika" % "tika-parsers" % "3.1.0",
+      "org.apache.tika" % "tika-parsers-standard-package" % "3.1.0",
+
+      // JAI
+      "com.github.jai-imageio" % "jai-imageio-core" % "1.4.0",
+      "com.github.jai-imageio" % "jai-imageio-jpeg2000" % "1.4.0",
 
       // PDF
-      "org.apache.pdfbox" % "pdfbox" % "3.0.3"
+      "org.apache.pdfbox" % "pdfbox" % "3.0.4",
+
+      // XML
+      "org.apache.xmlgraphics" % "batik-all" % "1.18"
+    )
+  )
+
+// New Aspose integration module
+lazy val coreAspose = (project in file("core-aspose"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .settings(
+    name := "xlcr-core-aspose",
+    libraryDependencies ++= Seq(
+      "com.aspose" % "aspose-cells" % "24.8",
+      "com.aspose" % "aspose-words" % "24.8" classifier "jdk17",
+      "com.aspose" % "aspose-slides" % "24.8" classifier "jdk16",
+      "com.aspose" % "aspose-email" % "24.7" classifier "jdk16",
     )
   )
 
@@ -72,7 +95,7 @@ lazy val server = (project in file("server"))
 
 // Root project for aggregating
 lazy val root = (project in file("."))
-  .aggregate(core, server)
+  .aggregate(core, coreAspose, server)
   .settings(
     name := "xlcr",
     // Don't publish the root project

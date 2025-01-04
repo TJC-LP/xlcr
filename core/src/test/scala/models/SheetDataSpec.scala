@@ -1,6 +1,8 @@
 package com.tjclp.xlcr
 package models
 
+import models.excel.{CellData, SheetData}
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -56,11 +58,8 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     workbook.close()
   }
 
-  val sampleCellData = CellData(
+  val sampleCellData: CellData = CellData(
     referenceA1 = "Sheet1!A1",
-    rowIndex = 0,
-    columnIndex = 0,
-    address = "A1",
     cellType = "STRING",
     value = Some("Test"),
     formula = None,
@@ -72,23 +71,17 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     formattedValue = None
   )
 
-  val sampleSheetData = SheetData(
+  val sampleSheetData: SheetData = SheetData(
     name = "Sheet1",
     index = 0,
-    isHidden = false,
-    rowCount = 1,
-    columnCount = 1,
     cells = List(sampleCellData),
-    mergedRegions = List(),
-    protectionStatus = false,
-    hasAutoFilter = false
+    mergedRegions = List()
   )
 
   "SheetData" should "serialize to JSON correctly" in {
     val json = SheetData.toJson(sampleSheetData)
     json should include(""""name" : "Sheet1"""")
-    json should include(""""rowCount" : 1""")
-    json should include(""""columnCount" : 1""")
+    json should include(""""index" : 0""")
   }
 
   it should "deserialize from JSON correctly" in {
@@ -105,8 +98,8 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
 
     val parsed = SheetData.fromJsonMultiple(json)
     parsed shouldBe a[Right[_, _]]
-    parsed.right.get should have length 2
-    parsed.right.get.map(_.name) should contain theSameElementsAs List("Sheet1", "Sheet2")
+    parsed.toOption.get should have length 2
+    parsed.toOption.get.map(_.name) should contain theSameElementsAs List("Sheet1", "Sheet2")
   }
 
   it should "handle single sheet JSON as multiple for backward compatibility" in {
@@ -114,8 +107,8 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     val parsed = SheetData.fromJsonMultiple(json)
 
     parsed shouldBe a[Right[_, _]]
-    parsed.right.get should have length 1
-    parsed.right.get.head shouldBe sampleSheetData
+    parsed.toOption.get should have length 1
+    parsed.toOption.get.head shouldBe sampleSheetData
   }
 
   it should "fail gracefully with invalid JSON" in {
@@ -129,26 +122,23 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
       cellType = "FORMULA",
       formula = Some("=SUM(A1:A10)"),
       value = Some("55"),
-      address = "B1"
     )
 
     val numericCell = sampleCellData.copy(
       cellType = "NUMERIC",
       value = Some("42.5"),
-      address = "C1"
     )
 
     val sheetWithFormulas = sampleSheetData.copy(
       cells = List(sampleCellData, formulaCell, numericCell),
-      columnCount = 3
     )
 
     val json = SheetData.toJson(sheetWithFormulas)
     val parsed = SheetData.fromJson(json)
 
     parsed shouldBe a[Right[_, _]]
-    parsed.right.get.cells should have length 3
-    parsed.right.get.cells.find(_.formula.isDefined) shouldBe defined
+    parsed.toOption.get.cells should have length 3
+    parsed.toOption.get.cells.find(_.formula.isDefined) shouldBe defined
   }
 
   it should "handle merged regions correctly" in {
@@ -160,8 +150,8 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     val parsed = SheetData.fromJson(json)
 
     parsed shouldBe a[Right[_, _]]
-    parsed.right.get.mergedRegions should have length 2
-    parsed.right.get.mergedRegions should contain allOf("A1:B2", "C3:D4")
+    parsed.toOption.get.mergedRegions should have length 2
+    parsed.toOption.get.mergedRegions should contain allOf("A1:B2", "C3:D4")
   }
 
   it should "preserve cell formatting information" in {
@@ -178,8 +168,8 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     val parsed = SheetData.fromJson(json)
 
     parsed shouldBe a[Right[_, _]]
-    parsed.right.get.cells.head.dataFormat shouldBe defined
-    parsed.right.get.cells.head.formattedValue shouldBe defined
+    parsed.toOption.get.cells.head.dataFormat shouldBe defined
+    parsed.toOption.get.cells.head.formattedValue shouldBe defined
   }
 
   it should "fail gracefully with malformed sheet data" in {

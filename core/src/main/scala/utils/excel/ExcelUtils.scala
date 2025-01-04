@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package utils.excel
 
-import models.ExcelReference
+import models.excel.ExcelReference
 
 import scala.annotation.tailrec
 
@@ -15,6 +15,21 @@ object ExcelUtils:
         loop(n / 26 - 1, char.toString + acc)
 
     loop(col.value)
+
+  def a1ToReference(a1: String): (ExcelReference.Row, ExcelReference.Col) =
+    val cellRef = a1ToSheetAndAddress(a1)._2
+    val pattern = """([A-Za-z]+)(\d+)""".r
+    cellRef match
+      case pattern(col, row) =>
+        (ExcelReference.Row(row.toInt - 1), stringToColumn(col))
+      case _ => throw IllegalArgumentException(s"Invalid A1 reference format: $a1")
+
+  def a1ToSheetAndAddress(a1: String): (Option[String], String) =
+    if a1.contains('!') then
+      val result = a1.split('!')
+      (Some(result(0)), result(1))
+    else
+      (None, a1)
 
   def stringToColumn(s: String): ExcelReference.Col =
     require(s.nonEmpty && s.forall(_.isLetter), s"Column reference must contain only letters, got '$s'")
