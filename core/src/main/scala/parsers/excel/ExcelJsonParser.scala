@@ -1,39 +1,44 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import models.{Content, SheetData}
+import adapters.AdapterRegistry
+import models.Content
 import types.MimeType
+import utils.FileUtils
 
-import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.slf4j.LoggerFactory
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import scala.util.Try
 
-object ExcelJsonParser extends ExcelParser:
+/**
+ * This file is drastically simplified. We now just delegate
+ * to our bridging approach (AdapterRegistry).
+ *
+ * If desired, we can remove this entirely and update references
+ * in tests or code to use the new bridging approach. For now,
+ * we'll keep a minimal placeholder that passes to AdapterRegistry.
+ */
+object ExcelJsonParser extends ExcelParser {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override def extractContent(input: Path, output: Option[Path] = None): Try[Content] =
-    Try {
-      val workbook = WorkbookFactory.create(input.toFile)
-      val evaluator = workbook.getCreationHelper.createFormulaEvaluator()
+  override def extractContent(input: Path, output: Option[Path]): Try[Content] = Try {
 
-      try
-        val sheets = (0 until workbook.getNumberOfSheets).map { idx =>
-          val sheet = workbook.getSheetAt(idx)
-          SheetData.fromSheet(sheet, evaluator)
-        }.toList
+    val inputBytes = Files.readAllBytes(input)
+    val fromMime = FileUtils.detectMimeType(input)
 
-        val jsonContent = SheetData.toJsonMultiple(sheets)
+    // We assume JSON output
+    val toMime = MimeType.ApplicationJson
 
-        Content(
-          jsonContent.getBytes(StandardCharsets.UTF_8),
-          MimeType.ApplicationJson.mimeType,
-          Map("sheets" -> sheets.length.toString)
-        )
-      finally
-        workbook.close()
+    AdapterRegistry.convert(inputBytes, fromMime, toMime) match {
+      case Right(jsonBytes) =>
+        // If 'output' is specified, we can write out
+        output.foreach(out => Files.write(out, jsonBytes))
+        Content(jsonBytes, toMime.mimeType, Map("Delegated" -> "ExcelJsonParserBridge"))
+      case Left(err) =>
+        throw new RuntimeException(err)
     }
+  }
 
   override def outputType: MimeType = MimeType.ApplicationJson
+}
