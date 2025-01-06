@@ -10,6 +10,6 @@ import types.MimeType.*
  * It implements the Model trait so it can load (fromMimeType) or
  * export (toMimeType) data as JSON, Excel, or Markdown.
  */
-final case class SheetsData(sheets: List[SheetData]) extends Model[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]
+final case class SheetsData(sheets: List[SheetData]) extends Model
 
-object SheetsData extends Model[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]
+object SheetsData extends Model

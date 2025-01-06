@@ -11,11 +11,7 @@ import scala.util.Using
  * An InputBridge is responsible for parsing raw bytes (for a specific
  * input mimeType) into a list of SheetData (our model).
  */
-trait InputBridge[I <: MimeType, M <: Model[_]] {
-  /** The MIME type we can parse (e.g., xlsx). */
-  def inputMimeType: I
-  def modelType: M
-
+trait InputBridge[I <: MimeType, M <: Model] {
   /**
    * Parse raw bytes from an input file into our intermediate model.
    */
