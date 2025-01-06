@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package models
 
-import models.ExcelReference.{*, given}
+import com.tjclp.xlcr.models.excel.ExcelReference.{*, given}
 import utils.excel.ExcelUtils
 
 import org.scalatest.flatspec.AnyFlatSpec

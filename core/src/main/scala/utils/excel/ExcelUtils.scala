@@ -1,8 +1,7 @@
 package com.tjclp.xlcr
 package utils.excel
 
-import models.ExcelReference
-
+import com.tjclp.xlcr.models.excel.ExcelReference
 import scala.annotation.tailrec
 
 object ExcelUtils:

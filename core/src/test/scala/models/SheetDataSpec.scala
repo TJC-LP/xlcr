@@ -1,6 +1,7 @@
 package com.tjclp.xlcr
 package models
 
+import com.tjclp.xlcr.models.excel.{CellData, SheetData}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

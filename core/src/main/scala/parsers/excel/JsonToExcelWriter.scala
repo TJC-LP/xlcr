@@ -1,14 +1,15 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import models.{CellData, SheetData}
+import models.excel.{CellData, SheetData}
+
 import org.apache.poi.ss.usermodel.{BorderStyle, CellType, FillPatternType, WorkbookFactory}
 import org.apache.poi.xssf.usermodel.{XSSFColor, XSSFFont, XSSFWorkbook}
 
 import java.io.FileOutputStream
 import java.nio.file.{Files, Path}
 import scala.annotation.tailrec
-import scala.util.{Failure, Success, Using, Try}
+import scala.util.{Failure, Success, Try, Using}
 
 /**
  * Converts JSON representing one or more SheetData objects into an Excel (.xlsx) file.
@@ -69,7 +70,7 @@ object JsonToExcelWriter:
     val mergedMap = newSheets.foldLeft(existingMap) { (acc, newSheet) =>
       acc.get(newSheet.name) match
         case Some(existingSheet) => acc.updated(newSheet.name, existingSheet.mergeDiff(newSheet))
-        case None                => acc.updated(newSheet.name, newSheet)
+        case None => acc.updated(newSheet.name, newSheet)
     }
     mergedMap.values.toList
 

@@ -1,7 +1,7 @@
 package com.tjclp.xlcr.server
 
 import com.tjclp.xlcr.Pipeline
-import com.tjclp.xlcr.models.SheetData
+import com.tjclp.xlcr.models.excel.SheetData
 import com.tjclp.xlcr.parsers.excel.ExcelMarkdownParser
 import com.tjclp.xlcr.parsers.excel.ExcelSvgParser
 import com.tjclp.xlcr.parsers.excel.MarkdownToExcelParser

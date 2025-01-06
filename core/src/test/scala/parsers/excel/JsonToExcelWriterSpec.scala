@@ -10,6 +10,8 @@ import java.nio.file.{Files, Path}
 import scala.util.{Failure, Success}
 import utils.TestExcelHelpers
 
+import com.tjclp.xlcr.models.excel.SheetData
+
 class JsonToExcelWriterSpec extends AnyFlatSpec with Matchers {
 
   def compareResults(output: Path, expected: Path): Boolean = {
@@ -201,7 +203,7 @@ class JsonToExcelWriterSpec extends AnyFlatSpec with Matchers {
             Files.write(roundTripJsonPath, content.data)
 
             // We'll parse the JSON back into SheetData objects
-            val parsed = models.SheetData.fromJsonMultiple(new String(content.data))
+            val parsed = SheetData.fromJsonMultiple(new String(content.data))
             parsed match {
               case Left(err) =>
                 fail(s"Failed to parse round-trip JSON: ${err.getMessage}")

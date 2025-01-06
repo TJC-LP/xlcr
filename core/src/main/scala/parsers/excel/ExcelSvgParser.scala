@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import models.{Content, FontData, SheetData}
+import models.Content
+import models.excel.{FontData, SheetData}
 import types.MimeType
 
 import org.apache.poi.ss.usermodel.WorkbookFactory
@@ -150,7 +151,7 @@ object ExcelSvgParser extends ExcelParser:
     sb.append(body)
     sb.append("</svg>\n")
     sb.toString
-    
+
   /** Produce CSS classes for each unique font family. */
   private def generateFontStyles(fonts: Set[FontData]): String =
     val sb = new StringBuilder

@@ -1,9 +1,10 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import models.{CellData, Content, SheetData}
+import models.Content
 import types.MimeType
 import types.MimeType.TextMarkdown
+import com.tjclp.xlcr.models.excel.{CellData, SheetData}
 
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
