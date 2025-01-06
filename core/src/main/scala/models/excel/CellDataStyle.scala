@@ -1,5 +1,5 @@
 package com.tjclp.xlcr
-package models
+package models.excel
 
 import io.circe.*
 import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
@@ -8,7 +8,7 @@ import io.circe.generic.semiauto.*
 /**
  * Represents cell style information (colors, borders, etc.).
  */
-final case class CellStyle(
+final case class CellDataStyle(
                             backgroundColor: Option[String] = None, // Hex RGB color string
                             foregroundColor: Option[String] = None, // Hex RGB color string
                             pattern: Option[String] = None, // Fill pattern type
@@ -21,8 +21,8 @@ final case class CellStyle(
                             borderColors: Map[String, String] = Map.empty // Border side -> RGB color
                           )
 
-object CellStyle:
+object CellDataStyle:
   given Configuration = Configuration.default.withDefaults
 
-  implicit val encoder: Encoder[CellStyle] = ConfiguredEncoder.derived[CellStyle]
-  implicit val decoder: Decoder[CellStyle] = ConfiguredDecoder.derived[CellStyle]
+  implicit val encoder: Encoder[CellDataStyle] = ConfiguredEncoder.derived[CellDataStyle]
+  implicit val decoder: Decoder[CellDataStyle] = ConfiguredDecoder.derived[CellDataStyle]

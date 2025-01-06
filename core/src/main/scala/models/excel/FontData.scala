@@ -1,5 +1,5 @@
 package com.tjclp.xlcr
-package models
+package models.excel
 
 import io.circe.*
 import io.circe.generic.semiauto.*

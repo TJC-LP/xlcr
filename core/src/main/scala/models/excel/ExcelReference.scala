@@ -1,5 +1,5 @@
 package com.tjclp.xlcr
-package models
+package models.excel
 
 import utils.excel.ExcelUtils
 
