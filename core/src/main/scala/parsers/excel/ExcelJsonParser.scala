@@ -2,8 +2,8 @@ package com.tjclp.xlcr
 package parsers.excel
 
 import adapters.AdapterRegistry
-import adapters.AdapterRegistry.implicits._
-import models.Content
+import adapters.AdapterRegistry.implicits.*
+import models.{Content, FileContent}
 import types.MimeType
 import utils.FileUtils
 
@@ -24,32 +24,24 @@ object ExcelJsonParser extends ExcelParser {
     val fromMime = FileUtils.detectMimeType(input)
     val toMime = MimeType.ApplicationJson
 
+    type Json = MimeType.ApplicationJson.type
+    type Excel = MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
+
     // For now, we only handle xlsx -> json via the bridging approach
     // If fromMime doesn't match, we'll bail out
     fromMime match {
       case MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet =>
         // Attempt the bridging approach
-        val conversionResult =
-          AdapterRegistry.convert[
-            MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
-            MimeType.ApplicationJson.type
-          ](
-            inputBytes,
-            MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-            MimeType.ApplicationJson
-          )
+        val fileContent = FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type](inputBytes, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
+        val result = AdapterRegistry.implicits.excelToJson.convert(fileContent)
 
-        conversionResult match {
-          case Right(convertedBytes) =>
-            output.foreach(out => Files.write(out, convertedBytes))
-            Content(
-              data = convertedBytes,
-              contentType = toMime.mimeType,
-              metadata = Map("Delegated" -> "ExcelJsonParserBridge")
-            )
-          case Left(errorMsg) =>
-            throw new RuntimeException(errorMsg)
-        }
+        val bytes = result.data
+        output.foreach(out => Files.write(out, bytes))
+        Content(
+          data = bytes,
+          contentType = toMime.mimeType,
+          metadata = Map("Delegated" -> "ExcelJsonParserBridge")
+        )
 
       case other =>
         throw new RuntimeException(

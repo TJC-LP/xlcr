@@ -20,7 +20,7 @@ enum MimeType(val mimeType: String):
   case ApplicationPdf extends MimeType("application/pdf") with ApplicationMimeType
   case ApplicationZip extends MimeType("application/zip") with ApplicationMimeType
   case ApplicationXml extends MimeType("application/xml") with ApplicationMimeType
-  case ApplicationJson extends MimeType("application/json") with ApplicationMimeType
+  case ApplicationJson extends MimeType("application/json")
   case ApplicationVndOpenXmlFormatsSpreadsheetmlSheet extends MimeType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") with ApplicationMimeType
 
   // Text types
@@ -39,3 +39,16 @@ enum MimeType(val mimeType: String):
   case MessageRfc822 extends MimeType("message/rfc822") with MessageMimeType
 
   def category: MimeTypeCategory = this.asInstanceOf[MimeTypeCategory]
+
+
+object MimeType:
+  def fromString(str: String): Option[MimeType] =
+    MimeType.values.find(_.mimeType == str.toLowerCase)
+
+  def unsafeFromString(str: String): MimeType =
+    fromString(str).getOrElse(
+      throw new IllegalArgumentException(s"Invalid mime type: $str")
+    )
+
+  // You might also want a method that tries to normalize the input
+  def normalize(str: String): String = str.trim.toLowerCase
