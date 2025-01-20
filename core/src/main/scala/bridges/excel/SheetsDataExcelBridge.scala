@@ -1,38 +1,37 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.Bridge
+import bridges.SymmetricBridge
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
 import types.MimeType
-import types.MimeType.ApplicationJson
-import io.circe.parser
-import io.circe.syntax._
-import io.circe.Error
 
+import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
-import java.io.ByteArrayOutputStream
-import java.nio.charset.StandardCharsets
-import scala.util.{Try, Failure, Success}
+
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import scala.util.Using
 
 /**
- * JsonExcelInputBridge parses JSON -> SheetsData and also renders SheetsData -> JSON.
- * This replaces JsonToExcelParser logic on input side,
- * and partially duplicates ExcelJsonOutputBridge logic for the output side.
+ * ExcelBridge can parse XLSX bytes into a List[SheetData] and render them back to XLSX.
  */
-object JsonExcelInputBridge extends Bridge[
+object SheetsDataExcelBridge extends SymmetricBridge[
   SheetsData,
-  MimeType.ApplicationJson.type,
   MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
 ] {
+  override def parse(input: FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]): SheetsData = {
+    Using.resource(new ByteArrayInputStream(input.data)) { is =>
+      val workbook = WorkbookFactory.create(is)
+      val evaluator = workbook.getCreationHelper.createFormulaEvaluator()
 
-  override def parse(input: FileContent[ApplicationJson.type]): SheetsData = {
-    val jsonString = new String(input.data, StandardCharsets.UTF_8)
-    SheetData.fromJsonMultiple(jsonString) match {
-      case Left(err) =>
-        throw new RuntimeException(s"Failed to parse SheetsData from JSON: ${err.getMessage}")
-      case Right(sheets) =>
-        SheetsData(sheets)
+      // For each sheet, build a SheetData
+      val sheets = for (idx <- 0 until workbook.getNumberOfSheets) yield {
+        val sheet = workbook.getSheetAt(idx)
+        SheetData.fromSheet(sheet, evaluator)
+      }
+
+      workbook.close()
+      SheetsData(sheets.toList)
     }
   }
 

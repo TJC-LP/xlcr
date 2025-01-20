@@ -13,7 +13,7 @@ import scala.collection.mutable
  * ExcelSvgOutputBridge produces an SVG representation of SheetsData.
  * This replaces ExcelSvgParser logic.
  */
-object ExcelSvgOutputBridge extends SymmetricBridge[
+object SheetsDataSvgBridge extends SymmetricBridge[
   SheetsData,
   MimeType.ImageSvgXml.type
 ] {

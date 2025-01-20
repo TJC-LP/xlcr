@@ -38,7 +38,7 @@ trait Bridge[M <: Model, I <: MimeType, O <: MimeType](using
    * Chains this bridge with another bridge sharing the same model type M
    * to create a new bridge that can convert between their mime types.
    */
-  def chain[O2 <: MimeType](using o2Tag: ClassTag[O2])(that: Bridge[M, _, O2]): Bridge[M, I, O2] = new Bridge[M, I, O2] {
+  def chain[O2 <: MimeType](that: Bridge[M, _, O2])(using o2Tag: ClassTag[O2]): Bridge[M, I, O2] = new Bridge[M, I, O2] {
     override def parse(input: FileContent[I]): M = Bridge.this.parse(input)
 
     override def render(model: M): FileContent[O2] = that.render(model)

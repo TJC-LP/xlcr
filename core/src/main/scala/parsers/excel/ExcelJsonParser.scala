@@ -32,7 +32,7 @@ object ExcelJsonParser extends ExcelParser {
     fromMime match {
       case MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet =>
         // Attempt the bridging approach
-        val fileContent = FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type](inputBytes, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
+        val fileContent = FileContent[Excel](inputBytes, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
         val result = AdapterRegistry.implicits.excelToJson.convert(fileContent)
 
         val bytes = result.data
