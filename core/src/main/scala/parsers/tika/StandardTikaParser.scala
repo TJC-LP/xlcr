@@ -1,33 +1,59 @@
 package com.tjclp.xlcr
 package parsers.tika
 
-import models.Content
+import bridges.tika.TikaPlainTextBridge
+import models.{Content, FileContent}
 import types.MimeType
+import types.MimeType.TextPlain
 
-import org.apache.tika.sax.BodyContentHandler
-
-import java.nio.file.Path
-import scala.util.Try
+import java.nio.file.{Files, Path}
+import scala.util.{Failure, Success, Try}
 
 /**
- * An implementation of TikaParser that uses BodyContentHandler
- * to produce plain text content. It inherits the common Tika
- * lifecycle and logic from the TikaParser trait.
+ * StandardTikaParser now uses TikaPlainTextBridge internally
+ * to parse the input file to plain text.
  */
 object StandardTikaParser extends TikaParser:
+  override def outputType: MimeType = TextPlain
+
+  override def extractContent(input: Path, output: Option[Path]): Try[Content] =
+    // Validate file existence
+    if !Files.exists(input) then
+      return Failure(new IllegalArgumentException(s"Input file does not exist: $input"))
+
+    // Read input bytes
+    val bytesTry = Try(Files.readAllBytes(input))
+    bytesTry.flatMap { data =>
+      val fileContent = FileContent[MimeType](data, detectInputMime(input))
+      val result =
+        try TikaPlainTextBridge.convert(fileContent)
+        catch {
+          case ex: Throwable => return Failure(ex)
+        }
+
+      val content = Content(
+        data = result.data,
+        contentType = result.mimeType.mimeType,
+        metadata = Map("Converter" -> "StandardTikaParser")
+      )
+
+      // Optionally write to output
+      output.foreach { out =>
+        Try(Files.write(out, content.data)) match
+          case Failure(e) => return Failure(e)
+          case _ => ()
+      }
+
+      Success(content)
+    }
+
   /**
-   * Extract content from the given input path, producing a
-   * text/plain result by default. Output type is used here
-   * mainly for high-level matching and logging.
-   *
-   * @param input The file path to parse
-   * @return A Try[Content] containing the extracted data
+   * For demonstration, we guess the input MimeType from extension
+   * or Tika detection. It's enough to pass MimeType to TikaBridge.
    */
-  override def extractContent(input: Path, output: Option[Path] = None): Try[Content] =
-    val handler = createContentHandler()
-    extractWithTika(input, handler, outputType)
+  private def detectInputMime(input: Path): MimeType =
+    val inMime = com.tjclp.xlcr.utils.FileUtils.detectMimeType(input)
+    // Tika can handle nearly anything, so we just pass it along:
+    inMime
 
-  def outputType: MimeType = MimeType.TextPlain
-
-  override protected def createContentHandler(): BodyContentHandler =
-    new BodyContentHandler()
+  override def priority: Int = 1

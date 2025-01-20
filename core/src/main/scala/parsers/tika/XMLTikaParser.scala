@@ -2,35 +2,53 @@ package com.tjclp.xlcr
 package parsers.tika
 
 import models.Content
+import bridges.tika.TikaXmlBridge
+import models.FileContent
 import types.MimeType
+import types.MimeType.ApplicationXml
 
-import org.apache.tika.sax.{ToXMLContentHandler, WriteOutContentHandler}
-import org.xml.sax.ContentHandler
-
-import java.nio.file.Path
-import scala.util.Try
+import java.nio.file.{Files, Path}
+import scala.util.{Try, Failure, Success}
 
 /**
- * An implementation of TikaParser that produces XML output
- * using ToXMLContentHandler. It inherits the common
- * Tika lifecycle and logic from the TikaParser trait.
+ * XMLTikaParser now uses TikaXmlBridge internally
+ * to parse the input file to an XML representation from Tika.
  */
 object XMLTikaParser extends TikaParser:
-  private val WriteLimit = -1 // No write limit
+  override def outputType: MimeType = ApplicationXml
 
-  /**
-   * Extract content from the given input path, producing an
-   * XML-structured result. Output type is used here for
-   * high-level matching and logging only.
-   *
-   * @param input The file path to parse
-   * @return A Try[Content] containing the extracted data
-   */
-  override def extractContent(input: Path, output: Option[Path] = None): Try[Content] =
-    extractWithTika(input, createContentHandler(), outputType)
+  override def extractContent(input: Path, output: Option[Path]): Try[Content] =
+    // Validate file existence
+    if !Files.exists(input) then
+      return Failure(new IllegalArgumentException(s"Input file does not exist: $input"))
 
-  def outputType: MimeType = MimeType.ApplicationXml
+    val bytesTry = Try(Files.readAllBytes(input))
+    bytesTry.flatMap { data =>
+      val fileContent = FileContent[MimeType](data, detectInputMime(input))
+      val result =
+        try TikaXmlBridge.convert(fileContent)
+        catch {
+          case ex: Throwable => return Failure(ex)
+        }
 
-  override protected def createContentHandler(): ContentHandler =
-    val xmlHandler = new ToXMLContentHandler()
-    new WriteOutContentHandler(xmlHandler, WriteLimit)
+      val content = Content(
+        data = result.data,
+        contentType = result.mimeType.mimeType,
+        metadata = Map("Converter" -> "XMLTikaParser")
+      )
+
+      // Optionally write to output
+      output.foreach { out =>
+        Try(Files.write(out, content.data)) match
+          case Failure(e) => return Failure(e)
+          case _ => ()
+      }
+
+      Success(content)
+    }
+
+  private def detectInputMime(input: Path): MimeType =
+    val inMime = com.tjclp.xlcr.utils.FileUtils.detectMimeType(input)
+    inMime
+
+  override def priority: Int = 1
