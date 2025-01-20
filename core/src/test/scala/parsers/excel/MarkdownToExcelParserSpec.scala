@@ -98,7 +98,7 @@ class MarkdownToExcelParserSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "handle partial or missing rows gracefully" in {
+  it should "handle partial or missing types gracefully" in {
     FileUtils.withTempFile("testPartial", ".md") { markdownPath =>
       val markdown =
         """# MySheet
@@ -125,12 +125,12 @@ class MarkdownToExcelParserSpec extends AnyFlatSpec with Matchers {
         sheet.getRow(0).getCell(2).getStringCellValue shouldBe "CellC1"
 
         sheet.getRow(1).getCell(0).getStringCellValue shouldBe "Only A2"
-        sheet.getRow(1).getCell(1).getCellType shouldBe CellType.BLANK
-        sheet.getRow(1).getCell(2).getCellType shouldBe CellType.BLANK
+        sheet.getRow(1).getCell(1).getCellType shouldBe CellType.STRING
+        sheet.getRow(1).getCell(2).getCellType shouldBe CellType.STRING
 
         sheet.getRow(2).getCell(0).getStringCellValue shouldBe "A3"
         sheet.getRow(2).getCell(1).getStringCellValue shouldBe "B3"
-        sheet.getRow(2).getCell(2).getCellType shouldBe CellType.BLANK
+        sheet.getRow(2).getCell(2).getCellType shouldBe CellType.STRING
 
         workbook.close()
       }

@@ -1,45 +1,39 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import models.Content
-import parsers.Parser
+import adapters.AdapterRegistry
+import adapters.AdapterRegistry.implicits.*
+import models.{Content, FileContent}
 import types.MimeType
+import types.MimeType.{ApplicationJson, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet}
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import scala.util.Try
 
-/**
- * Parser implementation that converts JSON files (containing SheetData)
- * into Excel (.xlsx) files using JsonToExcelWriter.
- */
-object JsonToExcelParser extends Parser:
-  def extractContent(input: Path, output: Option[Path] = None): Try[Content] = Try:
-    // Create a temporary file for the Excel output
-    val tempOutput = output.getOrElse(java.nio.file.Files.createTempFile("xlcr_output", ".xlsx"))
+object JsonToExcelParser extends ExcelParser {
+  override def extractContent(input: Path, output: Option[Path]): Try[Content] = Try {
+    val inputBytes = Files.readAllBytes(input)
+    val fileContent = FileContent[ApplicationJson.type](inputBytes, ApplicationJson)
+    val result = AdapterRegistry.convert[
+      ApplicationJson.type,
+      ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
+    ](fileContent)
 
-    // Use JsonToExcelWriter to convert the JSON to Excel
-    JsonToExcelWriter.jsonToExcelFile(input, tempOutput, diffMode = output.isDefined) match
-      case failure@scala.util.Failure(ex) =>
-        tempOutput.toFile.delete() // Clean up the temp file
-        throw ex
-      case scala.util.Success(_) =>
-        // Read the generated Excel file into a byte array
-        val bytes = java.nio.file.Files.readAllBytes(tempOutput)
-        tempOutput.toFile.delete() // Clean up the temp file
+    val bytes = result.data
+    output.foreach(out => Files.write(out, bytes))
 
-        Content(
-          data = bytes,
-          contentType = outputType.mimeType,
-          metadata = Map(
-            "Format" -> "Excel",
-            "Parser" -> "JsonToExcelParser"
-          )
-        )
+    Content(
+      data = bytes,
+      contentType = outputType.mimeType,
+      metadata = Map("Converter" -> "JsonToExcelParser")
+    )
+  }
 
-  def outputType: MimeType = MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
+  override def outputType: MimeType = ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
 
   override def supportedInputTypes: Set[MimeType] = Set(
     MimeType.ApplicationJson
   )
 
   override def supportsDiffMode: Boolean = true
+}
