@@ -2,7 +2,8 @@ package com.tjclp.xlcr
 package models.excel
 
 import models.Model
-import com.tjclp.xlcr.types.Mergeable
+import types.Mergeable
+
 import io.circe.generic.semiauto.*
 
 /**

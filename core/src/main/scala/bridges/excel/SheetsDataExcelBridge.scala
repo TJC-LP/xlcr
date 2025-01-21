@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.{MergeableSymmetricBridge, SymmetricBridge}
+import bridges.MergeableSymmetricBridge
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
 import types.MimeType
@@ -84,6 +84,7 @@ object SheetsDataExcelBridge extends MergeableSymmetricBridge[
         toLetters(n / 26 - 1, char.toString + acc)
       }
     }
+
     s"${toLetters(colIndex)}$rowIndex"
   }
 }

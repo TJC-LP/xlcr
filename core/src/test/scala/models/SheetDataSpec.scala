@@ -73,20 +73,14 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
   val sampleSheetData: SheetData = SheetData(
     name = "Sheet1",
     index = 0,
-    isHidden = false,
-    rowCount = 1,
-    columnCount = 1,
     cells = List(sampleCellData),
-    mergedRegions = List(),
-    protectionStatus = false,
-    hasAutoFilter = false
+    mergedRegions = List()
   )
 
   "SheetData" should "serialize to JSON correctly" in {
     val json = SheetData.toJson(sampleSheetData)
     json should include(""""name" : "Sheet1"""")
-    json should include(""""rowCount" : 1""")
-    json should include(""""columnCount" : 1""")
+    json should include(""""index" : 0""")
   }
 
   it should "deserialize from JSON correctly" in {
@@ -136,7 +130,6 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
 
     val sheetWithFormulas = sampleSheetData.copy(
       cells = List(sampleCellData, formulaCell, numericCell),
-      columnCount = 3
     )
 
     val json = SheetData.toJson(sheetWithFormulas)

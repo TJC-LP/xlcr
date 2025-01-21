@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.{Bridge, MergeableBridge, MergeableSymmetricBridge, SymmetricBridge}
+import bridges.{Bridge, MergeableBridge, MergeableSymmetricBridge}
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
 import types.MimeType

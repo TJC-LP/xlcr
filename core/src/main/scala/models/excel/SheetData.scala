@@ -1,9 +1,10 @@
 package com.tjclp.xlcr
 package models.excel
 
-import com.tjclp.xlcr.types.Mergeable
+import types.Mergeable
+
 import io.circe.*
-import io.circe.generic.semiauto.*
+import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
 import io.circe.syntax.*
 import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.XSSFSheet
@@ -15,29 +16,26 @@ import scala.jdk.CollectionConverters.*
  * - name: The sheet name
  * - index: The sheet index
  * - isHidden: Whether the sheet is hidden
- * - rowCount: Number of rows
- * - columnCount: Number of columns
  * - cells: A list of CellData
- * - mergedRegions: List of merged regions in A1 notation
- * - protectionStatus: Whether the sheet is protected
  * - hasAutoFilter: Whether the sheet has an auto-filter
  */
 case class SheetData(
                       name: String,
                       index: Int,
-                      isHidden: Boolean,
-                      rowCount: Int,
-                      columnCount: Int,
+                      isHidden: Boolean = false,
                       cells: List[CellData],
-                      mergedRegions: List[String],
-                      protectionStatus: Boolean,
-                      hasAutoFilter: Boolean
+                      mergedRegions: List[String] = List.empty,
+                      protectionStatus: Boolean = false,
+                      hasAutoFilter: Boolean = false
                     ) extends Mergeable[SheetData] {
+
+  // Calculate row and column counts from cells
+  lazy val rowCount: Int = if (cells.isEmpty) 0 else cells.map(_.rowIndex).max + 1
+  lazy val columnCount: Int = if (cells.isEmpty) 0 else cells.map(_.columnIndex).max + 1
 
   /**
    * Merge two SheetData objects by combining their cells.
-   * The new sheet's rowCount/columnCount is updated to
-   * accommodate both sets of cells. Merged regions are combined.
+   * The merged regions are combined.
    */
   override def merge(other: SheetData): SheetData = {
     val thisMap = this.cells.map(c => c.address -> c).toMap
@@ -45,13 +43,9 @@ case class SheetData(
     val mergedMap = thisMap ++ thatMap
 
     val mergedCells = mergedMap.values.toList
-    val newRowCount = math.max(this.rowCount, other.rowCount)
-    val newColumnCount = math.max(this.columnCount, other.columnCount)
     val allRegions = (this.mergedRegions ++ other.mergedRegions).distinct
 
     this.copy(
-      rowCount = newRowCount,
-      columnCount = newColumnCount,
       cells = mergedCells,
       mergedRegions = allRegions
     )
@@ -59,9 +53,12 @@ case class SheetData(
 }
 
 object SheetData {
+  // Configuration for circe codecs with default values
+  given Configuration = Configuration.default.withDefaults
+
   // Circe encoders and decoders for a single SheetData
-  implicit val sheetDataEncoder: Encoder[SheetData] = deriveEncoder[SheetData]
-  implicit val sheetDataDecoder: Decoder[SheetData] = deriveDecoder[SheetData]
+  implicit val sheetDataEncoder: Encoder[SheetData] = ConfiguredEncoder.derived[SheetData]
+  implicit val sheetDataDecoder: Decoder[SheetData] = ConfiguredDecoder.derived[SheetData]
 
   /**
    * Generate a single JSON object representing one sheet.
@@ -116,16 +113,6 @@ object SheetData {
     // Convert rowIterator to a list for consistent iteration
     val rowList = sheet.rowIterator().asScala.toList
 
-    // Determine the actual rowCount by scanning all rows
-    val rowCount =
-      if rowList.isEmpty then 0
-      else rowList.map(_.getRowNum).max + 1
-
-    // Determine the actual columnCount by scanning for the highest column index in any row
-    val colCount =
-      if rowList.isEmpty then 0
-      else rowList.flatMap(row => row.cellIterator().asScala.map(_.getColumnIndex)).max + 1
-
     // Build a list of CellData from each cell in each row
     val cellList: List[CellData] =
       rowList.flatMap { row =>
@@ -134,7 +121,6 @@ object SheetData {
         }
       }
     val mergedRegions = sheet.getMergedRegions.asScala.map(_.formatAsString()).toList
-    val protectionStatus = sheet.getProtect
 
     // Attempt to detect auto-filters (for demonstration only, can vary by usage)
     val hasAutoFilter = sheet match
@@ -149,11 +135,8 @@ object SheetData {
       name = sheet.getSheetName,
       index = sheet.getWorkbook.getSheetIndex(sheet),
       isHidden = sheet.getWorkbook.isSheetHidden(sheet.getWorkbook.getSheetIndex(sheet)),
-      rowCount = rowCount,
-      columnCount = colCount,
       cells = cellList,
       mergedRegions = mergedRegions,
-      protectionStatus = protectionStatus,
       hasAutoFilter = hasAutoFilter
     )
 }
