@@ -14,7 +14,7 @@ import org.apache.tika.sax.{ToXMLContentHandler, WriteOutContentHandler}
  * Falls back to plain text wrapped in XML if XML parsing fails.
  */
 object TikaXmlBridge extends TikaBridgeTrait[MimeType, ApplicationXml.type] {
-  override def parse(fileContent: FileContent[MimeType]): TikaModel[xlcr.types.MimeType.ApplicationXml.type] =
+  override def parseInput(fileContent: FileContent[MimeType]): TikaModel[xlcr.types.MimeType.ApplicationXml.type] =
     parseTika(fileContent.data, new WriteOutContentHandler(new ToXMLContentHandler(), -1))
 
   override def render(model: TikaModel[ApplicationXml.type]): FileContent[ApplicationXml.type] = {

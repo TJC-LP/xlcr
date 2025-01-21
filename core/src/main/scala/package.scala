@@ -40,4 +40,7 @@ package object xlcr {
    */
   case class UnknownExtensionException(path: java.nio.file.Path, extension: String)
     extends RuntimeException(s"Cannot determine MIME type for extension '$extension' in file: $path")
+  
+  case class UnsupportedConversionException(inputMimeType: String, outputMimeType: String)
+    extends RuntimeException(s"No bridge found to convert from $inputMimeType to $outputMimeType")
 }

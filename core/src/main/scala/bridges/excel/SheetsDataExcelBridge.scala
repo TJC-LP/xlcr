@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.SymmetricBridge
+import bridges.{MergeableSymmetricBridge, SymmetricBridge}
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
 import types.MimeType
@@ -15,11 +15,11 @@ import scala.util.Using
 /**
  * ExcelBridge can parse XLSX bytes into a List[SheetData] and render them back to XLSX.
  */
-object SheetsDataExcelBridge extends SymmetricBridge[
+object SheetsDataExcelBridge extends MergeableSymmetricBridge[
   SheetsData,
   MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
 ] {
-  override def parse(input: FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]): SheetsData = {
+  override def parseInput(input: FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]): SheetsData = {
     Using.resource(new ByteArrayInputStream(input.data)) { is =>
       val workbook = WorkbookFactory.create(is)
       val evaluator = workbook.getCreationHelper.createFormulaEvaluator()

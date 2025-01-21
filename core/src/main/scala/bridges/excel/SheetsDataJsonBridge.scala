@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.{Bridge, SymmetricBridge}
+import bridges.{Bridge, MergeableBridge, MergeableSymmetricBridge, SymmetricBridge}
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
 import types.MimeType
@@ -16,12 +16,10 @@ import java.nio.charset.StandardCharsets
  * This replaces JsonToExcelParser logic on input side,
  * and partially duplicates ExcelJsonOutputBridge logic for the output side.
  */
-object SheetsDataJsonBridge extends SymmetricBridge[
-  SheetsData,
-  MimeType.ApplicationJson.type
-] {
+object SheetsDataJsonBridge extends MergeableSymmetricBridge[SheetsData, ApplicationJson.type]
+  with MergeableBridge[SheetsData, ApplicationJson.type, ApplicationJson.type] {
 
-  override def parse(input: FileContent[ApplicationJson.type]): SheetsData = {
+  override def parseInput(input: FileContent[ApplicationJson.type]): SheetsData = {
     val jsonString = new String(input.data, StandardCharsets.UTF_8)
     SheetData.fromJsonMultiple(jsonString) match {
       case Left(err) =>

@@ -1,26 +1,24 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.SymmetricBridge
-import models.{FileContent}
+import bridges.{MergeableSymmetricBridge, SymmetricBridge}
+import models.FileContent
 import models.excel.{SheetData, SheetsData}
 import types.MimeType
 import types.MimeType.TextMarkdown
 
-import org.apache.poi.ss.usermodel.{Cell, CellType, Sheet, WorkbookFactory, FormulaEvaluator}
+import org.apache.poi.ss.usermodel.*
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
-import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable
-import scala.util.Using
 
 /**
  * SheetsDataMarkdownBridge is a symmetric bridge that converts
  * SheetsData to/from Markdown. This merges the logic from the
  * older MarkdownExcelInputBridge and ExcelMarkdownOutputBridge.
  */
-object SheetsDataMarkdownBridge extends SymmetricBridge[
+object SheetsDataMarkdownBridge extends MergeableSymmetricBridge[
   SheetsData,
   TextMarkdown.type
 ] {
@@ -87,13 +85,14 @@ object SheetsDataMarkdownBridge extends SymmetricBridge[
         else toColumnName(quotient - 1) + (remainder + 'A').toChar
       }
     }
+
     (0 until columnCount).map(toColumnName)
   }
 
   // --------------------------------------------------------------------------
   // Parse: Markdown -> SheetsData
   // --------------------------------------------------------------------------
-  override def parse(input: FileContent[TextMarkdown.type]): SheetsData = {
+  override def parseInput(input: FileContent[TextMarkdown.type]): SheetsData = {
     val markdownString = new String(input.data, StandardCharsets.UTF_8)
     val workbook = parseMarkdownToWorkbook(markdownString)
     val (sheets, _) = workbookToSheetsData(workbook)
@@ -209,8 +208,8 @@ object SheetsDataMarkdownBridge extends SymmetricBridge[
       case Some("NUMERIC") => CellType.NUMERIC
       case Some("BOOLEAN") => CellType.BOOLEAN
       case Some("FORMULA") => CellType.FORMULA
-      case Some("BLANK")   => CellType.BLANK
-      case Some(_)         => CellType.STRING
+      case Some("BLANK") => CellType.BLANK
+      case Some(_) => CellType.STRING
       case None =>
         if (cleanedValue.matches("""-?\d+(\.\d+)?""")) CellType.NUMERIC
         else if (cleanedValue.equalsIgnoreCase("true") || cleanedValue.equalsIgnoreCase("false")) CellType.BOOLEAN
