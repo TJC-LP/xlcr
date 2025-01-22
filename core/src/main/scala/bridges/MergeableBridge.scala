@@ -13,7 +13,7 @@ trait MergeableBridge[M <: Model & Mergeable[M], I <: MimeType, O <: MimeType] e
    * Merges source content into target content by parsing both to the model type,
    * performing the merge, then rendering back to the output type.
    */
-  def merge(source: FileContent[I], target: FileContent[O]): FileContent[O] =
+  override def convertWithDiff(source: FileContent[I], target: FileContent[O]): FileContent[O] =
     val sourceModel = parseInput(source)
     val targetModel = parseOutput(target)
     render(targetModel.merge(sourceModel))

@@ -15,16 +15,16 @@ class FileContent[T <: MimeType](
 object FileContent {
   private val tika = new Tika()
 
-  def fromPath[T <: MimeType](path: Path)(implicit ev: T =:= MimeType): FileContent[T] = {
+  def fromPath[T <: MimeType](path: Path): FileContent[T] = {
     val bytes = Files.readAllBytes(path)
     val detectedMime = MimeType.fromString(tika.detect(path.toFile))
       .getOrElse(throw new RuntimeException(s"Unsupported mime type for file: $path"))
-    new FileContent(bytes, detectedMime.asInstanceOf[T])
+    new FileContent[T](bytes, detectedMime.asInstanceOf[T])
   }
 
-  def fromBytes[T <: MimeType](bytes: Array[Byte])(implicit ev: T =:= MimeType): FileContent[T] = {
+  def fromBytes[T <: MimeType](bytes: Array[Byte]): FileContent[T] = {
     val detectedMime = MimeType.fromString(tika.detect(bytes))
       .getOrElse(throw new RuntimeException("Could not detect mime type from bytes"))
-    new FileContent(bytes, detectedMime.asInstanceOf[T])
+    new FileContent[T](bytes, detectedMime.asInstanceOf[T])
   }
 }

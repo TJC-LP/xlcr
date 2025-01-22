@@ -3,6 +3,8 @@ package bridges.tika
 
 import models.FileContent
 import models.tika.TikaModel
+import parsers.tika.{TikaParser, TikaTextParser}
+import renderers.tika.TikaTextRenderer
 import types.MimeType
 import types.MimeType.TextPlain
 
@@ -11,12 +13,8 @@ import org.apache.tika.sax.BodyContentHandler
 /**
  * Converts any supported input to plain text using Tika.
  */
-object TikaPlainTextBridge extends TikaBridgeTrait[MimeType, TextPlain.type] {
-  override def parseInput(input: FileContent[MimeType]): TikaModel[TextPlain.type] =
-    parseTika(input.data, new BodyContentHandler())
+object TikaPlainTextBridge extends TikaBridge[TextPlain.type] {
+  override protected def parser = new TikaTextParser()
 
-  override def render(model: TikaModel[TextPlain.type]): FileContent[TextPlain.type] = {
-    val bytes = model.text.getBytes("UTF-8")
-    FileContent(bytes, TextPlain)
-  }
+  override protected def renderer = new TikaTextRenderer()
 }

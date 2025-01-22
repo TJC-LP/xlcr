@@ -105,7 +105,7 @@ object Pipeline:
 
     BridgeRegistry.findMergeableBridge(incoming.mimeType, outputMime) match
       case Some(bridge: MergeableBridge[_, i, o]) =>
-        bridge.merge(
+        bridge.convertWithDiff(
           incoming.asInstanceOf[FileContent[i]],
           existingContent.asInstanceOf[FileContent[o]]
         ).asInstanceOf[FileContent[MimeType]]

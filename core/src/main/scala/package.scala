@@ -6,6 +6,36 @@ package com.tjclp
 package object xlcr {
 
   /**
+   * Defines Tika-specific error types.
+   */
+  sealed trait TikaError extends BridgeError
+
+  case class TikaParseError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
+
+  case class TikaRenderError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
+
+  case class UnsupportedTikaFormatError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
+
+  /**
+   * Sealed trait for all bridging errors.
+   */
+  sealed trait BridgeError extends Exception {
+    def message: String
+
+    def causeOpt: Option[Throwable]
+
+    override def getMessage: String = message
+
+    override def getCause: Throwable | Null = causeOpt.orNull
+  }
+
+  case class ParserError(message: String, causeOpt: Option[Throwable] = None) extends BridgeError
+
+  case class RendererError(message: String, causeOpt: Option[Throwable] = None) extends BridgeError
+
+  case class UnsupportedConversionError(message: String, causeOpt: Option[Throwable] = None) extends BridgeError
+
+  /**
    * Thrown when an input file is not found (e.g., missing or invalid path).
    */
   case class InputFileNotFoundException(path: String)

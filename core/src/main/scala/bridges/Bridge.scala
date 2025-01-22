@@ -1,83 +1,106 @@
-package com.tjclp.xlcr
-package bridges
+package com.tjclp.xlcr.bridges
 
-import models.{FileContent, Model}
-import types.{Mergeable, MimeType}
+import com.tjclp.xlcr.models.FileContent
+import com.tjclp.xlcr.models.Model
+import com.tjclp.xlcr.parsers.Parser
+import com.tjclp.xlcr.renderers.Renderer
+import com.tjclp.xlcr.types.MimeType
+import com.tjclp.xlcr.{ParserError, RendererError, BridgeError, UnsupportedConversionError}
 
 import java.nio.file.Path
 import scala.reflect.ClassTag
 
 /**
- * A Bridge is responsible for (de-)serializing a Model to/from mime types.
- * It supports parsing from both input and output mime types, and rendering to output mime type.
+ * A Bridge ties together a Parser and a Renderer to transform
+ * FileContent[I] -> Model -> FileContent[O].
+ *
+ * @tparam M The internal model type
+ * @tparam I The input MimeType
+ * @tparam O The output MimeType
  */
-trait Bridge[M <: Model, I <: MimeType, O <: MimeType](using
-                                                       mTag: ClassTag[M],
-                                                       iTag: ClassTag[I],
-                                                       oTag: ClassTag[O]
-                                                      ) {
+trait Bridge[M <: Model, I <: MimeType, O <: MimeType](
+  using mTag: ClassTag[M], iTag: ClassTag[I], oTag: ClassTag[O]
+):
   /**
-   * Parse a file path into our intermediate model by reading the bytes.
+   * @return Parser for the input mime type
    */
-  def parseInput(path: Path): M = {
-    this.parseInput(FileContent.fromPath(path).asInstanceOf[FileContent[I]])
-  }
+  protected def inputParser: Parser[I, M]
 
+  /**
+   * @return Optional parser for the output mime type (useful if we want parseOutput)
+   */
+  protected def outputParser: Option[Parser[O, M]] = None
+
+  /**
+   * @return Optional renderer for the input mime type (if we want to do a "reverse" from M to I)
+   */
+  protected def inputRenderer: Option[Renderer[M, I]] = None
+
+  /**
+   * @return Renderer for the output mime type
+   */
+  protected def outputRenderer: Renderer[M, O]
+
+  /**
+   * Parse input file content into an internal model M
+   * @throws ParserError on parse failures
+   */
+  @throws[ParserError]
+  def parseInput(input: FileContent[I]): M =
+    inputParser.parse(input)
+
+  /**
+   * Parse output file content (if outputParser is available) into an internal model M
+   * for merging or diffing scenarios
+   */
+  @throws[ParserError]
+  def parseOutput(output: FileContent[O]): M =
+    outputParser match
+      case Some(parser) => parser.parse(output)
+      case None => throw ParserError(
+        s"No output parser available to parse ${oTag.runtimeClass.getSimpleName} back into ${mTag.runtimeClass.getSimpleName}",
+        None
+      )
+
+  /**
+   * Render a model M into the output file content O
+   * @throws RendererError on render failures
+   */
+  @throws[RendererError]
+  def render(model: M): FileContent[O] =
+    outputRenderer.render(model)
+
+  /**
+   * Convert input: FileContent[I] -> M -> FileContent[O]
+   */
+  @throws[BridgeError]
   def convert(input: FileContent[I]): FileContent[O] =
-    this.render(this.parseInput(input))
+    val model = parseInput(input)
+    render(model)
 
   /**
-   * Parse input mime type content into model
+   * Attempt to convert an output file back to a model (if we have an outputParser).
    */
-  def parseInput(input: FileContent[I]): M = throw new NotImplementedError(
-    s"Parse is not supported for model type ${mTag.runtimeClass.getSimpleName} " +
-      s"and MimeType ${iTag.runtimeClass.getSimpleName}"
-  )
+  @throws[BridgeError]
+  def convertBack(output: FileContent[O]): M =
+    parseOutput(output)
 
   /**
-   * Convert the model into raw bytes for the output mimeType.
+   * Attempt to chain this bridge with another, resulting in a new
+   * Bridge from I -> the other bridge's output type.
    */
-  def render(model: M): FileContent[O] = throw new NotImplementedError(
-    s"Render is not supported for model type ${mTag.runtimeClass.getSimpleName} " +
-      s"and MimeType ${oTag.runtimeClass.getSimpleName}"
-  )
+  def chain[O2 <: MimeType](that: Bridge[M, _, O2])(using o2Tag: ClassTag[O2]): Bridge[M, I, O2] =
+    new Bridge[M, I, O2]:
+      override protected def inputParser: Parser[I, M] = Bridge.this.inputParser
+      override protected def outputParser: Option[Parser[O2, M]] = that.outputParser
+      override protected def inputRenderer: Option[Renderer[M, I]] = Bridge.this.inputRenderer
+      override protected def outputRenderer: Renderer[M, O2] = that.outputRenderer
 
   /**
-   * Chains this bridge with another bridge sharing the same model type M
-   * to create a new bridge that can convert between their mime types.
-   * The new bridge inherits parsing capabilities from both bridges.
+   * Convert with diff: merges the source FileContent[I] into the existingFileContent[O],
+   * requiring that M is Mergeable. By default, throws if not implemented.
    */
-  def chain[O2 <: MimeType](that: Bridge[M, _, O2])(using o2Tag: ClassTag[O2]): Bridge[M, I, O2] = new Bridge[M, I, O2] {
-    override def parseInput(input: FileContent[I]): M = Bridge.this.parseInput(input)
-
-    override def parseOutput(output: FileContent[O2]): M = that.parseOutput(output)
-
-    override def render(model: M): FileContent[O2] = that.render(model)
-  }
-
-  /**
-   * Parse output mime type content into model
-   */
-  def parseOutput(output: FileContent[O]): M = throw new NotImplementedError(
-    s"Parse is not supported for model type ${mTag.runtimeClass.getSimpleName} " +
-      s"and MimeType ${oTag.runtimeClass.getSimpleName}"
-  )
-
-  /**
-   * Attempt a type-safe merge of two file contents that share the same model type & mime type,
-   * requiring that the model extends Mergeable. The result is a single merged FileContent.
-   *
-   * @param source The 'new' or 'incoming' file content
-   * @param target The 'existing' file content
-   * @return FileContent[O] representing the merged result
-   */
-  def convertWithDiff(
-                       source: FileContent[I],
-                       target: FileContent[O]
-                     )(implicit ev: M <:< Mergeable[M]): FileContent[O] = {
-    val sourceModel: M = parseInput(source)
-    val targetModel: M = parseOutput(target)
-    val merged: M = targetModel.merge(sourceModel)
-    render(merged)
-  }
-}
+  def convertWithDiff(source: FileContent[I], existing: FileContent[O]): FileContent[O] =
+    throw UnsupportedConversionError(
+      s"No diff/merge supported for $iTag => $oTag (model: ${mTag.runtimeClass.getSimpleName})."
+    )
