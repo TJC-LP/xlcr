@@ -14,6 +14,7 @@ import com.tjclp.xlcr.ParserError
 trait Parser[I <: MimeType, M <: Model]:
   /**
    * Parse input file content into model
+   *
    * @param input The file content to parse
    * @return The parsed model
    * @throws ParserError if parsing fails

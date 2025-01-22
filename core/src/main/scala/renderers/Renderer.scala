@@ -1,8 +1,8 @@
-package com.tjclp.xlcr.renderers
+package com.tjclp.xlcr
+package renderers
 
-import com.tjclp.xlcr.models.{FileContent, Model}
-import com.tjclp.xlcr.types.MimeType
-import com.tjclp.xlcr.RendererError
+import models.{FileContent, Model}
+import types.MimeType
 
 /**
  * A Renderer transforms a model M into an output file content of type O (MimeType).
@@ -13,6 +13,7 @@ import com.tjclp.xlcr.RendererError
 trait Renderer[M <: Model, O <: MimeType]:
   /**
    * Render model into output file content
+   *
    * @param model The model to render
    * @return The rendered file content
    * @throws RendererError if rendering fails

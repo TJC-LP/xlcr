@@ -6,10 +6,11 @@ import types.MimeType
 
 /**
  * A generic model for Tika-related activities, storing text, optional XML, and metadata.
- * @param text the plain text extracted by Tika
+ *
+ * @param text     the plain text extracted by Tika
  * @param metadata key-value pairs from Tika
  */
 case class TikaModel[O <: MimeType](
-    text: String,
-    metadata: Map[String, String]
-) extends Model
+                                     text: String,
+                                     metadata: Map[String, String]
+                                   ) extends Model

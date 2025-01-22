@@ -3,9 +3,6 @@ package parsers.excel
 
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
-import parsers.Parser
-import renderers.Renderer
-import renderers.excel.SheetsDataMarkdownRenderer
 import types.MimeType
 import types.MimeType.TextMarkdown
 

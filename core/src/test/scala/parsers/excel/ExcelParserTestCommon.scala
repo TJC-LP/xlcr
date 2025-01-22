@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package parsers.excel
 
 import org.apache.poi.ss.usermodel.*
-import org.apache.poi.xssf.usermodel.{XSSFCellStyle, XSSFColor, XSSFWorkbook}
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 import java.io.FileOutputStream
 import java.nio.file.Path

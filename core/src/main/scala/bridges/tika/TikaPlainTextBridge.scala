@@ -1,14 +1,11 @@
 package com.tjclp.xlcr
 package bridges.tika
 
-import models.FileContent
 import models.tika.TikaModel
-import parsers.tika.{TikaParser, TikaTextParser}
+import parsers.tika.TikaTextParser
 import renderers.tika.TikaTextRenderer
 import types.MimeType
 import types.MimeType.TextPlain
-
-import org.apache.tika.sax.BodyContentHandler
 
 /**
  * Converts any supported input to plain text using Tika.

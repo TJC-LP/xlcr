@@ -1,8 +1,6 @@
 package com.tjclp.xlcr
 package parsers.tika
 
-import models.FileContent
-import models.tika.TikaModel
 import types.MimeType
 import types.MimeType.TextPlain
 
@@ -18,5 +16,3 @@ class TikaTextParser extends TikaParser[MimeType, TextPlain.type]:
 
   /** We use a text content handler for textual extraction */
   protected val contentHandler: ContentHandler = TikaContentHandler.text()
-
-// Additional custom logic or overrides can go here, if needed

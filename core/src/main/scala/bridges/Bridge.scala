@@ -1,13 +1,11 @@
 package com.tjclp.xlcr.bridges
 
-import com.tjclp.xlcr.models.FileContent
-import com.tjclp.xlcr.models.Model
+import com.tjclp.xlcr.models.{FileContent, Model}
 import com.tjclp.xlcr.parsers.Parser
 import com.tjclp.xlcr.renderers.Renderer
 import com.tjclp.xlcr.types.MimeType
-import com.tjclp.xlcr.{ParserError, RendererError, BridgeError, UnsupportedConversionError}
+import com.tjclp.xlcr.{BridgeError, ParserError, RendererError, UnsupportedConversionError}
 
-import java.nio.file.Path
 import scala.reflect.ClassTag
 
 /**
@@ -19,35 +17,40 @@ import scala.reflect.ClassTag
  * @tparam O The output MimeType
  */
 trait Bridge[M <: Model, I <: MimeType, O <: MimeType](
-  using mTag: ClassTag[M], iTag: ClassTag[I], oTag: ClassTag[O]
-):
+                                                        using mTag: ClassTag[M], iTag: ClassTag[I], oTag: ClassTag[O]
+                                                      ):
   /**
-   * @return Parser for the input mime type
+   * Convert input: FileContent[I] -> M -> FileContent[O]
    */
-  protected def inputParser: Parser[I, M]
-
-  /**
-   * @return Optional parser for the output mime type (useful if we want parseOutput)
-   */
-  protected def outputParser: Option[Parser[O, M]] = None
-
-  /**
-   * @return Optional renderer for the input mime type (if we want to do a "reverse" from M to I)
-   */
-  protected def inputRenderer: Option[Renderer[M, I]] = None
-
-  /**
-   * @return Renderer for the output mime type
-   */
-  protected def outputRenderer: Renderer[M, O]
+  @throws[BridgeError]
+  def convert(input: FileContent[I]): FileContent[O] =
+    val model = parseInput(input)
+    render(model)
 
   /**
    * Parse input file content into an internal model M
+   *
    * @throws ParserError on parse failures
    */
   @throws[ParserError]
   def parseInput(input: FileContent[I]): M =
     inputParser.parse(input)
+
+  /**
+   * Render a model M into the output file content O
+   *
+   * @throws RendererError on render failures
+   */
+  @throws[RendererError]
+  def render(model: M): FileContent[O] =
+    outputRenderer.render(model)
+
+  /**
+   * Attempt to convert an output file back to a model (if we have an outputParser).
+   */
+  @throws[BridgeError]
+  def convertBack(output: FileContent[O]): M =
+    parseOutput(output)
 
   /**
    * Parse output file content (if outputParser is available) into an internal model M
@@ -63,38 +66,28 @@ trait Bridge[M <: Model, I <: MimeType, O <: MimeType](
       )
 
   /**
-   * Render a model M into the output file content O
-   * @throws RendererError on render failures
-   */
-  @throws[RendererError]
-  def render(model: M): FileContent[O] =
-    outputRenderer.render(model)
-
-  /**
-   * Convert input: FileContent[I] -> M -> FileContent[O]
-   */
-  @throws[BridgeError]
-  def convert(input: FileContent[I]): FileContent[O] =
-    val model = parseInput(input)
-    render(model)
-
-  /**
-   * Attempt to convert an output file back to a model (if we have an outputParser).
-   */
-  @throws[BridgeError]
-  def convertBack(output: FileContent[O]): M =
-    parseOutput(output)
-
-  /**
    * Attempt to chain this bridge with another, resulting in a new
    * Bridge from I -> the other bridge's output type.
    */
   def chain[O2 <: MimeType](that: Bridge[M, _, O2])(using o2Tag: ClassTag[O2]): Bridge[M, I, O2] =
     new Bridge[M, I, O2]:
       override protected def inputParser: Parser[I, M] = Bridge.this.inputParser
+
       override protected def outputParser: Option[Parser[O2, M]] = that.outputParser
+
       override protected def inputRenderer: Option[Renderer[M, I]] = Bridge.this.inputRenderer
+
       override protected def outputRenderer: Renderer[M, O2] = that.outputRenderer
+
+  /**
+   * @return Optional parser for the output mime type (useful if we want parseOutput)
+   */
+  protected def outputParser: Option[Parser[O, M]] = None
+
+  /**
+   * @return Optional renderer for the input mime type (if we want to do a "reverse" from M to I)
+   */
+  protected def inputRenderer: Option[Renderer[M, I]] = None
 
   /**
    * Convert with diff: merges the source FileContent[I] into the existingFileContent[O],
@@ -104,3 +97,13 @@ trait Bridge[M <: Model, I <: MimeType, O <: MimeType](
     throw UnsupportedConversionError(
       s"No diff/merge supported for $iTag => $oTag (model: ${mTag.runtimeClass.getSimpleName})."
     )
+
+  /**
+   * @return Parser for the input mime type
+   */
+  protected def inputParser: Parser[I, M]
+
+  /**
+   * @return Renderer for the output mime type
+   */
+  protected def outputRenderer: Renderer[M, O]

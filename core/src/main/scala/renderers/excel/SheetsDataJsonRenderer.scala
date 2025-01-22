@@ -3,7 +3,6 @@ package renderers.excel
 
 import models.FileContent
 import models.excel.SheetsData
-import renderers.Renderer
 import types.MimeType.ApplicationJson
 
 import java.nio.charset.StandardCharsets

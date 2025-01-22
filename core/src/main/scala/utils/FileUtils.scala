@@ -19,6 +19,10 @@ import scala.util.{Failure, Success, Try, Using}
  * helps reduce boilerplate and code duplication.
  */
 object FileUtils:
+  private lazy val tikaConfig = new TikaConfig()
+  private lazy val detector = tikaConfig.getDetector
+  private val logger = LoggerFactory.getLogger(getClass)
+
   /**
    * Recursively delete a directory and all its contents.
    */
@@ -30,9 +34,6 @@ object FileUtils:
       Files.delete(path)
     }
   }
-  private lazy val tikaConfig = new TikaConfig()
-  private lazy val detector = tikaConfig.getDetector
-  private val logger = LoggerFactory.getLogger(getClass)
 
   /**
    * Write the given byte array to the specified path, overwriting if necessary.

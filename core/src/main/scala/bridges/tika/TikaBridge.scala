@@ -3,14 +3,9 @@ package bridges.tika
 
 import bridges.Bridge
 import models.tika.TikaModel
-import models.{FileContent, Model}
 import parsers.tika.TikaParser
 import renderers.tika.TikaRenderer
 import types.MimeType
-
-import com.tjclp.xlcr.{BridgeError, ParserError, RendererError}
-
-import scala.reflect.ClassTag
 
 /**
  * TikaBridge ties together a TikaParser and a TikaRenderer

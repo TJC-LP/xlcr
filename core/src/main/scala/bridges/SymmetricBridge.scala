@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges
 
-import models.{FileContent, Model}
+import models.Model
 import parsers.Parser
 import renderers.Renderer
 import types.MimeType

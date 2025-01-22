@@ -16,14 +16,14 @@ trait Mergeable[Self] {
   def merge(other: Self): Self
 
   /**
-   * An optional trait for customizing merge behavior.
-   */
-  trait MergeStrategy
-
-  /**
    * By default, merges with the given strategy by delegating to `merge`.
    *
    * Override to implement strategy-based merging if desired.
    */
   def mergeWith(other: Self, strategy: MergeStrategy): Self = merge(other)
+
+  /**
+   * An optional trait for customizing merge behavior.
+   */
+  trait MergeStrategy
 }

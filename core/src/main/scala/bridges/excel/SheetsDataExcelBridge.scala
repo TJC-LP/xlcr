@@ -2,17 +2,10 @@ package com.tjclp.xlcr
 package bridges.excel
 
 import bridges.MergeableSymmetricBridge
-import models.FileContent
-import models.excel.{SheetData, SheetsData}
+import models.excel.SheetsData
 import parsers.excel.SheetsDataExcelParser
 import renderers.excel.SheetsDataExcelRenderer
 import types.MimeType
-
-import org.apache.poi.ss.usermodel.WorkbookFactory
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.util.Using
 
 /**
  * ExcelBridge can parse XLSX bytes into a List[SheetData] and render them back to XLSX.

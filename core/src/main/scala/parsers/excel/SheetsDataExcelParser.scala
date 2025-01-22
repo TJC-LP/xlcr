@@ -3,7 +3,6 @@ package parsers.excel
 
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
-import parsers.Parser
 import types.MimeType
 
 import org.apache.poi.ss.usermodel.WorkbookFactory

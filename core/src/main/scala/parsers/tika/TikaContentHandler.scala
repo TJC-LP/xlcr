@@ -11,6 +11,7 @@ object TikaContentHandler {
 
   /**
    * Create a content handler suitable for text extraction.
+   *
    * @param maxLength Maximum length of text content (default -1 = unlimited)
    * @return ContentHandler
    */

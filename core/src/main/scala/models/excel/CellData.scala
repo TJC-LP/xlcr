@@ -154,14 +154,6 @@ object CellData:
     )
 
   /**
-   * Helper to convert an XSSFColor to a hex RGB string, e.g. #RRGGBB
-   */
-  private def colorToRgb(color: XSSFColor): Option[String] =
-    Option(color).flatMap(c => Option(c.getRGB)).map { arr =>
-      f"#${arr(0) & 0xFF}%02X${arr(1) & 0xFF}%02X${arr(2) & 0xFF}%02X"
-    }
-
-  /**
    * Helper to convert a POI XSSFCellStyle to CellStyle.
    */
   private def fromPoiCellStyle(xstyle: XSSFCellStyle): CellDataStyle =
@@ -182,3 +174,11 @@ object CellData:
         "left" -> colorToRgb(xstyle.getLeftBorderXSSFColor)
       ).collect { case (k, Some(v)) => k -> v }
     )
+
+  /**
+   * Helper to convert an XSSFColor to a hex RGB string, e.g. #RRGGBB
+   */
+  private def colorToRgb(color: XSSFColor): Option[String] =
+    Option(color).flatMap(c => Option(c.getRGB)).map { arr =>
+      f"#${arr(0) & 0xFF}%02X${arr(1) & 0xFF}%02X${arr(2) & 0xFF}%02X"
+    }

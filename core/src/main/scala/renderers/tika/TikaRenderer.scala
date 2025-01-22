@@ -19,6 +19,7 @@ import scala.util.{Failure, Success, Try}
 trait TikaRenderer[O <: MimeType](using mimeTag: ClassTag[O]) extends Renderer[TikaModel[O], O]:
   // Explicitly declare mime type
   val mimeType: O
+
   /**
    * Render the TikaModel into output bytes, returning a FileContent
    *

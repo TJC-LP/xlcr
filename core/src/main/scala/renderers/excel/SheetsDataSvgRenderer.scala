@@ -3,7 +3,6 @@ package renderers.excel
 
 import models.FileContent
 import models.excel.{FontData, SheetData, SheetsData}
-import renderers.Renderer
 import types.MimeType.ImageSvgXml
 
 import scala.collection.mutable

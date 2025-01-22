@@ -10,12 +10,6 @@ package object xlcr {
    */
   sealed trait TikaError extends BridgeError
 
-  case class TikaParseError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
-
-  case class TikaRenderError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
-
-  case class UnsupportedTikaFormatError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
-
   /**
    * Sealed trait for all bridging errors.
    */
@@ -28,6 +22,12 @@ package object xlcr {
 
     override def getCause: Throwable | Null = causeOpt.orNull
   }
+
+  case class TikaParseError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
+
+  case class TikaRenderError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
+
+  case class UnsupportedTikaFormatError(message: String, causeOpt: Option[Throwable] = None) extends TikaError
 
   case class ParserError(message: String, causeOpt: Option[Throwable] = None) extends BridgeError
 
@@ -70,7 +70,7 @@ package object xlcr {
    */
   case class UnknownExtensionException(path: java.nio.file.Path, extension: String)
     extends RuntimeException(s"Cannot determine MIME type for extension '$extension' in file: $path")
-  
+
   case class UnsupportedConversionException(inputMimeType: String, outputMimeType: String)
     extends RuntimeException(s"No bridge found to convert from $inputMimeType to $outputMimeType")
 }

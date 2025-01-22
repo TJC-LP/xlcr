@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package utils.excel
 
-import com.tjclp.xlcr.models.excel.ExcelReference
+import models.excel.ExcelReference
+
 import scala.annotation.tailrec
 
 object ExcelUtils:
@@ -22,7 +23,7 @@ object ExcelUtils:
       case pattern(col, row) =>
         (ExcelReference.Row(row.toInt - 1), stringToColumn(col))
       case _ => throw IllegalArgumentException(s"Invalid A1 reference format: $a1")
-      
+
   def a1ToSheetAndAddress(a1: String): (Option[String], String) =
     if a1.contains('!') then
       val result = a1.split('!')

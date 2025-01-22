@@ -2,13 +2,10 @@ package com.tjclp.xlcr
 package bridges.excel
 
 import bridges.SymmetricBridge
-import models.FileContent
-import models.excel.{FontData, SheetData, SheetsData}
+import models.excel.SheetsData
 import parsers.excel.SheetsDataParser
 import renderers.excel.SheetsDataSvgRenderer
 import types.MimeType.ImageSvgXml
-
-import scala.collection.mutable
 
 /**
  * ExcelSvgOutputBridge produces an SVG representation of SheetsData.

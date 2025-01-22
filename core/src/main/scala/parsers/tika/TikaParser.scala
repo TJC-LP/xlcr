@@ -1,8 +1,8 @@
 package com.tjclp.xlcr
 package parsers.tika
 
+import models.FileContent
 import models.tika.TikaModel
-import models.{FileContent, Model}
 import parsers.Parser
 import types.MimeType
 
