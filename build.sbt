@@ -28,6 +28,8 @@ lazy val core = (project in file("core"))
     libraryDependencies ++= Seq(
       // Scala-specific dependencies
       "org.scalatest" %% "scalatest" % "3.2.19" % Test,
+      "org.scalatestplus" %% "scalacheck-1-17" % "3.2.18.0" % Test,
+      "org.scalacheck" %% "scalacheck" % "1.18.1" % Test,
       "com.github.scopt" %% "scopt" % "4.1.0",
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
