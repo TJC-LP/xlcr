@@ -203,3 +203,4 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
 
     require(rgb.length == 3, s"Invalid RGB color: $hexColor")
     rgb
+    
