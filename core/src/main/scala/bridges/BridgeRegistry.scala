@@ -3,11 +3,11 @@ package bridges
 
 import bridges.excel.*
 import bridges.tika.{TikaPlainTextBridge, TikaXmlBridge}
+import bridges.ppt.{SlidesDataPowerPointBridge, SlidesDataJsonBridge}
 import models.excel.SheetsData
+import models.ppt.SlidesData
 import types.MimeType
 import types.MimeType.*
-
-import scala.reflect.ClassTag
 
 /**
  * AdapterRegistry provides a registry of bridges between different mime types.
@@ -16,19 +16,21 @@ import scala.reflect.ClassTag
 object BridgeRegistry {
 
   // The typed bridges for SheetsData:
-  private val excelToJson: Bridge[SheetsData, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, ApplicationJson.type] =
-    SheetsDataExcelBridge.chain(SheetsDataJsonBridge)
-  private val jsonToExcel: Bridge[SheetsData, ApplicationJson.type, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] =
-    SheetsDataJsonBridge.chain(SheetsDataExcelBridge)
-  private val excelToMarkdown: Bridge[SheetsData, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, TextMarkdown.type] =
-    SheetsDataExcelBridge.chain(SheetsDataMarkdownBridge)
-  private val markdownToExcel: Bridge[SheetsData, TextMarkdown.type, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] =
-    SheetsDataMarkdownBridge.chain(SheetsDataExcelBridge)
-  private val excelToSvg: Bridge[SheetsData, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, ImageSvgXml.type] =
-    SheetsDataExcelBridge.chain(SheetsDataSvgBridge)
+  private val excelToJson = SheetsDataExcelBridge.chain(SheetsDataJsonBridge)
+  private val jsonToExcel = SheetsDataJsonBridge.chain(SheetsDataExcelBridge)
+  private val excelToMarkdown = SheetsDataExcelBridge.chain(SheetsDataMarkdownBridge)
+  private val markdownToExcel = SheetsDataMarkdownBridge.chain(SheetsDataExcelBridge)
+  private val excelToSvg = SheetsDataExcelBridge.chain(SheetsDataSvgBridge)
+
   // Tika bridges for generic conversions
-  private val tikaToXml: TikaXmlBridge.type = TikaXmlBridge
-  private val tikaToText: TikaPlainTextBridge.type = TikaPlainTextBridge
+  private val tikaToXml = TikaXmlBridge
+  private val tikaToText = TikaPlainTextBridge
+
+  // The typed bridges for SlidesData:
+  // (Symmetric slides - can parse PPTX => SlidesData => PPTX, or JSON => SlidesData => JSON)
+  // We also want to chain them for PPTX -> JSON and JSON -> PPTX conversions.
+  private val pptToJson = SlidesDataPowerPointBridge.chain(SlidesDataJsonBridge)
+  private val jsonToPpt = SlidesDataJsonBridge.chain(SlidesDataPowerPointBridge)
 
   /**
    * Test if we can merge between these mime types
@@ -39,10 +41,7 @@ object BridgeRegistry {
   /**
    * Find a bridge that supports merging between these mime types
    */
-  def findMergeableBridge(
-                           input: MimeType,
-                           output: MimeType
-                         ): Option[MergeableBridge[_, _, _]] =
+  def findMergeableBridge(input: MimeType, output: MimeType): Option[MergeableBridge[_, _, _]] =
     findBridge(input, output) match
       case Some(b: MergeableBridge[_, _, _]) => Some(b)
       case _ => None
@@ -56,13 +55,18 @@ object BridgeRegistry {
       // Excel conversions
       case (ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ApplicationJson) => Some(excelToJson)
       case (ApplicationJson, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet) => Some(jsonToExcel)
-      case (ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, TextMarkdown) => Some(excelToMarkdown)
-      case (TextMarkdown, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet) => Some(markdownToExcel)
-      case (ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ImageSvgXml) => Some(excelToSvg)
+      case (ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, TextMarkdown)    => Some(excelToMarkdown)
+      case (TextMarkdown, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)    => Some(markdownToExcel)
+      case (ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ImageSvgXml)     => Some(excelToSvg)
+
+      // SlidesData conversions
+      // PPT <-> JSON
+      case (ApplicationVndMsPowerpoint, ApplicationJson) => Some(pptToJson)
+      case (ApplicationJson, ApplicationVndMsPowerpoint) => Some(jsonToPpt)
 
       // Generic Tika conversions
       case (_, ApplicationXml) => Some(tikaToXml)
-      case (_, TextPlain) => Some(tikaToText)
+      case (_, TextPlain)      => Some(tikaToText)
 
       case _ => None
     }

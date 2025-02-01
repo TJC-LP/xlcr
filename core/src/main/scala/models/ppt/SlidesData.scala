@@ -18,6 +18,6 @@ final case class SlidesData(slides: List[SlideData]) extends Model with Mergeabl
     }
     SlidesData(mergedMap.values.toList.sortBy(_.index))
 
-private object SlidesData:
+object SlidesData:
   implicit val encoder: Encoder[SlidesData] = deriveEncoder[SlidesData]
   implicit val decoder: Decoder[SlidesData] = deriveDecoder[SlidesData]
