@@ -10,7 +10,7 @@ val ktorVersion  = "3.0.3"
 lazy val commonSettings = Seq(
   organization := "com.tjclp.xlcr",
   idePackagePrefix := Some("com.tjclp.xlcr"),
-
+  resolvers += "Aspose Java Repository" at "https://releases.aspose.com/java/repo/",
   libraryDependencies ++= Seq(
     // Common logging
     "org.slf4j" % "slf4j-api" % "2.0.16",
@@ -49,6 +49,20 @@ lazy val core = (project in file("core"))
     )
   )
 
+// New Aspose integration module
+lazy val coreAspose = (project in file("core-aspose"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .settings(
+    name := "xlcr-core-aspose",
+    libraryDependencies ++= Seq(
+      "com.aspose" % "aspose-cells" % "24.8",
+      "com.aspose" % "aspose-words" % "24.8" classifier "jdk17",
+      "com.aspose" % "aspose-slides" % "24.8" classifier "jdk16",
+      "com.aspose" % "aspose-email" % "24.7" classifier "jdk16",
+    )
+  )
+
 // Kotlin server project
 lazy val server = (project in file("server"))
   .enablePlugins(KotlinPlugin)
@@ -78,7 +92,7 @@ lazy val server = (project in file("server"))
 
 // Root project for aggregating
 lazy val root = (project in file("."))
-  .aggregate(core, server)
+  .aggregate(core, coreAspose, server)
   .settings(
     name := "xlcr",
     // Don't publish the root project
