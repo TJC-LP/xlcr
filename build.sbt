@@ -45,7 +45,10 @@ lazy val core = (project in file("core"))
       "com.github.jai-imageio" % "jai-imageio-jpeg2000" % "1.4.0",
 
       // PDF
-      "org.apache.pdfbox" % "pdfbox" % "3.0.4"
+      "org.apache.pdfbox" % "pdfbox" % "3.0.4",
+
+      // XML
+      "org.apache.xmlgraphics" % "batik-all" % "1.18"
     )
   )
 
@@ -86,7 +89,7 @@ lazy val server = (project in file("server"))
       "io.ktor" % "ktor-server-content-negotiation" % ktorVersion,
 
       // Kotlin MCP
-      "io.modelcontextprotocol" % "kotlin-sdk" % "0.3.0"
+      "io.modelcontextprotocol" % "kotlin-sdk" % "0.2.0"
     )
   )
 
