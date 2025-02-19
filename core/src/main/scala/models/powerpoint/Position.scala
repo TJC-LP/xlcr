@@ -1,5 +1,5 @@
 package com.tjclp.xlcr
-package models.ppt
+package models.powerpoint
 
 import io.circe._
 import io.circe.generic.semiauto._

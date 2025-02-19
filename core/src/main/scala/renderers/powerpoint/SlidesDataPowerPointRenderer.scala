@@ -1,9 +1,9 @@
 package com.tjclp.xlcr
-package renderers.ppt
+package renderers.powerpoint
 
 import bridges.image.SvgToPngBridge
 import models.FileContent
-import models.ppt.*
+import models.powerpoint.*
 import renderers.Renderer
 import types.MimeType
 import types.MimeType.{ApplicationVndMsPowerpoint, ImageSvgXml}

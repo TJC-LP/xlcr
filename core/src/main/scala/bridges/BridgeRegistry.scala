@@ -5,7 +5,7 @@ import bridges.excel.*
 import bridges.tika.{TikaPlainTextBridge, TikaXmlBridge}
 import bridges.powerpoint.{SlidesDataPowerPointBridge, SlidesDataJsonBridge}
 import models.excel.SheetsData
-import models.ppt.SlidesData
+import models.powerpoint.SlidesData
 import types.MimeType
 import types.MimeType._
 

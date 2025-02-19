@@ -2,9 +2,9 @@ package com.tjclp.xlcr
 package bridges.powerpoint
 
 import bridges.MergeableSymmetricBridge
-import models.ppt.SlidesData
-import parsers.ppt.SlidesDataPowerPointParser
-import renderers.ppt.SlidesDataPowerPointRenderer
+import models.powerpoint.SlidesData
+import parsers.powerpoint.SlidesDataPowerPointParser
+import renderers.powerpoint.SlidesDataPowerPointRenderer
 import types.MimeType
 import types.MimeType.ApplicationVndMsPowerpoint
 

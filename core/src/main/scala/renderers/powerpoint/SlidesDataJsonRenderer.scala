@@ -1,8 +1,8 @@
 package com.tjclp.xlcr
-package renderers.ppt
+package renderers.powerpoint
 
 import models.FileContent
-import models.ppt.SlidesData
+import models.powerpoint.SlidesData
 import renderers.Renderer
 import types.MimeType
 import types.MimeType.ApplicationJson
