@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.aspose.email
 
-import bridges.Bridge
+import bridges.{Bridge, SimpleBridge}
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -21,21 +21,20 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
  * Using Aspose.Email to load the mail, then Aspose.Words to convert the MHT
  * output to PDF.
  */
-object EmailToPdfAsposeBridge extends Bridge[FileContent[MimeType.MessageRfc822.type], MessageRfc822.type, ApplicationPdf.type] {
+object EmailToPdfAsposeBridge extends SimpleBridge[MessageRfc822.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
-  private type EmailDocModel = FileContent[MimeType.MessageRfc822.type]
 
-  override protected def inputParser: Parser[MessageRfc822.type, EmailDocModel] =
+  override protected def inputParser: Parser[MessageRfc822.type, M] =
     EmailToPdfAsposeParser
 
-  override protected def outputRenderer: Renderer[EmailDocModel, ApplicationPdf.type] =
+  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] =
     EmailToPdfAsposeRenderer
 
   /**
    * Parser that simply wraps the input bytes in an EmailDocModel.
    */
-  private object EmailToPdfAsposeParser extends Parser[MessageRfc822.type, EmailDocModel] {
-    override def parse(input: FileContent[MessageRfc822.type]): EmailDocModel = {
+  private object EmailToPdfAsposeParser extends Parser[MessageRfc822.type, M] {
+    override def parse(input: FileContent[MessageRfc822.type]): M = {
       AsposeLicense.initializeIfNeeded()
       logger.info("Parsing Email content (message/rfc822) into EmailDocModel.")
       FileContent[MimeType.MessageRfc822.type](input.data, MimeType.MessageRfc822)
@@ -51,8 +50,8 @@ object EmailToPdfAsposeBridge extends Bridge[FileContent[MimeType.MessageRfc822.
    * 3) Load that MHT into Aspose.Words Document.
    * 4) Save the Document as PDF in-memory, returning that as FileContent.
    */
-  private object EmailToPdfAsposeRenderer extends Renderer[EmailDocModel, ApplicationPdf.type] {
-    override def render(model: EmailDocModel): FileContent[ApplicationPdf.type] = {
+  private object EmailToPdfAsposeRenderer extends Renderer[M, ApplicationPdf.type] {
+    override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()
         logger.info("Rendering EmailDocModel to PDF using Aspose.Email + Aspose.Words.")

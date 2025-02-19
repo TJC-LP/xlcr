@@ -1,8 +1,8 @@
 package com.tjclp.xlcr
-package parsers.ppt
+package parsers.powerpoint
 
 import models.FileContent
-import models.ppt.{Position, SlideData, SlideElement, SlidesData}
+import models.powerpoint.{Position, SlideData, SlideElement, SlidesData}
 import parsers.Parser
 import types.MimeType
 import types.MimeType.ApplicationVndMsPowerpoint

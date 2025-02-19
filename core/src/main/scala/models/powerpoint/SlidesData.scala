@@ -1,5 +1,5 @@
 package com.tjclp.xlcr
-package models.ppt
+package models.powerpoint
 
 import models.Model
 import types.Mergeable

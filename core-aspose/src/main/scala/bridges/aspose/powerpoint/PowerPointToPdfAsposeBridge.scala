@@ -1,8 +1,8 @@
 package com.tjclp.xlcr
-package bridges.aspose.ppt
+package bridges.aspose.powerpoint
 
-import bridges.Bridge
-import models.{FileContent, Model}
+import bridges.{Bridge, SimpleBridge}
+import models.FileContent
 import parsers.Parser
 import renderers.Renderer
 import types.MimeType
@@ -15,45 +15,40 @@ import org.slf4j.LoggerFactory
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 /**
- * Minimal model representing a PowerPoint document.
- */
-final case class PptDocModel(bytes: Array[Byte]) extends Model
-
-/**
  * PowerPointToPdfAsposeBridge converts PowerPoint files (PPT/PPTX)
  * to PDF using Aspose.Slides.
  */
-object PowerPointToPdfAsposeBridge extends Bridge[PptDocModel, ApplicationVndMsPowerpoint.type, ApplicationPdf.type] {
+object PowerPointToPdfAsposeBridge extends SimpleBridge[ApplicationVndMsPowerpoint.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override protected def inputParser: Parser[ApplicationVndMsPowerpoint.type, PptDocModel] =
+  override protected def inputParser: Parser[ApplicationVndMsPowerpoint.type, M] =
     PowerPointToPdfAsposeParser
 
-  override protected def outputRenderer: Renderer[PptDocModel, ApplicationPdf.type] =
+  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] =
     PowerPointToPdfAsposeRenderer
 
   /**
    * Parser that simply wraps the input bytes into a PptDocModel.
    */
-  private object PowerPointToPdfAsposeParser extends Parser[ApplicationVndMsPowerpoint.type, PptDocModel] {
-    override def parse(input: FileContent[ApplicationVndMsPowerpoint.type]): PptDocModel = {
+  private object PowerPointToPdfAsposeParser extends Parser[ApplicationVndMsPowerpoint.type, M] {
+    override def parse(input: M): M = {
       AsposeLicense.initializeIfNeeded()
       logger.info("Parsing PowerPoint file content into PptDocModel.")
-      PptDocModel(input.data)
+      input
     }
   }
 
   /**
    * Renderer that uses Aspose.Slides to convert a PptDocModel to PDF.
    */
-  private object PowerPointToPdfAsposeRenderer extends Renderer[PptDocModel, ApplicationPdf.type] {
-    override def render(model: PptDocModel): FileContent[ApplicationPdf.type] = {
+  private object PowerPointToPdfAsposeRenderer extends Renderer[M, ApplicationPdf.type] {
+    override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()
         logger.info("Rendering PptDocModel to PDF using Aspose.Slides.")
 
         // Create an input stream from the PowerPoint bytes.
-        val inputStream = new ByteArrayInputStream(model.bytes)
+        val inputStream = new ByteArrayInputStream(model.data)
         // Instantiate a Presentation from the input stream.
         val presentation = new Presentation(inputStream)
         inputStream.close()

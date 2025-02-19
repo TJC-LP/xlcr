@@ -1,60 +1,54 @@
 package com.tjclp.xlcr
 package bridges.aspose.word
 
-import bridges.Bridge
-import models.{FileContent, Model}
+import bridges.{Bridge, SimpleBridge}
+import models.FileContent
 import parsers.Parser
 import renderers.Renderer
 import types.MimeType
 import types.MimeType.{ApplicationMsWord, ApplicationPdf}
+import utils.aspose.AsposeLicense
 
-import com.aspose.words.{Document => AsposeDocument}
-import com.tjclp.xlcr.utils.aspose.AsposeLicense
-
+import com.aspose.words.Document as AsposeDocument
 import org.slf4j.LoggerFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 /**
- * A minimal model that carries Word document bytes from parse -> render.
- */
-final case class WordDocModel(bytes: Array[Byte]) extends Model
-
-/**
  * WordToPdfAsposeBridge is a Bridge from application/msword to application/pdf using Aspose.Words.
  */
-object WordToPdfAsposeBridge extends Bridge[WordDocModel, ApplicationMsWord.type, ApplicationPdf.type] {
+object WordToPdfAsposeBridge extends SimpleBridge[ApplicationMsWord.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override protected def inputParser: Parser[ApplicationMsWord.type, WordDocModel] =
+  override protected def inputParser: Parser[ApplicationMsWord.type, M] =
     WordToPdfAsposeParser
 
-  override protected def outputRenderer: Renderer[WordDocModel, ApplicationPdf.type] =
+  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] =
     WordToPdfAsposeRenderer
 
   /**
    * Parser that simply wraps the input bytes in a WordDocModel.
    */
-  private object WordToPdfAsposeParser extends Parser[ApplicationMsWord.type, WordDocModel] {
-    override def parse(input: FileContent[ApplicationMsWord.type]): WordDocModel = {
+  private object WordToPdfAsposeParser extends Parser[ApplicationMsWord.type, M] {
+    override def parse(input: M): M = {
       // Initialize Aspose license if needed
       AsposeLicense.initializeIfNeeded()
       logger.info("Parsing Word file content to WordDocModel.")
-      WordDocModel(input.data)
+      input
     }
   }
 
   /**
    * Renderer that uses Aspose.Words to convert WordDocModel -> PDF.
    */
-  private object WordToPdfAsposeRenderer extends Renderer[WordDocModel, ApplicationPdf.type] {
-    override def render(model: WordDocModel): FileContent[ApplicationPdf.type] = {
+  private object WordToPdfAsposeRenderer extends Renderer[M, ApplicationPdf.type] {
+    override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()
         logger.info("Rendering WordDocModel to PDF using Aspose.Words.")
 
         // Load the Word document from bytes
-        val inputStream = new ByteArrayInputStream(model.bytes)
+        val inputStream = new ByteArrayInputStream(model.data)
         val asposeDoc = new AsposeDocument(inputStream)
 
         // Convert to PDF in-memory

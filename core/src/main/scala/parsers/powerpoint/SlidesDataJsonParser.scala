@@ -1,8 +1,8 @@
 package com.tjclp.xlcr
-package parsers.ppt
+package parsers.powerpoint
 
 import models.FileContent
-import models.ppt.SlidesData
+import models.powerpoint.SlidesData
 import parsers.Parser
 import types.MimeType
 import types.MimeType.ApplicationJson

@@ -1,10 +1,10 @@
 package com.tjclp.xlcr
-package bridges.ppt
+package bridges.powerpoint
 
 import bridges.MergeableSymmetricBridge
-import models.ppt.SlidesData
-import parsers.ppt.SlidesDataJsonParser
-import renderers.ppt.SlidesDataJsonRenderer
+import models.powerpoint.SlidesData
+import parsers.powerpoint.SlidesDataJsonParser
+import renderers.powerpoint.SlidesDataJsonRenderer
 import types.MimeType
 import types.MimeType.ApplicationJson
 
