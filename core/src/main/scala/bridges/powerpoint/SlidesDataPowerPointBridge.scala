@@ -16,6 +16,6 @@ import types.MimeType.ApplicationVndMsPowerpoint
 object SlidesDataPowerPointBridge
   extends MergeableSymmetricBridge[SlidesData, ApplicationVndMsPowerpoint.type]:
 
-  override protected def parser = SlidesDataPowerPointParser
+  override protected def parser: SlidesDataPowerPointParser.type = SlidesDataPowerPointParser
 
   override protected def renderer = new SlidesDataPowerPointRenderer()
