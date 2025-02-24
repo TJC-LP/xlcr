@@ -1,16 +1,28 @@
 # XLCR 
 ## e**X**tensible **L**anguage **C**omputation **R**untime
 
-XLCR is a powerful and flexible command-line tool designed for language processing and computation tasks. It provides a runtime environment for extracting, analyzing, and transforming textual content from various file formats.
+XLCR is a powerful and flexible command-line tool designed for language processing and computation tasks. It provides a runtime environment for extracting, analyzing, and transforming content between various file formats.
 
 ## Features
 
-- Extensible architecture for language computation tasks
-- Supports multiple input file formats (PDF, Word, Excel, PowerPoint, etc.)
-- Extracts and processes textual content from input files
-- Outputs processed content in either plain text or XML format
-- Customizable processing pipelines
-- Simple command-line interface
+Core Module (`core/run`):
+- Excel to JSON/Markdown/SVG conversions and back
+- PowerPoint to JSON conversions and back
+- Tika-based text and XML extraction from various formats
+- SVG to PNG conversion support
+- Extensible bridge architecture for format conversions
+- Diff/merge support for compatible formats
+- Directory-based batch processing
+
+Aspose Module (`coreAspose/run`):
+- Professional PDF output from Word, Excel, PowerPoint, and Email files
+- High-quality document conversion using Aspose libraries
+- Requires valid Aspose license(s) for production use
+
+Server Module (Experimental):
+- WebSocket-based document editing server
+- Model Context Protocol (MCP) integration
+- Currently under development and not recommended for production use
 
 ## Prerequisites
 
@@ -32,41 +44,44 @@ XLCR is a powerful and flexible command-line tool designed for language processi
 
 ## Usage
 
-To run XLCR, use the following command within the SBT console:
+XLCR provides two main command-line interfaces:
 
+### Core Module
+Basic format conversions using open-source libraries:
 ```
 sbt
-> run --input "<input_file_path>" --output "<output_file_path>"
+> core/run --input "<input_file>" --output "<output_file>" [--diff true]
 ```
 
-For example:
-
+### Aspose Module
+Professional document conversion using Aspose:
 ```
-> run --input "data/import/Sample Document.pdf" --output data/export/output.xml
+sbt
+> coreAspose/run --input "<input_file>" --output "<output_file>" [--licenseTotal "<license_path>"]
 ```
 
-### Command-line Options
+Additional Aspose license options:
+- `--licenseWords`: Aspose.Words license path
+- `--licenseCells`: Aspose.Cells license path
+- `--licenseEmail`: Aspose.Email license path
+- `--licenseSlides`: Aspose.Slides license path
 
-- `--input` or `-i`: Specify the input file path (required)
-- `--output` or `-o`: Specify the output file path (required)
+### Directory Processing
+Both modules support directory-based processing with MIME type mapping:
+```
+> core/run --input "input_dir" --output "output_dir" --mapping "xlsx=json,docx=pdf"
+```
 
-The output format (text or XML) is determined by the file extension of the output file.
-
-## Extending XLCR
-
-XLCR is designed to be extensible. You can add new language processing modules by...
-[Add specific instructions or refer to a development guide]
+The output format is determined by file extension or explicit MIME type mapping.
 
 ## Development
 
 To run tests:
-
 ```
 sbt test
 ```
 
 To create a distributable package:
-
 ```
 sbt package
 ```
@@ -78,3 +93,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Note: The Aspose module requires valid Aspose licenses for production use. Evaluation/trial licenses can be obtained from Aspose directly.
