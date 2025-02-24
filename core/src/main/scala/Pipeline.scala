@@ -61,9 +61,12 @@ object Pipeline:
           throw ContentExtractionException(s"Error extracting content: ${exception.getMessage}", exception)
 
         case Success(fileContentOut) =>
-          Files.write(output, fileContentOut.data)
-          logger.info(s"Content successfully extracted and saved to '$outputPath'.")
-          logger.info(s"Content type: ${fileContentOut.mimeType.mimeType}")
+          FileUtils.writeBytes(output, fileContentOut.data) match
+            case Success(_) =>
+              logger.info(s"Content successfully extracted and saved to '$outputPath'.")
+              logger.info(s"Content type: ${fileContentOut.mimeType.mimeType}")
+            case Failure(ex) =>
+              throw OutputWriteException(s"Failed to write output to '$outputPath'", ex)
     finally
       Files.deleteIfExists(localCopy)
 

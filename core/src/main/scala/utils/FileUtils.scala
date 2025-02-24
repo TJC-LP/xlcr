@@ -37,7 +37,7 @@ object FileUtils:
 
   /**
    * Write the given byte array to the specified path, overwriting if necessary.
-   * Wrapped in a Try to handle any I/O exceptions.
+   * Creates parent directories if they don't exist.
    *
    * @param path The Path where data should be written.
    * @param data The byte array to be written.
@@ -98,6 +98,7 @@ object FileUtils:
 
   /**
    * Write a JSON string to a file with UTF-8 encoding.
+   * Creates parent directories if they don't exist.
    *
    * @param path        The Path where JSON should be written.
    * @param jsonContent The JSON string to write.
