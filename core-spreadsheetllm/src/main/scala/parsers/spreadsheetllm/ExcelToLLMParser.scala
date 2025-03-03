@@ -1,9 +1,6 @@
 package com.tjclp.xlcr
 package parsers.spreadsheetllm
 
-import java.io.ByteArrayInputStream
-import java.nio.file.{Files, Path, Paths}
-
 import compression.AnchorExtractor.CellInfo
 import compression.CompressionPipeline
 import models.FileContent
@@ -11,13 +8,14 @@ import models.spreadsheetllm.CompressedWorkbook
 import parsers.Parser
 import types.MimeType
 
-import org.apache.poi.ss.usermodel.{CellType, WorkbookFactory, Workbook => PoiWorkbook}
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
-import org.slf4j.LoggerFactory
+import org.apache.poi.ss.usermodel.{CellType, WorkbookFactory, Workbook as PoiWorkbook}
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.slf4j.{Logger, LoggerFactory}
 
-import scala.jdk.CollectionConverters._
-import scala.util.{Try, Success, Failure}
+import java.io.ByteArrayInputStream
+import scala.jdk.CollectionConverters.*
+import scala.util.Try
 
 /**
  * Parser that converts Excel files to CompressedWorkbook models using
@@ -28,7 +26,7 @@ import scala.util.{Try, Success, Failure}
  * the SpreadsheetLLM compression pipeline.
  */
 trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
-  protected val logger = LoggerFactory.getLogger(getClass)
+  protected val logger: Logger = LoggerFactory.getLogger(getClass)
   
   /** Configuration for the compression pipeline */
   protected val config: SpreadsheetLLMConfig
@@ -81,7 +79,7 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
    * @param workbook The POI workbook
    * @return Map of sheet names to (cells, rowCount, colCount)
    */
-  protected def extractSheets(
+  private def extractSheets(
     workbook: PoiWorkbook
   ): Map[String, (Seq[CellInfo], Int, Int)] =
     // Process each sheet in the workbook
@@ -102,7 +100,7 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
       else
         0
       
-      logger.info(s"Sheet dimensions: ${rowCount}x${colCount}")
+      logger.info(s"Sheet dimensions: ${rowCount}x$colCount")
       
       // Extract cells from the sheet
       val cells = for
@@ -134,7 +132,7 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
           isEmpty = isEmpty
         )
       
-      (sheetName, (cells.toSeq, rowCount, colCount))
+      (sheetName, (cells, rowCount, colCount))
     }.toMap
   
   /**
@@ -143,8 +141,8 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
    * @param cell The POI cell
    * @return The display value as a string
    */
-  protected def extractCellValue(cell: org.apache.poi.ss.usermodel.Cell): String =
-    import org.apache.poi.ss.usermodel.CellType._
+  private def extractCellValue(cell: org.apache.poi.ss.usermodel.Cell): String =
+    import org.apache.poi.ss.usermodel.CellType.*
     
     cell.getCellType match
       case STRING => cell.getStringCellValue

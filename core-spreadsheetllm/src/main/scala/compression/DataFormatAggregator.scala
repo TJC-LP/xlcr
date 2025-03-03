@@ -82,12 +82,12 @@ object DataFormatAggregator:
     val result = preserveValues ++ aggregatedEntries
     
     // Log compression results
-    val compressionRatio = if result.size > 0 then
+    val compressionRatio = if result.nonEmpty then
       contentMap.size.toDouble / result.size
     else
       1.0
       
-    logger.info(f"Format aggregation: ${contentMap.size} entries -> ${result.size} entries (${compressionRatio}%.2fx compression)")
+    logger.info(f"Format aggregation: ${contentMap.size} entries -> ${result.size} entries ($compressionRatio%.2fx compression)")
     
     result
   

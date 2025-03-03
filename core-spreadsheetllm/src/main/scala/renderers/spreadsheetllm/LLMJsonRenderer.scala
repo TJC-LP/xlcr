@@ -53,7 +53,7 @@ class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJ
           case Left(singleLocation) => Json.fromString(singleLocation)
           case Right(locationsList) => locationsList.asJson
         
-        // Apply markdown formatting to key where appropriate
+        // Apply Markdown formatting to key where appropriate
         val formattedKey = applyMarkdownFormatting(key)
         (formattedKey, locationsJson)
       }
@@ -100,11 +100,11 @@ class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJ
     Json.obj(fields.toSeq: _*)
   
   /**
-   * Apply markdown formatting to values based on content type.
+   * Apply Markdown formatting to values based on content type.
    * This enhances the JSON with formatting cues for LLMs.
    *
    * @param value The cell value or format descriptor
-   * @return The value with markdown formatting applied
+   * @return The value with Markdown formatting applied
    */
   private def applyMarkdownFormatting(value: String): String =
     // Check if this is a format descriptor

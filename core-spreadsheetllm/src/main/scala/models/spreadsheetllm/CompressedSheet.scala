@@ -64,17 +64,5 @@ case class CompressedSheet(
    * @param range A range of cells (e.g., "A1:B10")
    * @return A new CompressedSheet with the added content
    */
-  def addContentRange(value: String, range: String): CompressedSheet = {
-    val updatedContent = content.get(value) match {
-      case Some(Left(existingRange)) => 
-        // If this is already a range, convert to list and add new range
-        content + (value -> Right(List(existingRange, range)))
-      case Some(Right(existingAddresses)) => 
-        // Add to existing list of addresses
-        content + (value -> Right(existingAddresses :+ range))
-      case None => 
-        // Create new entry with single range
-        content + (value -> Left(range))
-    }
-    this.copy(content = updatedContent)
-  }
+  def addContentRange(value: String, range: String): CompressedSheet =
+    addContent(value, range)
