@@ -1,19 +1,23 @@
 package com.tjclp.xlcr
 
-import scopt.OParser
-import java.nio.file.{Files, Paths}
+import types.{FileType, MimeType}
+import bridges.BridgeRegistry
 
-import com.tjclp.xlcr.types.{FileType, MimeType}
+import scopt.OParser
+
+import java.nio.file.{Files, Paths}
 
 @main
 def main(args: String*): Unit =
   case class ExtendedConfig(
-    input: String = "",
-    output: String = "",
-    diffMode: Boolean = false,
-    mappings: Seq[String] = Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
-  )
+                             input: String = "",
+                             output: String = "",
+                             diffMode: Boolean = false,
+                             mappings: Seq[String] = Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
+                           )
 
+  val registry = BridgeRegistry
+  registry.init()
   val builder = OParser.builder[ExtendedConfig]
   val parser =
     import builder.*
@@ -69,10 +73,10 @@ def main(args: String*): Unit =
         // Directory-based approach
         if (mimeMap.nonEmpty) {
           DirectoryPipeline.runDirectoryToDirectory(
-            inputDir    = config.input,
-            outputDir   = config.output,
+            inputDir = config.input,
+            outputDir = config.output,
             mimeMappings = mimeMap,
-            diffMode    = config.diffMode
+            diffMode = config.diffMode
           )
         } else {
           System.err.println("No mime mappings provided for directory-based operation.")
@@ -94,7 +98,7 @@ def main(args: String*): Unit =
 private def parseMimeOrExtension(str: String): Option[MimeType] = {
   // First try direct MIME type parse
   MimeType.fromString(str) match {
-    case someMime @ Some(_) => someMime
+    case someMime@Some(_) => someMime
     case None =>
       // Attempt to interpret it as an extension
       // remove any leading dot, e.g. ".xlsx" -> "xlsx"
