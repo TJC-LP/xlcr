@@ -38,27 +38,24 @@ object InvertedIndexTranslator:
         if content.trim.isEmpty then
           (content, Seq.empty[CellAddress])
         else
-          // Map each cell to its address
+          // Map each cell to its address, properly preserving the original coordinates
           (content, cellEntries.map { case ((row, col), cellInfo) =>
-            // Check if we need to apply the coordinate correction based on config
-            val adjustedRow = if config.enableCoordinateCorrection && cellInfo.originalRow.isDefined then
-              // If coordinate correction is enabled and we have original coordinates,
-              // we can detect if a significant shift occurred which might indicate the need for adjustment
-              val originalRow = cellInfo.originalRow.get
-              val diff = originalRow - row
-
-              // Apply the correction if the difference matches our expected pattern
-              if diff >= config.coordinateCorrectionValue then
-                // Apply correction using the configured value
-                logger.debug(s"Applying row correction: $row -> ${row + config.coordinateCorrectionValue} (original: $originalRow)")
-                row + config.coordinateCorrectionValue
+            // Determine which coordinates to use based on configuration and availability
+            val (finalRow, finalCol) = 
+              if config.preserveOriginalCoordinates && cellInfo.originalRow.isDefined && cellInfo.originalCol.isDefined then
+                // Use the original coordinates directly from the Excel file
+                (cellInfo.originalRow.get, cellInfo.originalCol.get)
               else
-                row
-            else
-              row
-
-            val cellAddr = CellAddress(adjustedRow, col)
-            logger.debug(s"Cell at ($row, $col) -> ${cellAddr.toA1Notation} [${cellInfo.value}]")
+                // Fallback to internal coordinates if original not available or preservation disabled
+                (row, col)
+            
+            // Always use the final coordinates to generate the A1 notation
+            val cellAddr = CellAddress(finalRow, finalCol)
+            
+            if config.verbose && cellInfo.originalRow.isDefined then
+              // Log in verbose mode to help track coordinate transformations
+              logger.debug(s"Cell mapping: internal($row,$col) -> A1:${cellAddr.toA1Notation} [${cellInfo.value}]")
+              
             cellAddr
           }.toSeq)
       }
@@ -192,16 +189,18 @@ object InvertedIndexTranslator:
     /**
      * Convert numeric row, col indices to Excel-style A1 notation.
      *
-     * NOTE: row and col are 0-based indices, but Excel's A1 notation uses 1-based indices for rows.
+     * This method converts from our internal 0-based indices to Excel's 1-based row indices.
+     * We add 1 to the row index to match Excel's 1-indexed rows.
+     * 
+     * @return The Excel A1 notation for this cell address
      */
     def toA1Notation: String =
       // Using core ExcelUtils to ensure consistency with the rest of the codebase
       val excelCol = ExcelReference.Col(col)
       val columnName = ExcelUtils.columnToString(excelCol)
 
-      // Adjust row index by 1 (not 3) to convert from 0-based to 1-based
-      // This specific adjustment fixes the "off by 2" issue
-      s"$columnName${row + 1}" // +1 because Excel is 1-indexed for rows
+      // Convert from 0-based to 1-based row indexing for Excel
+      s"$columnName${row + 1}"
 
   /**
    * Represents a range of cells in A1 notation (e.g., "A1:B5").

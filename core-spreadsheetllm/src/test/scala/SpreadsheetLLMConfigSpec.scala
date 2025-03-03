@@ -14,8 +14,7 @@ class SpreadsheetLLMConfigSpec extends AnyFlatSpec with Matchers {
     config.anchorThreshold shouldBe 1
     config.disableAnchorExtraction shouldBe false
     config.disableFormatAggregation shouldBe false
-    config.enableCoordinateCorrection shouldBe true
-    config.coordinateCorrectionValue shouldBe 2
+    config.preserveOriginalCoordinates shouldBe true
     config.threads should be > 0
     config.verbose shouldBe false
   }
@@ -28,8 +27,7 @@ class SpreadsheetLLMConfigSpec extends AnyFlatSpec with Matchers {
       anchorThreshold = 3,
       disableAnchorExtraction = true,
       disableFormatAggregation = true,
-      enableCoordinateCorrection = false,
-      coordinateCorrectionValue = 5,
+      preserveOriginalCoordinates = false,
       threads = 4,
       verbose = true
     )
@@ -40,8 +38,7 @@ class SpreadsheetLLMConfigSpec extends AnyFlatSpec with Matchers {
     config.anchorThreshold shouldBe 3
     config.disableAnchorExtraction shouldBe true
     config.disableFormatAggregation shouldBe true
-    config.enableCoordinateCorrection shouldBe false
-    config.coordinateCorrectionValue shouldBe 5
+    config.preserveOriginalCoordinates shouldBe false
     config.threads shouldBe 4
     config.verbose shouldBe true
   }
@@ -49,19 +46,16 @@ class SpreadsheetLLMConfigSpec extends AnyFlatSpec with Matchers {
   it should "allow partial updates via copy" in {
     val baseConfig = SpreadsheetLLMConfig()
     
-    // Update just the coordinate correction settings
+    // Update just the coordinate preservation setting
     val updatedConfig = baseConfig.copy(
-      enableCoordinateCorrection = false,
-      coordinateCorrectionValue = 3
+      preserveOriginalCoordinates = false
     )
     
     // Original config should be unchanged
-    baseConfig.enableCoordinateCorrection shouldBe true
-    baseConfig.coordinateCorrectionValue shouldBe 2
+    baseConfig.preserveOriginalCoordinates shouldBe true
     
     // Updated config should have new values only for specified fields
-    updatedConfig.enableCoordinateCorrection shouldBe false
-    updatedConfig.coordinateCorrectionValue shouldBe 3
+    updatedConfig.preserveOriginalCoordinates shouldBe false
     
     // Other fields should be unchanged
     updatedConfig.anchorThreshold shouldBe baseConfig.anchorThreshold

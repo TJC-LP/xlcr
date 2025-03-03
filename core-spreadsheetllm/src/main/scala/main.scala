@@ -47,15 +47,10 @@ def main(args: String*): Unit =
         .action((_, c) => c.copy(disableFormatAggregation = true))
         .text("Disable format-based aggregation, keeping all values as-is"),
         
-      // Coordinate correction options
-      opt[Unit]("no-coordinate-correction")
-        .action((_, c) => c.copy(enableCoordinateCorrection = false))
-        .text("Disable automatic coordinate correction for large sheets"),
-        
-      opt[Int]("correction-value")
-        .valueName("<n>")
-        .action((x, c) => c.copy(coordinateCorrectionValue = x))
-        .text("Value to use for coordinate correction (default: 2)"),
+      // Coordinate preservation option
+      opt[Unit]("no-preserve-coordinates")
+        .action((_, c) => c.copy(preserveOriginalCoordinates = false))
+        .text("Disable preservation of original Excel coordinates"),
       
       // Table detection options
       opt[Unit]("no-table-detection")

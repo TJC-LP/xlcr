@@ -10,8 +10,7 @@ package com.tjclp.xlcr
  * @param anchorThreshold Number of neighbor rows/columns to keep around structural anchors
  * @param disableAnchorExtraction Disable anchor-based pruning, keeping full sheet content
  * @param disableFormatAggregation Disable format-based aggregation, keeping all values as-is
- * @param enableCoordinateCorrection Whether to enable the coordinate correction for "off by 2" issue
- * @param coordinateCorrectionValue The specific value to add for coordinate correction (default: 2)
+ * @param preserveOriginalCoordinates Whether to preserve original Excel coordinates (default: true)
  * @param enableTableDetection Whether to enable multi-table detection in sheets
  * @param enableSemanticCompression Whether to enable semantic compression for text-heavy cells
  * @param enableEnhancedFormulas Whether to include enhanced formula relationships in output
@@ -26,8 +25,7 @@ case class SpreadsheetLLMConfig(
   anchorThreshold: Int = 1,
   disableAnchorExtraction: Boolean = false,
   disableFormatAggregation: Boolean = false,
-  enableCoordinateCorrection: Boolean = true,
-  coordinateCorrectionValue: Int = 2,
+  preserveOriginalCoordinates: Boolean = true,
   enableTableDetection: Boolean = true,
   enableSemanticCompression: Boolean = false,
   enableEnhancedFormulas: Boolean = true,

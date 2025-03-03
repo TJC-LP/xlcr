@@ -19,8 +19,8 @@ class InvertedIndexTranslatorSpec extends AnyFlatSpec with Matchers {
     )
     val grid = SheetGrid(cells, 2, 2)
     
-    // Translate without coordinate correction
-    val config = SpreadsheetLLMConfig(enableCoordinateCorrection = false)
+    // Translate without coordinate preservation
+    val config = SpreadsheetLLMConfig(preserveOriginalCoordinates = false)
     val result = InvertedIndexTranslator.translate(grid, config)
     
     // Verify results
@@ -42,7 +42,7 @@ class InvertedIndexTranslatorSpec extends AnyFlatSpec with Matchers {
     )
     val grid = SheetGrid(cells, 2, 3)
     
-    val config = SpreadsheetLLMConfig(enableCoordinateCorrection = false)
+    val config = SpreadsheetLLMConfig(preserveOriginalCoordinates = false)
     val result = InvertedIndexTranslator.translate(grid, config)
     
     // Verify that same values are merged into a range
@@ -51,67 +51,96 @@ class InvertedIndexTranslatorSpec extends AnyFlatSpec with Matchers {
     result("Different") shouldBe Left("A2:B2") // Horizontal range
   }
   
-  it should "apply coordinate correction when enabled and original coordinates differ" in {
-    // Create a grid with remapped coordinates that would trigger correction
+  it should "merge cells with the same content while respecting original coordinates" in {
+    // Create a grid with repeated values that have been remapped from original coordinates
     val cells = Map(
-      (0, 0) -> CellInfo(0, 0, "Header", originalRow = Some(2)), // Original row is +2 from current
-      (0, 1) -> CellInfo(0, 1, "Value", originalRow = Some(2)) // Original row is +2 from current
+      // Three cells with the same value "Repeated" in row 10, original columns 5, 6, 7
+      (0, 0) -> CellInfo(0, 0, "Repeated", originalRow = Some(10), originalCol = Some(5)),
+      (0, 1) -> CellInfo(0, 1, "Repeated", originalRow = Some(10), originalCol = Some(6)),
+      (0, 2) -> CellInfo(0, 2, "Repeated", originalRow = Some(10), originalCol = Some(7)),
+      
+      // Two cells with the same value "Header" in row 9, original columns 5, 6
+      (1, 0) -> CellInfo(1, 0, "Header", originalRow = Some(9), originalCol = Some(5)),
+      (1, 1) -> CellInfo(1, 1, "Header", originalRow = Some(9), originalCol = Some(6))
+    )
+    val grid = SheetGrid(cells, 2, 3)
+    
+    // Apply translation while preserving original coordinates
+    val config = SpreadsheetLLMConfig(preserveOriginalCoordinates = true)
+    val result = InvertedIndexTranslator.translate(grid, config)
+    
+    // Verify that cells are properly merged based on their original coordinates
+    result.size shouldBe 2 // 2 unique values
+    result("Repeated") shouldBe Left("F11:H11") // Original row 10+1, cols 5-7 (F-H) -> F11:H11
+    result("Header") shouldBe Left("F10:G10")   // Original row 9+1, cols 5-6 (F-G) -> F10:G10
+  }
+  
+  it should "preserve original coordinates when they are provided" in {
+    // Create a grid with remapped coordinates
+    val cells = Map(
+      (0, 0) -> CellInfo(0, 0, "Header", originalRow = Some(2), originalCol = Some(0)), // Original coordinates
+      (0, 1) -> CellInfo(0, 1, "Value", originalRow = Some(2), originalCol = Some(1))  // Original coordinates
     )
     val grid = SheetGrid(cells, 1, 2)
     
-    // Test with correction enabled (default correction value is 2)
-    val configEnabled = SpreadsheetLLMConfig(enableCoordinateCorrection = true)
-    val resultWithCorrection = InvertedIndexTranslator.translate(grid, configEnabled)
+    // Test with coordinate preservation enabled (default)
+    val configEnabled = SpreadsheetLLMConfig(preserveOriginalCoordinates = true)
+    val resultWithPreservation = InvertedIndexTranslator.translate(grid, configEnabled)
     
-    // Correction should add 2 to the row number
-    resultWithCorrection("Header") shouldBe Left("A3") // A1 -> A3 (row 0+2+1)
-    resultWithCorrection("Value") shouldBe Left("B3")  // B1 -> B3 (row 0+2+1)
+    // Should use the original coordinates directly
+    resultWithPreservation("Header") shouldBe Left("A3") // Original position (2,0) -> A3 (1-indexed)
+    resultWithPreservation("Value") shouldBe Left("B3")  // Original position (2,1) -> B3 (1-indexed)
     
-    // Test with correction disabled
-    val configDisabled = SpreadsheetLLMConfig(enableCoordinateCorrection = false)
-    val resultWithoutCorrection = InvertedIndexTranslator.translate(grid, configDisabled)
+    // Test with coordinate preservation disabled
+    val configDisabled = SpreadsheetLLMConfig(preserveOriginalCoordinates = false)
+    val resultWithoutPreservation = InvertedIndexTranslator.translate(grid, configDisabled)
     
-    // No correction should be applied
-    resultWithoutCorrection("Header") shouldBe Left("A1") // No adjustment
-    resultWithoutCorrection("Value") shouldBe Left("B1")  // No adjustment
+    // Should use internal coordinates when preservation disabled
+    resultWithoutPreservation("Header") shouldBe Left("A1") // Internal position (0,0) -> A1
+    resultWithoutPreservation("Value") shouldBe Left("B1")  // Internal position (0,1) -> B1
   }
   
-  it should "use custom correction value when specified" in {
-    // Create a grid with remapped coordinates
+  it should "correctly handle coordinate preservation for cells with large shifts" in {
+    // Create a grid with cells that have been shifted significantly from their original positions
     val cells = Map(
-      (0, 0) -> CellInfo(0, 0, "Value", originalRow = Some(5)) // Original row is +5 from current
+      (0, 0) -> CellInfo(0, 0, "ShiftedValue", originalRow = Some(30), originalCol = Some(0)) // Large shift of 30 rows
     )
     val grid = SheetGrid(cells, 1, 1)
     
-    // Test with different correction values
-    val config1 = SpreadsheetLLMConfig(enableCoordinateCorrection = true, coordinateCorrectionValue = 1)
-    val result1 = InvertedIndexTranslator.translate(grid, config1)
-    result1("Value") shouldBe Left("A2") // Only +1 correction applied (0+1+1)
+    // Test with coordinates preservation enabled
+    val config = SpreadsheetLLMConfig(preserveOriginalCoordinates = true)
+    val result = InvertedIndexTranslator.translate(grid, config)
     
-    val config5 = SpreadsheetLLMConfig(enableCoordinateCorrection = true, coordinateCorrectionValue = 5)
-    val result5 = InvertedIndexTranslator.translate(grid, config5)
-    result5("Value") shouldBe Left("A6") // +5 correction applied (0+5+1)
+    // Should use the original coordinates
+    result("ShiftedValue") shouldBe Left("A31") // Original (30,0) -> A31
   }
   
-  it should "handle the specific 'off by 2' issue for large spreadsheets" in {
-    // Simulate the original issue with a large sheet that's been remapped
-    val originalSheet = Map(
-      (20, 5) -> CellInfo(20, 5, "Data at C22") // C22 in Excel = row 21, col 2 in 0-based
+  it should "handle various original coordinate scenarios correctly" in {
+    // Test case 1: Standard remapping from different locations
+    val cells = Map(
+      (0, 0) -> CellInfo(0, 0, "Data", originalRow = Some(20), originalCol = Some(5))
     )
+    val grid = SheetGrid(cells, 1, 1)
     
-    // After remapping, it gets compressed to (0,0) but retains original coordinates
-    val remappedCells = Map(
-      (0, 0) -> CellInfo(0, 0, "Data at C22", originalRow = Some(20), originalCol = Some(5))
+    // Apply translation with coordinate preservation
+    val config = SpreadsheetLLMConfig(preserveOriginalCoordinates = true)
+    val result = InvertedIndexTranslator.translate(grid, config)
+    
+    // Should use original coordinates directly
+    result("Data") shouldBe Left("F21") // Original (20,5) -> F21
+    
+    // Test case 2: Very large coordinate shift
+    val originalRow = 100
+    val originalCol = 10
+    val complexCells = Map(
+      (1, 1) -> CellInfo(1, 1, "Complex case", originalRow = Some(originalRow), originalCol = Some(originalCol))
     )
-    val remappedGrid = SheetGrid(remappedCells, 1, 1)
+    val complexGrid = SheetGrid(complexCells, 2, 2)
     
-    // Apply translation with correction
-    val config = SpreadsheetLLMConfig(enableCoordinateCorrection = true, coordinateCorrectionValue = 2)
-    val result = InvertedIndexTranslator.translate(remappedGrid, config)
+    val complexResult = InvertedIndexTranslator.translate(complexGrid, config)
     
-    // The correction should yield C3 (original was C22)
-    // Cell at (0,0) with +2 correction = (2,0) in 0-based = C3 in Excel notation
-    result("Data at C22") shouldBe Left("A3") // Not C22 because we're adjusting the row only
+    // The A1 notation for (100,10) is K101
+    complexResult("Complex case") shouldBe Left("K101") // Original (100,10) -> K101
   }
   
   "CellAddress" should "convert correctly to A1 notation" in {

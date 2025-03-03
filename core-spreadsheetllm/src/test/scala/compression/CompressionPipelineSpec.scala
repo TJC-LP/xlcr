@@ -30,10 +30,9 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
       "TestSheet" -> (cells.values.toSeq, 11, 2)
     )
     
-    // Create a configuration with coordinate correction enabled
+    // Create a configuration with coordinate preservation enabled
     val config = SpreadsheetLLMConfig(
-      enableCoordinateCorrection = true,
-      coordinateCorrectionValue = 2,
+      preserveOriginalCoordinates = true,
       anchorThreshold = 0, // Lower threshold to force pruning of distant cells
       threads = 1 // Single thread for predictable testing
     )
@@ -97,7 +96,7 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
     )
     
     val config = SpreadsheetLLMConfig(
-      enableCoordinateCorrection = true,
+      preserveOriginalCoordinates = true,
       threads = 1 // Single thread for predictable testing
     )
     
@@ -135,7 +134,7 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
     // Test with anchor extraction disabled
     val configNoAnchor = SpreadsheetLLMConfig(
       disableAnchorExtraction = true,
-      enableCoordinateCorrection = false,
+      preserveOriginalCoordinates = false,
       threads = 1
     )
     
@@ -154,7 +153,7 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
     // Test with format aggregation disabled
     val configNoFormat = SpreadsheetLLMConfig(
       disableFormatAggregation = true,
-      enableCoordinateCorrection = false,
+      preserveOriginalCoordinates = false,
       threads = 1
     )
     
