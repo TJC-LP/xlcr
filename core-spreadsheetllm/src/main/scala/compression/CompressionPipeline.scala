@@ -128,7 +128,9 @@ object CompressionPipeline:
       else
         logger.info("Performing data format aggregation")
         val startFormatTime = System.currentTimeMillis()
-        val aggregatedMap = DataFormatAggregator.aggregate(indexMap, anchorGrid)
+        
+        // Pass configuration to DataFormatAggregator
+        val aggregatedMap = DataFormatAggregator.aggregate(indexMap, anchorGrid, config)
         val endFormatTime = System.currentTimeMillis()
         
         val metadata = Map(
