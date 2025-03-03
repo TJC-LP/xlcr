@@ -19,6 +19,12 @@ Aspose Module (`coreAspose/run`):
 - High-quality document conversion using Aspose libraries
 - Requires valid Aspose license(s) for production use
 
+SpreadsheetLLM Module (`coreSpreadsheetLLM/run`):
+- Compress Excel spreadsheets into LLM-friendly JSON format
+- Based on Microsoft's SpreadsheetLLM/SheetCompressor research
+- Three-stage compression pipeline: anchor extraction, inverted index, format aggregation
+- Reduces token usage while preserving essential structure
+
 Server Module (Experimental):
 - WebSocket-based document editing server
 - Model Context Protocol (MCP) integration
@@ -65,6 +71,18 @@ Additional Aspose license options:
 - `--licenseCells`: Aspose.Cells license path
 - `--licenseEmail`: Aspose.Email license path
 - `--licenseSlides`: Aspose.Slides license path
+
+### SpreadsheetLLM Module
+Compress Excel spreadsheets for LLM processing:
+```
+sbt
+> coreSpreadsheetLLM/run --input "<input_file>" --output "<output_file>" [--anchor-threshold <n>]
+```
+
+Additional SpreadsheetLLM options:
+- `--no-anchor`: Disable anchor-based pruning, keeping full sheet content
+- `--no-format`: Disable format-based aggregation, keeping all values as-is
+- `--threads <n>`: Control parallel processing thread count
 
 ### Directory Processing
 Both modules support directory-based processing with MIME type mapping:
