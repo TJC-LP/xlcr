@@ -93,9 +93,33 @@ lazy val server = (project in file("server"))
     )
   )
 
+// SpreadsheetLLM integration module
+lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .settings(
+    name := "xlcr-core-spreadsheetllm",
+    libraryDependencies ++= Seq(
+      // Apache POI for Excel handling
+      "org.apache.poi" % "poi" % "5.2.5",
+      "org.apache.poi" % "poi-ooxml" % "5.2.5",
+      
+      // JSON processing
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      
+      // CLI argument parsing
+      "com.github.scopt" %% "scopt" % "4.1.0",
+      
+      // Testing
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test
+    )
+  )
+
 // Root project for aggregating
 lazy val root = (project in file("."))
-  .aggregate(core, coreAspose, server)
+  .aggregate(core, coreAspose, coreSpreadsheetLLM, server)
   .settings(
     name := "xlcr",
     // Don't publish the root project
