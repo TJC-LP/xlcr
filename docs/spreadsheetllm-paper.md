@@ -128,12 +128,12 @@ These enable efficient data compression and enhance performance on downstream ta
 
 > The paper defines the spreadsheet representation as:
 >
-> \[
-> \mathcal{S} = \{\,Cell_{i,j}\}_{i \in m, j \in n}
-> \quad\text{and}\quad
-> \mathcal{T} = \mathrm{markdown}\{\mathrm{encode}(Cell_{i,j})\}
-> := ``|Address_{i,j}, Value_{i,j}, Format|...\n"
-> \]
+> $$
+\mathcal{S} = \{\,Cell_{i,j}\}_{i \in m, j \in n}
+\quad\text{and}\quad
+\mathcal{T} = \mathrm{markdown}\{\mathrm{encode}(Cell_{i,j})\}
+:= |Address_{i,j}, Value_{i,j}, Format|...
+$$
 >
 > Where \(\mathcal{S} \in \mathbb{R}^{m,n}\) denotes the spreadsheet, \(\mathcal{T} \in \mathbb{R}^1\) denotes the text representation, and \(i, j, m, n\) respectively are the row index, column index, and row/column ranges.
 
@@ -151,26 +151,26 @@ Here, the spreadsheet \(\mathcal{S}\) is a 2D grid \(\in \mathbb{R}^{m,n}\), and
 
 Large spreadsheets often have numerous homogeneous rows/columns that minimally contribute to layout understanding. We propose a *heuristic-based* method to identify “structural anchors”: **heterogeneous rows/columns** that mark potential table boundaries. Mathematically:
 
-\[
+$$
 \mathcal{A} = \{\,r_p,\,c_q\}_{p\in m,q\in n}, \quad
 r_p = \{Cell_{i,j}\}_{i=p, j \in n}, \quad
 c_q = \{Cell_{i,j}\}_{i\in m, j=q}.
-\]
+$$
 
 We keep rows/columns within a threshold \(k\) of these anchors (Appendix C). Formally,
 
-\[
+$$
 r_{p_+} = \{Cell_{i,j}\}_{|i - p|\le k,\,j\in n},
 \quad
 c_{q_+} = \{Cell_{i,j}\}_{i\in m,\,|j - q|\le k}.
-\]
+$$
 
 Then we form the extracted compact spreadsheet:
 
-\[
+$$
 \mathcal{S}_e = \mathrm{extract}(\mathcal{S})
 = \mathrm{address\_map}(r_{p_+}\,\cap\,c_{q_+}).
-\]
+$$
 
 Finally, we **remap coordinates** to maintain continuity. This procedure discards large blocks of trivial/homogeneous data but preserves essential structural rows/columns (over 97% coverage when \(k=4\), see Appendix D).
 
@@ -185,10 +185,10 @@ Traditional row-by-row encoding is token-consuming for large or sparse spreadshe
 
 Formally:
 
-\[
+$$
 \mathcal{T}_t = \mathrm{invert}(\mathcal{T})
 := \{\,Value : Address\text{ or }Address\_Region,\dots\}.
-\]
+$$
 
 This is **lossless** compression, drastically reducing redundancy. In Table 1 (Section 4.2.1), we show a 14.91× ratio improvement in our dataset.
 
@@ -198,12 +198,12 @@ This is **lossless** compression, drastically reducing redundancy. In Table 1 (S
 
 In spreadsheets, many cells share data formats (e.g., “yyyy-mm-dd,” “#,##0,” etc.). We exploit **Number Format Strings (NFS)**—built-in attributes. If no NFS is present, we fall back on a rule-based recognizer (e.g., integer, float, date, currency). Then we **cluster** adjacent cells with the same data format or type, summarizing them under a single key. Formally:
 
-\[
+$$
 NFSs = \mathrm{nfs}(\{Cell_{i,j}\}), \quad
 \mathcal{T}_a = \mathrm{aggregator}(\{Cell_{i,j}\},\, NFSs,\, R).
-\]
+$$
 
-Here, \(R\) is a predefined rule set for typed data (Algorithm 1 in Appendix M). This final step can push compression to **24.79×**.
+Here, $R$ is a predefined rule set for typed data (Algorithm 1 in Appendix M). This final step can push compression to **24.79×**.
 
 ### 3.5. Chain of Spreadsheet
 
