@@ -199,12 +199,14 @@ object AnchorExtractor:
    * @param grid The sheet grid to analyze
    * @param anchorRows Set of identified anchor rows
    * @param anchorCols Set of identified anchor columns
+   * @param config Configuration options for detection, including minGapSize
    * @return List of detected table regions
    */
   def detectTableRegions(
     grid: SheetGrid, 
     anchorRows: Set[Int], 
-    anchorCols: Set[Int]
+    anchorCols: Set[Int],
+    config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()
   ): List[TableRegion] =
     // Skip if we have too few anchors to form meaningful table boundaries
     if anchorRows.size < 2 || anchorCols.size < 2 then
@@ -216,11 +218,20 @@ object AnchorExtractor:
     
     // Step 1: Find gaps in anchor rows that might separate tables
     val sortedRows = anchorRows.toSeq.sorted
-    val rowGaps = findGaps(sortedRows, grid.rowCount, 3) // Look for gaps of at least 3 rows
+    val rowGaps = findGaps(sortedRows, grid.rowCount, config.minGapSize) // Use configured gap size
     
     // Step 2: Find gaps in anchor columns that might separate tables
     val sortedCols = anchorCols.toSeq.sorted
-    val colGaps = findGaps(sortedCols, grid.colCount, 3) // Look for gaps of at least 3 columns
+    // For columns, we'll use a potentially smaller gap size to be more sensitive to column separation
+    // This makes table detection more effective for side-by-side tables
+    val columnGapSize = math.max(1, config.minGapSize - 1) // At least 1, but typically 1 less than row gap size
+    val colGaps = findGaps(sortedCols, grid.colCount, columnGapSize)
+    
+    // Debug logging
+    if config.verbose && columnGapSize != config.minGapSize then
+      logger.info(s"Using enhanced column detection with gap size $columnGapSize (row gap size: ${config.minGapSize})")
+    if config.verbose then
+      logger.debug(s"Found ${rowGaps.size} row gaps and ${colGaps.size} column gaps")
     
     // Step 3: Define row segments based on gaps
     val rowSegments = if rowGaps.isEmpty then 
@@ -250,14 +261,38 @@ object AnchorExtractor:
       )
     
     // Step 6: Filter out regions that don't actually have enough content
-    // A valid table should have anchors and content
+    // A valid table should have anchors and content 
     candidates.filter { region =>
       val cellCount = countCellsInRegion(grid, region)
       val contentDensity = cellCount.toDouble / region.area
       
-      // Keep the region if it has a reasonable density of filled cells
-      // and contains some anchor rows and columns
-      contentDensity >= 0.1 && 
+      // Calculate the width-to-height ratio to identify very wide or very tall tables
+      val widthToHeightRatio = if region.height > 0 then region.width.toDouble / region.height else 0.0
+      
+      // Calculate separate row and column densities for capturing sparse tables
+      val rowsCovered = region.anchorRows.size.toDouble / region.height
+      val colsCovered = region.anchorCols.size.toDouble / region.width
+      
+      // Special case: if the region is significantly wider than tall, it's likely a row-oriented table
+      val isRowDominantTable = widthToHeightRatio > 3.0 && rowsCovered > 0.4
+      // Special case: if the region is significantly taller than wide, it's likely a column-oriented table
+      val isColumnDominantTable = widthToHeightRatio < 0.33 && colsCovered > 0.4
+      
+      // Enhanced debug logging for table characteristics
+      if config.verbose then
+        val tableType = 
+          if isRowDominantTable then "row-dominant" 
+          else if isColumnDominantTable then "column-dominant"
+          else "standard"
+        logger.debug(f"Table candidate at (${region.topRow},${region.leftCol}) to (${region.bottomRow},${region.rightCol}): " +
+          f"${region.width}x${region.height}, type=$tableType, density=$contentDensity%.2f, " +
+          f"row coverage=$rowsCovered%.2f, col coverage=$colsCovered%.2f, ratio=$widthToHeightRatio%.2f")
+      
+      // Keep the region if it meets any of our criteria:
+      // 1. It has a reasonable overall density of filled cells
+      // 2. It's a row-dominant or column-dominant table
+      // 3. Both have at least one anchor row and column
+      (contentDensity >= 0.1 || isRowDominantTable || isColumnDominantTable) && 
       region.anchorRows.nonEmpty && 
       region.anchorCols.nonEmpty
     }.toList

@@ -60,8 +60,20 @@ object CompressionPipeline:
         
         // Detect table regions (if table detection is enabled)
         val tableRegions = 
-          if config.enableTableDetection then AnchorExtractor.detectTableRegions(grid, anchorRows, anchorCols)
-          else List.empty
+          if config.enableTableDetection then 
+            val regions = AnchorExtractor.detectTableRegions(grid, anchorRows, anchorCols, config)
+            if regions.nonEmpty then
+              logger.info(s"Detected ${regions.size} tables using enhanced column detection")
+              // Log more details about table types if verbose
+              if config.verbose then
+                val columnDominant = regions.count(r => r.width > 0 && r.height / r.width.toDouble >= 3.0)
+                val rowDominant = regions.count(r => r.height > 0 && r.width / r.height.toDouble >= 3.0)
+                val standard = regions.size - columnDominant - rowDominant
+                logger.info(s"Table types: $standard standard, $rowDominant row-dominant, $columnDominant column-dominant")
+            regions
+          else 
+            logger.info("Table detection disabled")
+            List.empty
         
         // Then extract the grid with pruning
         val extractedGrid = AnchorExtractor.extract(grid, config.anchorThreshold)

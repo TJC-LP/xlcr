@@ -62,10 +62,13 @@ The SpreadsheetLLM module includes several advanced compression techniques:
 
 #### Table Detection
 - Automatically identifies multiple tables within a single sheet
-- Uses gap analysis to detect table boundaries
+- Uses sophisticated gap analysis to detect table boundaries
+- Enhanced column detection with smaller gap size for side-by-side tables
+- Intelligently detects sparse tables, row-oriented and column-oriented layouts
 - Tables are included in the output JSON with range and header information
 - Can be disabled with `--no-table-detection` if needed
 - Minimum gap size can be adjusted with `--min-gap-size` (default: 3)
+- Column gap detection uses smaller value (min-gap-size minus 1) for better separation
 
 #### Enhanced Data Format Detection
 - Sophisticated pattern recognition for dates, numbers, and currencies
