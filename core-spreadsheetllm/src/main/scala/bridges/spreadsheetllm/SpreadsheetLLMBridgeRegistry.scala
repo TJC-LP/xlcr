@@ -1,8 +1,9 @@
 package com.tjclp.xlcr
 package bridges.spreadsheetllm
 
-import bridges.{Bridge, BridgeRegistry}
-import types.{MimeType, FileType, Extension}
+import bridges.BridgeRegistry
+import types.MimeType
+
 import org.slf4j.LoggerFactory
 
 /**
@@ -12,7 +13,7 @@ import org.slf4j.LoggerFactory
 object SpreadsheetLLMBridgeRegistry:
   private val logger = LoggerFactory.getLogger(getClass)
   private var initialized = false
-  
+
   /**
    * Register all SpreadsheetLLM bridges with the main BridgeRegistry.
    * This makes them available to the XLCR pipeline system.
@@ -22,9 +23,9 @@ object SpreadsheetLLMBridgeRegistry:
   def registerAll(config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()): Unit = synchronized {
     if initialized then
       return
-      
+
     logger.info(s"Registering SpreadsheetLLM bridges with config: $config")
-    
+
     // Register Excel -> LLM JSON bridges
     val xlsxBridge = ExcelToLLMJsonBridge.forXlsx(config)
     BridgeRegistry.register(
@@ -32,7 +33,7 @@ object SpreadsheetLLMBridgeRegistry:
       MimeType.ApplicationJson,
       xlsxBridge
     )
-    
+
     // Register other Excel format bridges as needed
     val xlsBridge = ExcelToLLMJsonBridge.forXls(config)
     BridgeRegistry.register(
@@ -40,7 +41,7 @@ object SpreadsheetLLMBridgeRegistry:
       MimeType.ApplicationJson,
       xlsBridge
     )
-    
+
     logger.info("Successfully registered SpreadsheetLLM bridges")
     initialized = true
   }

@@ -8,19 +8,19 @@ import models.Model
  * This is the top-level container for the SpreadsheetLLM compression output.
  *
  * @param fileName Original file name (without path)
- * @param sheets List of compressed sheets in the workbook
+ * @param sheets   List of compressed sheets in the workbook
  * @param metadata Additional metadata about the workbook and compression
  */
 case class CompressedWorkbook(
-  fileName: String,
-  sheets: List[CompressedSheet],
-  metadata: Map[String, String] = Map.empty
-) extends Model:
+                               fileName: String,
+                               sheets: List[CompressedSheet],
+                               metadata: Map[String, String] = Map.empty
+                             ) extends Model:
   /**
    * Returns all children models (sheets in this case).
    */
   override def children: Option[List[Model]] = Some(sheets)
-  
+
   /**
    * Calculates overall compression statistics for the workbook.
    *
@@ -30,7 +30,7 @@ case class CompressedWorkbook(
     val totalOriginalCells = sheets.map(s => s.originalRowCount * s.originalColumnCount).sum
     val totalCompressedEntries = sheets.map(_.content.size).sum
     val compressionRatio = if (totalOriginalCells > 0) totalOriginalCells.toDouble / totalCompressedEntries else 0
-    
+
     Map(
       "fileName" -> fileName,
       "sheetCount" -> sheets.size,
@@ -41,16 +41,16 @@ case class CompressedWorkbook(
       "sheetStats" -> sheets.map(_.compressionStats)
     )
   }
-  
+
   /**
    * Adds a sheet to the workbook.
    *
    * @param sheet The compressed sheet to add
    * @return A new CompressedWorkbook with the added sheet
    */
-  def addSheet(sheet: CompressedSheet): CompressedWorkbook = 
+  def addSheet(sheet: CompressedSheet): CompressedWorkbook =
     this.copy(sheets = sheets :+ sheet)
-    
+
   /**
    * Finds a sheet by name.
    *
