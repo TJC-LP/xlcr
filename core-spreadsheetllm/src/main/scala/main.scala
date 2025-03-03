@@ -77,7 +77,7 @@ def main(args: String*): Unit =
   // Parse the command-line arguments
   OParser.parse(parser, args.toArray, SpreadsheetLLMConfig()) match
     case Some(config) =>
-      logger.info(s"Starting SpreadsheetLLM compression: ${config}")
+      logger.info(s"Starting SpreadsheetLLM compression: $config")
       
       // Run the pipeline using the bridges
       import bridges.spreadsheetllm.SpreadsheetLLMBridgeRegistry

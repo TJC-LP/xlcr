@@ -2,8 +2,11 @@ package com.tjclp.xlcr
 package compression
 
 import models.spreadsheetllm.{CompressedSheet, CompressedWorkbook}
-import compression.AnchorExtractor.{SheetGrid, CellInfo}
+import compression.AnchorExtractor.{CellInfo, SheetGrid}
+
 import org.slf4j.LoggerFactory
+
+import scala.concurrent.ExecutionContextExecutor
 
 /**
  * CompressionPipeline orchestrates the complete SpreadsheetLLM compression process,
@@ -27,14 +30,14 @@ object CompressionPipeline:
    * @param config Configuration options for the compression
    * @return A compressed sheet model
    */
-  def compressSheet(
+  private def compressSheet(
     sheetName: String,
     rawCells: Seq[CellInfo],
     rowCount: Int,
     colCount: Int,
     config: SpreadsheetLLMConfig
   ): CompressedSheet =
-    logger.info(s"Starting compression for sheet: $sheetName (${rowCount}x${colCount} cells)")
+    logger.info(s"Starting compression for sheet: $sheetName (${rowCount}x$colCount cells)")
     
     // Create the initial sheet grid from raw cells
     val cellMap = rawCells.map(cell => (cell.row, cell.col) -> cell).toMap
@@ -146,7 +149,7 @@ object CompressionPipeline:
         import java.util.concurrent.Executors
         
         val executor = Executors.newFixedThreadPool(config.threads)
-        implicit val ec = ExecutionContext.fromExecutor(executor)
+        implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(executor)
         
         try
           val futures = sheets.map { case (sheetName, (cells, rowCount, colCount)) =>

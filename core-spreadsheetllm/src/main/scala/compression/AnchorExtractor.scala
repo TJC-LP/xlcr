@@ -13,10 +13,11 @@ import org.slf4j.LoggerFactory
  */
 object AnchorExtractor:
   private val logger = LoggerFactory.getLogger(getClass)
-  
-  /**
-   * Cell information used for anchor analysis.
-   */
+
+  // Define dimension enum to abstract row vs column operations
+  enum Dimension:
+    case Row, Column
+
   /**
    * Cell information used for anchor analysis.
    *
@@ -32,38 +33,52 @@ object AnchorExtractor:
    * @param originalCol The original column index before remapping (for debugging)
    */
   case class CellInfo(
-    row: Int,
-    col: Int,
-    value: String,
-    isBold: Boolean = false,
-    isFormula: Boolean = false,
-    isNumeric: Boolean = false,
-    isDate: Boolean = false,
-    isEmpty: Boolean = false,
-    originalRow: Option[Int] = None,
-    originalCol: Option[Int] = None
-  )
-  
+                       row: Int,
+                       col: Int,
+                       value: String,
+                       isBold: Boolean = false,
+                       isFormula: Boolean = false,
+                       isNumeric: Boolean = false,
+                       isDate: Boolean = false,
+                       isEmpty: Boolean = false,
+                       originalRow: Option[Int] = None,
+                       originalCol: Option[Int] = None
+                     )
+
   /**
    * Represents a spreadsheet grid for anchor extraction.
    */
   case class SheetGrid(
-    cells: Map[(Int, Int), CellInfo],
-    rowCount: Int,
-    colCount: Int
-  ):
+                        cells: Map[(Int, Int), CellInfo],
+                        rowCount: Int,
+                        colCount: Int
+                      ):
+    /**
+     * Get all cells in a specific row or column based on dimension.
+     */
+    def getCells(dim: Dimension, index: Int): Seq[CellInfo] = dim match
+      case Dimension.Row => getRow(index)
+      case Dimension.Column => getCol(index)
+
     /**
      * Get all cells in a specific row.
      */
     def getRow(row: Int): Seq[CellInfo] =
       (0 until colCount).flatMap(col => cells.get((row, col)))
-      
+
     /**
      * Get all cells in a specific column.
      */
     def getCol(col: Int): Seq[CellInfo] =
       (0 until rowCount).flatMap(row => cells.get((row, col)))
-      
+
+    /**
+     * Get dimension count (rowCount or colCount).
+     */
+    def getDimCount(dim: Dimension): Int = dim match
+      case Dimension.Row => rowCount
+      case Dimension.Column => colCount
+
     /**
      * Filter the grid to only include cells in the specified rows and columns.
      */
@@ -72,7 +87,7 @@ object AnchorExtractor:
         rowsToKeep.contains(r) && colsToKeep.contains(c)
       }
       SheetGrid(filteredCells, rowCount, colCount)
-    
+
     /**
      * Remap coordinates to close gaps after pruning.
      * This maintains logical structure while creating a more compact representation.
@@ -81,37 +96,36 @@ object AnchorExtractor:
       // Create new row and column indices that are continuous
       val sortedRows = cells.keys.map(_._1).toSeq.distinct.sorted
       val sortedCols = cells.keys.map(_._2).toSeq.distinct.sorted
-      
+
       val rowMap = sortedRows.zipWithIndex.toMap
       val colMap = sortedCols.zipWithIndex.toMap
-      
+
       // For debugging purposes, log the mapping
-      val logger = org.slf4j.LoggerFactory.getLogger(this.getClass)
       logger.debug(s"Row mapping: ${rowMap.take(10)}...")
       logger.debug(s"Column mapping: ${colMap.take(10)}...")
-      
+
       // Remap each cell to its new coordinates
       val remappedCells = cells.map { case ((oldRow, oldCol), cellInfo) =>
         val newRow = rowMap(oldRow)
         val newCol = colMap(oldCol)
-        
+
         // For debugging, log significant coordinate changes
         if math.abs(oldRow - newRow) > 1 || math.abs(oldCol - newCol) > 1 then
           logger.debug(s"Remapping cell: ($oldRow,$oldCol) -> ($newRow,$newCol) [${cellInfo.value}]")
-        
+
         // Store original row/col in the cell info for later debugging
         val originalRow = cellInfo.originalRow.getOrElse(oldRow)
         val originalCol = cellInfo.originalCol.getOrElse(oldCol)
-        
+
         // Important: We need to update both the map key AND the CellInfo's internal coordinates
         (newRow, newCol) -> cellInfo.copy(
-          row = newRow, 
+          row = newRow,
           col = newCol,
           originalRow = Some(originalRow),
           originalCol = Some(originalCol)
         )
       }
-      
+
       SheetGrid(remappedCells, sortedRows.size, sortedCols.size)
 
   /**
@@ -122,95 +136,61 @@ object AnchorExtractor:
    * @return Set of row and column indices identified as anchors
    */
   def identifyAnchors(grid: SheetGrid): (Set[Int], Set[Int]) =
-    // Identify anchor rows
-    val anchorRows = (0 until grid.rowCount).filter { row =>
-      val rowCells = grid.getRow(row)
-      isAnchorRow(rowCells, row, grid)
-    }.toSet
-    
-    // Identify anchor columns
-    val anchorCols = (0 until grid.colCount).filter { col =>
-      val colCells = grid.getCol(col)
-      isAnchorColumn(colCells, col, grid)
-    }.toSet
-    
+    // Identify anchors for rows and columns using the same logic
+    val anchorRows = identifyAnchorsForDimension(grid, Dimension.Row)
+    val anchorCols = identifyAnchorsForDimension(grid, Dimension.Column)
+
     logger.info(s"Identified ${anchorRows.size} anchor rows and ${anchorCols.size} anchor columns")
     (anchorRows, anchorCols)
 
   /**
-   * Determines if a row should be considered an anchor based on heterogeneity
+   * Identifies anchors for a specific dimension (rows or columns).
+   */
+  private def identifyAnchorsForDimension(grid: SheetGrid, dim: Dimension): Set[Int] =
+    val count = grid.getDimCount(dim)
+    (0 until count).filter { idx =>
+      val cells = grid.getCells(dim, idx)
+      isAnchor(cells, idx, grid, dim)
+    }.toSet
+
+  /**
+   * Determines if a row or column should be considered an anchor based on heterogeneity
    * and structural importance.
    */
-  private def isAnchorRow(cells: Seq[CellInfo], rowIdx: Int, grid: SheetGrid): Boolean =
+  private def isAnchor(cells: Seq[CellInfo], idx: Int, grid: SheetGrid, dim: Dimension): Boolean =
     if cells.isEmpty then
       return false
-      
-    // Check for format cues that indicate a header or important row
+
+    // Check for format cues that indicate a header or important row/column
     val hasBoldCells = cells.exists(_.isBold)
     val hasFormulas = cells.exists(_.isFormula)
-    
+
     // Check for type heterogeneity - mix of text, numbers, dates, etc.
     val hasNumbers = cells.exists(_.isNumeric)
     val hasText = cells.exists(c => !c.isNumeric && !c.isDate && !c.isEmpty)
     val hasDates = cells.exists(_.isDate)
     val isHeterogeneous = (hasNumbers && hasText) || (hasNumbers && hasDates) || (hasText && hasDates)
-    
-    // Check if this row is different from its neighbors
-    val isFirstOrLastRow = rowIdx == 0 || rowIdx == grid.rowCount - 1
-    val isDifferentFromNeighbors = 
-      if rowIdx > 0 && rowIdx < grid.rowCount - 1 then
-        val prevRow = grid.getRow(rowIdx - 1)
-        val nextRow = grid.getRow(rowIdx + 1)
-        
-        // Check if data type pattern changes to/from this row
-        val prevRowTypes = typePattern(prevRow)
-        val currentRowTypes = typePattern(cells)
-        val nextRowTypes = typePattern(nextRow)
-        
-        prevRowTypes != currentRowTypes || currentRowTypes != nextRowTypes
+
+    // Check if this row/column is different from its neighbors
+    val count = grid.getDimCount(dim)
+    val isFirstOrLast = idx == 0 || idx == count - 1
+    val isDifferentFromNeighbors =
+      if idx > 0 && idx < count - 1 then
+        val prevCells = grid.getCells(dim, idx - 1)
+        val nextCells = grid.getCells(dim, idx + 1)
+
+        // Check if data type pattern changes to/from this row/column
+        val prevPattern = typePattern(prevCells)
+        val currentPattern = typePattern(cells)
+        val nextPattern = typePattern(nextCells)
+
+        prevPattern != currentPattern || currentPattern != nextPattern
       else
-        true // First or last row is automatically different
-    
-    // A row is an anchor if it has formatting cues or heterogeneous content or is different from neighbors
-    hasBoldCells || hasFormulas || isHeterogeneous || isDifferentFromNeighbors || isFirstOrLastRow
-  
-  /**
-   * Determines if a column should be considered an anchor based on heterogeneity
-   * and structural importance.
-   */
-  private def isAnchorColumn(cells: Seq[CellInfo], colIdx: Int, grid: SheetGrid): Boolean =
-    if cells.isEmpty then
-      return false
-      
-    // Check for format cues
-    val hasBoldCells = cells.exists(_.isBold)
-    val hasFormulas = cells.exists(_.isFormula)
-    
-    // Check for type heterogeneity
-    val hasNumbers = cells.exists(_.isNumeric)
-    val hasText = cells.exists(c => !c.isNumeric && !c.isDate && !c.isEmpty)
-    val hasDates = cells.exists(_.isDate)
-    val isHeterogeneous = (hasNumbers && hasText) || (hasNumbers && hasDates) || (hasText && hasDates)
-    
-    // Check if this column is different from its neighbors
-    val isFirstOrLastCol = colIdx == 0 || colIdx == grid.colCount - 1
-    val isDifferentFromNeighbors = 
-      if colIdx > 0 && colIdx < grid.colCount - 1 then
-        val prevCol = grid.getCol(colIdx - 1)
-        val nextCol = grid.getCol(colIdx + 1)
-        
-        // Check if data type pattern changes to/from this column
-        val prevColTypes = typePattern(prevCol)
-        val currentColTypes = typePattern(cells)
-        val nextColTypes = typePattern(nextCol)
-        
-        prevColTypes != currentColTypes || currentColTypes != nextColTypes
-      else
-        true // First or last column is automatically different
-    
-    // A column is an anchor if it has formatting cues or heterogeneous content or is different from neighbors
-    hasBoldCells || hasFormulas || isHeterogeneous || isDifferentFromNeighbors || isFirstOrLastCol
-  
+        true // First or last row/column is automatically different
+
+    // A row/column is an anchor if it has formatting cues or heterogeneous content or is different from neighbors
+    hasBoldCells || hasFormulas || isHeterogeneous || isDifferentFromNeighbors || isFirstOrLast
+
   /**
    * Helper method to determine the type pattern (sequence of cell types) in a row or column.
    */
@@ -221,7 +201,7 @@ object AnchorExtractor:
       else if cell.isDate then "D"
       else "T" // Text
     }.mkString
-  
+
   /**
    * Expands the set of anchor rows and columns by including neighbors
    * up to the specified threshold.
@@ -234,29 +214,29 @@ object AnchorExtractor:
    * @return Expanded sets of row and column indices to keep
    */
   def expandAnchors(
-    anchorRows: Set[Int],
-    anchorCols: Set[Int],
-    rowCount: Int,
-    colCount: Int,
-    threshold: Int
-  ): (Set[Int], Set[Int]) =
-    // Expand anchor rows to include neighbors within threshold
-    val expandedRows = anchorRows.flatMap { row =>
-      val start = math.max(0, row - threshold)
-      val end = math.min(rowCount - 1, row + threshold)
-      (start to end)
-    }
-    
-    // Expand anchor columns to include neighbors within threshold
-    val expandedCols = anchorCols.flatMap { col =>
-      val start = math.max(0, col - threshold)
-      val end = math.min(colCount - 1, col + threshold)
-      (start to end)
-    }
-    
+                     anchorRows: Set[Int],
+                     anchorCols: Set[Int],
+                     rowCount: Int,
+                     colCount: Int,
+                     threshold: Int
+                   ): (Set[Int], Set[Int]) =
+    // Use common expansion logic for both dimensions
+    val expandedRows = expandDimension(anchorRows, rowCount, threshold)
+    val expandedCols = expandDimension(anchorCols, colCount, threshold)
+
     logger.info(s"Expanded to ${expandedRows.size} rows and ${expandedCols.size} columns (threshold=$threshold)")
     (expandedRows, expandedCols)
-  
+
+  /**
+   * Expands a set of indices by including neighbors within threshold.
+   */
+  private def expandDimension(anchors: Set[Int], count: Int, threshold: Int): Set[Int] =
+    anchors.flatMap { anchor =>
+      val start = math.max(0, anchor - threshold)
+      val end = math.min(count - 1, anchor + threshold)
+      start to end
+    }
+
   /**
    * Main entry point for the anchor extraction process.
    *
@@ -267,18 +247,18 @@ object AnchorExtractor:
   def extract(grid: SheetGrid, anchorThreshold: Int): SheetGrid =
     // Step 1: Identify structural anchors
     val (anchorRows, anchorCols) = identifyAnchors(grid)
-    
+
     // Step 2: Expand anchors to include neighbors within threshold
     val (rowsToKeep, colsToKeep) = expandAnchors(
       anchorRows, anchorCols, grid.rowCount, grid.colCount, anchorThreshold
     )
-    
+
     // Step 3: Filter the grid to only keep cells in the anchor rows and columns
     val prunedGrid = grid.filterToKeep(rowsToKeep, colsToKeep)
-    
+
     // Step 4: Remap coordinates to close gaps
     val remappedGrid = prunedGrid.remapCoordinates()
-    
+
     // Log compression statistics
     val originalCellCount = grid.rowCount * grid.colCount
     val retainedCellCount = remappedGrid.cells.size
@@ -286,7 +266,7 @@ object AnchorExtractor:
       originalCellCount.toDouble / retainedCellCount
     else
       1.0
-      
-    logger.info(f"Anchor extraction: ${originalCellCount} cells -> ${retainedCellCount} cells (${compressionRatio}%.2fx compression)")
-    
+
+    logger.info(f"Anchor extraction: $originalCellCount cells -> $retainedCellCount cells ($compressionRatio%.2fx compression)")
+
     remappedGrid
