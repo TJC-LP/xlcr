@@ -61,12 +61,7 @@ def main(args: String*): Unit =
         .valueName("<n>")
         .action((x, c) => c.copy(minGapSize = x))
         .text("Minimum gap size for table detection (default: 3)"),
-      
-      // Advanced compression options
-      opt[Unit]("semantic-compression")
-        .action((_, c) => c.copy(enableSemanticCompression = true))
-        .text("Enable semantic compression for text-heavy cells"),
-        
+
       opt[Unit]("no-enhanced-formulas")
         .action((_, c) => c.copy(enableEnhancedFormulas = false))
         .text("Disable enhanced formula relationship detection"),

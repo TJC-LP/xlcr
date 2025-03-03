@@ -12,7 +12,6 @@ package com.tjclp.xlcr
  * @param disableFormatAggregation Disable format-based aggregation, keeping all values as-is
  * @param preserveOriginalCoordinates Whether to preserve original Excel coordinates (default: true)
  * @param enableTableDetection Whether to enable multi-table detection in sheets
- * @param enableSemanticCompression Whether to enable semantic compression for text-heavy cells
  * @param enableEnhancedFormulas Whether to include enhanced formula relationships in output
  * @param minGapSize Minimum gap size to consider for table detection (in rows/columns)
  * @param threads Number of threads to use for parallel processing
@@ -27,7 +26,6 @@ case class SpreadsheetLLMConfig(
   disableFormatAggregation: Boolean = false,
   preserveOriginalCoordinates: Boolean = true,
   enableTableDetection: Boolean = true,
-  enableSemanticCompression: Boolean = false,
   enableEnhancedFormulas: Boolean = true,
   minGapSize: Int = 3,
   threads: Int = Runtime.getRuntime.availableProcessors(),
