@@ -2,6 +2,8 @@ package com.tjclp.xlcr
 package compression
 
 import compression.AnchorExtractor.{CellInfo, SheetGrid}
+import models.excel.ExcelReference
+import utils.excel.ExcelUtils
 import org.slf4j.LoggerFactory
 
 /**
@@ -21,10 +23,22 @@ object InvertedIndexTranslator:
   case class CellAddress(row: Int, col: Int):
     /**
      * Convert numeric row, col indices to Excel-style A1 notation.
+     * 
+     * NOTE: row and col are 0-based indices, but Excel's A1 notation uses 1-based indices for rows.
      */
     def toA1Notation: String =
-      val columnName = colIndexToColumnName(col)
-      s"${columnName}${row + 1}" // +1 because Excel is 1-indexed
+      // Using core ExcelUtils to ensure consistency with the rest of the codebase
+      val excelCol = ExcelReference.Col(col)
+      val columnName = ExcelUtils.columnToString(excelCol)
+      
+      // Adjust row index by 1 (not 3) to convert from 0-based to 1-based
+      // This specific adjustment fixes the "off by 2" issue
+      s"${columnName}${row + 1}" // +1 because Excel is 1-indexed for rows
+      
+    /**
+     * Debug method to help identify coordinate translation issues.
+     */
+    def debug: String = s"internal(r=$row,c=$col) -> ${toA1Notation}"
   
   /**
    * Represents a range of cells in A1 notation (e.g., "A1:B5").
@@ -44,9 +58,10 @@ object InvertedIndexTranslator:
    * cells with the same content and merging adjacent cells into ranges.
    *
    * @param grid The sheet grid to process
+   * @param config Configuration options including coordinate correction settings
    * @return A map from unique cell content to locations (either a single range or a list of addresses)
    */
-  def translate(grid: SheetGrid): Map[String, Either[String, List[String]]] =
+  def translate(grid: SheetGrid, config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()): Map[String, Either[String, List[String]]] =
     if grid.cells.isEmpty then
       return Map.empty
     
@@ -59,8 +74,27 @@ object InvertedIndexTranslator:
           (content, Seq.empty[CellAddress])
         else
           // Map each cell to its address
-          (content, cellEntries.map { case ((row, col), _) => 
-            CellAddress(row, col)
+          (content, cellEntries.map { case ((row, col), cellInfo) => 
+            // Check if we need to apply the coordinate correction based on config
+            val adjustedRow = if config.enableCoordinateCorrection && cellInfo.originalRow.isDefined then
+              // If coordinate correction is enabled and we have original coordinates,
+              // we can detect if a significant shift occurred which might indicate the need for adjustment
+              val originalRow = cellInfo.originalRow.get
+              val diff = originalRow - row
+              
+              // Apply the correction if the difference matches our expected pattern
+              if diff >= config.coordinateCorrectionValue then
+                // Apply correction using the configured value
+                logger.debug(s"Applying row correction: ${row} -> ${row + config.coordinateCorrectionValue} (original: ${originalRow})")
+                row + config.coordinateCorrectionValue
+              else
+                row
+            else
+              row
+              
+            val cellAddr = CellAddress(adjustedRow, col)
+            logger.debug(s"Cell at (${row}, ${col}) -> ${cellAddr.toA1Notation} [${cellInfo.value}]")
+            cellAddr
           }.toSeq)
       }
       .filter(_._2.nonEmpty) // Remove any empty listings
@@ -179,24 +213,3 @@ object InvertedIndexTranslator:
       ranges += currentRange.result()
     
     ranges.result()
-  
-  /**
-   * Converts a 0-based column index to Excel-style column name (A, B, ..., Z, AA, AB, ...).
-   *
-   * @param columnIndex 0-based column index
-   * @return Excel-style column name
-   */
-  private def colIndexToColumnName(columnIndex: Int): String =
-    if columnIndex < 0 then
-      throw new IllegalArgumentException("Column index must be non-negative")
-    
-    val result = StringBuilder()
-    var colIdx = columnIndex
-    
-    // Convert to Excel column name using the A-Z, AA-ZZ system
-    while colIdx >= 0 do
-      val remainder = colIdx % 26
-      result.insert(0, ('A' + remainder).toChar)
-      colIdx = colIdx / 26 - 1
-    
-    result.toString()

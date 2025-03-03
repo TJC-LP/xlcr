@@ -17,6 +17,20 @@ object AnchorExtractor:
   /**
    * Cell information used for anchor analysis.
    */
+  /**
+   * Cell information used for anchor analysis.
+   *
+   * @param row The 0-based row index
+   * @param col The 0-based column index
+   * @param value The cell content as a string
+   * @param isBold Whether the cell has bold formatting
+   * @param isFormula Whether the cell contains a formula
+   * @param isNumeric Whether the cell contains numeric content
+   * @param isDate Whether the cell contains a date
+   * @param isEmpty Whether the cell is empty
+   * @param originalRow The original row index before remapping (for debugging)
+   * @param originalCol The original column index before remapping (for debugging)
+   */
   case class CellInfo(
     row: Int,
     col: Int,
@@ -25,7 +39,9 @@ object AnchorExtractor:
     isFormula: Boolean = false,
     isNumeric: Boolean = false,
     isDate: Boolean = false,
-    isEmpty: Boolean = false
+    isEmpty: Boolean = false,
+    originalRow: Option[Int] = None,
+    originalCol: Option[Int] = None
   )
   
   /**
@@ -59,6 +75,7 @@ object AnchorExtractor:
     
     /**
      * Remap coordinates to close gaps after pruning.
+     * This maintains logical structure while creating a more compact representation.
      */
     def remapCoordinates(): SheetGrid =
       // Create new row and column indices that are continuous
@@ -68,11 +85,31 @@ object AnchorExtractor:
       val rowMap = sortedRows.zipWithIndex.toMap
       val colMap = sortedCols.zipWithIndex.toMap
       
+      // For debugging purposes, log the mapping
+      val logger = org.slf4j.LoggerFactory.getLogger(this.getClass)
+      logger.debug(s"Row mapping: ${rowMap.take(10)}...")
+      logger.debug(s"Column mapping: ${colMap.take(10)}...")
+      
       // Remap each cell to its new coordinates
       val remappedCells = cells.map { case ((oldRow, oldCol), cellInfo) =>
         val newRow = rowMap(oldRow)
         val newCol = colMap(oldCol)
-        (newRow, newCol) -> cellInfo.copy(row = newRow, col = newCol)
+        
+        // For debugging, log significant coordinate changes
+        if math.abs(oldRow - newRow) > 1 || math.abs(oldCol - newCol) > 1 then
+          logger.debug(s"Remapping cell: ($oldRow,$oldCol) -> ($newRow,$newCol) [${cellInfo.value}]")
+        
+        // Store original row/col in the cell info for later debugging
+        val originalRow = cellInfo.originalRow.getOrElse(oldRow)
+        val originalCol = cellInfo.originalCol.getOrElse(oldCol)
+        
+        // Important: We need to update both the map key AND the CellInfo's internal coordinates
+        (newRow, newCol) -> cellInfo.copy(
+          row = newRow, 
+          col = newCol,
+          originalRow = Some(originalRow),
+          originalCol = Some(originalCol)
+        )
       }
       
       SheetGrid(remappedCells, sortedRows.size, sortedCols.size)

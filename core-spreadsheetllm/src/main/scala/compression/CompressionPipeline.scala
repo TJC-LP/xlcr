@@ -69,7 +69,7 @@ object CompressionPipeline:
     // Step 2: Inverted Index Translation
     logger.info("Performing inverted index translation")
     val startIndexTime = System.currentTimeMillis()
-    val indexMap = InvertedIndexTranslator.translate(anchorGrid)
+    val indexMap = InvertedIndexTranslator.translate(anchorGrid, config)
     val endIndexTime = System.currentTimeMillis()
     
     val indexMetadata = Map(
