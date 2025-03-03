@@ -16,15 +16,17 @@ object SpreadsheetLLMBridgeRegistry:
   /**
    * Register all SpreadsheetLLM bridges with the main BridgeRegistry.
    * This makes them available to the XLCR pipeline system.
+   *
+   * @param config Optional configuration for the compression pipeline
    */
-  def registerAll(): Unit = synchronized {
+  def registerAll(config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()): Unit = synchronized {
     if initialized then
       return
       
-    logger.info("Registering SpreadsheetLLM bridges")
+    logger.info(s"Registering SpreadsheetLLM bridges with config: $config")
     
     // Register Excel -> LLM JSON bridges
-    val xlsxBridge = ExcelToLLMJsonBridge.forXlsx()
+    val xlsxBridge = ExcelToLLMJsonBridge.forXlsx(config)
     BridgeRegistry.register(
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       MimeType.ApplicationJson,
@@ -32,7 +34,7 @@ object SpreadsheetLLMBridgeRegistry:
     )
     
     // Register other Excel format bridges as needed
-    val xlsBridge = ExcelToLLMJsonBridge.forXls()
+    val xlsBridge = ExcelToLLMJsonBridge.forXls(config)
     BridgeRegistry.register(
       MimeType.ApplicationVndMsExcel,
       MimeType.ApplicationJson,

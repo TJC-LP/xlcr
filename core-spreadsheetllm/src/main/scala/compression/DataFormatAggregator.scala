@@ -99,16 +99,50 @@ object DataFormatAggregator:
    */
   private def buildTypeMap(cells: Seq[CellInfo]): Map[String, DataType] =
     cells.map { cell =>
-      val dataType = 
-        if cell.isEmpty then DataType.Empty
-        else if cell.isDate then DataType.Date
-        else if cell.isNumeric then
-          if cell.value.contains(".") then DataType.Float
-          else DataType.Integer
-        else DataType.Text
+      val dataType = inferDataType(cell.value, 
+                                  cell.isEmpty, 
+                                  cell.isDate, 
+                                  cell.isNumeric)
       
       (cell.value, dataType)
     }.toMap
+
+  /**
+   * Improved data type inference with more sophisticated pattern matching.
+   * Uses regex patterns to identify specific formats like currencies, emails, etc.
+   *
+   * @param value The cell value as a string
+   * @param isEmpty Whether the cell is empty
+   * @param isDateFlag Whether the cell was flagged as a date by Excel
+   * @param isNumericFlag Whether the cell was flagged as numeric by Excel
+   * @return The detected DataType
+   */
+  private def inferDataType(value: String, 
+                           isEmpty: Boolean, 
+                           isDateFlag: Boolean, 
+                           isNumericFlag: Boolean): DataType =
+    if isEmpty then
+      DataType.Empty
+    else if isDateFlag then
+      DataType.Date
+    else if value.trim.endsWith("%") then
+      DataType.Percentage
+    else if """^[$€£¥₹]\s*[\d,.]+$""".r.matches(value) || 
+            """^[\d,.]+\s*[$€£¥₹]$""".r.matches(value) then
+      DataType.Currency
+    else if """\d+[.]\d+[eE][+-]?\d+""".r.matches(value) then
+      DataType.ScientificNotation
+    else if """^(19|20)\d{2}$""".r.matches(value) then
+      DataType.Year
+    else if """^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$""".r.matches(value) then
+      DataType.Email
+    else if """^\d{1,2}:\d{2}(:\d{2})?(\s*[AaPp][Mm])?$""".r.matches(value) then
+      DataType.Time
+    else if isNumericFlag then
+      if value.contains(".") then DataType.Float
+      else DataType.Integer
+    else
+      DataType.Text
   
   /**
    * Separates content map entries into those that should be aggregated
@@ -136,6 +170,7 @@ object DataFormatAggregator:
   
   /**
    * Groups aggregation candidates by their data type and format.
+   * This enhanced version also uses format codes for more precise grouping.
    *
    * @param candidates Content map entries that are candidates for aggregation
    * @param typeMap Map from cell value to data type
@@ -145,12 +180,13 @@ object DataFormatAggregator:
     candidates: Map[String, Either[String, List[String]]],
     typeMap: Map[String, DataType]
   ): Map[FormatDescriptor, Map[String, Either[String, List[String]]]] =
-    // Group by inferred data type
+    // Group by inferred data type and format code
     candidates.groupBy { case (content, _) =>
       val dataType = typeMap.getOrElse(content, DataType.Text)
+      val formatCode = inferFormatCode(content, dataType)
       
-      // Create a format descriptor without format code (could be enhanced later)
-      FormatDescriptor(dataType, None, Some(content))
+      // Create a format descriptor with type, format code, and sample value
+      FormatDescriptor(dataType, formatCode, Some(content))
     }
   
   /**
@@ -185,16 +221,116 @@ object DataFormatAggregator:
     }
     
   /**
-   * (Future improvement) Detects format code from a cell value.
-   * This would enhance the format detection beyond simple type inference.
+   * Detects format code from a cell value using pattern recognition.
+   * This enhanced version uses regex patterns to detect common formats.
+   *
+   * @param value The cell value as a string
+   * @param dataType The detected data type
+   * @return An optional format code
    */
   private def inferFormatCode(value: String, dataType: DataType): Option[String] =
-    // Future: Implement more sophisticated format code detection
     dataType match
-      case DataType.Date => Some("yyyy-mm-dd")
-      case DataType.Time => Some("hh:mm:ss")
-      case DataType.Currency => Some("$#,##0.00")
-      case DataType.Percentage => Some("0.00%")
-      case DataType.Float => Some("#,##0.00")
-      case DataType.Integer => Some("#,##0")
+      case DataType.Date =>
+        // Detect common date formats: MM/DD/YYYY, YYYY-MM-DD, DD-MMM-YYYY, etc.
+        val datePatterns = Map(
+          """^\d{1,2}/\d{1,2}/\d{4}$""".r -> "mm/dd/yyyy",
+          """^\d{4}-\d{1,2}-\d{1,2}$""".r -> "yyyy-mm-dd",
+          """^\d{1,2}-[A-Za-z]{3}-\d{4}$""".r -> "dd-mmm-yyyy",
+          """^\d{1,2}\.\d{1,2}\.\d{4}$""".r -> "dd.mm.yyyy"
+        )
+        
+        datePatterns.collectFirst {
+          case (pattern, format) if pattern.matches(value) => format
+        }.orElse(Some("yyyy-mm-dd")) // Default date format
+        
+      case DataType.Time =>
+        // Detect common time formats: HH:MM, HH:MM:SS, HH:MM AM/PM
+        val timePatterns = Map(
+          """^\d{1,2}:\d{2}$""".r -> "hh:mm",
+          """^\d{1,2}:\d{2}:\d{2}$""".r -> "hh:mm:ss",
+          """^\d{1,2}:\d{2}\s*[AaPp][Mm]$""".r -> "hh:mm am/pm"
+        )
+        
+        timePatterns.collectFirst {
+          case (pattern, format) if pattern.matches(value) => format
+        }.orElse(Some("hh:mm:ss")) // Default time format
+        
+      case DataType.Currency =>
+        // Detect currency format with symbol (before or after)
+        val hasCurrencySymbol = """^[$€£¥₹]|[$€£¥₹]$""".r.findFirstIn(value).isDefined
+        val hasCommas = value.contains(",")
+        val hasDecimals = value.contains(".")
+        val decimalPlaces = if hasDecimals then
+          value.split("\\.")(1).length
+        else
+          0
+          
+        val format = 
+          if hasCurrencySymbol then
+            if hasCommas && hasDecimals then
+              if decimalPlaces == 2 then "$#,##0.00"
+              else s"$$#,##0.${"0" * decimalPlaces}"
+            else if hasDecimals then
+              if decimalPlaces == 2 then "$#0.00"
+              else s"$$#0.${"0" * decimalPlaces}"
+            else "$#,##0"
+          else
+            if hasCommas && hasDecimals then "#,##0.00"
+            else if hasDecimals then "#0.00"
+            else "#,##0"
+            
+        Some(format)
+        
+      case DataType.Percentage =>
+        // Detect percentage format with varying decimal places
+        val percentValue = value.replace("%", "").trim
+        val hasDecimals = percentValue.contains(".")
+        val decimalPlaces = if hasDecimals then
+          percentValue.split("\\.")(1).length
+        else
+          0
+          
+        val format = 
+          if decimalPlaces > 0 then s"0.${"0" * decimalPlaces}%"
+          else "0%"
+          
+        Some(format)
+        
+      case DataType.Float =>
+        // Detect floating point format with varying decimal places
+        val hasCommas = value.contains(",")
+        val decimalPlaces = if value.contains(".") then
+          value.split("\\.")(1).length
+        else
+          0
+          
+        val format =
+          if hasCommas then
+            if decimalPlaces > 0 then s"#,##0.${"0" * decimalPlaces}"
+            else "#,##0"
+          else
+            if decimalPlaces > 0 then s"#0.${"0" * decimalPlaces}"
+            else "#0"
+            
+        Some(format)
+        
+      case DataType.Integer =>
+        // Detect integer format with or without thousands separators
+        val hasCommas = value.contains(",")
+        val format = if hasCommas then "#,##0" else "#0"
+        Some(format)
+        
+      case DataType.ScientificNotation =>
+        // Scientific notation (e.g., 1.23E+04)
+        Some("0.00E+00")
+        
+      case DataType.Year =>
+        // 4-digit or 2-digit year
+        val format = if value.length == 4 then "yyyy" else "yy"
+        Some(format)
+        
+      case DataType.Email =>
+        // No specific format for email, just indicate it's an email
+        Some("@")
+        
       case _ => None

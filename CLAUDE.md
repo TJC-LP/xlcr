@@ -42,6 +42,10 @@ This module compresses Excel spreadsheets into an LLM-friendly JSON format:
 - `--no-format` - Disable format-based aggregation
 - `--no-coordinate-correction` - Disable auto coordinate correction for large sheets
 - `--correction-value <n>` - Value for coordinate correction (default: 2)
+- `--no-table-detection` - Disable multi-table detection in sheets
+- `--min-gap-size <n>` - Minimum gap size for table detection (default: 3)
+- `--semantic-compression` - Enable semantic compression for text-heavy cells
+- `--no-enhanced-formulas` - Disable enhanced formula relationship detection
 - `--threads <n>` - Number of threads for parallel processing
 - `--verbose` - Enable verbose logging
 
@@ -52,3 +56,31 @@ The SpreadsheetLLM module includes a coordinate correction system for large shee
 - Can be disabled with `--no-coordinate-correction` if needed
 - The correction value defaults to 2 but can be adjusted with `--correction-value`
 - Fixes the "off by 2" issue that can occur in large sheets
+
+### Advanced Compression Features
+The SpreadsheetLLM module includes several advanced compression techniques:
+
+#### Table Detection
+- Automatically identifies multiple tables within a single sheet
+- Uses gap analysis to detect table boundaries
+- Tables are included in the output JSON with range and header information
+- Can be disabled with `--no-table-detection` if needed
+- Minimum gap size can be adjusted with `--min-gap-size` (default: 3)
+
+#### Enhanced Data Format Detection
+- Sophisticated pattern recognition for dates, numbers, and currencies
+- Detects date formats like MM/DD/YYYY, DD-MMM-YYYY, YYYY-MM-DD
+- Identifies currency formats with different symbols ($, €, £, etc.)
+- Preserves number formatting information (decimal places, thousands separators)
+- Enhances compression while maintaining important formatting cues
+
+#### Formula Handling
+- Preserves formula expressions in backtick-formatted markdown
+- Maps formulas to their target cells in a dedicated section
+- Improves understanding of spreadsheet calculations
+- Can be disabled with `--no-enhanced-formulas`
+
+#### Semantic Compression (Experimental)
+- Can be enabled with `--semantic-compression`
+- Compresses long text cells while preserving meaning
+- Useful for text-heavy spreadsheets with large descriptions

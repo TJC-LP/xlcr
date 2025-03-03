@@ -12,6 +12,10 @@ package com.tjclp.xlcr
  * @param disableFormatAggregation Disable format-based aggregation, keeping all values as-is
  * @param enableCoordinateCorrection Whether to enable the coordinate correction for "off by 2" issue
  * @param coordinateCorrectionValue The specific value to add for coordinate correction (default: 2)
+ * @param enableTableDetection Whether to enable multi-table detection in sheets
+ * @param enableSemanticCompression Whether to enable semantic compression for text-heavy cells
+ * @param enableEnhancedFormulas Whether to include enhanced formula relationships in output
+ * @param minGapSize Minimum gap size to consider for table detection (in rows/columns)
  * @param threads Number of threads to use for parallel processing
  * @param verbose Enable detailed logging output
  */
@@ -24,6 +28,10 @@ case class SpreadsheetLLMConfig(
   disableFormatAggregation: Boolean = false,
   enableCoordinateCorrection: Boolean = true,
   coordinateCorrectionValue: Int = 2,
+  enableTableDetection: Boolean = true,
+  enableSemanticCompression: Boolean = false,
+  enableEnhancedFormulas: Boolean = true,
+  minGapSize: Int = 3,
   threads: Int = Runtime.getRuntime.availableProcessors(),
   verbose: Boolean = false
 )

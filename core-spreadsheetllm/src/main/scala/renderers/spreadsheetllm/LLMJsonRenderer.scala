@@ -58,12 +58,38 @@ class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJ
         (formattedKey, locationsJson)
       }
       
+      // Create formula JSON if there are formulas
+      val formulasJson = 
+        if sheet.formulas.isEmpty then Json.Null
+        else 
+          // Format formula expressions with backticks in markdown
+          val formattedFormulas = sheet.formulas.map { case (formula, cell) =>
+            val markdownFormula = s"`$formula`"
+            (markdownFormula, Json.fromString(cell))
+          }
+          Json.obj(formattedFormulas.toSeq: _*)
+      
+      // Create table JSON if there are tables
+      val tablesJson =
+        if sheet.tables.isEmpty then Json.arr()
+        else
+          sheet.tables.map { table =>
+            Json.obj(
+              "id" -> Json.fromString(table.id),
+              "range" -> Json.fromString(table.range),
+              "hasHeaders" -> Json.fromBoolean(table.hasHeaders),
+              "headerRow" -> table.headerRow.fold(Json.Null)(row => Json.fromInt(row))
+            )
+          }.asJson
+      
       // Create sheet JSON object
       Json.obj(
         "name" -> Json.fromString(sheet.name),
         "originalRowCount" -> Json.fromInt(sheet.originalRowCount),
         "originalColumnCount" -> Json.fromInt(sheet.originalColumnCount),
         "content" -> Json.obj(contentJson.toSeq: _*),
+        "formulas" -> formulasJson,
+        "tables" -> tablesJson,
         "metadata" -> sheet.compressionMetadata.asJson
       )
     }

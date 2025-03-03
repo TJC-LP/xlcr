@@ -44,8 +44,8 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
     val workbook = loadWorkbook(content.data)
     
     try
-      // Extract file name (for metadata)
-      val fileName = "excel-file.xlsx" // This would ideally come from the original file path
+      // Extract file name from the configuration if available
+      val fileName = extractFileName(config.input)
       
       // Extract cells from each sheet
       val sheets = extractSheets(workbook)
@@ -134,6 +134,20 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
       
       (sheetName, (cells, rowCount, colCount))
     }.toMap
+  
+  /**
+   * Extract filename from the input path.
+   * 
+   * @param inputPath The input file path
+   * @return The extracted filename
+   */
+  private def extractFileName(inputPath: String): String =
+    // Extract just the filename portion without path
+    val path = java.nio.file.Paths.get(inputPath)
+    val fileName = path.getFileName.toString
+    
+    // If no filename could be extracted, use a generic name
+    if fileName.isEmpty then "excel-file.xlsx" else fileName
   
   /**
    * Extract the display value from a cell.

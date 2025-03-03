@@ -129,8 +129,37 @@ object AnchorExtractor:
       SheetGrid(remappedCells, sortedRows.size, sortedCols.size)
 
   /**
+   * Information about a table detected in the grid
+   *
+   * @param topRow The top row index of the table
+   * @param bottomRow The bottom row index of the table
+   * @param leftCol The leftmost column index of the table
+   * @param rightCol The rightmost column index of the table
+   * @param anchorRows Set of row indices that are anchors within this table
+   * @param anchorCols Set of column indices that are anchors within this table
+   */
+  case class TableRegion(
+    topRow: Int,
+    bottomRow: Int,
+    leftCol: Int,
+    rightCol: Int,
+    anchorRows: Set[Int],
+    anchorCols: Set[Int]
+  ):
+    def width: Int = rightCol - leftCol + 1
+    def height: Int = bottomRow - topRow + 1
+    def area: Int = width * height
+    
+    /** Get all rows in this table region */
+    def allRows: Set[Int] = (topRow to bottomRow).toSet
+    
+    /** Get all columns in this table region */
+    def allCols: Set[Int] = (leftCol to rightCol).toSet
+  
+  /**
    * Identifies which rows and columns are structural anchors in the sheet
-   * based on heterogeneity and formatting cues.
+   * based on heterogeneity and formatting cues. Also detects potential
+   * table regions within the sheet.
    *
    * @param grid The sheet grid to analyze
    * @return Set of row and column indices identified as anchors
@@ -139,9 +168,178 @@ object AnchorExtractor:
     // Identify anchors for rows and columns using the same logic
     val anchorRows = identifyAnchorsForDimension(grid, Dimension.Row)
     val anchorCols = identifyAnchorsForDimension(grid, Dimension.Column)
-
+    
+    // Detect table regions using the anchor information (more advanced method)
+    val tableRegions = detectTableRegions(grid, anchorRows, anchorCols)
+    
+    // Log information about detected tables
+    if tableRegions.nonEmpty then
+      logger.info(s"Detected ${tableRegions.size} table regions in the sheet")
+      tableRegions.zipWithIndex.foreach { case (table, idx) =>
+        logger.info(f"  Table ${idx + 1}: (${table.topRow},${table.leftCol}) to (${table.bottomRow},${table.rightCol}) - ${table.width}x${table.height} cells")
+      }
+    
     logger.info(s"Identified ${anchorRows.size} anchor rows and ${anchorCols.size} anchor columns")
     (anchorRows, anchorCols)
+    
+  /**
+   * Detects potential table regions within the sheet based on anchor rows and columns.
+   * This uses a more sophisticated approach to identify distinct tables by looking for
+   * clusters of anchors with empty regions between them.
+   *
+   * @param grid The sheet grid to analyze
+   * @param anchorRows Set of identified anchor rows
+   * @param anchorCols Set of identified anchor columns
+   * @return List of detected table regions
+   */
+  /**
+   * Detects potential table regions within the sheet based on anchor rows and columns.
+   * This method is made public so it can be called from the CompressionPipeline.
+   * 
+   * @param grid The sheet grid to analyze
+   * @param anchorRows Set of identified anchor rows
+   * @param anchorCols Set of identified anchor columns
+   * @return List of detected table regions
+   */
+  def detectTableRegions(
+    grid: SheetGrid, 
+    anchorRows: Set[Int], 
+    anchorCols: Set[Int]
+  ): List[TableRegion] =
+    // Skip if we have too few anchors to form meaningful table boundaries
+    if anchorRows.size < 2 || anchorCols.size < 2 then
+      return List(TableRegion(
+        0, grid.rowCount - 1, 
+        0, grid.colCount - 1,
+        anchorRows, anchorCols
+      ))
+    
+    // Step 1: Find gaps in anchor rows that might separate tables
+    val sortedRows = anchorRows.toSeq.sorted
+    val rowGaps = findGaps(sortedRows, grid.rowCount, 3) // Look for gaps of at least 3 rows
+    
+    // Step 2: Find gaps in anchor columns that might separate tables
+    val sortedCols = anchorCols.toSeq.sorted
+    val colGaps = findGaps(sortedCols, grid.colCount, 3) // Look for gaps of at least 3 columns
+    
+    // Step 3: Define row segments based on gaps
+    val rowSegments = if rowGaps.isEmpty then 
+      List((0, grid.rowCount - 1)) 
+    else 
+      segmentsFromGaps(rowGaps, grid.rowCount)
+    
+    // Step 4: Define column segments based on gaps
+    val colSegments = if colGaps.isEmpty then 
+      List((0, grid.colCount - 1))
+    else 
+      segmentsFromGaps(colGaps, grid.colCount)
+    
+    // Step 5: Create candidate table regions from the cross product of row and column segments
+    val candidates = for 
+      (topRow, bottomRow) <- rowSegments
+      (leftCol, rightCol) <- colSegments
+    yield
+      // Find anchors within this region
+      val regionAnchorRows = anchorRows.filter(r => r >= topRow && r <= bottomRow)
+      val regionAnchorCols = anchorCols.filter(c => c >= leftCol && c <= rightCol)
+      
+      TableRegion(
+        topRow, bottomRow,
+        leftCol, rightCol,
+        regionAnchorRows, regionAnchorCols
+      )
+    
+    // Step 6: Filter out regions that don't actually have enough content
+    // A valid table should have anchors and content
+    candidates.filter { region =>
+      val cellCount = countCellsInRegion(grid, region)
+      val contentDensity = cellCount.toDouble / region.area
+      
+      // Keep the region if it has a reasonable density of filled cells
+      // and contains some anchor rows and columns
+      contentDensity >= 0.1 && 
+      region.anchorRows.nonEmpty && 
+      region.anchorCols.nonEmpty
+    }.toList
+    
+  /**
+   * Finds gaps (sequences of missing indices) in a sorted sequence.
+   *
+   * @param indices Sorted sequence of indices
+   * @param maxIndex The maximum possible index (exclusive)
+   * @param minGapSize The minimum gap size to consider significant
+   * @return List of gaps as (start, end) pairs
+   */
+  private def findGaps(indices: Seq[Int], maxIndex: Int, minGapSize: Int): List[(Int, Int)] =
+    if indices.isEmpty then
+      return List((0, maxIndex - 1))
+      
+    val result = scala.collection.mutable.ListBuffer[(Int, Int)]()
+    
+    // Check for a gap at the beginning
+    if indices.head > minGapSize then
+      result += ((0, indices.head - 1))
+    
+    // Check for gaps between indices
+    for i <- 0 until indices.size - 1 do
+      val current = indices(i)
+      val next = indices(i + 1)
+      
+      if next - current > minGapSize then
+        result += ((current + 1, next - 1))
+    
+    // Check for a gap at the end
+    if maxIndex - indices.last > minGapSize then
+      result += ((indices.last + 1, maxIndex - 1))
+    
+    result.toList
+    
+  /**
+   * Converts a list of gaps into a list of segments.
+   *
+   * @param gaps List of gaps as (start, end) pairs
+   * @param maxIndex The maximum possible index (exclusive)
+   * @return List of segments as (start, end) pairs
+   */
+  private def segmentsFromGaps(gaps: List[(Int, Int)], maxIndex: Int): List[(Int, Int)] =
+    if gaps.isEmpty then
+      return List((0, maxIndex - 1))
+      
+    val sortedGaps = gaps.sortBy(_._1)
+    val result = scala.collection.mutable.ListBuffer[(Int, Int)]()
+    
+    // Add segment before first gap
+    if sortedGaps.head._1 > 0 then
+      result += ((0, sortedGaps.head._1 - 1))
+    
+    // Add segments between gaps
+    for i <- 0 until sortedGaps.size - 1 do
+      val currentGapEnd = sortedGaps(i)._2
+      val nextGapStart = sortedGaps(i + 1)._1
+      
+      if nextGapStart > currentGapEnd + 1 then
+        result += ((currentGapEnd + 1, nextGapStart - 1))
+    
+    // Add segment after last gap
+    if sortedGaps.last._2 < maxIndex - 1 then
+      result += ((sortedGaps.last._2 + 1, maxIndex - 1))
+    
+    result.toList
+    
+  /**
+   * Counts the number of non-empty cells in a table region.
+   *
+   * @param grid The sheet grid
+   * @param region The table region to analyze
+   * @return Count of non-empty cells in the region
+   */
+  private def countCellsInRegion(grid: SheetGrid, region: TableRegion): Int =
+    val cells = grid.cells.filter { case ((row, col), _) =>
+      row >= region.topRow && row <= region.bottomRow &&
+      col >= region.leftCol && col <= region.rightCol
+    }
+    
+    cells.size
 
   /**
    * Identifies anchors for a specific dimension (rows or columns).

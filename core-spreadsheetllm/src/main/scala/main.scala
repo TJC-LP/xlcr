@@ -57,6 +57,25 @@ def main(args: String*): Unit =
         .action((x, c) => c.copy(coordinateCorrectionValue = x))
         .text("Value to use for coordinate correction (default: 2)"),
       
+      // Table detection options
+      opt[Unit]("no-table-detection")
+        .action((_, c) => c.copy(enableTableDetection = false))
+        .text("Disable multi-table detection in sheets"),
+        
+      opt[Int]("min-gap-size")
+        .valueName("<n>")
+        .action((x, c) => c.copy(minGapSize = x))
+        .text("Minimum gap size for table detection (default: 3)"),
+      
+      // Advanced compression options
+      opt[Unit]("semantic-compression")
+        .action((_, c) => c.copy(enableSemanticCompression = true))
+        .text("Enable semantic compression for text-heavy cells"),
+        
+      opt[Unit]("no-enhanced-formulas")
+        .action((_, c) => c.copy(enableEnhancedFormulas = false))
+        .text("Disable enhanced formula relationship detection"),
+      
       // Performance options
       opt[Int]("threads")
         .valueName("<n>")
@@ -81,8 +100,8 @@ def main(args: String*): Unit =
       
       // Run the pipeline using the bridges
       import bridges.spreadsheetllm.SpreadsheetLLMBridgeRegistry
-      // Initialize bridge registry
-      SpreadsheetLLMBridgeRegistry.registerAll()
+      // Initialize bridge registry with the configuration
+      SpreadsheetLLMBridgeRegistry.registerAll(config)
       
       // Run the pipeline
       try

@@ -46,15 +46,26 @@ object CompressionPipeline:
     // Metadata to track compression steps
     var compressionMetadata = Map.empty[String, String]
     
-    // Step 1: Anchor Extraction (optional)
-    val (anchorGrid, anchorMetadata) = 
+    // Step 1: Anchor Extraction and Table Detection (optional)
+    val (anchorGrid, anchorMetadata, detectedTables) = 
       if config.disableAnchorExtraction then
         logger.info("Anchor extraction disabled, using full sheet content")
-        (grid, Map("anchorExtraction" -> "disabled"))
+        (grid, Map("anchorExtraction" -> "disabled"), List.empty)
       else
         logger.info(s"Performing anchor extraction with threshold: ${config.anchorThreshold}")
         val startTime = System.currentTimeMillis()
+        
+        // First identify anchors to detect tables
+        val (anchorRows, anchorCols) = AnchorExtractor.identifyAnchors(grid)
+        
+        // Detect table regions (if table detection is enabled)
+        val tableRegions = 
+          if config.enableTableDetection then AnchorExtractor.detectTableRegions(grid, anchorRows, anchorCols)
+          else List.empty
+        
+        // Then extract the grid with pruning
         val extractedGrid = AnchorExtractor.extract(grid, config.anchorThreshold)
+        
         val endTime = System.currentTimeMillis()
         
         val metadata = Map(
@@ -62,10 +73,24 @@ object CompressionPipeline:
           "anchorThreshold" -> config.anchorThreshold.toString,
           "extractionTimeMs" -> (endTime - startTime).toString,
           "originalCellCount" -> (grid.rowCount * grid.colCount).toString,
-          "retainedCellCount" -> extractedGrid.cells.size.toString
+          "retainedCellCount" -> extractedGrid.cells.size.toString,
+          "tablesDetected" -> tableRegions.size.toString
         )
         
-        (extractedGrid, metadata)
+        // Convert TableRegion objects to ranges for later use
+        val tables = tableRegions.map { region =>
+          val topLeft = InvertedIndexTranslator.CellAddress(region.topRow, region.leftCol)
+          val bottomRight = InvertedIndexTranslator.CellAddress(region.bottomRow, region.rightCol)
+          val range = s"${topLeft.toA1Notation}:${bottomRight.toA1Notation}"
+          
+          // Try to detect if the first row is a header (usually an anchor row)
+          val hasHeader = region.anchorRows.contains(region.topRow)
+          val headerRow = if hasHeader then Some(region.topRow) else None
+          
+          (range, hasHeader, headerRow)
+        }
+        
+        (extractedGrid, metadata, tables)
     
     compressionMetadata ++= anchorMetadata
     
@@ -114,14 +139,28 @@ object CompressionPipeline:
     
     logger.info(f"Compression complete for $sheetName: $originalCellCount cells -> $finalEntryCount entries ($overallCompressionRatio%.2fx compression)")
     
-    // Create the final CompressedSheet model
-    CompressedSheet(
+    // Collect formula information
+    val formulas = rawCells.filter(_.isFormula).map { cell =>
+      val formula = cell.value // In reality, this would be the actual formula text
+      val address = InvertedIndexTranslator.CellAddress(cell.row, cell.col).toA1Notation
+      (formula, address)
+    }.toMap
+    
+    // Create the basic compressed sheet
+    var compressedSheet = CompressedSheet(
       name = sheetName,
       content = finalContent,
+      formulas = formulas,
       originalRowCount = rowCount,
       originalColumnCount = colCount,
       compressionMetadata = compressionMetadata
     )
+    
+    // Add detected tables
+    for (range, hasHeaders, headerRow) <- detectedTables do
+      compressedSheet = compressedSheet.addTable(range, hasHeaders, headerRow)
+      
+    compressedSheet
   
   /**
    * Compresses a workbook containing multiple sheets.
