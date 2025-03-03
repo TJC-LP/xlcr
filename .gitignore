@@ -57,3 +57,6 @@ repomix*
 
 ### Aspose ###
 *.lic
+
+### Git ###
+changes.txt

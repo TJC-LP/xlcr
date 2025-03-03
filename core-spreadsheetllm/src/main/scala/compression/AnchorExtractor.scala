@@ -181,17 +181,7 @@ object AnchorExtractor:
     
     logger.info(s"Identified ${anchorRows.size} anchor rows and ${anchorCols.size} anchor columns")
     (anchorRows, anchorCols)
-    
-  /**
-   * Detects potential table regions within the sheet based on anchor rows and columns.
-   * This uses a more sophisticated approach to identify distinct tables by looking for
-   * clusters of anchors with empty regions between them.
-   *
-   * @param grid The sheet grid to analyze
-   * @param anchorRows Set of identified anchor rows
-   * @param anchorCols Set of identified anchor columns
-   * @return List of detected table regions
-   */
+
   /**
    * Detects potential table regions within the sheet based on anchor rows and columns.
    * This method is made public so it can be called from the CompressionPipeline.
