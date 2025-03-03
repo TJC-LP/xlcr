@@ -36,27 +36,27 @@ def main(args: String*): Unit =
       opt[String]("licenseWords")
         .valueName("<path>")
         .action((path, c) => c.copy(licenseWords = Some(path)))
-        .text("Path to Aspose.Words license file"),
+        .text("Path to Aspose.Words license file (optional, auto-detected if not specified)"),
 
       opt[String]("licenseCells")
         .valueName("<path>")
         .action((path, c) => c.copy(licenseCells = Some(path)))
-        .text("Path to Aspose.Cells license file"),
+        .text("Path to Aspose.Cells license file (optional, auto-detected if not specified)"),
 
       opt[String]("licenseEmail")
         .valueName("<path>")
         .action((path, c) => c.copy(licenseEmail = Some(path)))
-        .text("Path to Aspose.Email license file"),
+        .text("Path to Aspose.Email license file (optional, auto-detected if not specified)"),
 
       opt[String]("licenseSlides")
         .valueName("<path>")
         .action((path, c) => c.copy(licenseSlides = Some(path)))
-        .text("Path to Aspose.Slides license file"),
+        .text("Path to Aspose.Slides license file (optional, auto-detected if not specified)"),
 
       opt[String]("licenseTotal")
         .valueName("<path>")
         .action((path, c) => c.copy(licenseTotal = Some(path)))
-        .text("Path to Aspose Total license (covers all products)")
+        .text("Path to Aspose Total license (covers all products, optional, auto-detected if not specified)")
     )
   }
 
@@ -84,26 +84,39 @@ def main(args: String*): Unit =
 private def applyAsposeLicenses(cfg: AsposeConfig): Unit =
   val logger = LoggerFactory.getLogger(getClass)
   
-  // If a total license is specified, load that for all products
-  cfg.licenseTotal match
-    case Some(licPath) =>
-      logger.info(s"Loading Aspose.Total license from: $licPath")
-      AsposeLicense.loadLicenseForAll(licPath)
-    case None =>
-      // Otherwise load each license individually if present
-      cfg.licenseWords.foreach { lw =>
-        logger.info(s"Loading Aspose.Words license from: $lw")
-        AsposeLicense.loadWordsLicense(lw)
-      }
-      cfg.licenseCells.foreach { lc =>
-        logger.info(s"Loading Aspose.Cells license from: $lc")
-        AsposeLicense.loadCellsLicense(lc)
-      }
-      cfg.licenseEmail.foreach { le =>
-        logger.info(s"Loading Aspose.Email license from: $le")
-        AsposeLicense.loadEmailLicense(le)
-      }
-      cfg.licenseSlides.foreach { ls =>
-        logger.info(s"Loading Aspose.Slides license from: $ls")
-        AsposeLicense.loadSlidesLicense(ls)
-      }
+  // First try explicit paths from command line args
+  val explicitPathsProvided = cfg.licenseTotal.isDefined || 
+                             cfg.licenseWords.isDefined || 
+                             cfg.licenseCells.isDefined || 
+                             cfg.licenseEmail.isDefined || 
+                             cfg.licenseSlides.isDefined
+  
+  if (explicitPathsProvided) {
+    // If a total license is specified, load that for all products
+    cfg.licenseTotal match
+      case Some(licPath) =>
+        logger.info(s"Loading Aspose.Total license from: $licPath")
+        AsposeLicense.loadLicenseForAll(licPath)
+      case None =>
+        // Otherwise load each license individually if present
+        cfg.licenseWords.foreach { lw =>
+          logger.info(s"Loading Aspose.Words license from: $lw")
+          AsposeLicense.loadWordsLicense(lw)
+        }
+        cfg.licenseCells.foreach { lc =>
+          logger.info(s"Loading Aspose.Cells license from: $lc")
+          AsposeLicense.loadCellsLicense(lc)
+        }
+        cfg.licenseEmail.foreach { le =>
+          logger.info(s"Loading Aspose.Email license from: $le")
+          AsposeLicense.loadEmailLicense(le)
+        }
+        cfg.licenseSlides.foreach { ls =>
+          logger.info(s"Loading Aspose.Slides license from: $ls")
+          AsposeLicense.loadSlidesLicense(ls)
+        }
+  } else {
+    // No explicit paths provided, try auto-detection
+    logger.info("No license paths specified, attempting auto-detection...")
+    AsposeLicense.initializeIfNeeded()
+  }
