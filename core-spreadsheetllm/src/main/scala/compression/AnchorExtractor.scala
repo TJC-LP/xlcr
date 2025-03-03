@@ -1,6 +1,8 @@
 package com.tjclp.xlcr
 package compression
 
+import models.excel.{CellData, SheetData, ExcelReference}
+
 import org.slf4j.LoggerFactory
 
 /**
@@ -29,8 +31,10 @@ object AnchorExtractor:
    * @param isNumeric Whether the cell contains numeric content
    * @param isDate Whether the cell contains a date
    * @param isEmpty Whether the cell is empty
+   * @param numberFormatString The Excel number format string if available
    * @param originalRow The original row index before remapping (for debugging)
    * @param originalCol The original column index before remapping (for debugging)
+   * @param cellData The original CellData that this cell was derived from
    */
   case class CellInfo(
                        row: Int,
@@ -41,9 +45,49 @@ object AnchorExtractor:
                        isNumeric: Boolean = false,
                        isDate: Boolean = false,
                        isEmpty: Boolean = false,
+                       numberFormatString: Option[String] = None,
                        originalRow: Option[Int] = None,
-                       originalCol: Option[Int] = None
+                       originalCol: Option[Int] = None,
+                       cellData: Option[CellData] = None
                      )
+  
+  object CellInfo:
+    /**
+     * Convert from CellData to CellInfo
+     * 
+     * @param cellData The CellData from the core Excel model
+     * @return CellInfo suitable for anchor extraction
+     */
+    def fromCellData(cellData: CellData): CellInfo =
+      // Extract the row and column from the cell's A1 reference
+      // Adjust row index to be 0-based (Excel is 1-based for rows)
+      val rowIndex = cellData.rowIndex - 1
+      val colIndex = cellData.columnIndex
+      
+      // Use formatted value if available, otherwise use raw value
+      val displayValue = cellData.formattedValue.getOrElse(cellData.value.getOrElse(""))
+      
+      // Extract formatting information
+      val isBold = cellData.font.exists(_.bold)
+      val isFormula = cellData.formula.isDefined
+      val isNumeric = cellData.cellType == "NUMERIC"
+      val isDate = cellData.dataFormat.exists(format => 
+        format.contains("d") && format.contains("m") && format.contains("y") || 
+        format == "m/d/yy" || format.contains("date"))
+      val isEmpty = displayValue.trim.isEmpty || cellData.cellType == "BLANK"
+      
+      CellInfo(
+        row = rowIndex,
+        col = colIndex,
+        value = displayValue,
+        isBold = isBold,
+        isFormula = isFormula,
+        isNumeric = isNumeric,
+        isDate = isDate,
+        isEmpty = isEmpty,
+        numberFormatString = cellData.dataFormat,
+        cellData = Some(cellData)
+      )
 
   /**
    * Represents a spreadsheet grid for anchor extraction.
@@ -127,6 +171,26 @@ object AnchorExtractor:
       }
 
       SheetGrid(remappedCells, sortedRows.size, sortedCols.size)
+  
+  object SheetGrid:
+    /**
+     * Create a SheetGrid from a SheetData
+     * 
+     * @param sheetData The sheet data from the core Excel model
+     * @return A SheetGrid suitable for anchor extraction
+     */
+    def fromSheetData(sheetData: SheetData): SheetGrid =
+      // Convert each cell in the SheetData to a CellInfo
+      val cellMap = sheetData.cells.map { cellData =>
+        val cellInfo = CellInfo.fromCellData(cellData)
+        (cellInfo.row, cellInfo.col) -> cellInfo
+      }.toMap
+      
+      SheetGrid(
+        cells = cellMap,
+        rowCount = sheetData.rowCount,
+        colCount = sheetData.columnCount
+      )
 
   /**
    * Information about a table detected in the grid
