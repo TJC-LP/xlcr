@@ -78,6 +78,45 @@ object CellData:
     )
 
   private def extractCellData(cell: Cell, cellType: CellType, evaluator: FormulaEvaluator, formatter: DataFormatter): (Option[String], Option[String], Option[Byte], Option[String]) =
+    def extractFormulaData(formulaCell: Cell): (Option[String], Option[String], Option[Byte], Option[String]) =
+      try
+        val evaluatedValue = evaluator.evaluate(formulaCell)
+        if evaluatedValue != null then
+          evaluatedValue.getCellType match
+            case CellType.STRING =>
+              (Some(evaluatedValue.getStringValue), Some(formulaCell.getCellFormula), None, None)
+            case CellType.NUMERIC =>
+              (Some(evaluatedValue.getNumberValue.toString), Some(formulaCell.getCellFormula), None, Some(formatter.formatCellValue(formulaCell, evaluator)))
+            case CellType.BOOLEAN =>
+              (Some(evaluatedValue.getBooleanValue.toString), Some(formulaCell.getCellFormula), None, None)
+            case CellType.ERROR =>
+              (None, Some(formulaCell.getCellFormula), Some(evaluatedValue.getErrorValue), None)
+            case CellType.BLANK =>
+              (None, Some(formulaCell.getCellFormula), None, None)
+            case CellType.FORMULA =>
+              // Recursive case: if we get FORMULA again, try to evaluate it
+              extractFormulaData(formulaCell)
+            case _ =>
+              (None, Some(formulaCell.getCellFormula), None, None)
+        else (None, Some(formulaCell.getCellFormula), None, None)
+      catch
+        case _: Exception =>
+          // Fallback to cached formula result
+          val cachedFormulaType = formulaCell.getCachedFormulaResultType
+          val fallbackFormula = try Some(formulaCell.getCellFormula) catch case _: Exception => None
+
+          cachedFormulaType match
+            case CellType.STRING =>
+              (Some(formulaCell.getStringCellValue), fallbackFormula, None, None)
+            case CellType.NUMERIC =>
+              (Some(formulaCell.getNumericCellValue.toString), fallbackFormula, None, None)
+            case CellType.BOOLEAN =>
+              (Some(formulaCell.getBooleanCellValue.toString), fallbackFormula, None, None)
+            case CellType.ERROR =>
+              (None, fallbackFormula, Some(formulaCell.getErrorCellValue), None)
+            case _ =>
+              (None, fallbackFormula, None, None)
+
     cellType match
       case CellType.STRING =>
         (Some(cell.getStringCellValue), None, None, None)
@@ -86,44 +125,14 @@ object CellData:
       case CellType.BOOLEAN =>
         (Some(cell.getBooleanCellValue.toString), None, None, None)
       case CellType.FORMULA =>
-        val formula = Some(cell.getCellFormula)
-        try
-          val evaluatedValue = evaluator.evaluate(cell)
-          if evaluatedValue != null then
-            evaluatedValue.getCellType match
-              case CellType.STRING =>
-                (Some(evaluatedValue.getStringValue), formula, None, None)
-              case CellType.NUMERIC =>
-                (Some(evaluatedValue.getNumberValue.toString), formula, None, Some(formatter.formatCellValue(cell, evaluator)))
-              case CellType.BOOLEAN =>
-                (Some(evaluatedValue.getBooleanValue.toString), formula, None, None)
-              case CellType.ERROR =>
-                (None, formula, Some(evaluatedValue.getErrorValue), None)
-              case CellType.BLANK =>
-                (None, formula, None, None)
-              case _ =>
-                (None, formula, None, None)
-          else (None, formula, None, None)
-        catch
-          case _: Exception =>
-            // Fallback to cached formula result
-            cell.getCachedFormulaResultType match
-              case CellType.STRING =>
-                (Some(cell.getStringCellValue), formula, None, None)
-              case CellType.NUMERIC =>
-                (Some(cell.getNumericCellValue.toString), formula, None, Some(formatter.formatCellValue(cell)))
-              case CellType.BOOLEAN =>
-                (Some(cell.getBooleanCellValue.toString), formula, None, None)
-              case CellType.ERROR =>
-                (None, formula, Some(cell.getErrorCellValue), None)
-              case _ =>
-                (None, formula, None, None)
+        extractFormulaData(cell)
       case CellType.ERROR =>
         (None, None, Some(cell.getErrorCellValue), None)
       case CellType.BLANK =>
         (None, None, None, None)
       case _ =>
         (None, None, None, None)
+
 
   private def extractCommentData(cell: Cell): (Option[String], Option[String]) =
     Option(cell.getCellComment).map(comment =>
