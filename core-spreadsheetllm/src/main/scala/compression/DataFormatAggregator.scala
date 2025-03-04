@@ -182,10 +182,7 @@ object DataFormatAggregator:
         matchInfo.append("No pattern matched → Text")
         DataType.Text
       
-    // Log detailed pattern matching info for debugging
-    if value.contains("30") || value.contains("25") || value.contains("23") || value.contains("$") || value.contains("5,000") then
-      logger.info(s"Type inference for '$value': ${matchInfo.toString} → result: $result")
-      
+    // Only log in verbose mode (disabled by default)
     // Return the determined type
     result
 
@@ -204,9 +201,6 @@ object DataFormatAggregator:
     val (candidates, preserved) = contentMap.partition { case (content, _) =>
       val dataType = typeMap.getOrElse(content, DataType.Text)
 
-      // Log for debugging
-      logger.info(s"Content: '$content', detected type: $dataType")
-      
       // Only aggregate deterministic formats
       val isCandidate = dataType match
         case DataType.Integer | DataType.Float | DataType.Currency |
@@ -214,15 +208,11 @@ object DataFormatAggregator:
              DataType.Year | DataType.ScientificNotation => true
         case _ => false
       
-      // Log decision for debugging  
-      logger.info(s"Will aggregate '$content'? $isCandidate")
-      
       isCandidate
     }
     
-    // More detailed logging for debugging
-    logger.info(s"Aggregation candidates (${candidates.size}): ${candidates.keys.mkString(", ")}")
-    logger.info(s"Preserved values (${preserved.size}): ${preserved.keys.mkString(", ")}")
+    // Simply log the number of candidates in normal log level
+    logger.info(s"Found ${candidates.size} candidate entries for format aggregation")
     
     (candidates, preserved)
 
@@ -252,8 +242,6 @@ object DataFormatAggregator:
     )
     
     if isAllIntegers && candidates.size >= 2 && candidates.size <= 10 then
-      logger.info(s"Detected ${candidates.size} numeric values that could be aggregated together")
-      
       // Group all the numeric values under a common descriptor
       // Choose the smallest value as the representative
       val minValue = candidates.keys.minBy(_.trim.toDoubleOption.getOrElse(Double.MaxValue))
@@ -261,8 +249,6 @@ object DataFormatAggregator:
       val dataType = typeMap.getOrElse(minValue, DataType.Integer)
       val formatCode = inferFormatCode(minValue, dataType, None)
       val descriptor = FormatDescriptor(dataType, formatCode, Some(s"<Numbers like $minValue>"))
-      
-      logger.info(s"Forcing aggregation of all numeric values under descriptor: ${descriptor.toFormatString}")
       return Map(descriptor -> candidates)
     
     // Normal grouping  
@@ -278,15 +264,7 @@ object DataFormatAggregator:
       // Create format descriptor with type, format code, and sample value
       val descriptor = FormatDescriptor(dataType, formatCode, Some(content))
       
-      // Log for debugging
-      logger.info(s"Grouping '$content' as format descriptor: ${descriptor.toFormatString}")
-      
       descriptor
-    }
-    
-    // Log group sizes for debugging
-    grouped.foreach { case (descriptor, entries) =>
-      logger.info(s"Format group '${descriptor.toFormatString}' has ${entries.size} entries: ${entries.keys.mkString(", ")}")
     }
     
     grouped
@@ -413,9 +391,29 @@ object DataFormatAggregator:
       return Map.empty
       
     formatGroups.flatMap { case (formatDescriptor, entries) =>
-      // If there's only one entry, no need to aggregate
-      if entries.size <= 1 then
-        logger.info(s"Format '${formatDescriptor.toFormatString}' has only ${entries.size} entry, not aggregating")
+      // We'll always aggregate entries by data type, even if there's only one
+      // This improves readability by using descriptive format names rather than raw values
+      // Only skip aggregation for non-deterministic data types like Text
+      
+      // Special handling for dates - always aggregate even when there's only one entry
+      if formatDescriptor.dataType == DataType.Date && entries.size == 1 then
+        // Aggregate the single date entry to improve consistency
+        val locationEither = entries.values.head
+        val locations = locationEither match
+          case Left(singleLocation) => List(singleLocation)
+          case Right(locationList) => locationList
+          
+        // Use the format descriptor as the new key, with better naming
+        val formatKey = formatDescriptor.formatCode match
+          case Some(code) => s"<Date:$code>"
+          case None => "<Date>"
+          
+        if locations.size == 1 then
+          Map(formatKey -> Left(locations.head))
+        else
+          Map(formatKey -> Right(locations))
+      // For other types with size 1, keep original, except for well-known types
+      else if entries.size == 1 && !shouldAlwaysAggregate(formatDescriptor.dataType) then
         entries
       else
         // Aggregate all locations for this format into one entry
@@ -427,9 +425,6 @@ object DataFormatAggregator:
 
         // Use the format descriptor as the new key
         val formatKey = formatDescriptor.toFormatString
-        
-        logger.info(s"Aggregating ${entries.size} entries as '$formatKey' with ${allLocations.size} locations")
-        logger.info(s"Original entries being aggregated: ${entries.keys.mkString(", ")}")
 
         // Create aggregated entry
         if allLocations.size == 1 then
@@ -437,6 +432,16 @@ object DataFormatAggregator:
         else
           Map(formatKey -> Right(allLocations))
     }
+    
+  /**
+   * Determines if a data type should always be aggregated, even with just one entry.
+   * This helps consistency in the output and makes the data more readable for LLMs.
+   */
+  private def shouldAlwaysAggregate(dataType: DataType): Boolean =
+    dataType match
+      case DataType.Date | DataType.Time | DataType.Currency | 
+           DataType.Percentage | DataType.Year => true
+      case _ => false
 
   /**
    * Data type classifications for cell values.
@@ -459,12 +464,47 @@ object DataFormatAggregator:
                              ):
     /**
      * Convert to a string representation for use as a map key.
+     * Creates a more descriptive and LLM-friendly format description.
      */
     def toFormatString: String =
-      formatCode match
-        case Some(code) =>
-          val prefix = sampleValue.map(v => s"$v: ").getOrElse("")
-          s"$prefix<${dataType.toString}:$code>"
-        case None =>
-          val prefix = sampleValue.map(v => s"$v: ").getOrElse("")
-          s"$prefix<${dataType.toString}>"
+      // Get a more human-readable description of the dataType
+      val typeDesc = dataType match
+        case DataType.Date => "Date"
+        case DataType.Time => "Time"
+        case DataType.Currency => "Currency"
+        case DataType.Percentage => "Percentage" 
+        case DataType.Integer => "Number"
+        case DataType.Float => "Decimal"
+        case DataType.Year => "Year"
+        case DataType.ScientificNotation => "Scientific"
+        case DataType.Email => "Email"
+        case DataType.Text => "Text"
+        case DataType.Empty => "Empty"
+      
+      // Different format based on type
+      (dataType, formatCode, sampleValue) match
+        // For dates, prefer using just the format
+        case (DataType.Date, Some(code), _) => s"<$typeDesc:$code>"
+        case (DataType.Date, None, _) => s"<$typeDesc>"
+        
+        // For times, prefer using just the format  
+        case (DataType.Time, Some(code), _) => s"<$typeDesc:$code>"
+        case (DataType.Time, None, _) => s"<$typeDesc>"
+        
+        // For currency, prefer descriptive format
+        case (DataType.Currency, Some(code), Some(sample)) => 
+          // Extract the currency symbol if possible
+          val symbol = sample.trim.find("$€£¥₹".contains(_)).map(_.toString).getOrElse("$")
+          s"<$typeDesc like $symbol>"
+        case (DataType.Currency, _, _) => "<Currency>"
+        
+        // For numbers, prefer "Numbers like X" format
+        case ((DataType.Integer | DataType.Float), _, Some(sample)) => 
+          s"<$typeDesc like $sample>"
+        
+        // For percentages, just use "Percentage" format
+        case (DataType.Percentage, _, _) => "<Percentage>"
+        
+        // For everything else, use type and format code if available
+        case (_, Some(code), _) => s"<$typeDesc:$code>"
+        case (_, None, _) => s"<$typeDesc>"

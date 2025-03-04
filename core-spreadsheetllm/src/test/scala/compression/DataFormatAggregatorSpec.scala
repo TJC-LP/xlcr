@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 
 class DataFormatAggregatorSpec extends AnyFlatSpec with Matchers {
 
-  "DataFormatAggregator" should "identify numeric values for aggregation" in {
+  "DataFormatAggregator" should "aggregate numeric values" in {
     // Create a map with numeric values
     val contentMap = Map(
       "100" -> Left("A1"),
@@ -30,9 +30,17 @@ class DataFormatAggregatorSpec extends AnyFlatSpec with Matchers {
     val config = SpreadsheetLLMConfig()
     val result = DataFormatAggregator.aggregate(contentMap, grid, config)
 
-    // Verify result contains all keys from the input
-    result.size shouldBe 4
-    result.keys should contain allOf("100", "200", "300", "Header")
+    // Verify the numbers are aggregated into a single representation
+    result.size shouldBe 2
+    
+    // The text value should be preserved
+    result.keys should contain("Header")
+    
+    // The numeric values should be aggregated
+    result.keys should not contain allOf("100", "200", "300")
+    
+    // Should see a Number format entry instead
+    result.keys.exists(_.contains("<Number")) shouldBe true
 
     // Verify the log output shows numeric values were identified as candidates
     // (Visual verification via log output: "Found 3 candidate entries for format aggregation")
@@ -65,7 +73,7 @@ class DataFormatAggregatorSpec extends AnyFlatSpec with Matchers {
     result.keys should contain allOf("United States", "Canada", "France")
   }
 
-  it should "identify date values for aggregation" in {
+  it should "aggregate date values even with single entries" in {
     // Create a map with date values
     val contentMap = Map(
       "2023-01-01" -> Left("A1"),
@@ -85,11 +93,36 @@ class DataFormatAggregatorSpec extends AnyFlatSpec with Matchers {
     val config = SpreadsheetLLMConfig()
     val result = DataFormatAggregator.aggregate(contentMap, grid, config)
 
-    // Verify result contains all the date values
-    result.size shouldBe 3
-    result.keys should contain allOf("2023-01-01", "2023-02-15", "2023-03-30")
+    // Each date should be replaced with a format descriptor
+    result.keys should not contain allOf("2023-01-01", "2023-02-15", "2023-03-30")
+    
+    // Should see Date format entries instead
+    result.keys.exists(_.contains("<Date")) shouldBe true
+    
+    // Should consolidate similar date formats 
+    result.size should be <= 3
+  }
+  
+  it should "always aggregate single date entries" in {
+    // Create a map with just a single date value
+    val contentMap = Map(
+      "2023-01-01" -> Left("A1")
+    )
 
-    // Verify the log output shows date values were identified as candidates
-    // (Visual verification via log output: "Found 3 candidate entries for format aggregation")
+    // Create grid with a cell that indicates date type
+    val cells = Map(
+      (0, 0) -> CellInfo(0, 0, "2023-01-01", isDate = true)
+    )
+    val grid = SheetGrid(cells, 1, 1)
+
+    // Run aggregation
+    val config = SpreadsheetLLMConfig()
+    val result = DataFormatAggregator.aggregate(contentMap, grid, config)
+
+    // The date should be replaced with a format descriptor even though it's the only entry
+    result.keys should not contain "2023-01-01"
+    
+    // Should see a Date format entry instead
+    result.keys.exists(_.contains("<Date")) shouldBe true
   }
 }
