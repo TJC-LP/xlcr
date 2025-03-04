@@ -21,7 +21,7 @@ object AnchorExtractor:
    *
    * @param grid            The sheet grid to process
    * @param anchorThreshold How many neighboring rows/columns to keep around anchors
-   * @return A new grid with non-anchor cells pruned and coordinates remapped
+   * @return A new grid with non-anchor cells pruned but original coordinates preserved
    */
   def extract(grid: SheetGrid, anchorThreshold: Int): SheetGrid =
     // Step 1: Identify structural anchors
@@ -33,14 +33,12 @@ object AnchorExtractor:
     )
 
     // Step 3: Filter the grid to only keep cells in the anchor rows and columns
+    // but preserve original coordinates (no remapping)
     val prunedGrid = grid.filterToKeep(rowsToKeep, colsToKeep)
-
-    // Step 4: Remap coordinates to close gaps
-    val remappedGrid = prunedGrid.remapCoordinates()
 
     // Log compression statistics
     val originalCellCount = grid.rowCount * grid.colCount
-    val retainedCellCount = remappedGrid.cells.size
+    val retainedCellCount = prunedGrid.cells.size
     val compressionRatio = if originalCellCount > 0 then
       originalCellCount.toDouble / retainedCellCount
     else
@@ -48,7 +46,8 @@ object AnchorExtractor:
 
     logger.info(f"Anchor extraction: $originalCellCount cells -> $retainedCellCount cells ($compressionRatio%.2fx compression)")
 
-    remappedGrid
+    // Return the pruned grid directly without coordinate remapping
+    prunedGrid
 
   /**
    * Identifies which rows and columns are structural anchors in the sheet
@@ -514,6 +513,13 @@ object AnchorExtractor:
       // Adjust row index to be 0-based (Excel is 1-based for rows)
       val rowIndex = cellData.rowIndex - 1
       val colIndex = cellData.columnIndex
+      
+      // Validate column index is not negative
+      val validatedColIndex = math.max(0, colIndex)
+      
+      if (colIndex < 0) {
+        logger.warn(s"Detected negative column index: $colIndex in cell ${cellData.referenceA1}, corrected to 0")
+      }
 
       // Use formatted value if available, otherwise use raw value
       val displayValue = cellData.formattedValue.getOrElse(cellData.value.getOrElse(""))
@@ -529,7 +535,7 @@ object AnchorExtractor:
 
       CellInfo(
         row = rowIndex,
-        col = colIndex,
+        col = validatedColIndex, // Use validated column index
         value = displayValue,
         isBold = isBold,
         isFormula = isFormula,

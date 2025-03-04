@@ -195,12 +195,16 @@ object InvertedIndexTranslator:
      * @return The Excel A1 notation for this cell address
      */
     def toA1Notation: String =
+      // Ensure column index is valid (non-negative)
+      val validCol = math.max(0, col)
+      
       // Using core ExcelUtils to ensure consistency with the rest of the codebase
-      val excelCol = ExcelReference.Col(col)
+      val excelCol = ExcelReference.Col(validCol)
       val columnName = ExcelUtils.columnToString(excelCol)
 
-      // Convert from 0-based to 1-based row indexing for Excel
-      s"$columnName${row + 1}"
+      // Ensure row index is valid and convert from 0-based to 1-based row indexing for Excel
+      val validRow = math.max(0, row) + 1
+      s"$columnName$validRow"
 
   /**
    * Represents a range of cells in A1 notation (e.g., "A1:B5").
