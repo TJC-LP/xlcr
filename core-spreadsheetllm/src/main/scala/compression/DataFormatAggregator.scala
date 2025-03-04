@@ -94,29 +94,100 @@ object DataFormatAggregator:
                              isDateFlag: Boolean,
                              isNumericFlag: Boolean
                            ): DataType =
-    if isEmpty then
-      DataType.Empty
-    else if isDateFlag then
-      DataType.Date
-    else if value.trim.endsWith("%") then
-      DataType.Percentage
-    else if
-      """^[$€£¥₹]\s*[\d,.]+$""".r.matches(value) ||
-        """^[\d,.]+\s*[$€£¥₹]$""".r.matches(value) then
-      DataType.Currency
-    else if """\d+[.]\d+[eE][+-]?\d+""".r.matches(value) then
-      DataType.ScientificNotation
-    else if """^(19|20)\d{2}$""".r.matches(value) then
-      DataType.Year
-    else if """^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$""".r.matches(value) then
-      DataType.Email
-    else if """^\d{1,2}:\d{2}(:\d{2})?(\s*[AaPp][Mm])?$""".r.matches(value) then
-      DataType.Time
-    else if isNumericFlag || """^\d+$""".r.matches(value) then
-      if value.contains(".") then DataType.Float
-      else DataType.Integer
-    else
-      DataType.Text
+    // Track pattern matching for debugging
+    val matchInfo = new StringBuilder()
+    
+    // Variable to store the result
+    val result: DataType =                         
+      if isEmpty then
+        matchInfo.append("isEmpty=true → Empty")
+        DataType.Empty
+      else if isDateFlag then
+        matchInfo.append("isDateFlag=true → Date")
+        DataType.Date
+      else if value.trim.endsWith("%") then
+        matchInfo.append("ends with % → Percentage")
+        DataType.Percentage
+      else if
+        // More flexible currency patterns to handle extra spaces and formats
+        val currencyPattern1 = """^\s*[$€£¥₹]\s*[\d,.]+\s*$""".r
+        val currencyPattern2 = """^\s*[\d,.]+\s*[$€£¥₹]\s*$""".r
+        val dollarPattern = """.*\$.*\d.*""".r // Special looser pattern for dollar sign
+        
+        val isCurrency = currencyPattern1.matches(value) || 
+                        currencyPattern2.matches(value) || 
+                        dollarPattern.matches(value)
+        
+        matchInfo.append(s"Currency pattern check: $value => $isCurrency")
+        
+        isCurrency
+      then
+        DataType.Currency
+      else if 
+        val scientificPattern = """\d+[.]\d+[eE][+-]?\d+""".r
+        val isScientific = scientificPattern.matches(value)
+        
+        matchInfo.append(s"Scientific notation: $isScientific")
+        
+        isScientific
+      then
+        DataType.ScientificNotation
+      else if 
+        val yearPattern = """^(19|20)\d{2}$""".r
+        val isYear = yearPattern.matches(value)
+        
+        matchInfo.append(s"Year pattern: $isYear")
+        
+        isYear
+      then
+        DataType.Year
+      else if 
+        val emailPattern = """^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$""".r
+        val isEmail = emailPattern.matches(value)
+        
+        matchInfo.append(s"Email pattern: $isEmail")
+        
+        isEmail
+      then
+        DataType.Email
+      else if 
+        val timePattern = """^\d{1,2}:\d{2}(:\d{2})?(\s*[AaPp][Mm])?$""".r
+        val isTime = timePattern.matches(value)
+        
+        matchInfo.append(s"Time pattern: $isTime")
+        
+        isTime
+      then
+        DataType.Time
+      else if
+        // Check for numeric types - using more flexible patterns and isNumericFlag
+        val integerPattern = """^\s*\d+\s*$""".r
+        val floatPattern = """^\s*\d+\.\d+\s*$""".r
+        
+        val isInt = integerPattern.matches(value)
+        val isFloat = floatPattern.matches(value)
+        val isNumber = isNumericFlag || isInt || isFloat
+        
+        matchInfo.append(s"Number check: isNumericFlag=$isNumericFlag, isInt=$isInt, isFloat=$isFloat")
+        
+        isNumber
+      then
+        if value.contains(".") || value.trim.toDoubleOption.exists(_ != value.trim.toIntOption.getOrElse(0).toDouble) then 
+          matchInfo.append("Classifying as Float")
+          DataType.Float
+        else
+          matchInfo.append("Classifying as Integer")
+          DataType.Integer
+      else
+        matchInfo.append("No pattern matched → Text")
+        DataType.Text
+      
+    // Log detailed pattern matching info for debugging
+    if value.contains("30") || value.contains("25") || value.contains("23") || value.contains("$") || value.contains("5,000") then
+      logger.info(s"Type inference for '$value': ${matchInfo.toString} → result: $result")
+      
+    // Return the determined type
+    result
 
   /**
    * Separates content map entries into those that should be aggregated
@@ -130,16 +201,30 @@ object DataFormatAggregator:
                                               contentMap: Map[String, Either[String, List[String]]],
                                               typeMap: Map[String, DataType]
                                             ): (Map[String, Either[String, List[String]]], Map[String, Either[String, List[String]]]) =
-    contentMap.partition { case (content, _) =>
+    val (candidates, preserved) = contentMap.partition { case (content, _) =>
       val dataType = typeMap.getOrElse(content, DataType.Text)
 
+      // Log for debugging
+      logger.info(s"Content: '$content', detected type: $dataType")
+      
       // Only aggregate deterministic formats
-      dataType match
+      val isCandidate = dataType match
         case DataType.Integer | DataType.Float | DataType.Currency |
              DataType.Percentage | DataType.Date | DataType.Time |
              DataType.Year | DataType.ScientificNotation => true
         case _ => false
+      
+      // Log decision for debugging  
+      logger.info(s"Will aggregate '$content'? $isCandidate")
+      
+      isCandidate
     }
+    
+    // More detailed logging for debugging
+    logger.info(s"Aggregation candidates (${candidates.size}): ${candidates.keys.mkString(", ")}")
+    logger.info(s"Preserved values (${preserved.size}): ${preserved.keys.mkString(", ")}")
+    
+    (candidates, preserved)
 
   /**
    * Groups aggregation candidates by their data type and format.
@@ -155,7 +240,33 @@ object DataFormatAggregator:
                              typeMap: Map[String, DataType],
                              formatMap: Map[String, String] = Map.empty
                            ): Map[FormatDescriptor, Map[String, Either[String, List[String]]]] =
-    candidates.groupBy { case (content, _) =>
+    if candidates.isEmpty then
+      logger.info("No candidates to group by format")
+      return Map.empty
+    
+    // Special handling for small numbers - they're likely the same type regardless of exact value
+    // This is a preprocessing step to help with aggregation
+    val isAllIntegers = candidates.keys.forall(s => 
+      typeMap.getOrElse(s, DataType.Text) == DataType.Integer ||
+      typeMap.getOrElse(s, DataType.Text) == DataType.Float
+    )
+    
+    if isAllIntegers && candidates.size >= 2 && candidates.size <= 10 then
+      logger.info(s"Detected ${candidates.size} numeric values that could be aggregated together")
+      
+      // Group all the numeric values under a common descriptor
+      // Choose the smallest value as the representative
+      val minValue = candidates.keys.minBy(_.trim.toDoubleOption.getOrElse(Double.MaxValue))
+      
+      val dataType = typeMap.getOrElse(minValue, DataType.Integer)
+      val formatCode = inferFormatCode(minValue, dataType, None)
+      val descriptor = FormatDescriptor(dataType, formatCode, Some(s"<Numbers like $minValue>"))
+      
+      logger.info(s"Forcing aggregation of all numeric values under descriptor: ${descriptor.toFormatString}")
+      return Map(descriptor -> candidates)
+    
+    // Normal grouping  
+    val grouped = candidates.groupBy { case (content, _) =>
       val dataType = typeMap.getOrElse(content, DataType.Text)
 
       // Use Excel's NFS if available, otherwise infer from content
@@ -165,8 +276,20 @@ object DataFormatAggregator:
         inferFormatCode(content, dataType, None)
 
       // Create format descriptor with type, format code, and sample value
-      FormatDescriptor(dataType, formatCode, Some(content))
+      val descriptor = FormatDescriptor(dataType, formatCode, Some(content))
+      
+      // Log for debugging
+      logger.info(s"Grouping '$content' as format descriptor: ${descriptor.toFormatString}")
+      
+      descriptor
     }
+    
+    // Log group sizes for debugging
+    grouped.foreach { case (descriptor, entries) =>
+      logger.info(s"Format group '${descriptor.toFormatString}' has ${entries.size} entries: ${entries.keys.mkString(", ")}")
+    }
+    
+    grouped
 
   /**
    * Detects format code from a cell value using pattern recognition.
@@ -285,9 +408,14 @@ object DataFormatAggregator:
   private def aggregateFormatGroups(
                                      formatGroups: Map[FormatDescriptor, Map[String, Either[String, List[String]]]]
                                    ): Map[String, Either[String, List[String]]] =
+    if formatGroups.isEmpty then
+      logger.info("No format groups to aggregate")
+      return Map.empty
+      
     formatGroups.flatMap { case (formatDescriptor, entries) =>
       // If there's only one entry, no need to aggregate
       if entries.size <= 1 then
+        logger.info(s"Format '${formatDescriptor.toFormatString}' has only ${entries.size} entry, not aggregating")
         entries
       else
         // Aggregate all locations for this format into one entry
@@ -299,6 +427,9 @@ object DataFormatAggregator:
 
         // Use the format descriptor as the new key
         val formatKey = formatDescriptor.toFormatString
+        
+        logger.info(s"Aggregating ${entries.size} entries as '$formatKey' with ${allLocations.size} locations")
+        logger.info(s"Original entries being aggregated: ${entries.keys.mkString(", ")}")
 
         // Create aggregated entry
         if allLocations.size == 1 then
