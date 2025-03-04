@@ -29,5 +29,6 @@ case class SpreadsheetLLMConfig(
                                  enableEnhancedFormulas: Boolean = true,
                                  minGapSize: Int = 3,
                                  threads: Int = Runtime.getRuntime.availableProcessors(),
-                                 verbose: Boolean = false
+                                 verbose: Boolean = false,
+                                 eliminateOverlaps: Boolean = true
                                )
