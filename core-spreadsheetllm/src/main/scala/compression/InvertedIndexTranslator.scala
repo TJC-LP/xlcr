@@ -1,9 +1,9 @@
 package com.tjclp.xlcr
 package compression
 
-import compression.AnchorExtractor.SheetGrid
-import models.excel.ExcelReference
-import utils.excel.ExcelUtils
+import compression.models.SheetGrid
+import com.tjclp.xlcr.models.excel.ExcelReference
+import com.tjclp.xlcr.utils.excel.ExcelUtils
 
 import org.slf4j.LoggerFactory
 

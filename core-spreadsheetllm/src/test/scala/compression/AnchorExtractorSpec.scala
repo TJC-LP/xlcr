@@ -1,14 +1,15 @@
 package com.tjclp.xlcr
 package compression
 
-import compression.AnchorExtractor.{CellInfo, SheetGrid}
+import compression.anchors.AnchorAnalyzer
+import compression.models.{CellInfo, SheetGrid}
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
 
-  "AnchorExtractor" should "identify anchor rows and columns correctly" in {
+  "AnchorAnalyzer" should "identify anchor rows and columns correctly" in {
     // Create a test grid with some patterns that should be identified as anchors
     val cells = Map(
       // Header row (heterogeneous with a mix of text and formatting)
@@ -28,7 +29,7 @@ class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
     val grid = SheetGrid(cells, 4, 3) // Row count is now 4 (rows 1-3)
 
     // Identify anchors
-    val (anchorRows, anchorCols) = AnchorExtractor.identifyAnchors(grid)
+    val (anchorRows, anchorCols) = AnchorAnalyzer.identifyAnchors(grid)
 
     // The header row should be identified as an anchor
     anchorRows should contain(1)
@@ -38,7 +39,7 @@ class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
     anchorCols should contain(2)
   }
 
-  it should "preserve original coordinates when remapping" in {
+  "SheetGrid" should "preserve original coordinates when remapping" in {
     // Create a sparse grid with gaps
     val cells = Map(
       (1, 0) -> CellInfo(1, 0, "A1"),
@@ -89,7 +90,7 @@ class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
     filteredGrid.cells should not contain key(2, 1)
   }
 
-  it should "extract anchors and prune unnecessary cells" in {
+  "AnchorExtractor" should "extract anchors and prune unnecessary cells" in {
     // Create a test grid with some clear anchors
     val cells = Map(
       // Header row (clear anchor)
@@ -109,11 +110,8 @@ class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
     )
     val grid = SheetGrid(cells, 12, 3) // Rows 1-11, Columns 0-2
 
-    // Step 1: Identify structural anchors
-    val (anchorRows, anchorCols) = AnchorExtractor.identifyAnchors(grid)
-    
     // Extract with threshold of 1
-    val extractedGrid = AnchorExtractor.extract(grid, 1)
+    val extractedGrid = AnchorExtractor.extract(grid, 1, SpreadsheetLLMConfig())
 
     // Verify that key rows are preserved
     // Row 1 is a header with bold text - definite anchor

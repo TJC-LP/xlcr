@@ -2,9 +2,11 @@ package com.tjclp.xlcr
 package parsers.spreadsheetllm
 
 import compression.{AnchorExtractor, CompressionPipeline}
-import models.FileContent
-import models.excel.SheetsData
-import models.spreadsheetllm.CompressedWorkbook
+import compression.models.CellInfo
+import compression.utils.SheetGridUtils
+import com.tjclp.xlcr.models.FileContent
+import com.tjclp.xlcr.models.excel.SheetsData
+import com.tjclp.xlcr.models.spreadsheetllm.CompressedWorkbook
 import parsers.Parser
 import types.MimeType
 
@@ -61,14 +63,14 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
    */
   private def convertSheetsDataToGrids(
                                         sheetsData: SheetsData
-                                      ): Map[String, (Seq[AnchorExtractor.CellInfo], Int, Int)] =
+                                      ): Map[String, (Seq[CellInfo], Int, Int)] =
     sheetsData.sheets.map { sheetData =>
       val sheetName = sheetData.name
 
       logger.info(s"Converting sheet data for: $sheetName")
 
       // Use the SheetGrid.fromSheetData helper to create a SheetGrid
-      val sheetGrid = AnchorExtractor.SheetGrid.fromSheetData(sheetData)
+      val sheetGrid = SheetGridUtils.fromSheetData(sheetData)
 
       // Extract just the cells from the grid
       val cells = sheetGrid.cells.values.toSeq

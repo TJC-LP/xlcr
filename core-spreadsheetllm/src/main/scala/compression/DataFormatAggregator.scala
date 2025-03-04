@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package compression
 
-import compression.AnchorExtractor.{CellInfo, SheetGrid}
+import compression.models.{CellInfo, SheetGrid}
 
 import org.slf4j.LoggerFactory
 

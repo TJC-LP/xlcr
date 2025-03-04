@@ -1,8 +1,10 @@
 package com.tjclp.xlcr
 package compression
 
-import compression.AnchorExtractor.{CellInfo, SheetGrid}
-import models.spreadsheetllm.{CompressedSheet, CompressedWorkbook}
+import compression.anchors.AnchorAnalyzer
+import compression.tables.TableDetector
+import compression.models.{CellInfo, SheetGrid, TableRegion}
+import com.tjclp.xlcr.models.spreadsheetllm.{CompressedSheet, CompressedWorkbook}
 
 import org.slf4j.LoggerFactory
 
@@ -117,12 +119,12 @@ object CompressionPipeline:
         val startTime = System.currentTimeMillis()
 
         // First identify anchors to detect tables
-        val (anchorRows, anchorCols) = AnchorExtractor.identifyAnchors(grid)
+        val (anchorRows, anchorCols) = AnchorAnalyzer.identifyAnchors(grid)
 
         // Detect table regions (if table detection is enabled)
-        val tableRegions =
+        val tableRegions: List[TableRegion] =
           if config.enableTableDetection then
-            val regions = AnchorExtractor.detectTableRegions(grid, anchorRows, anchorCols, config)
+            val regions = TableDetector.detectTableRegions(grid, anchorRows, anchorCols, config)
             if regions.nonEmpty then
               logger.info(s"Detected ${regions.size} tables using enhanced column detection")
               // Log more details about table types if verbose
@@ -137,7 +139,7 @@ object CompressionPipeline:
             List.empty
 
         // Then extract the grid with pruning
-        val extractedGrid = AnchorExtractor.extract(grid, config.anchorThreshold)
+        val extractedGrid = AnchorExtractor.extract(grid, config.anchorThreshold, config)
 
         val endTime = System.currentTimeMillis()
 

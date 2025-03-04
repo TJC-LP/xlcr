@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package compression
 
-import compression.AnchorExtractor.CellInfo
+import compression.models.CellInfo
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
