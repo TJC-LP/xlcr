@@ -118,11 +118,15 @@ object InvertedIndexTranslator:
     )
 
     // Choose the approach that produces fewer ranges
+    // When there's a tie, always prefer horizontal ranges for deterministic results
     val (selectedRanges, rangeType) =
-      if horizontalRanges.size <= verticalRanges.size then
+      if horizontalRanges.size < verticalRanges.size then
         (horizontalRanges, "horizontal")
-      else
+      else if horizontalRanges.size > verticalRanges.size then
         (verticalRanges, "vertical")
+      else
+        // Deterministic tie-breaking: always choose horizontal ranges
+        (horizontalRanges, "horizontal")
 
     // Convert ranges to A1 notation
     val result = selectedRanges.map {
