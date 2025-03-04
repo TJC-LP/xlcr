@@ -39,8 +39,8 @@ class DataFormatAggregatorSpec extends AnyFlatSpec with Matchers {
     // The numeric values should be aggregated
     result.keys should not contain allOf("100", "200", "300")
     
-    // Should see a Number format entry instead
-    result.keys.exists(_.contains("<Number")) shouldBe true
+    // Should see an IntNum format entry instead
+    result.keys.exists(_.contains("<Int")) shouldBe true
 
     // Verify the log output shows numeric values were identified as candidates
     // (Visual verification via log output: "Found 3 candidate entries for format aggregation")
