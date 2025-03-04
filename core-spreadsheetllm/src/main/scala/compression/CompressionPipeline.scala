@@ -64,6 +64,7 @@ object CompressionPipeline:
           executor.shutdown()
       else
         // Process sheets sequentially
+        logger.info("Using sequential processing")
         sheets.map { case (sheetName, (cells, rowCount, colCount)) =>
           compressSheet(sheetName, cells, rowCount, colCount, config)
         }.toList
