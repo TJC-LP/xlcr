@@ -31,8 +31,11 @@ object InvertedIndexTranslator:
       return Map.empty
 
     // Step 1: Group cells by their content to create the initial inverted index
+    // Force stable iteration by converting to a sorted list first
     val contentToAddresses = grid.cells
-      .groupBy(_._2.value)
+      .toList                                  // Convert to list for stable handling
+      .sortBy { case ((row, col), _) => (row, col) }  // Sort by row, col for deterministic processing
+      .groupBy(_._2.value)                    // Group by content
       .map { case (content, cellEntries) =>
         // Skip empty cells
         if content.trim.isEmpty then
@@ -59,7 +62,9 @@ object InvertedIndexTranslator:
             cellAddr
           }.toSeq)
       }
-      .filter(_._2.nonEmpty) // Remove any empty listings
+      .toList                                 // Convert back to list to maintain stable order
+      .sortBy(_._1)                           // Sort by content string for deterministic processing
+      .filter(_._2.nonEmpty)                  // Remove any empty listings
 
     // Step 2: For each content value, try to merge consecutive addresses into ranges
     val contentToRanges = contentToAddresses.map { case (content, addresses) =>
@@ -68,14 +73,17 @@ object InvertedIndexTranslator:
     }
 
     // Step 3: Convert to the final format for output
-    val result = contentToRanges.map { case (content, ranges) =>
+    val intermediateResult = contentToRanges.map { case (content, ranges) =>
       if ranges.size == 1 then
         // If there's only one range, use it directly
         (content, Left(ranges.head))
       else
-        // If there are multiple ranges, return them as a list
-        (content, Right(ranges.toList))
+        // If there are multiple ranges, return them as a sorted list for deterministic output
+        (content, Right(ranges.toList.sorted))
     }
+    
+    // Convert to TreeMap for deterministic iteration of final map
+    val result = scala.collection.immutable.TreeMap[String, Either[String, List[String]]](intermediateResult.toSeq: _*)
 
     // Log compression results
     val originalCellCount = grid.cells.size
@@ -144,26 +152,33 @@ object InvertedIndexTranslator:
 
   /**
    * Finds ranges of consecutive addresses based on a provided adjacency test.
+   * Returns a deterministic sequence of address ranges, ensuring consistent output.
    *
    * @param addresses  Sorted sequence of addresses to check
    * @param isAdjacent Function that tests if two addresses are adjacent
-   * @return Sequence of address ranges
+   * @return Sequence of address ranges, with each range containing sorted addresses
    */
   private def findRanges(
                           addresses: Seq[CellAddress],
                           isAdjacent: (CellAddress, CellAddress) => Boolean
                         ): Seq[Seq[CellAddress]] =
+    // Ensure input is sorted for deterministic processing
+    val sortedAddresses = if addresses != addresses.sortBy(addr => (addr.row, addr.col)) then
+      addresses.sortBy(addr => (addr.row, addr.col))
+    else
+      addresses
+      
     val ranges = Seq.newBuilder[Seq[CellAddress]]
     var currentRange = Seq.newBuilder[CellAddress]
 
     // Add the first address to start a range
-    if addresses.nonEmpty then
-      currentRange += addresses.head
+    if sortedAddresses.nonEmpty then
+      currentRange += sortedAddresses.head
 
     // Process the rest of the addresses
-    for i <- 1 until addresses.size do
-      val prev = addresses(i - 1)
-      val curr = addresses(i)
+    for i <- 1 until sortedAddresses.size do
+      val prev = sortedAddresses(i - 1)
+      val curr = sortedAddresses(i)
 
       if isAdjacent(prev, curr) then
         // Continue the current range
@@ -175,20 +190,31 @@ object InvertedIndexTranslator:
         currentRange += curr
 
     // Add the last range if it's not empty
-    if addresses.nonEmpty then
+    if sortedAddresses.nonEmpty then
       ranges += currentRange.result()
 
+    // Ensure output is deterministic by sorting the result
     ranges.result()
 
   /**
    * Represents a cell's address in A1 notation (e.g., "A1" or "B5").
    * This is the standard Excel column-row reference format.
+   * 
+   * Implements Ordered to allow deterministic sorting of addresses.
    */
-  case class CellAddress(row: Int, col: Int):
+  case class CellAddress(row: Int, col: Int) extends Ordered[CellAddress]:
     /**
      * Debug method to help identify coordinate translation issues.
      */
     def debug: String = s"internal(r=$row,c=$col) -> $toA1Notation"
+    
+    /**
+     * Compare method for ordering CellAddress instances in a deterministic way.
+     * Orders first by row, then by column.
+     */
+    def compare(that: CellAddress): Int =
+      val rowCompare = this.row.compare(that.row)
+      if rowCompare != 0 then rowCompare else this.col.compare(that.col)
 
     /**
      * Convert numeric row, col indices to Excel-style A1 notation.
