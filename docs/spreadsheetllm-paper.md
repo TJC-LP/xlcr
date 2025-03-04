@@ -1,8 +1,8 @@
 # SpreadsheetLLM: Encoding Spreadsheets for Large Language Models
 
 **Authors**:  
-Yuzhang Tian\(^\dagger\)\(^\dagger\)\(^\text{equal contribution}\), Jianbo Zhao\(^{1,2}\), Haoyu Dong\(^\dagger\)\(^\text{corresponding author}\), Junyu Xiong\(^\dagger\), Shiyu Xia\(^\dagger\),  
-Mengyu Zhou, Yun Lin\(^2\), José Cambronero, Yeye He, Shi Han, Dongmei Zhang  
+Yuzhang Tian$^\dagger$ $^\dagger$ $^\text{equal contribution}$, Jianbo Zhao $^{1,2}$, Haoyu Dong$^\dagger$ $^\text{corresponding author}$, Junyu Xiong$^\dagger$, Shiyu Xia$^\dagger$,  
+Mengyu Zhou, Yun Lin$^2$, José Cambronero, Yeye He, Shi Han, Dongmei Zhang  
 Microsoft Corporation  
 
 ---
@@ -26,17 +26,17 @@ Finally, we propose a **Chain of Spreadsheet** for downstream tasks of spreadshe
 ## 1. Introduction
 
 Spreadsheets are ubiquitous for data management and widely used within platforms like Microsoft Excel and Google Sheets. Understanding spreadsheet layout and structure
-<sup>[Dong et al. (2019b); Gol et al. (2019); Hulsebos et al. (2019); Dou et al. (2018); Wang et al. (2021); Deng et al. (2022); Chen and Cafarella (2014)]</sup>,
+<sup>[Dong et al. (2019b); Gol et al. (2019); Hulsebos et al. (2019); Dou et al. (2018); Wang et al. (2021); Deng et al. (2022); Chen and Cafarella (2014)]</sup>,
 a longstanding challenge for traditional models, is crucial for effective data analysis and intelligent user interaction.
 
 Recently, the rapid development of **large language models (LLMs)** has opened new frontiers in table processing
-<sup>[Li et al. (2023b)]</sup>
+<sup>[Li et al. (2023b)]</sup>
 and reasoning
-<sup>[Cheng et al. (2022)]</sup>.
+<sup>[Cheng et al. (2022)]</sup>.
 However, spreadsheets pose unique challenges for LLMs due to their expansive grids that usually exceed the token limitations of popular LLMs, as well as their inherent two-dimensional layouts and structures—poorly suited to linear and sequential input. Furthermore, LLMs often struggle with spreadsheet-specific features such as cell addresses and formats, complicating their ability to effectively parse and utilize spreadsheet data (see Appendix A).
 
 In this paper, we introduce **SpreadsheetLLM**, a pioneering framework to unleash and maximize the potential of LLMs for spreadsheet understanding and reasoning. We initially propose a **vanilla encoding method** to serialize spreadsheets into sequences, augmenting the Markdown encoding method by including essential cell addresses (and optionally, formats). However, large spreadsheets that exceed LLM token limits not only limit processing capacity but—as observed in prior studies—degrade accuracy performance as the size increases
-<sup>[Liu et al. (2024)]</sup>.
+<sup>[Liu et al. (2024)]</sup>.
 
 To address this challenge, we propose **SheetCompressor**, featuring a novel encoding framework comprising three portable modules:
 
@@ -50,9 +50,9 @@ To address this challenge, we propose **SheetCompressor**, featuring a novel enc
    Adjacent numerical cells often share similar number formats. Recognizing that **exact** numerical values are less crucial for grasping spreadsheet structure, we extract number format strings and data types from these cells. Then, adjacent cells with the same formats or types are clustered. This is visualized in the right example of Figure&nbsp;2, where rectangular regions are replaced by uniform format strings and data types—streamlining numerical data representation without excessive token expenditure.
 
 We conducted a comprehensive evaluation on a variety of LLMs. Our experiments show that SheetCompressor significantly reduces token usage by **96%**. Moreover, **SpreadsheetLLM** significantly improves spreadsheet table detection accuracy, surpassing a previous SOTA method by **12.3%**. We also applied SpreadsheetLLM to a representative spreadsheet QA task. Inspired by the Chain of Thought (CoT) methodology
-<sup>[Zheng et al. (2023); Jiang et al. (2023b)]</sup>,
+<sup>[Zheng et al. (2023); Jiang et al. (2023b)]</sup>,
 we propose **Chain of Spreadsheet (CoS)**, which decomposes spreadsheet reasoning into a table detection–match–reasoning pipeline. It significantly outperforms existing SOTA methods for table QA
-<sup>[Herzig et al. (2020); Cheng et al. (2022)]</sup>.
+<sup>[Herzig et al. (2020); Cheng et al. (2022)]</sup>.
 
 **Our primary contributions**:
 
@@ -135,7 +135,7 @@ These enable efficient data compression and enhance performance on downstream ta
 := |Address_{i,j}, Value_{i,j}, Format|...
 $$
 >
-> Where \(\mathcal{S} \in \mathbb{R}^{m,n}\) denotes the spreadsheet, \(\mathcal{T} \in \mathbb{R}^1\) denotes the text representation, and \(i, j, m, n\) respectively are the row index, column index, and row/column ranges.
+> Where $\mathcal{S} \in \mathbb{R}^{m,n}$ denotes the spreadsheet, $\mathcal{T} \in \mathbb{R}^1$ denotes the text representation, and $i, j, m, n$ respectively are the row index, column index, and row/column ranges.
 
 Due to the absence of standardized practices in spreadsheet encoding for LLMs, we explore a **Markdown-like** style representation:
 

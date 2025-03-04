@@ -510,8 +510,8 @@ object AnchorExtractor:
      */
     def fromCellData(cellData: CellData): CellInfo =
       // Extract the row and column from the cell's A1 reference
-      // Adjust row index to be 0-based (Excel is 1-based for rows)
-      val rowIndex = cellData.rowIndex - 1
+      // Keep the original 1-based row index that Excel uses (don't subtract 1)
+      val rowIndex = cellData.rowIndex
       val colIndex = cellData.columnIndex
       
       // Validate column index is not negative
