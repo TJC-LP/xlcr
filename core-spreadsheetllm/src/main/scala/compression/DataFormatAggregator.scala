@@ -79,19 +79,65 @@ object DataFormatAggregator:
     val originalCellCount = grid.cells.size
     val typeCounts = collection.mutable.Map[DataType, Int]().withDefaultValue(0)
     
+    // Special debug mode for specific date/number detection issues
+    val isDebugMode = config.verbose || config.debugDataDetection
+    
+    // For detailed debugging when verbose or debug mode is enabled
+    val cellTypeDetails = collection.mutable.Map[(Int, Int), (String, DataType, String)]()
+    
+    // If in debug mode, you can add extra patterns to look for specifically
+    if isDebugMode && config.debugDataDetection then
+      logger.debug("DATA DETECTION DEBUG MODE ENABLED - Looking for problematic cells")
+      
+      // Example: search for specific suspicious patterns
+      val suspiciousCells = grid.cells.filter { case ((_, _), cellInfo) =>
+        val value = cellInfo.value
+        
+        // Add specific patterns you're looking for here
+        // For example, looking for date-like strings that aren't being detected
+        val looksLikeDateButIsnt = !cellInfo.isDate && 
+          (value.contains("/") || value.contains("-")) && 
+          value.matches(""".*\d+.*""")
+        
+        // Or looking for numeric cells not flagged as such
+        val looksLikeNumberButIsnt = !cellInfo.isNumeric && 
+          value.matches(""".*\d+.*""") && 
+          !value.matches(""".*[a-zA-Z].*""")
+          
+        looksLikeDateButIsnt || looksLikeNumberButIsnt
+      }
+      
+      if suspiciousCells.nonEmpty then
+        logger.debug(s"Found ${suspiciousCells.size} suspicious cells that might have detection issues:")
+        suspiciousCells.take(20).foreach { case ((r, c), cellInfo) =>
+          val address = InvertedIndexTranslator.CellAddress(r, c).toA1Notation
+          logger.debug(f"  $address: '${cellInfo.value}' " +
+            f"(isDate=${cellInfo.isDate}, isNumeric=${cellInfo.isNumeric}, " +
+            f"format=${cellInfo.numberFormatString.getOrElse("none")})")
+        }
+    
     // Process each cell and update its value based on data type
     val updatedCells = grid.cells.map { case ((r, c), cellInfo) =>
+      // Get cell address for debugging
+      val cellAddress = InvertedIndexTranslator.CellAddress(r, c).toA1Notation
+      
       // Identify data type using existing inference logic
       val dataType = inferDataType(
         value         = cellInfo.value,
         isEmpty       = cellInfo.isEmpty,
         isDateFlag    = cellInfo.isDate,
         isNumericFlag = cellInfo.isNumeric,
-        formatString  = cellInfo.numberFormatString
+        formatString  = cellInfo.numberFormatString,
+        config        = Some(config),
+        cellAddress   = Some(cellAddress)
       )
       
       // Track type counts for logging
       typeCounts(dataType) += 1
+      
+      // Store details for debug logging
+      if isDebugMode then
+        cellTypeDetails((r, c)) = (cellInfo.value, dataType, cellAddress)
       
       // Determine if this cell should be aggregated
       val shouldAggregate = dataType match
@@ -122,6 +168,25 @@ object DataFormatAggregator:
           case DataType.IpAddress => "<IPAddressData>"
           case _ => cellInfo.value // Shouldn't happen due to shouldAggregate check
         
+        // Verbose logging for aggregation decisions
+        if isDebugMode then
+          logger.debug(f"AGGREGATING $cellAddress: '${cellInfo.value}' -> '$aggregatedValue' (detected as $dataType)")
+          
+          // Extra details for date/time cells
+          if dataType == DataType.Date || dataType == DataType.Time then
+            logger.debug(f"  DATE/TIME INFO: cell=$cellAddress, value='${cellInfo.value}', " +
+                        f"isDateFlag=${cellInfo.isDate}, " +
+                        f"formatString=${cellInfo.numberFormatString.getOrElse("none")}, " +
+                        f"matches date pattern=${isDateByPattern(cellInfo.value, isDebugMode, cellAddress)}, " +
+                        f"matches time pattern=${isTimeByPattern(cellInfo.value)}")
+          
+          // Extra details for numeric cells  
+          else if dataType == DataType.Integer || dataType == DataType.Float then
+            logger.debug(f"  NUMBER INFO: cell=$cellAddress, value='${cellInfo.value}', " +
+                        f"isNumericFlag=${cellInfo.isNumeric}, " +
+                        f"formatString=${cellInfo.numberFormatString.getOrElse("none")}, " +
+                        f"matches numeric pattern=${isNumericByPattern(cellInfo.value, isDebugMode, cellAddress)}")
+        
         // Create a new CellInfo with the aggregated value
         val updatedCell = cellInfo.copy(value = aggregatedValue)
         ((r, c), updatedCell)
@@ -131,7 +196,7 @@ object DataFormatAggregator:
     }
     
     // Log aggregation statistics
-    val aggregatedCount = typeCounts.filterKeys(k => 
+    val aggregatedCount = typeCounts.view.filterKeys(k => 
       k == DataType.Integer || k == DataType.Float || k == DataType.Currency ||
       k == DataType.Percentage || k == DataType.Date || k == DataType.Time ||
       k == DataType.Year || k == DataType.ScientificNotation || 
@@ -140,11 +205,61 @@ object DataFormatAggregator:
     
     logger.info(f"Cell aggregation: $originalCellCount cells -> $aggregatedCount aggregated cells (${aggregatedCount * 100.0 / originalCellCount}%.1f%% aggregated)")
     
-    if config.verbose then
-      typeCounts.foreach { case (dataType, count) =>
+    // Extended logging for debugging type detection issues
+    if isDebugMode then
+      logger.debug("AGGREGATION TYPE COUNTS:")
+      typeCounts.toSeq.sortBy(_._1.toString).foreach { case (dataType, count) =>
         if count > 0 then
           logger.debug(f"  $dataType: $count cells")
       }
+      
+      // Specific logging for potentially problematic cells
+      if cellTypeDetails.nonEmpty then
+        // Log all date/time cells for inspection
+        val dateCells = cellTypeDetails.filter(_._2._2 == DataType.Date)
+        if dateCells.nonEmpty then
+          logger.debug("DATE CELLS DETECTED:")
+          dateCells.toSeq.sortBy(_._2._3).foreach { case ((r, c), (value, _, address)) =>
+            val cellInfo = grid.cells((r, c))
+            logger.debug(f"  $address: '$value' (isDateFlag=${cellInfo.isDate}, " + 
+                        f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
+                        f"matches pattern=${isDateByPattern(value, isDebugMode, address)})")
+          }
+        
+        // Log all numeric cells for inspection
+        val numericCells = cellTypeDetails.filter { case (_, (_, dataType, _)) =>
+          dataType == DataType.Integer || dataType == DataType.Float
+        }
+        if numericCells.nonEmpty then
+          logger.debug("NUMERIC CELLS DETECTED:")
+          numericCells.toSeq.sortBy(_._2._3).foreach { case ((r, c), (value, dataType, address)) =>
+            val cellInfo = grid.cells((r, c))
+            logger.debug(f"  $address: '$value' -> $dataType (isNumericFlag=${cellInfo.isNumeric}, " +
+                        f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
+                        f"matches numeric pattern=${isNumericByPattern(value, isDebugMode, address)})")
+          }
+        
+        // Log text cells that might be dates/numbers but weren't classified as such
+        val textCells = cellTypeDetails.filter(_._2._2 == DataType.Text)
+        if textCells.nonEmpty then
+          logger.debug("SUSPICIOUS TEXT CELLS (check for misclassification):")
+          textCells.toSeq
+            .filter { case (_, (value, _, _)) => 
+              // Only show text cells that contain numbers or date-like patterns
+              value.matches(""".*\d+.*""") || 
+              value.contains("/") || 
+              value.contains("-") ||
+              value.contains(":") 
+            }
+            .sortBy(_._2._3)
+            .foreach { case ((r, c), (value, _, address)) =>
+              val cellInfo = grid.cells((r, c))
+              logger.debug(f"  $address: '$value' classified as TEXT but contains numbers/symbols " +
+                          f"(isDateFlag=${cellInfo.isDate}, isNumericFlag=${cellInfo.isNumeric}, " +
+                          f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
+                          f"matches date pattern=${isDateByPattern(value, isDebugMode, address)}, " +
+                          f"matches numeric pattern=${isNumericByPattern(value, isDebugMode, address)})")
+            }
     
     // Return a new grid with updated cell values
     grid.copy(cells = updatedCells)
@@ -184,60 +299,117 @@ object DataFormatAggregator:
    * @param formatString  The number format string from Excel if available
    * @return The detected DataType
    */
+  /**
+   * Infers data type with pattern matching, with additional logging when verbose is enabled.
+   * Implements the rules from CaseJudge.py and TableDataAggregation.py
+   *
+   * @param value         The cell value as a string
+   * @param isEmpty       Whether the cell is empty
+   * @param isDateFlag    Whether the cell was flagged as a date by Excel
+   * @param isNumericFlag Whether the cell was flagged as numeric by Excel
+   * @param formatString  The number format string from Excel if available
+   * @param config        Optional configuration for verbose logging
+   * @param cellAddress   Optional cell address for debug logging
+   * @return The detected DataType
+   */
   private def inferDataType(
                              value: String,
                              isEmpty: Boolean,
                              isDateFlag: Boolean,
                              isNumericFlag: Boolean,
-                             formatString: Option[String] = None
+                             formatString: Option[String] = None,
+                             config: Option[SpreadsheetLLMConfig] = None,
+                             cellAddress: Option[String] = None
                            ): DataType =
+    // Use for detailed debug logging if provided
+    val isVerbose = config.exists(_.verbose)
+    val logPrefix = cellAddress.map(addr => s"[$addr] ").getOrElse("")
+    
+    def debugLog(message: String): Unit =
+      if isVerbose then logger.debug(s"${logPrefix}TYPE INFERENCE: $message")
+    
     if isEmpty then
+      debugLog("Empty cell -> DataType.Empty")
       DataType.Empty
     // If we have a format string, use it as first priority
     else if formatString.isDefined && formatString.get.nonEmpty then
-      val nfsType = getTypeFromNfs(formatString.get)
+      val nfs = formatString.get
+      val nfsType = getTypeFromNfs(nfs)
       if nfsType != DataType.Text then
+        debugLog(s"Using format string '$nfs' -> $nfsType")
         return nfsType
+      else
+        debugLog(s"Format string '$nfs' didn't help, continuing with other checks")
       // If format string doesn't help, continue with other checks
     
     // Date detection has high priority
     if isDateFlag then
+      debugLog(s"Excel date flag is true for '$value' -> DataType.Date")
       DataType.Date
     // Check special date formats from Python CaseJudge.py
-    else if isDateByPattern(value) then
+    else if isDateByPattern(value, isVerbose, cellAddress.getOrElse("")) then
+      debugLog(s"'$value' matches date pattern -> DataType.Date")
       DataType.Date
     // Check for time formats
     else if isTimeByPattern(value) then
+      debugLog(s"'$value' matches time pattern -> DataType.Time")
       DataType.Time
     // Check for percentage (immediately visible pattern)
     else if isPercentageByPattern(value) then
+      debugLog(s"'$value' matches percentage pattern -> DataType.Percentage")
       DataType.Percentage
     // Check for currency symbols
     else if isCurrencyByPattern(value) then
+      debugLog(s"'$value' matches currency pattern -> DataType.Currency")
       DataType.Currency
     // Check for scientific notation
     else if isScientificNotation(value) then
+      debugLog(s"'$value' matches scientific notation pattern -> DataType.ScientificNotation")
       DataType.ScientificNotation
     // Check for email format
     else if isEmailByPattern(value) then
+      debugLog(s"'$value' matches email pattern -> DataType.Email")
       DataType.Email
     // Check for year (standalone)
     else if isYearPattern(value) then
+      debugLog(s"'$value' matches year pattern -> DataType.Year")
       DataType.Year
     // Check for fractions
     else if isFractionPattern(value) then
+      debugLog(s"'$value' matches fraction pattern -> DataType.Fraction")
       DataType.Fraction
     // Check for IP addresses
     else if isIpAddress(value) then
+      debugLog(s"'$value' matches IP address pattern -> DataType.IpAddress")
       DataType.IpAddress
     // For numeric types, check if it's a decimal or integer
-    else if isNumericByPattern(value) || isNumericFlag then
+    else if isNumericByPattern(value, isVerbose, cellAddress.getOrElse("")) || isNumericFlag then
       if value.contains(".") then
+        debugLog(s"'$value' is numeric with decimal point -> DataType.Float" + 
+                 (if isNumericFlag then " (Excel flag)" else " (pattern match)"))
         DataType.Float
       else
+        debugLog(s"'$value' is numeric without decimal point -> DataType.Integer" + 
+                 (if isNumericFlag then " (Excel flag)" else " (pattern match)"))
         DataType.Integer
     // If none of the above patterns match, it's text
     else
+      // Detailed logging for text cells that might be missing detection
+      if isVerbose then
+        val patterns = Seq(
+          ("Date", isDateByPattern(value, isVerbose, cellAddress.getOrElse(""))),
+          ("Time", isTimeByPattern(value)),
+          ("Numeric", isNumericByPattern(value, isVerbose, cellAddress.getOrElse(""))),
+          ("Year", isYearPattern(value))
+        )
+        val closeMatches = patterns.filter(_._2).map(_._1)
+        if closeMatches.nonEmpty then
+          debugLog(s"'$value' classified as TEXT but has some pattern matches: ${closeMatches.mkString(", ")}")
+        else if value.matches(""".*\d+.*""") then
+          debugLog(s"'$value' classified as TEXT but contains numbers")
+        else
+          debugLog(s"'$value' doesn't match any special patterns -> DataType.Text")
+      
       DataType.Text
 
   /**
@@ -302,20 +474,36 @@ object DataFormatAggregator:
 
   /**
    * Pattern matching for date detection based on Python CaseJudge.py
+   * 
+   * @param value The cell value to check
+   * @param verbose Whether to log detailed pattern matching information
+   * @param cellAddress Optional cell address for debug logs
+   * @return Whether the value matches any date pattern
    */
-  private def isDateByPattern(value: String): Boolean =
-    // Date patterns from Python
+  private def isDateByPattern(value: String, verbose: Boolean = false, cellAddress: String = ""): Boolean =
+    // Date patterns from Python with descriptive names for debugging
     val datePatterns = Seq(
-      """\d{4}[-/]\d{1,2}[-/]\d{1,2}""", // YYYY-MM-DD or YYYY/MM/DD
-      """\d{1,2}[-/]\d{1,2}[-/]\d{4}""", // DD-MM-YYYY or MM/DD/YYYY
-      """\d{1,2}[-/]\d{1,2}""",          // DD-MM or MM/DD
-      """\d{4}[-/]\d{1,2}""",            // YYYY-MM or YYYY/MM
-      // Add more sophisticated patterns here
-      """\d{1,2}[-]\w{3}[-]\d{4}""",     // DD-MMM-YYYY (e.g., 15-Jan-2023)
-      """^[A-Za-z]{3}-\d{2}$"""          // <-- mmm-yy
+      ("YYYY-MM-DD", """\d{4}[-/]\d{1,2}[-/]\d{1,2}"""),
+      ("DD-MM-YYYY", """\d{1,2}[-/]\d{1,2}[-/]\d{4}"""),
+      ("DD-MM or MM/DD", """\d{1,2}[-/]\d{1,2}"""),
+      ("YYYY-MM", """\d{4}[-/]\d{1,2}"""),
+      ("DD-MMM-YYYY", """\d{1,2}[-]\w{3}[-]\d{4}"""),
+      ("MMM-YY", """^[A-Za-z]{3}-\d{2}$""")
     )
     
-    datePatterns.exists(pattern => value.matches(pattern))
+    if !verbose then
+      datePatterns.exists(pattern => value.matches(pattern._2))
+    else
+      // For verbose mode, collect and log all matching patterns
+      val matches = datePatterns.collect { 
+        case (desc, pattern) if value.matches(pattern) => desc 
+      }
+      
+      if matches.nonEmpty then
+        val prefix = if cellAddress.nonEmpty then s"[$cellAddress] " else ""
+        logger.debug(s"${prefix}VALUE '${value}' matches date patterns: ${matches.mkString(", ")}")
+        
+      matches.nonEmpty
 
   /**
    * Pattern matching for time detection based on Python CaseJudge.py
@@ -383,26 +571,74 @@ object DataFormatAggregator:
     
   /**
    * Pattern matching for numeric values, handles common formats
+   * 
+   * @param value The cell value to check
+   * @param verbose Whether to log detailed pattern matching information
+   * @param cellAddress Optional cell address for debug logs
+   * @return Whether the value matches any numeric pattern
    */
-  private def isNumericByPattern(value: String): Boolean =
-    // First check for clean numeric patterns
-    val cleanIntPattern = """^-?\d+$"""
-    val cleanDecimalPattern = """^-?\d+\.\d+$"""
+  private def isNumericByPattern(value: String, verbose: Boolean = false, cellAddress: String = ""): Boolean =
+    // First check for clean numeric patterns with descriptive names for debugging
+    val numericPatterns = Seq(
+      ("Integer", """^-?\d+$"""),
+      ("Decimal", """^-?\d+\.\d+$"""),
+      ("Integer with commas", """^-?[\d,]+$"""),
+      ("Decimal with commas", """^-?[\d,]+\.\d+$""")
+    )
     
-    // Check if it's a basic integer or decimal
-    if value.matches(cleanIntPattern) || value.matches(cleanDecimalPattern) then
-      return true
+    // For standard usage
+    if !verbose then
+      val cleanIntPattern = """^-?\d+$"""
+      val cleanDecimalPattern = """^-?\d+\.\d+$"""
       
-    // Handle numbers with commas for thousands separator
-    val thousandsPattern = """^-?[\d,]+$"""
-    val thousandsDecimalPattern = """^-?[\d,]+\.\d+$"""
-    
-    if value.matches(thousandsPattern) || value.matches(thousandsDecimalPattern) then
-      // Verify it's a properly formatted number with commas
-      val noCommas = value.replace(",", "")
-      return noCommas.matches(cleanIntPattern) || noCommas.matches(cleanDecimalPattern)
+      // Check basic integer or decimal
+      if value.matches(cleanIntPattern) || value.matches(cleanDecimalPattern) then
+        return true
+        
+      // Handle numbers with commas for thousands separator
+      val thousandsPattern = """^-?[\d,]+$"""
+      val thousandsDecimalPattern = """^-?[\d,]+\.\d+$"""
       
-    false
+      if value.matches(thousandsPattern) || value.matches(thousandsDecimalPattern) then
+        // Verify it's a properly formatted number with commas
+        val noCommas = value.replace(",", "")
+        return noCommas.matches(cleanIntPattern) || noCommas.matches(cleanDecimalPattern)
+        
+      false
+    else
+      // For verbose mode, collect and log all matching patterns
+      var isNumeric = false
+      val matchResults = numericPatterns.map { case (desc, pattern) => 
+        val matches = value.matches(pattern)
+        
+        // Special handling for thousands separator patterns
+        if matches && (desc == "Integer with commas" || desc == "Decimal with commas") then
+          val noCommas = value.replace(",", "")
+          val isValidNumber = noCommas.matches("""^-?\d+$""") || noCommas.matches("""^-?\d+\.\d+$""")
+          if isValidNumber then 
+            isNumeric = true
+            (desc, true, s"valid number after comma removal: $noCommas")
+          else
+            (desc, false, "invalid number after comma removal")
+        else if matches then
+          isNumeric = true
+          (desc, true, "")
+        else
+          (desc, false, "")
+      }
+      
+      // Log detailed results for debugging
+      val matches = matchResults.filter(_._2).map(_._1)
+      if matches.nonEmpty then
+        val prefix = if cellAddress.nonEmpty then s"[$cellAddress] " else ""
+        logger.debug(s"${prefix}VALUE '${value}' matches numeric patterns: ${matches.mkString(", ")}")
+        
+        // Log special notes for thousands separators
+        matchResults.filter(r => r._2 && r._3.nonEmpty).foreach { case (desc, _, note) =>
+          logger.debug(s"${prefix}  $desc: $note")
+        }
+      
+      isNumeric
   
   /**
    * Process a string value to prepare it for numeric pattern matching.

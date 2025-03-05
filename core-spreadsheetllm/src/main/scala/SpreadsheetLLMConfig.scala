@@ -16,6 +16,8 @@ package com.tjclp.xlcr
  * @param minGapSize                  Minimum gap size to consider for table detection (in rows/columns)
  * @param threads                     Number of threads to use for parallel processing
  * @param verbose                     Enable detailed logging output
+ * @param debugDataDetection          Enable extra debug logging for date and number detection
+ * @param eliminateOverlaps           Whether to eliminate overlapping tables in detection
  */
 case class SpreadsheetLLMConfig(
                                  input: String = "",
@@ -30,5 +32,6 @@ case class SpreadsheetLLMConfig(
                                  minGapSize: Int = 3,
                                  threads: Int = Runtime.getRuntime.availableProcessors(),
                                  verbose: Boolean = false,
+                                 debugDataDetection: Boolean = false,
                                  eliminateOverlaps: Boolean = true
                                )
