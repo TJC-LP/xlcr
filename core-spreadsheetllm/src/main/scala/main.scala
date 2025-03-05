@@ -76,6 +76,10 @@ def main(args: String*): Unit =
       opt[Unit]("verbose")
         .action((_, c) => c.copy(verbose = true))
         .text("Enable verbose logging output"),
+        
+      opt[Unit]("debug-data-detection")
+        .action((_, c) => c.copy(debugDataDetection = true))
+        .text("Enable detailed debugging for date and number detection"),
 
       opt[Unit]('d', "diff")
         .action((_, c) => c.copy(diffMode = true))

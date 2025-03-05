@@ -47,6 +47,7 @@ This module compresses Excel spreadsheets into an LLM-friendly JSON format:
 - `--no-enhanced-formulas` - Disable enhanced formula relationship detection
 - `--threads <n>` - Number of threads for parallel processing
 - `--verbose` - Enable verbose logging
+- `--debug-data-detection` - Enable detailed debugging for date and number detection issues
 
 ### Coordinate Preservation Feature
 The SpreadsheetLLM module includes a robust coordinate preservation system:
@@ -485,6 +486,16 @@ These enhancements will significantly improve detection accuracy, especially for
 - Uses standardized format descriptors like "IntNum", "FloatNum", "DateData", etc.
 - Compatible with Excel's Number Format Strings (NFS) for accurate type inference
 - Improved scientific notation and numeric detection with enhanced patterns
+
+#### Data Format Debugging
+When investigating issues with data type detection, you can use the `--debug-data-detection` flag:
+- Provides comprehensive logging of cell data type inference process
+- Shows pattern matching details for date formats (YYYY-MM-DD, DD-MMM-YYYY, etc.)
+- Logs numeric format detection including handling of thousands separators
+- Reports suspicious text cells that might be misclassified dates or numbers
+- Helps diagnose issues where cells are incorrectly aggregated as dates/numbers
+- Displays Excel's internal flags and format strings for problematic cells
+- Analyzes and reports spreadsheet regions with potential detection issues
 
 #### Formula Handling
 - Preserves formula expressions in backtick-formatted markdown
