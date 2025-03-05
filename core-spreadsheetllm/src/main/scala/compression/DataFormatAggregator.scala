@@ -58,6 +58,96 @@ object DataFormatAggregator:
     logger.info(f"Format aggregation: ${contentMap.size} entries -> ${result.size} entries ($compressionRatio%.2fx compression)")
 
     result
+    
+  /**
+   * Applies format-based aggregation directly to cells in the grid before dictionary building.
+   * This approach provides more consistent aggregation by replacing cell values with type 
+   * descriptors before inverted index translation.
+   *
+   * @param grid   The anchored/pruned SheetGrid to process
+   * @param config The pipeline configuration
+   * @return A new SheetGrid with cell values replaced by type descriptors where appropriate
+   */
+  def aggregateCells(grid: SheetGrid, config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()): SheetGrid =
+    if grid.cells.isEmpty then
+      logger.info("SheetGrid is empty; skipping cell aggregation.")
+      return grid
+
+    logger.info("Performing type-based data aggregation on grid cells before dictionary compression")
+    
+    // Count original cell types for logging
+    val originalCellCount = grid.cells.size
+    val typeCounts = collection.mutable.Map[DataType, Int]().withDefaultValue(0)
+    
+    // Process each cell and update its value based on data type
+    val updatedCells = grid.cells.map { case ((r, c), cellInfo) =>
+      // Identify data type using existing inference logic
+      val dataType = inferDataType(
+        value         = cellInfo.value,
+        isEmpty       = cellInfo.isEmpty,
+        isDateFlag    = cellInfo.isDate,
+        isNumericFlag = cellInfo.isNumeric,
+        formatString  = cellInfo.numberFormatString
+      )
+      
+      // Track type counts for logging
+      typeCounts(dataType) += 1
+      
+      // Determine if this cell should be aggregated
+      val shouldAggregate = dataType match
+        case DataType.Integer | DataType.Float | DataType.Currency |
+             DataType.Percentage | DataType.Date | DataType.Time |
+             DataType.Year | DataType.ScientificNotation | 
+             DataType.Email | DataType.IpAddress | DataType.Fraction => true
+        case _ => false
+      
+      // If it's a candidate for aggregation, replace its value with a type descriptor
+      if shouldAggregate then
+        // Create the appropriate type descriptor string
+        val aggregatedValue = dataType match
+          case DataType.Integer => "<IntNum>"
+          case DataType.Float => "<FloatNum>"
+          case DataType.Date => 
+            // For dates, we can include format information if available
+            cellInfo.numberFormatString match
+              case Some(format) if format.nonEmpty => s"<DateData:$format>"
+              case _ => "<DateData>"
+          case DataType.Time => "<TimeData>"
+          case DataType.Currency => "<CurrencyData>"
+          case DataType.Percentage => "<PercentageNum>"
+          case DataType.Year => "<YearData>"
+          case DataType.ScientificNotation => "<SentificNum>"
+          case DataType.Email => "<EmailData>"
+          case DataType.Fraction => "<FractionData>"
+          case DataType.IpAddress => "<IPAddressData>"
+          case _ => cellInfo.value // Shouldn't happen due to shouldAggregate check
+        
+        // Create a new CellInfo with the aggregated value
+        val updatedCell = cellInfo.copy(value = aggregatedValue)
+        ((r, c), updatedCell)
+      else
+        // Keep the original cell as-is for non-aggregated types
+        ((r, c), cellInfo)
+    }
+    
+    // Log aggregation statistics
+    val aggregatedCount = typeCounts.filterKeys(k => 
+      k == DataType.Integer || k == DataType.Float || k == DataType.Currency ||
+      k == DataType.Percentage || k == DataType.Date || k == DataType.Time ||
+      k == DataType.Year || k == DataType.ScientificNotation || 
+      k == DataType.Email || k == DataType.IpAddress || k == DataType.Fraction
+    ).values.sum
+    
+    logger.info(f"Cell aggregation: $originalCellCount cells -> $aggregatedCount aggregated cells (${aggregatedCount * 100.0 / originalCellCount}%.1f%% aggregated)")
+    
+    if config.verbose then
+      typeCounts.foreach { case (dataType, count) =>
+        if count > 0 then
+          logger.debug(f"  $dataType: $count cells")
+      }
+    
+    // Return a new grid with updated cell values
+    grid.copy(cells = updatedCells)
 
   /**
    * Builds a map from cell content to its detected data type.

@@ -169,42 +169,43 @@ object CompressionPipeline:
 
     compressionMetadata ++= anchorMetadata
 
-    // Step 2: Inverted Index Translation
+    // Step 2: Data Format Aggregation on cells (optional)
+    // Apply format aggregation BEFORE building the dictionary
+    val (processedGrid, formatMetadata) =
+      if config.disableFormatAggregation then
+        logger.info("Format aggregation disabled, using raw values in the anchored grid")
+        (anchorGrid, Map("formatAggregation" -> "disabled"))
+      else
+        logger.info("Performing data format aggregation on grid cells before dictionary compression")
+        val startFormatTime = System.currentTimeMillis()
+        
+        // Apply cell-based format aggregation
+        val aggregatedGrid = DataFormatAggregator.aggregateCells(anchorGrid, config)
+        val endFormatTime = System.currentTimeMillis()
+        
+        val metadata = Map(
+          "formatAggregation" -> "enabled",
+          "cellBasedAggregation" -> "true",
+          "aggregationTimeMs" -> (endFormatTime - startFormatTime).toString
+        )
+        
+        (aggregatedGrid, metadata)
+        
+    compressionMetadata ++= formatMetadata
+    
+    // Step 3: Inverted Index Translation (on the already type-aggregated grid)
     logger.info("Performing inverted index translation")
     val startIndexTime = System.currentTimeMillis()
-    val indexMap = InvertedIndexTranslator.translate(anchorGrid, config)
+    val finalContent = InvertedIndexTranslator.translate(processedGrid, config)
     val endIndexTime = System.currentTimeMillis()
 
     val indexMetadata = Map(
       "invertedIndexTranslation" -> "enabled",
       "translationTimeMs" -> (endIndexTime - startIndexTime).toString,
-      "uniqueContentCount" -> indexMap.size.toString
+      "uniqueContentCount" -> finalContent.size.toString
     )
 
     compressionMetadata ++= indexMetadata
-
-    // Step 3: Data Format Aggregation (optional)
-    val (finalContent, formatMetadata) =
-      if config.disableFormatAggregation then
-        logger.info("Format aggregation disabled, using raw values")
-        (indexMap, Map("formatAggregation" -> "disabled"))
-      else
-        logger.info("Performing data format aggregation")
-        val startFormatTime = System.currentTimeMillis()
-
-        // Pass configuration to DataFormatAggregator
-        val aggregatedMap = DataFormatAggregator.aggregate(indexMap, anchorGrid, config)
-        val endFormatTime = System.currentTimeMillis()
-        
-        val metadata = Map(
-          "formatAggregation" -> "enabled",
-          "aggregationTimeMs" -> (endFormatTime - startFormatTime).toString,
-          "finalEntryCount" -> aggregatedMap.size.toString
-        )
-
-        (aggregatedMap, metadata)
-
-    compressionMetadata ++= formatMetadata
 
     // Calculate overall compression metrics
     val originalCellCount = rowCount * colCount
