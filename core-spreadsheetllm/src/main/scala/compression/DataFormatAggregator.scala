@@ -311,7 +311,8 @@ object DataFormatAggregator:
       """\d{1,2}[-/]\d{1,2}""",          // DD-MM or MM/DD
       """\d{4}[-/]\d{1,2}""",            // YYYY-MM or YYYY/MM
       // Add more sophisticated patterns here
-      """\d{1,2}[-]\w{3}[-]\d{4}"""      // DD-MMM-YYYY (e.g., 15-Jan-2023)
+      """\d{1,2}[-]\w{3}[-]\d{4}""",     // DD-MMM-YYYY (e.g., 15-Jan-2023)
+      """^[A-Za-z]{3}-\d{2}$"""          // <-- mmm-yy
     )
     
     datePatterns.exists(pattern => value.matches(pattern))
