@@ -63,13 +63,25 @@ object TableSenseDetector:
       TableDetector.segmentsFromGaps(colGaps, grid.colCount)
 
     // Step 5: Use connected range detection as an additional approach
-    // Try multiple thresholds to catch different table types
+    // Use the enhanced BFS detection with anchor awareness
     val connectedRanges = mutable.ListBuffer[TableRegion]()
 
-    for (threshHor <- 1 to 2; threshVer <- 1 to 2) {
-      val foundRanges = RegionGrowthDetector.findConnectedRanges(grid, threshHor, threshVer)
-      connectedRanges ++= foundRanges
-    }
+    // Use the configuration's emptyTolerance values, or fall back to defaults
+    val threshHor = config.emptyToleranceHorizontal
+    val threshVer = config.emptyToleranceVertical
+    
+    // Call the enhanced findConnectedRanges with anchor information
+    val foundRanges = RegionGrowthDetector.findConnectedRanges(
+      grid,
+      threshHor,
+      threshVer,
+      direction = 1,
+      config = config,
+      anchorRows = anchorRows,
+      anchorCols = anchorCols
+    )
+    
+    connectedRanges ++= foundRanges
 
     // Step 6: Create candidate table regions from both approaches
     val gapBasedCandidates = for
@@ -169,22 +181,17 @@ object TableSenseDetector:
   }
 
   /**
-   * Filter out small or sparse boxes
+   * Filter out small or sparse boxes with enhanced criteria
    */
   private def filterLittleBoxes(regions: List[TableRegion], grid: SheetGrid): List[TableRegion] = {
-    regions.filter { region =>
-      // Size criteria
-      val isTooBig = region.width > 50 || region.height > 50
-      val isTooSmall = region.width < 2 || region.height < 2 || region.area < 8
-
-      // Density criteria
-      val cellCount = SheetGridUtils.countCellsInRegion(grid, region)
-      val density = cellCount.toDouble / region.area
-      val isTooSparse = density < 0.1
-
-      // Keep tables unless they're too small or too sparse (but always keep very big tables)
-      !isTooSmall && (!isTooSparse || isTooBig)
-    }
+    // Use RegionGrowthDetector's enhanced filter
+    // Create a config with stricter density requirements for this call
+    val filterConfig = SpreadsheetLLMConfig(
+      maxTableSize = 200,
+      minTableDensity = 0.15
+    )
+    
+    RegionGrowthDetector.filterLittleBoxes(regions, grid, filterConfig)
   }
 
   /**

@@ -2,6 +2,7 @@ package com.tjclp.xlcr
 package compression.tables
 
 import compression.AnchorExtractor
+import compression.anchors.AnchorAnalyzer
 import compression.models.{SheetGrid, TableRegion}
 import compression.utils.SheetGridUtils
 
@@ -17,7 +18,7 @@ import scala.math.{max, min}
  */
 object RegionGrowthDetector:
   private val logger = LoggerFactory.getLogger(getClass)
-
+  
   /**
    * Main entry point for region growth detection
    */
@@ -25,15 +26,10 @@ object RegionGrowthDetector:
     logger.info("Starting region growth detection")
 
     // Extract anchor rows and columns for BFS if anchor checking is enabled
-    val anchorRows = if (config.enableAnchorCheckInBFS && !config.disableAnchorExtraction) 
-      AnchorExtractor.extractAnchorRows(grid)
+    val (anchorRows, anchorCols) = if (config.enableAnchorCheckInBFS && !config.disableAnchorExtraction) 
+      AnchorAnalyzer.identifyAnchors(grid)
     else 
-      Set.empty[Int]
-      
-    val anchorCols = if (config.enableAnchorCheckInBFS && !config.disableAnchorExtraction)
-      AnchorExtractor.extractAnchorColumns(grid)
-    else
-      Set.empty[Int]
+      (Set.empty[Int], Set.empty[Int])
 
     if (config.verbose && config.enableAnchorCheckInBFS) {
       logger.debug(s"Using ${anchorRows.size} anchor rows and ${anchorCols.size} anchor columns for BFS boundary detection")
@@ -73,9 +69,10 @@ object RegionGrowthDetector:
   }
   
   /**
-   * Enhanced boundary refinement with multiple specialized passes
+   * Enhanced boundary refinement with multiple specialized passes.
+   * This improves on basic trimming by adding split detection and content-based trimming.
    */
-  private def refineBoundaries(regions: List[TableRegion], grid: SheetGrid, config: SpreadsheetLLMConfig): List[TableRegion] = {
+  def refineBoundaries(regions: List[TableRegion], grid: SheetGrid, config: SpreadsheetLLMConfig): List[TableRegion] = {
     var result = regions
     
     // Pass 1: Basic empty edge trimming (multiple passes for stability)
@@ -83,11 +80,197 @@ object RegionGrowthDetector:
       result = trimEmptyEdges(result, grid)
     }
     
-    // Pass 2: Sparse interior trimming - this would split regions with large empty areas
-    // Placeholder for future implementation
+    // Pass 2: Content-based trimming
+    result = trimToContentBoundaries(result, grid)
     
-    // For now, use TableDetector's refineBoundaries for compatibility
+    // Pass 3: Check for splits in tables with empty areas
+    result = checkForTableSplits(result, grid)
+    
+    // Use TableDetector's refineBoundaries for additional refinements
     TableDetector.refineBoundaries(result, grid)
+  }
+  
+  /**
+   * Checks tables for potential splits and divides them if necessary.
+   * This handles cases where BFS may have bridged over small gaps and connected separate tables.
+   */
+  private def checkForTableSplits(regions: List[TableRegion], grid: SheetGrid): List[TableRegion] = {
+    val result = mutable.ListBuffer[TableRegion]()
+    
+    for (region <- regions) {
+      // Check if the region should be split
+      val splitRegions = findTableSplits(region, grid)
+      result ++= splitRegions
+    }
+    
+    result.toList
+  }
+  
+  /**
+   * Looks for potential split points in a table region and splits it if necessary.
+   */
+  private def findTableSplits(region: TableRegion, grid: SheetGrid): List[TableRegion] = {
+    // Skip small tables
+    if (region.height < 10 || region.width < 5) {
+      return List(region)
+    }
+    
+    // Look for horizontal splits (gaps in rows)
+    val rowGaps = findRowGaps(region, grid)
+    
+    // If no splits found, return the original region
+    if (rowGaps.isEmpty) {
+      return List(region)
+    }
+    
+    // Sort gaps by row position
+    val sortedGaps = rowGaps.sortBy(_._1)
+    
+    // Create regions based on gaps
+    val splitRegions = mutable.ListBuffer[TableRegion]()
+    var startRow = region.topRow
+    
+    // Create sub-regions based on gaps
+    for ((gapStart, gapEnd) <- sortedGaps) {
+      // Only create a region if there's content above the gap
+      if (gapStart > startRow) {
+        val subRegion = TableRegion(
+          startRow, gapStart - 1,
+          region.leftCol, region.rightCol,
+          region.anchorRows.filter(r => r >= startRow && r < gapStart),
+          region.anchorCols
+        )
+        
+        // Only add if it has content
+        if (hasContent(subRegion, grid)) {
+          splitRegions += subRegion
+        }
+      }
+      
+      // Next region starts after the gap
+      startRow = gapEnd + 1
+    }
+    
+    // Add the final region after the last gap
+    if (startRow <= region.bottomRow) {
+      val subRegion = TableRegion(
+        startRow, region.bottomRow,
+        region.leftCol, region.rightCol,
+        region.anchorRows.filter(r => r >= startRow && r <= region.bottomRow),
+        region.anchorCols
+      )
+      
+      // Only add if it has content
+      if (hasContent(subRegion, grid)) {
+        splitRegions += subRegion
+      }
+    }
+    
+    // If we didn't find any valid splits, return the original region
+    if (splitRegions.isEmpty) {
+      List(region)
+    } else {
+      // Trim edges of the split regions before returning
+      splitRegions.map(r => trimToContent(r, grid)).toList
+    }
+  }
+  
+  /**
+   * Find significant gaps in rows that could indicate table boundaries.
+   * Returns a list of (start, end) row indices for gaps.
+   */
+  private def findRowGaps(region: TableRegion, grid: SheetGrid): List[(Int, Int)] = {
+    val gaps = mutable.ListBuffer[(Int, Int)]()
+    var currentGapStart = -1
+    
+    // Scan through rows looking for empty rows
+    for (row <- region.topRow to region.bottomRow) {
+      val isEmpty = SheetGridUtils.isRowEmpty(grid, region.leftCol, region.rightCol, row)
+      
+      if (isEmpty) {
+        // If this is the start of a new gap, record it
+        if (currentGapStart == -1) {
+          currentGapStart = row
+        }
+      } else {
+        // If we were in a gap and found a non-empty row, check if gap is significant
+        if (currentGapStart != -1) {
+          val gapSize = row - currentGapStart
+          // Consider a gap significant if it's 2 or more empty rows
+          if (gapSize >= 2) {
+            gaps += ((currentGapStart, row - 1))
+          }
+          currentGapStart = -1
+        }
+      }
+    }
+    
+    // Handle case where the last rows form a gap
+    if (currentGapStart != -1) {
+      val gapSize = region.bottomRow - currentGapStart + 1
+      if (gapSize >= 2) {
+        gaps += ((currentGapStart, region.bottomRow))
+      }
+    }
+    
+    gaps.toList
+  }
+  
+  /**
+   * Checks if a region has any non-empty content.
+   */
+  private def hasContent(region: TableRegion, grid: SheetGrid): Boolean = {
+    val cellCount = SheetGridUtils.countCellsInRegion(grid, region)
+    cellCount > 0
+  }
+  
+  /**
+   * Trim regions to their actual content boundaries.
+   */
+  private def trimToContentBoundaries(regions: List[TableRegion], grid: SheetGrid): List[TableRegion] = {
+    regions.map { region => trimToContent(region, grid) }
+  }
+  
+  /**
+   * Enhanced trimming that shrinks a region to only contain actual content.
+   */
+  private def trimToContent(region: TableRegion, grid: SheetGrid): TableRegion = {
+    var topRow = region.topRow
+    var bottomRow = region.bottomRow
+    var leftCol = region.leftCol
+    var rightCol = region.rightCol
+    
+    // Find first non-empty row from top
+    while (topRow <= bottomRow && SheetGridUtils.isRowEmpty(grid, leftCol, rightCol, topRow)) {
+      topRow += 1
+    }
+    
+    // Find first non-empty row from bottom
+    while (bottomRow >= topRow && SheetGridUtils.isRowEmpty(grid, leftCol, rightCol, bottomRow)) {
+      bottomRow -= 1
+    }
+    
+    // Find first non-empty column from left
+    while (leftCol <= rightCol && SheetGridUtils.isColEmpty(grid, topRow, bottomRow, leftCol)) {
+      leftCol += 1
+    }
+    
+    // Find first non-empty column from right
+    while (rightCol >= leftCol && SheetGridUtils.isColEmpty(grid, topRow, bottomRow, rightCol)) {
+      rightCol -= 1
+    }
+    
+    // Create trimmed region
+    if (topRow <= bottomRow && leftCol <= rightCol) {
+      // Filter anchor rows to only include those within the new boundaries
+      val newAnchorRows = region.anchorRows.filter(r => r >= topRow && r <= bottomRow)
+      val newAnchorCols = region.anchorCols.filter(c => c >= leftCol && c <= rightCol)
+      
+      TableRegion(topRow, bottomRow, leftCol, rightCol, newAnchorRows, newAnchorCols)
+    } else {
+      // If trimming made the region invalid, return the original
+      region
+    }
   }
 
   /**
@@ -99,7 +282,7 @@ object RegionGrowthDetector:
    * @param config Configuration with filtering parameters
    * @return Filtered list of table regions
    */
-  private def filterLittleBoxes(regions: List[TableRegion], grid: SheetGrid, config: SpreadsheetLLMConfig): List[TableRegion] = {
+  def filterLittleBoxes(regions: List[TableRegion], grid: SheetGrid, config: SpreadsheetLLMConfig): List[TableRegion] = {
     regions.filter { region =>
       // Size criteria
       val isTooBig = region.width > 50 || region.height > 50
@@ -498,8 +681,14 @@ object RegionGrowthDetector:
     val width = maxCol - minCol + 1
     val height = maxRow - minRow + 1
     
-    // Only check for large empty blocks in larger regions
-    if (width < 10 && height < 10) return false
+    // Even for small regions, we should check for empty blocks to avoid spanning across tables
+    // So we're removing the early return for small regions
+    
+    // Check for content boundaries (cells that indicate table borders)
+    val hasBorderAbove = checkForBoundaryRow(grid, row, -1, minCol, maxCol)
+    val hasBorderBelow = checkForBoundaryRow(grid, row, 1, minCol, maxCol)
+    val hasBorderLeft = checkForBoundaryColumn(grid, col, -1, minRow, maxRow)
+    val hasBorderRight = checkForBoundaryColumn(grid, col, 1, minRow, maxRow)
     
     // Check for empty block to the right
     val emptyColsRight = SheetGridUtils.countConsecutiveEmptyCols(
@@ -521,8 +710,87 @@ object RegionGrowthDetector:
       grid, row, -1, math.max(minCol, col - 5), math.min(maxCol, col + 5), 10
     )
     
-    // Stop BFS if we find large empty blocks (8+ consecutive empty rows/cols)
-    emptyColsRight >= 8 || emptyColsLeft >= 8 || emptyRowsBelow >= 8 || emptyRowsAbove >= 8
+    // For smaller tables, use smaller thresholds
+    val emptyThreshold = if (width < 10 && height < 10) 3 else 8
+    
+    // Stop BFS if we find empty blocks or borders
+    hasBorderAbove || hasBorderBelow || hasBorderLeft || hasBorderRight ||
+    emptyColsRight >= emptyThreshold || emptyColsLeft >= emptyThreshold || 
+    emptyRowsBelow >= emptyThreshold || emptyRowsAbove >= emptyThreshold
+  }
+  
+  /**
+   * Check if there is a boundary row that would indicate a table edge.
+   * Boundary rows often have borders, different formatting, or are surrounded by empty rows.
+   */
+  private def checkForBoundaryRow(grid: SheetGrid, startRow: Int, direction: Int, minCol: Int, maxCol: Int): Boolean = {
+    val rowToCheck = startRow + direction
+    
+    // If row is out of bounds, it's a boundary
+    if (rowToCheck < 0 || rowToCheck >= grid.rowCount) return true
+    
+    // Check if row is empty (empty rows can indicate table boundaries)
+    val isEmpty = SheetGridUtils.isRowEmpty(grid, minCol, maxCol, rowToCheck)
+    
+    // If not empty, check if it has borders or is a header-like row
+    if (!isEmpty) {
+      // Get cells in the row
+      val rowCells = (minCol to maxCol).flatMap(col => grid.cells.get((rowToCheck, col)))
+      
+      // Check for border indicators
+      val hasBorders = rowCells.exists(c => c.hasTopBorder || c.hasBottomBorder)
+      
+      // Check for formatting differences that indicate a header
+      val hasBoldCells = rowCells.exists(_.isBold)
+      val hasFillColors = rowCells.exists(_.hasFillColor)
+      
+      // Return true if we found indicators of a boundary
+      hasBorders || hasBoldCells || hasFillColors
+    } else {
+      // If we have 2 or more consecutive empty rows, it's a strong boundary indicator
+      val consecutiveEmptyRows = SheetGridUtils.countConsecutiveEmptyRows(
+        grid, startRow, direction, minCol, maxCol, 3
+      )
+      
+      consecutiveEmptyRows >= 2
+    }
+  }
+  
+  /**
+   * Check if there is a boundary column that would indicate a table edge.
+   * Similar to boundary rows, but for columns.
+   */
+  private def checkForBoundaryColumn(grid: SheetGrid, startCol: Int, direction: Int, minRow: Int, maxRow: Int): Boolean = {
+    val colToCheck = startCol + direction
+    
+    // If column is out of bounds, it's a boundary
+    if (colToCheck < 0 || colToCheck >= grid.colCount) return true
+    
+    // Check if column is empty (empty columns can indicate table boundaries)
+    val isEmpty = SheetGridUtils.isColEmpty(grid, minRow, maxRow, colToCheck)
+    
+    // If not empty, check if it has borders or is a header-like column
+    if (!isEmpty) {
+      // Get cells in the column
+      val colCells = (minRow to maxRow).flatMap(row => grid.cells.get((row, colToCheck)))
+      
+      // Check for border indicators
+      val hasBorders = colCells.exists(c => c.hasLeftBorder || c.hasRightBorder)
+      
+      // Check for formatting differences that indicate a header
+      val hasBoldCells = colCells.exists(_.isBold)
+      val hasFillColors = colCells.exists(_.hasFillColor)
+      
+      // Return true if we found indicators of a boundary
+      hasBorders || hasBoldCells || hasFillColors
+    } else {
+      // If we have 2 or more consecutive empty columns, it's a strong boundary indicator
+      val consecutiveEmptyCols = SheetGridUtils.countConsecutiveEmptyCols(
+        grid, startCol, direction, minRow, maxRow, 3
+      )
+      
+      consecutiveEmptyCols >= 2
+    }
   }
 
   /**

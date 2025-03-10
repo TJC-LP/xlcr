@@ -123,13 +123,12 @@ object TableDetector:
   }
 
   /**
-   * Refine boundaries of regions
+   * Refine boundaries of regions using enhanced trimming
    */
   def refineBoundaries(regions: List[TableRegion], grid: SheetGrid): List[TableRegion] = {
-    // Apply multiple passes of trimming
-    val regions1 = regions.map(r => trimEmptyTopBottom(r, grid))
-    val regions2 = regions1.map(r => trimEmptySides(r, grid))
-    regions2
+    // Use RegionGrowthDetector's enhanced boundary refinement
+    val config = SpreadsheetLLMConfig()
+    RegionGrowthDetector.refineBoundaries(regions, grid, config)
   }
 
   /**
