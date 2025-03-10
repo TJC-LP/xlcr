@@ -18,6 +18,14 @@ package com.tjclp.xlcr
  * @param verbose                     Enable detailed logging output
  * @param debugDataDetection          Enable extra debug logging for date and number detection
  * @param eliminateOverlaps           Whether to eliminate overlapping tables in detection
+ * @param maxTableSize                Maximum size of a table in cells (area) for preventing oversized tables
+ * @param minTableDensity             Minimum density (ratio of non-empty cells) for valid tables
+ * @param emptyToleranceHorizontal    Empty cell tolerance horizontally (default lowered from 3)
+ * @param emptyToleranceVertical      Empty cell tolerance vertically (default lowered from 3)
+ * @param enableAnchorCheckInBFS      Whether to use anchor locations during BFS to prevent over-expansion
+ * @param enableAdvancedHeaderDetection Whether to enable advanced multi-level header detection
+ * @param enableFormulaCorrelation    Whether to enable formula relationship analysis for table detection
+ * @param enableCohesionDetection     Whether to enable cohesion region detection
  */
 case class SpreadsheetLLMConfig(
                                  input: String = "",
@@ -33,5 +41,14 @@ case class SpreadsheetLLMConfig(
                                  threads: Int = Runtime.getRuntime.availableProcessors(),
                                  verbose: Boolean = false,
                                  debugDataDetection: Boolean = false,
-                                 eliminateOverlaps: Boolean = true
+                                 eliminateOverlaps: Boolean = true,
+                                 // New parameters for enhanced table detection
+                                 maxTableSize: Int = 200,
+                                 minTableDensity: Double = 0.15,
+                                 emptyToleranceHorizontal: Int = 1,
+                                 emptyToleranceVertical: Int = 1,
+                                 enableAnchorCheckInBFS: Boolean = true,
+                                 enableAdvancedHeaderDetection: Boolean = true,
+                                 enableFormulaCorrelation: Boolean = true,
+                                 enableCohesionDetection: Boolean = true
                                )
