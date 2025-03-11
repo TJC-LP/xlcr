@@ -38,7 +38,7 @@ case class SpreadsheetLLMConfig(
                                  preserveOriginalCoordinates: Boolean = true,
                                  enableTableDetection: Boolean = true,
                                  enableEnhancedFormulas: Boolean = true,
-                                 minGapSize: Int = 3,
+                                 minGapSize: Int = 1,
                                  threads: Int = Runtime.getRuntime.availableProcessors(),
                                  verbose: Boolean = false,
                                  debugDataDetection: Boolean = false,

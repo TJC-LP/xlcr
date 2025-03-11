@@ -102,21 +102,41 @@ object SheetGridUtils:
     if region.area > 0 then nonEmptyCellCount.toDouble / region.area else 0.0
 
   /** 
-   * Checks if a row is effectively empty (contains only empty cells or filler content)
+   * Checks if a row is empty (contains only empty cells)
+   * For table boundary detection, we need to be strict about emptiness
    */
   def isRowEmpty(grid: SheetGrid, left: Int, right: Int, row: Int): Boolean = {
-    !(left to right).exists(col =>
-      grid.cells.get((row, col)).exists(!_.isEffectivelyEmpty)
-    )
+    // Get all cells in this row within the range
+    val cells = (left to right).flatMap(col => grid.cells.get((row, col)))
+    
+    // If no cells exist in this range, the row is empty
+    if cells.isEmpty then return true
+    
+    // For table detection, we only care if cells are truly empty
+    // This ensures that tables with "test" content are properly detected
+    val nonEmptyCellCount = cells.count(!_.isEmpty)
+    
+    // The row is empty if there are no non-empty cells
+    nonEmptyCellCount == 0
   }
 
   /** 
-   * Checks if a column is effectively empty (contains only empty cells or filler content)
+   * Checks if a column is empty (contains only empty cells)
+   * For table boundary detection, we need to be strict about emptiness
    */
   def isColEmpty(grid: SheetGrid, top: Int, bottom: Int, col: Int): Boolean = {
-    !(top to bottom).exists(row =>
-      grid.cells.get((row, col)).exists(!_.isEffectivelyEmpty)
-    )
+    // Get all cells in this column within the range
+    val cells = (top to bottom).flatMap(row => grid.cells.get((row, col)))
+    
+    // If no cells exist in this range, the column is empty
+    if cells.isEmpty then return true
+    
+    // For table detection, we only care if cells are truly empty
+    // This ensures that tables with "test" content are properly detected
+    val nonEmptyCellCount = cells.count(!_.isEmpty)
+    
+    // The column is empty if there are no non-empty cells
+    nonEmptyCellCount == 0
   }
 
   /** Checks if coordinates are in bounds */

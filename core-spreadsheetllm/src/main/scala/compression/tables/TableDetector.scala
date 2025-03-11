@@ -63,9 +63,9 @@ object TableDetector:
 
     val result = scala.collection.mutable.ListBuffer[(Int, Int)]()
 
-    // Check for a gap at the beginning - for leading gaps, be more lenient
-    val leadingGapThreshold = math.max(1, minGapSize - 1)
-    if indices.head > leadingGapThreshold then
+    // Check for a gap at the beginning - use minGapSize directly
+    // For minGapSize=1, this means any empty space creates a gap
+    if indices.head > minGapSize then
       result += ((0, indices.head - 1))
 
     // Check for gaps between indices
@@ -73,12 +73,13 @@ object TableDetector:
       val current = indices(i)
       val next = indices(i + 1)
 
+      // Use minGapSize directly for gap detection
+      // For minGapSize=1, any empty cell creates a table separation
       if next - current > minGapSize then
         result += ((current + 1, next - 1))
 
-    // Check for a gap at the end - for trailing gaps, be more lenient
-    val trailingGapThreshold = math.max(1, minGapSize - 1)
-    if maxIndex - indices.last > trailingGapThreshold then
+    // Check for a gap at the end - use minGapSize directly
+    if maxIndex - indices.last > minGapSize then
       result += ((indices.last + 1, maxIndex - 1))
 
     result.toList
