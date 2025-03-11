@@ -276,44 +276,55 @@ object RegionGrowthDetector:
   
   /**
    * Enhanced trimming that shrinks a region to only contain actual content.
+   * This is a critical function for ensuring table boundaries match content exactly.
    */
-  private def trimToContent(region: TableRegion, grid: SheetGrid): TableRegion = {
-    var topRow = region.topRow
-    var bottomRow = region.bottomRow
-    var leftCol = region.leftCol
-    var rightCol = region.rightCol
+  def trimToContent(region: TableRegion, grid: SheetGrid): TableRegion = {
+    val logger = LoggerFactory.getLogger(getClass)
+    logger.info(f"Trimming table region at (${region.topRow},${region.leftCol})-(${region.bottomRow},${region.rightCol})")
     
-    // Find first non-empty row from top
-    while (topRow <= bottomRow && SheetGridUtils.isRowEmpty(grid, leftCol, rightCol, topRow)) {
-      topRow += 1
+    // Instead of iteratively checking from the edges, get all non-empty cells and use their bounds
+    val nonEmptyCells = mutable.Set[(Int, Int)]()
+    
+    // Find all non-empty cells in the region
+    for (row <- region.topRow to region.bottomRow; col <- region.leftCol to region.rightCol) {
+      if (grid.cells.get((row, col)).exists(!_.isEmpty)) {
+        nonEmptyCells.add((row, col))
+      }
     }
     
-    // Find first non-empty row from bottom
-    while (bottomRow >= topRow && SheetGridUtils.isRowEmpty(grid, leftCol, rightCol, bottomRow)) {
-      bottomRow -= 1
+    // If we found no non-empty cells, return the original region
+    if (nonEmptyCells.isEmpty) {
+      logger.info(f"No content found in region, keeping original boundaries")
+      return region
     }
     
-    // Find first non-empty column from left
-    while (leftCol <= rightCol && SheetGridUtils.isColEmpty(grid, topRow, bottomRow, leftCol)) {
-      leftCol += 1
-    }
+    // Get actual content bounds
+    val rows = nonEmptyCells.map(_._1)
+    val cols = nonEmptyCells.map(_._2)
     
-    // Find first non-empty column from right
-    while (rightCol >= leftCol && SheetGridUtils.isColEmpty(grid, topRow, bottomRow, rightCol)) {
-      rightCol -= 1
-    }
+    val topRow = rows.min
+    val bottomRow = rows.max
+    val leftCol = cols.min
+    val rightCol = cols.max
     
-    // Create trimmed region
-    if (topRow <= bottomRow && leftCol <= rightCol) {
-      // Filter anchor rows to only include those within the new boundaries
-      val newAnchorRows = region.anchorRows.filter(r => r >= topRow && r <= bottomRow)
-      val newAnchorCols = region.anchorCols.filter(c => c >= leftCol && c <= rightCol)
-      
-      TableRegion(topRow, bottomRow, leftCol, rightCol, newAnchorRows, newAnchorCols)
-    } else {
-      // If trimming made the region invalid, return the original
-      region
-    }
+    // Log the content bounds
+    logger.info(f"Content bounds: ($topRow,$leftCol)-($bottomRow,$rightCol)")
+    
+    // Create trimmed region based on actual content bounds
+    // Filter anchor rows to only include those within the new boundaries
+    val newAnchorRows = region.anchorRows.filter(r => r >= topRow && r <= bottomRow)
+    val newAnchorCols = region.anchorCols.filter(c => c >= leftCol && c <= rightCol)
+    
+    // If we have no anchor rows remaining, add the top row as an anchor
+    val finalAnchorRows = if (newAnchorRows.isEmpty) Set(topRow) else newAnchorRows
+    
+    // If we have no anchor columns remaining, add the left column as an anchor
+    val finalAnchorCols = if (newAnchorCols.isEmpty) Set(leftCol) else newAnchorCols
+    
+    logger.info(f"Trimmed region: ($topRow,$leftCol)-($bottomRow,$rightCol), width=${rightCol-leftCol+1}, height=${bottomRow-topRow+1}")
+    logger.info(f"Anchor rows: ${finalAnchorRows.mkString(", ")}, anchor columns: ${finalAnchorCols.mkString(", ")}")
+    
+    TableRegion(topRow, bottomRow, leftCol, rightCol, finalAnchorRows, finalAnchorCols)
   }
 
   /**
@@ -636,9 +647,10 @@ object RegionGrowthDetector:
                       if (SheetGridUtils.isInBounds(nextRow, nextCol, height, width) && !visited(nextRow)(nextCol)) {
                         visited(nextRow)(nextCol) = true
     
-                        // Check if next cell is empty or contains filler content
+                        // Check if next cell is empty (just empty, not considering filler content)
+                        // This is critical for test files where cells contain uniform content
                         val nextCell = grid.cells.get((nextRow, nextCol))
-                        val isEmpty = nextCell.forall(_.isEffectivelyEmpty)
+                        val isEmpty = nextCell.forall(_.isEmpty)
     
                         if (isEmpty) {
                           // Reduce counter for empty cells using the adjusted tolerances
@@ -776,9 +788,9 @@ object RegionGrowthDetector:
       grid, row, -1, math.max(minCol, col - 5), math.min(maxCol, col + 5), 10
     )
     
-    // For smaller tables, use smaller thresholds to better detect table boundaries
-    // Reduce threshold from 3 to 2 to better handle filler content as boundaries
-    val emptyThreshold = if (width < 10 && height < 10) 2 else 4
+    // For all table sizes, use a consistent threshold that's not too strict
+    // This ensures gaps are consistently detected regardless of table size
+    val emptyThreshold = 2
     
     // Log detailed information in debug mode
     if (logger.isDebugEnabled) {

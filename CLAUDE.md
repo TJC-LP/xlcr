@@ -30,6 +30,7 @@ The project is organized into these main modules:
 - `core-aspose` - Integration with Aspose for PDF conversion
 - `core-spreadsheetllm` - Excel compression for LLM processing
 - `server` - Kotlin-based server for interactive editing
+- `data` - Directory containing sample Excel files for testing
 
 ## SpreadsheetLLM Module
 This module compresses Excel spreadsheets into an LLM-friendly JSON format:
