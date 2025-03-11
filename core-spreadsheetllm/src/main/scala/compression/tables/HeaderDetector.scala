@@ -57,25 +57,27 @@ object HeaderDetector:
     val cells = (leftCol to rightCol).flatMap(col => grid.cells.get((row, col)))
 
     if (cells.isEmpty) return false
+    
+    // Filter out cells that are actually empty or filler content
+    val meaningfulCells = cells.filterNot(_.isEffectivelyEmpty)
+    
+    // If no meaningful cells, not a header
+    if (meaningfulCells.isEmpty) return false
 
     // Header characteristics
     val totalCells = cells.size
-    val nonEmptyCells = cells.count(!_.isEmpty)
-    val boldCells = cells.count(_.isBold)
-    val borderCells = cells.count(c => c.hasTopBorder || c.hasBottomBorder)
-    val colorCells = cells.count(_.hasFillColor)
+    val boldCells = meaningfulCells.count(_.isBold)
+    val borderCells = meaningfulCells.count(c => c.hasTopBorder || c.hasBottomBorder)
+    val colorCells = meaningfulCells.count(_.hasFillColor)
 
-    // Check if there's at least some content
-    if (nonEmptyCells < 1) return false
+    // Strong header indicators - only consider meaningful cells for these ratios
+    val hasMostlyBold = meaningfulCells.nonEmpty && boldCells.toDouble / meaningfulCells.size >= 0.5
+    val hasMostlyBorders = meaningfulCells.nonEmpty && borderCells.toDouble / meaningfulCells.size >= 0.5
+    val hasMostlyColor = meaningfulCells.nonEmpty && colorCells.toDouble / meaningfulCells.size >= 0.5
 
-    // Strong header indicators
-    val hasMostlyBold = boldCells.toDouble / totalCells >= 0.5
-    val hasMostlyBorders = borderCells.toDouble / totalCells >= 0.5
-    val hasMostlyColor = colorCells.toDouble / totalCells >= 0.5
-
-    // Text-based header detection
-    val hasHeaderText = cells.exists(c =>
-      !c.isEmpty && c.alphabetRatio > c.numberRatio && c.alphabetRatio > 0.5
+    // Text-based header detection - only consider meaningful cells
+    val hasHeaderText = meaningfulCells.exists(c =>
+      c.alphabetRatio > c.numberRatio && c.alphabetRatio > 0.5
     )
 
     // Return true if it shows multiple header characteristics
@@ -108,25 +110,26 @@ object HeaderDetector:
     val cells = (topRow to bottomRow).flatMap(row => grid.cells.get((row, col)))
 
     if (cells.isEmpty) return false
+    
+    // Filter out cells that are actually empty or filler content
+    val meaningfulCells = cells.filterNot(_.isEffectivelyEmpty)
+    
+    // If no meaningful cells, not a header
+    if (meaningfulCells.isEmpty) return false
 
-    // Header characteristics
-    val totalCells = cells.size
-    val nonEmptyCells = cells.count(!_.isEmpty)
-    val boldCells = cells.count(_.isBold)
-    val borderCells = cells.count(c => c.hasLeftBorder || c.hasRightBorder)
-    val colorCells = cells.count(_.hasFillColor)
+    // Header characteristics - only calculate using meaningful cells
+    val boldCells = meaningfulCells.count(_.isBold)
+    val borderCells = meaningfulCells.count(c => c.hasLeftBorder || c.hasRightBorder)
+    val colorCells = meaningfulCells.count(_.hasFillColor)
 
-    // Check if there's at least some content
-    if (nonEmptyCells < 1) return false
+    // Strong header indicators - only consider meaningful cells for these ratios
+    val hasMostlyBold = meaningfulCells.nonEmpty && boldCells.toDouble / meaningfulCells.size >= 0.5
+    val hasMostlyBorders = meaningfulCells.nonEmpty && borderCells.toDouble / meaningfulCells.size >= 0.5
+    val hasMostlyColor = meaningfulCells.nonEmpty && colorCells.toDouble / meaningfulCells.size >= 0.5
 
-    // Strong header indicators
-    val hasMostlyBold = boldCells.toDouble / totalCells >= 0.5
-    val hasMostlyBorders = borderCells.toDouble / totalCells >= 0.5
-    val hasMostlyColor = colorCells.toDouble / totalCells >= 0.5
-
-    // Text-based header detection
-    val hasHeaderText = cells.exists(c =>
-      !c.isEmpty && c.alphabetRatio > c.numberRatio && c.alphabetRatio > 0.5
+    // Text-based header detection - only consider meaningful cells
+    val hasHeaderText = meaningfulCells.exists(c =>
+      c.alphabetRatio > c.numberRatio && c.alphabetRatio > 0.5
     )
 
     // Return true if it shows multiple header characteristics

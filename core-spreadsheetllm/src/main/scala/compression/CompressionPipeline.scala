@@ -134,6 +134,14 @@ object CompressionPipeline:
                 val rowDominant = regions.count(r => r.height > 0 && r.width / r.height.toDouble >= 3.0)
                 val standard = regions.size - columnDominant - rowDominant
                 logger.info(s"Table types: $standard standard, $rowDominant row-dominant, $columnDominant column-dominant")
+                
+              // List all detected table ranges in the log
+              regions.zipWithIndex.foreach { case (region, idx) =>
+                val topLeft = InvertedIndexTranslator.CellAddress(region.topRow, region.leftCol)
+                val bottomRight = InvertedIndexTranslator.CellAddress(region.bottomRow, region.rightCol)
+                val range = s"${topLeft.toA1Notation}:${bottomRight.toA1Notation}"
+                logger.info(f"Table ${idx + 1}: $range (${region.width}x${region.height}) - anchor rows: ${region.anchorRows.size}, anchor cols: ${region.anchorCols.size}")
+              }
             regions
           else
             logger.info("Table detection disabled")
@@ -238,5 +246,12 @@ object CompressionPipeline:
     // Add detected tables
     for (range, hasHeaders, headerRow) <- detectedTables do
       compressedSheet = compressedSheet.addTable(range, hasHeaders, headerRow)
+      
+    // Log detected tables
+    if compressedSheet.tables.nonEmpty then
+      logger.info(s"Added ${compressedSheet.tables.size} tables to compressed sheet model:")
+      compressedSheet.tables.foreach { table =>
+        logger.info(s"- Table ${table.id}: ${table.range}, hasHeaders=${table.hasHeaders}")
+      }
 
     compressedSheet

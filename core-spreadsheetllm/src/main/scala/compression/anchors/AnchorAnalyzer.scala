@@ -63,20 +63,27 @@ object AnchorAnalyzer:
     // Check for fill color patterns that might indicate structure
     val hasFillColors = cells.count(_.hasFillColor) > cells.size / 4
     
+    // Filter out filler content and truly empty cells - only consider meaningful content
+    val meaningfulCells = cells.filterNot(_.isEffectivelyEmpty)
+    
+    // If all cells are filler or empty, this is not an anchor
+    if meaningfulCells.isEmpty then
+      return false
+    
     // Check for header-like characteristics
     val hasHeaderCharacteristics = dim match
       case Dimension.Row =>
         // Headers typically have more letters than numbers and may contain special characters
-        cells.count(c => c.alphabetRatio > c.numberRatio && c.textLength > 0) > cells.size / 3 ||
-        cells.count(c => c.spCharRatio > 0 && !c.isEmpty) > 1
+        meaningfulCells.count(c => c.alphabetRatio > c.numberRatio && c.textLength > 0) > meaningfulCells.size / 3 ||
+        meaningfulCells.count(c => c.spCharRatio > 0) > 1
       case Dimension.Column => 
         // Column headers often have similar characteristics to row headers
-        cells.count(c => c.alphabetRatio > c.numberRatio && c.textLength > 0) > cells.size / 3
+        meaningfulCells.count(c => c.alphabetRatio > c.numberRatio && c.textLength > 0) > meaningfulCells.size / 3
 
     // Check for type heterogeneity - mix of text, numbers, dates, etc.
-    val hasNumbers = cells.exists(_.isNumeric)
-    val hasText = cells.exists(c => !c.isNumeric && !c.isDate && !c.isEmpty)
-    val hasDates = cells.exists(_.isDate)
+    val hasNumbers = meaningfulCells.exists(_.isNumeric)
+    val hasText = meaningfulCells.exists(c => !c.isNumeric && !c.isDate)
+    val hasDates = meaningfulCells.exists(_.isDate)
     val isHeterogeneous = (hasNumbers && hasText) || (hasNumbers && hasDates) || (hasText && hasDates)
 
     // Check if this row/column is different from its neighbors

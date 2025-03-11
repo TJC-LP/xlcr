@@ -26,6 +26,7 @@ package com.tjclp.xlcr
  * @param enableAdvancedHeaderDetection Whether to enable advanced multi-level header detection
  * @param enableFormulaCorrelation    Whether to enable formula relationship analysis for table detection
  * @param enableCohesionDetection     Whether to enable cohesion region detection
+ * @param enableSplitDetection      Whether to enable detection of tables split by empty rows/columns
  */
 case class SpreadsheetLLMConfig(
                                  input: String = "",
@@ -50,5 +51,6 @@ case class SpreadsheetLLMConfig(
                                  enableAnchorCheckInBFS: Boolean = true,
                                  enableAdvancedHeaderDetection: Boolean = true,
                                  enableFormulaCorrelation: Boolean = true,
-                                 enableCohesionDetection: Boolean = true
+                                 enableCohesionDetection: Boolean = true,
+                                 enableSplitDetection: Boolean = true
                                )

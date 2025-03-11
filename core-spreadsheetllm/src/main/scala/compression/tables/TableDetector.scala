@@ -40,7 +40,14 @@ object TableDetector:
     else
       // Smaller sheet - use more sophisticated table sense detection
       logger.info(s"Using table sense detection for sheet (${grid.rowCount}x${grid.colCount})")
-      TableSenseDetector.detect(grid, anchorRows, anchorCols, config)
+      val regions = TableSenseDetector.detect(grid, anchorRows, anchorCols, config)
+      // For diagnostic purposes, log the detected tables
+      if regions.nonEmpty then
+        logger.info(s"Detected ${regions.size} tables using enhanced column detection")
+        regions.foreach { region =>
+          logger.info(f"Table at (${region.topRow},${region.leftCol}) to (${region.bottomRow},${region.rightCol}): ${region.width}x${region.height}")
+        }
+      regions
 
   /**
    * Finds gaps (sequences of missing indices) in a sorted sequence.
@@ -56,8 +63,9 @@ object TableDetector:
 
     val result = scala.collection.mutable.ListBuffer[(Int, Int)]()
 
-    // Check for a gap at the beginning
-    if indices.head > minGapSize then
+    // Check for a gap at the beginning - for leading gaps, be more lenient
+    val leadingGapThreshold = math.max(1, minGapSize - 1)
+    if indices.head > leadingGapThreshold then
       result += ((0, indices.head - 1))
 
     // Check for gaps between indices
@@ -68,8 +76,9 @@ object TableDetector:
       if next - current > minGapSize then
         result += ((current + 1, next - 1))
 
-    // Check for a gap at the end
-    if maxIndex - indices.last > minGapSize then
+    // Check for a gap at the end - for trailing gaps, be more lenient
+    val trailingGapThreshold = math.max(1, minGapSize - 1)
+    if maxIndex - indices.last > trailingGapThreshold then
       result += ((indices.last + 1, maxIndex - 1))
 
     result.toList

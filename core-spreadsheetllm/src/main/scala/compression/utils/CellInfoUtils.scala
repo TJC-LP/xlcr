@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory
 object CellInfoUtils:
   private val logger = LoggerFactory.getLogger(getClass)
 
+  // No predefined placeholder patterns - rely on pattern detection instead
+
   /**
    * Convert from CellData to CellInfo
    *
@@ -42,6 +44,9 @@ object CellInfoUtils:
       format.contains("d") && format.contains("m") && format.contains("y") ||
         format == "m/d/yy" || format.contains("date"))
     val isEmpty = displayValue.trim.isEmpty || cellData.cellType == "BLANK"
+
+    // Check if this is filler content
+    val isFillerContent = isLikelyFillerContent(displayValue)
 
     // Extract border information from cell style (if available)
     val hasTopBorder = cellData.style.exists(style =>
@@ -77,6 +82,7 @@ object CellInfoUtils:
       isNumeric = isNumeric,
       isDate = isDate,
       isEmpty = isEmpty,
+      isFillerContent = isFillerContent,
       hasTopBorder = hasTopBorder,
       hasBottomBorder = hasBottomBorder,
       hasLeftBorder = hasLeftBorder,
@@ -89,6 +95,44 @@ object CellInfoUtils:
       numberFormatString = cellData.dataFormat,
       cellData = Some(cellData)
     )
+
+  /**
+   * Detects if a cell value is likely just filler content
+   * 
+   * @param value The cell value to check
+   * @return true if the content appears to be filler
+   */
+  def isLikelyFillerContent(value: String): Boolean =
+    val normalized = value.trim.toLowerCase
+    
+    if normalized.isEmpty then
+      return false
+      
+    // Check for repeated characters (e.g., "xxxxx", "aaaaa")
+    if normalized.length > 2 && normalized.distinct.length == 1 then
+      return true
+      
+    // Check for repeated patterns (e.g., "123123123")
+    if normalized.length > 3 && isRepeatedPattern(normalized) then
+      return true
+      
+    false
+
+  /**
+   * Check if a string consists of a repeated pattern
+   * 
+   * @param str The string to check
+   * @return true if the string is a repeated pattern
+   */
+  def isRepeatedPattern(str: String): Boolean =
+    // Try different pattern lengths
+    (1 to str.length / 2).exists { patternLength =>
+      if str.length % patternLength != 0 then
+        false
+      else
+        val pattern = str.substring(0, patternLength)
+        str.sliding(patternLength, patternLength).forall(_ == pattern)
+    }
 
   /**
    * Helper method to determine the type pattern (sequence of cell types) in a row or column.

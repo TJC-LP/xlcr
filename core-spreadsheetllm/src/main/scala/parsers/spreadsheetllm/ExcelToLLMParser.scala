@@ -75,6 +75,18 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook]:
       // Extract just the cells from the grid
       val cells = sheetGrid.cells.values.toSeq
 
+      // Log sheet dimensions
+      logger.debug(s"Sheet $sheetName has dimensions: ${sheetData.rowCount}x${sheetData.columnCount} with ${cells.size} non-empty cells")
+      
+      // Log content cells to help with debugging
+      if (config.verbose) {
+        val contentCells = cells.filterNot(_.isEffectivelyEmpty)
+        logger.debug(s"Sheet $sheetName has ${contentCells.size} content cells")
+        contentCells.take(10).foreach { cell =>
+          logger.debug(f"Cell at (${cell.row},${cell.col}): '${cell.value.take(30)}', isNumeric=${cell.isNumeric}, isDate=${cell.isDate}")
+        }
+      }
+
       (sheetName, (cells, sheetData.rowCount, sheetData.columnCount))
     }.toMap
 

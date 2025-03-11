@@ -43,7 +43,7 @@ object SheetGridUtils:
     grid.cells.count { case ((row, col), cell) =>
       row >= region.topRow && row <= region.bottomRow &&
         col >= region.leftCol && col <= region.rightCol &&
-        !cell.isEmpty
+        !cell.isEffectivelyEmpty
     }
 
   /**
@@ -75,7 +75,7 @@ object SheetGridUtils:
     
     // Count different content types
     val numericCells = cells.count(_.isNumeric)
-    val textCells = cells.count(c => !c.isNumeric && !c.isDate && !c.isEmpty)
+    val textCells = cells.count(c => !c.isNumeric && !c.isDate && !c.isEffectivelyEmpty)
     val dateCells = cells.count(_.isDate)
     val formattedCells = cells.count(c => c.hasFillColor || c.isBold || c.hasBottomBorder || c.hasTopBorder)
     
@@ -101,17 +101,21 @@ object SheetGridUtils:
     val nonEmptyCellCount = countCellsInRegion(grid, region)
     if region.area > 0 then nonEmptyCellCount.toDouble / region.area else 0.0
 
-  /** Checks if a row is empty */
+  /** 
+   * Checks if a row is effectively empty (contains only empty cells or filler content)
+   */
   def isRowEmpty(grid: SheetGrid, left: Int, right: Int, row: Int): Boolean = {
     !(left to right).exists(col =>
-      grid.cells.get((row, col)).exists(!_.isEmpty)
+      grid.cells.get((row, col)).exists(!_.isEffectivelyEmpty)
     )
   }
 
-  /** Checks if a column is empty */
+  /** 
+   * Checks if a column is effectively empty (contains only empty cells or filler content)
+   */
   def isColEmpty(grid: SheetGrid, top: Int, bottom: Int, col: Int): Boolean = {
     !(top to bottom).exists(row =>
-      grid.cells.get((row, col)).exists(!_.isEmpty)
+      grid.cells.get((row, col)).exists(!_.isEffectivelyEmpty)
     )
   }
 
@@ -159,3 +163,76 @@ object SheetGridUtils:
       colToCheck >= 0 && colToCheck <= maxColIndex && isColEmpty(grid, top, bottom, colToCheck)
     }
     range.size
+    
+  /**
+   * Checks if a row could be considered an anchor row based on its content and formatting
+   * An anchor row has significant content, formatting, or structural characteristics
+   */
+  def isAnchorRow(grid: SheetGrid, row: Int): Boolean = {
+    // Get all cells in the row
+    val cells = grid.getRow(row)
+    
+    if (cells.isEmpty) return false
+    
+    // Check for anchor characteristics
+    val nonEmptyCells = cells.count(!_.isEffectivelyEmpty)
+    val hasBoldOrColor = cells.exists(c => c.isBold || c.hasFillColor)
+    val hasBorders = cells.exists(c => c.hasTopBorder || c.hasBottomBorder)
+    val hasHighTextDensity = nonEmptyCells > cells.size * 0.3
+    
+    // A row is an anchor if it has at least one of these characteristics
+    hasBoldOrColor || hasBorders || hasHighTextDensity
+  }
+  
+  /**
+   * Checks if a column could be considered an anchor column based on its content and formatting
+   * An anchor column has significant content, formatting, or structural characteristics
+   */
+  def isAnchorColumn(grid: SheetGrid, col: Int): Boolean = {
+    // Get all cells in the column
+    val cells = grid.getCol(col)
+    
+    if (cells.isEmpty) return false
+    
+    // Check for anchor characteristics
+    val nonEmptyCells = cells.count(!_.isEffectivelyEmpty)
+    val hasBoldOrColor = cells.exists(c => c.isBold || c.hasFillColor)
+    val hasBorders = cells.exists(c => c.hasLeftBorder || c.hasRightBorder)
+    val hasHighTextDensity = nonEmptyCells > cells.size * 0.3
+    
+    // A column is an anchor if it has at least one of these characteristics
+    hasBoldOrColor || hasBorders || hasHighTextDensity
+  }
+  
+  /**
+   * Checks if a region has uniform content (all non-empty cells have the same value)
+   * This is useful for identifying test/example tables or grids with repeating values.
+   *
+   * @param grid   The sheet grid
+   * @param region The table region to analyze
+   * @return True if all non-empty cells have the same value
+   */
+  def hasUniformContent(grid: SheetGrid, region: TableRegion): Boolean = {
+    // Get all non-empty cells in the region
+    val nonEmptyCells = grid.cells.filter { case ((row, col), cell) =>
+      row >= region.topRow && row <= region.bottomRow &&
+      col >= region.leftCol && col <= region.rightCol &&
+      !cell.isEmpty // Note: we check for actually empty, not "effectively empty"
+    }
+    
+    if (nonEmptyCells.isEmpty) return false
+    
+    // If we have just one cell, it's technically uniform
+    if (nonEmptyCells.size == 1) return true
+    
+    // Check if all cells have the same value
+    val values = nonEmptyCells.values.map(_.value).toSet
+    
+    // Consider it uniform if there's only one distinct value
+    // or if all values are very similar (e.g., "test", "test ", "Test")
+    if (values.size == 1) return true
+    
+    // Allow for minor variations in case/whitespace
+    val normalizedValues = values.map(_.trim.toLowerCase).filter(_.nonEmpty)
+    normalizedValues.size == 1
+  }
