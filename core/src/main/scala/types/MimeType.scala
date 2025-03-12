@@ -42,13 +42,59 @@ enum MimeType(val mimeType: String):
 
 
 object MimeType:
+  // Extensions can register additional MIME types beyond the core ones
+  private var extensionValues: Seq[MimeType] = Seq.empty
+  
+  /**
+   * Registers additional MIME types from extension modules.
+   * This allows other modules to add their own MIME types while
+   * maintaining compatibility with the core lookup system.
+   *
+   * @param extensions Sequence of additional MIME types to register
+   */
+  def registerExtension(extensions: Seq[MimeType]): Unit =
+    extensionValues ++= extensions
+  
+  /**
+   * Creates a MimeType from a string representation, throwing if not found.
+   *
+   * @param str The MIME type string
+   * @return The corresponding MimeType instance
+   * @throws IllegalArgumentException if the MIME type is not recognized
+   */
   def unsafeFromString(str: String): MimeType =
     fromString(str).getOrElse(
       throw new IllegalArgumentException(s"Invalid mime type: $str")
     )
 
-  def fromString(str: String): Option[MimeType] =
-    MimeType.values.find(_.mimeType == str.toLowerCase)
+  /**
+   * Attempts to find a MimeType matching the given string.
+   *
+   * @param str The MIME type string to look up
+   * @return Option containing the matching MimeType, or None if not found
+   */
+  def fromString(str: String): Option[MimeType] = {
+    val normalizedStr = normalize(str)
+    // First check the core values
+    MimeType.values.find(_.mimeType == normalizedStr) match {
+      case Some(mime) => Some(mime)
+      case None => 
+        // Then check the extension values
+        extensionValues.find(_.mimeType == normalizedStr)
+    }
+  }
 
-  // You might also want a method that tries to normalize the input
+  /**
+   * Normalizes a MIME type string for consistent comparison.
+   *
+   * @param str The MIME type string to normalize
+   * @return The normalized string
+   */
   def normalize(str: String): String = str.trim.toLowerCase
+  
+  /**
+   * Returns all registered MIME types (core + extensions).
+   *
+   * @return Sequence of all known MIME types
+   */
+  def allValues: Seq[MimeType] = MimeType.values.toSeq ++ extensionValues

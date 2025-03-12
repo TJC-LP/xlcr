@@ -4,6 +4,7 @@ package bridges
 import bridges.excel.*
 import bridges.tika.{TikaPlainTextBridge, TikaXmlBridge}
 import bridges.powerpoint.{SlidesDataPowerPointBridge, SlidesDataJsonBridge}
+import bridges.image.SvgToPngBridge
 import models.excel.SheetsData
 import models.powerpoint.SlidesData
 import types.MimeType
@@ -47,6 +48,7 @@ object BridgeRegistry {
     register(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, TextMarkdown, excelToMarkdown)
     register(TextMarkdown, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, markdownToExcel)
     register(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ImageSvgXml, excelToSvg)
+    register(ImageSvgXml, ImagePng, SvgToPngBridge)
 
     register(ApplicationVndMsPowerpoint, ApplicationJson, pptToJson)
     register(ApplicationJson, ApplicationVndMsPowerpoint, jsonToPpt)
