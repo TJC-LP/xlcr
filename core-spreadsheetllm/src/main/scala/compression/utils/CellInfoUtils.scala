@@ -34,6 +34,7 @@ object CellInfoUtils:
     }
 
     // Use formatted value if available, otherwise use raw value
+    // For formula cells, we want to use the calculated result, not the formula itself
     val displayValue = cellData.formattedValue.getOrElse(cellData.value.getOrElse(""))
 
     // Extract formatting information
