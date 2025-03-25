@@ -66,33 +66,6 @@ lazy val coreAspose = (project in file("core-aspose"))
     )
   )
 
-// Kotlin server project
-lazy val server = (project in file("server"))
-  .enablePlugins(KotlinPlugin)
-  .dependsOn(core)
-  .settings(commonSettings)
-  .settings(
-    name := "xlcr-server",
-    kotlinVersion := "1.9.10",
-    kotlincJvmTarget := "1.8",
-    kotlinLib("stdlib"),
-
-    // Kotlin source directory configuration
-    Compile / sourceDirectories += baseDirectory.value / "src" / "main" / "kotlin",
-    Test / sourceDirectories += baseDirectory.value / "src" / "test" / "kotlin",
-
-    libraryDependencies ++= Seq(
-      // Ktor dependencies
-      "io.ktor" % "ktor-server-core" % ktorVersion,
-      "io.ktor" % "ktor-server-cio" % ktorVersion,
-      "io.ktor" % "ktor-server-websockets" % ktorVersion,
-      "io.ktor" % "ktor-server-content-negotiation" % ktorVersion,
-
-      // Kotlin MCP
-      "io.modelcontextprotocol" % "kotlin-sdk" % "0.2.0"
-    )
-  )
-
 // SpreadsheetLLM integration module
 lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
   .dependsOn(core)
@@ -103,17 +76,30 @@ lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
       // Apache POI for Excel handling
       "org.apache.poi" % "poi" % "5.2.5",
       "org.apache.poi" % "poi-ooxml" % "5.2.5",
-      
+
       // JSON processing
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
-      
+
       // CLI argument parsing
       "com.github.scopt" %% "scopt" % "4.1.0",
-      
+
       // Testing
       "org.scalatest" %% "scalatest" % "3.2.19" % Test
+    )
+  )
+
+// Scala MCP server project
+lazy val server = (project in file("server"))
+  .dependsOn(core, coreAspose, coreSpreadsheetLLM)
+  .settings(commonSettings)
+  .settings(
+    name := "xlcr-server",
+
+    libraryDependencies ++= Seq(
+      // MCP Java SDK modules
+      "io.modelcontextprotocol.sdk" % "mcp" % "0.8.0",
     )
   )
 
