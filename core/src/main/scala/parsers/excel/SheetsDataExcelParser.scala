@@ -13,8 +13,8 @@ import scala.util.{Try, Using}
 /**
  * SheetsDataExcelParser parses Excel files (XLSX) into SheetsData.
  */
-class SheetsDataExcelParser extends SheetsDataParser[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]:
-  override def parse(input: FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]): SheetsData =
+class SheetsDataExcelParser extends SheetsDataParser[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] {
+  override def parse(input: FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]): SheetsData = {
     Try {
       Using.resource(new ByteArrayInputStream(input.data)) { bais =>
         val workbook = WorkbookFactory.create(bais)
@@ -31,3 +31,5 @@ class SheetsDataExcelParser extends SheetsDataParser[MimeType.ApplicationVndOpen
       case ex: Exception =>
         throw ParserError(s"Failed to parse Excel to SheetsData: ${ex.getMessage}", Some(ex))
     }.get
+  }
+}

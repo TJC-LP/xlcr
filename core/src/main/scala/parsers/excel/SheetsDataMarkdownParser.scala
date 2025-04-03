@@ -6,13 +6,13 @@ import models.excel.{SheetData, SheetsData}
 import types.MimeType
 import types.MimeType.TextMarkdown
 
-import org.apache.poi.ss.usermodel.*
+import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable
 
-class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type]:
+class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
   // --------------------------------------------------------------------------
   // Parse: Markdown -> SheetsData
   // --------------------------------------------------------------------------
@@ -150,3 +150,4 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type]:
     }.toList
     (sheets, evaluator)
   }
+}

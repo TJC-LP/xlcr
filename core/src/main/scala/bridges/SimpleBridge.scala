@@ -4,5 +4,7 @@ package bridges
 import types.MimeType
 import models.FileContent
 
-trait SimpleBridge[I <: MimeType, O <: MimeType] extends Bridge[FileContent[I], I, O]:
+trait SimpleBridge[I <: MimeType, O <: MimeType] extends Bridge[FileContent[I], I, O] {
   type M = FileContent[I]
+}
+  

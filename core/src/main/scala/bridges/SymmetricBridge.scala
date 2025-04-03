@@ -17,8 +17,7 @@ import scala.reflect.ClassTag
  */
 trait SymmetricBridge[M <: Model, T <: MimeType](
                                                   using mTag: ClassTag[M], tTag: ClassTag[T]
-                                                ) extends Bridge[M, T, T]:
-
+                                                ) extends Bridge[M, T, T] {
   /**
    * A single parser for T => M
    */
@@ -37,3 +36,5 @@ trait SymmetricBridge[M <: Model, T <: MimeType](
   override protected def inputRenderer: Option[Renderer[M, T]] = Some(renderer)
 
   override protected def outputRenderer: Renderer[M, T] = renderer
+}
+
