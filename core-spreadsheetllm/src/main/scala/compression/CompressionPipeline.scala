@@ -227,10 +227,14 @@ object CompressionPipeline:
     logger.info(f"Compression complete for $sheetName: $originalCellCount cells -> $finalEntryCount entries ($overallCompressionRatio%.2fx compression)")
 
     // Collect formula information
-    val formulas = rawCells.filter(_.isFormula).map { cell =>
-      val formula = cell.value // In reality, this would be the actual formula text
-      val address = InvertedIndexTranslator.CellAddress(cell.row, cell.col).toA1Notation
-      (formula, address)
+    val formulas = rawCells.filter(_.isFormula).flatMap { cell =>
+      // Extract formula text from the original cellData
+      cell.cellData.flatMap(_.formula).map { formula =>
+        val address = InvertedIndexTranslator.CellAddress(cell.row, cell.col).toA1Notation
+        // Ensure formula starts with = if it doesn't already
+        val normalizedFormula = if (formula.startsWith("=")) formula else s"=$formula"
+        (normalizedFormula, address)
+      }
     }.toMap
 
     // Create the basic compressed sheet

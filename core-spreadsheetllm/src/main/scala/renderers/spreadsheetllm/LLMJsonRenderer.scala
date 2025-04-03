@@ -141,7 +141,7 @@ class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJ
       // Apply formatting based on content
       value match
         case v if v.startsWith("=") =>
-          // Format formulas using backticks
+          // Format formulas using backticks and ensure they're not escaped
           s"`$v`"
         case v if v.contains("**") || v.contains("*") || v.contains("`") =>
           // Value already has markdown, leave as-is
