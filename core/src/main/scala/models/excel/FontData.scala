@@ -18,6 +18,8 @@ final case class FontData(
                            rgbColor: Option[String] = None // Hex RGB color string
                          )
 
-object FontData:
+object FontData {
   implicit val encoder: Encoder[FontData] = deriveEncoder[FontData]
   implicit val decoder: Decoder[FontData] = deriveDecoder[FontData]
+}
+  
