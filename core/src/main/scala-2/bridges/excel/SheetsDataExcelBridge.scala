@@ -19,6 +19,10 @@ object SheetsDataExcelBridge extends MergeableSymmetricBridge[
   implicit val mTag: ClassTag[SheetsData] = implicitly[ClassTag[SheetsData]]
   implicit val tTag: ClassTag[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] = 
     implicitly[ClassTag[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]]
+  implicit val iTag: ClassTag[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] = 
+    implicitly[ClassTag[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]]
+  implicit val oTag: ClassTag[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] = 
+    implicitly[ClassTag[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]]
   
   override protected def parser = new SheetsDataExcelParser()
 

@@ -11,7 +11,9 @@ import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardOpenOption}
-import scala.util.{Failure, Success, Try, Using}
+// Import Using from our compat package
+import com.tjclp.xlcr.compat.Using
+import scala.util.{Failure, Success, Try}
 
 /**
  * A central utility object for file operations (reading, writing,

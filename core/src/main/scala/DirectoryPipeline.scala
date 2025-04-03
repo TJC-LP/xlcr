@@ -5,7 +5,8 @@ import com.tjclp.xlcr.types.{FileType, MimeType}
 import org.slf4j.LoggerFactory
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
-import scala.jdk.CollectionConverters._
+// Import the right collection converters based on Scala version
+import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
 import scala.util.{Failure, Success, Try}
 
 /**

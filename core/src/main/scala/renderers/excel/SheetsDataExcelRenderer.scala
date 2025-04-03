@@ -10,7 +10,8 @@ import org.apache.poi.ss.util.CellRangeAddress
 import org.apache.poi.xssf.usermodel._
 
 import java.io.ByteArrayOutputStream
-import scala.util.{Try, Using}
+import scala.util.Try
+import com.tjclp.xlcr.compat.Using
 
 /**
  * Renders SheetsData back to Excel format (XLSX)

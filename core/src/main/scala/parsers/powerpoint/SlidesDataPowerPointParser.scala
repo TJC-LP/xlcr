@@ -13,8 +13,11 @@ import org.apache.poi.xslf.usermodel._
 
 import java.awt.{Color, Rectangle}
 import java.io.ByteArrayInputStream
-import scala.jdk.CollectionConverters._
-import scala.util.{Try, Using}
+// Import the right collection converters based on Scala version
+import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
+// Import Using from our compat package
+import com.tjclp.xlcr.compat.Using
+import scala.util.Try
 
 /**
  * SlidesDataPowerPointParser parses PowerPoint presentations (PPTX) into SlidesData,

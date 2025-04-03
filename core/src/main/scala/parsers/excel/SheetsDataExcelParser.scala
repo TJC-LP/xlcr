@@ -8,7 +8,8 @@ import types.MimeType
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
 import java.io.ByteArrayInputStream
-import scala.util.{Try, Using}
+import scala.util.Try
+import com.tjclp.xlcr.compat.Using
 
 /**
  * SheetsDataExcelParser parses Excel files (XLSX) into SheetsData.

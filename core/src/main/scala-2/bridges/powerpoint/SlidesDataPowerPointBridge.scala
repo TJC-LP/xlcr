@@ -20,6 +20,8 @@ object SlidesDataPowerPointBridge
   
   implicit val mTag: ClassTag[SlidesData] = implicitly[ClassTag[SlidesData]]
   implicit val tTag: ClassTag[ApplicationVndMsPowerpoint.type] = implicitly[ClassTag[ApplicationVndMsPowerpoint.type]]
+  implicit val iTag: ClassTag[ApplicationVndMsPowerpoint.type] = implicitly[ClassTag[ApplicationVndMsPowerpoint.type]]
+  implicit val oTag: ClassTag[ApplicationVndMsPowerpoint.type] = implicitly[ClassTag[ApplicationVndMsPowerpoint.type]]
 
   override protected def parser: SlidesDataPowerPointParser.type = SlidesDataPowerPointParser
 

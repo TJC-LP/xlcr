@@ -18,6 +18,8 @@ import scala.reflect.ClassTag
 object SheetsDataJsonBridge extends MergeableSymmetricBridge[SheetsData, ApplicationJson.type] {
   implicit val mTag: ClassTag[SheetsData] = implicitly[ClassTag[SheetsData]]
   implicit val tTag: ClassTag[ApplicationJson.type] = implicitly[ClassTag[ApplicationJson.type]]
+  implicit val iTag: ClassTag[ApplicationJson.type] = implicitly[ClassTag[ApplicationJson.type]]
+  implicit val oTag: ClassTag[ApplicationJson.type] = implicitly[ClassTag[ApplicationJson.type]]
   
   override protected def parser = new SheetsDataJsonParser()
 

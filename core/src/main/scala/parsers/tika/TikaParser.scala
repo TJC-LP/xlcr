@@ -11,7 +11,8 @@ import org.apache.tika.parser.{AutoDetectParser, ParseContext}
 import org.xml.sax.ContentHandler
 
 import java.io.ByteArrayInputStream
-import scala.util.{Try, Using}
+import scala.util.Try
+import com.tjclp.xlcr.compat.Using
 
 /**
  * TikaParser is a base trait for parsing content using Apache Tika.

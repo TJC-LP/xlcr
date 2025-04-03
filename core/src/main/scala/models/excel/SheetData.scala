@@ -8,7 +8,8 @@ import io.circe.syntax._
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.XSSFSheet
 
-import scala.jdk.CollectionConverters._
+// Import the right collection converters based on Scala version
+import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
 
 /**
  * Represents the data of a single sheet in an Excel workbook:

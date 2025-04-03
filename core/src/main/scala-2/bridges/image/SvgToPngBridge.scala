@@ -20,7 +20,7 @@ import scala.reflect.ClassTag
  * then renders that model to PNG (image/png) using Apache Batik.
  */
 object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
-  type M = FileContent[ImageSvgXml.type]
+  override type M = FileContent[ImageSvgXml.type]
   
   implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
   implicit val iTag: ClassTag[ImageSvgXml.type] = implicitly[ClassTag[ImageSvgXml.type]]

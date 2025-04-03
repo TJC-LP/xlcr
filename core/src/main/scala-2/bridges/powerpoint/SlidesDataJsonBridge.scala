@@ -19,6 +19,8 @@ object SlidesDataJsonBridge
   
   implicit val mTag: ClassTag[SlidesData] = implicitly[ClassTag[SlidesData]]
   implicit val tTag: ClassTag[ApplicationJson.type] = implicitly[ClassTag[ApplicationJson.type]]
+  implicit val iTag: ClassTag[ApplicationJson.type] = implicitly[ClassTag[ApplicationJson.type]]
+  implicit val oTag: ClassTag[ApplicationJson.type] = implicitly[ClassTag[ApplicationJson.type]]
 
   override protected def parser = new SlidesDataJsonParser()
 

@@ -21,6 +21,8 @@ object SheetsDataMarkdownBridge extends MergeableSymmetricBridge[
 ] {
   implicit val mTag: ClassTag[SheetsData] = implicitly[ClassTag[SheetsData]]
   implicit val tTag: ClassTag[TextMarkdown.type] = implicitly[ClassTag[TextMarkdown.type]]
+  implicit val iTag: ClassTag[TextMarkdown.type] = implicitly[ClassTag[TextMarkdown.type]]
+  implicit val oTag: ClassTag[TextMarkdown.type] = implicitly[ClassTag[TextMarkdown.type]]
   
   override protected def parser = new SheetsDataMarkdownParser()
 

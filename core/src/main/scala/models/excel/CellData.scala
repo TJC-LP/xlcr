@@ -5,7 +5,7 @@ import models.excel.ExcelReference.{Col, Row, Cell => RefCell}
 import utils.excel.ExcelUtils
 
 import io.circe._
-import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
+// circe.derivation not needed here, we're using the codecs from other files
 import io.circe.generic.semiauto._
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.{XSSFCellStyle, XSSFColor, XSSFFont}

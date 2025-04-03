@@ -13,9 +13,9 @@ import scala.reflect.ClassTag
  * Converts any supported input to plain text using Tika.
  */
 object TikaPlainTextBridge extends TikaBridge[TextPlain.type] {
-  implicit val mTag: ClassTag[TikaModel[TextPlain.type]] = implicitly[ClassTag[TikaModel[TextPlain.type]]]
-  implicit val iTag: ClassTag[MimeType] = implicitly[ClassTag[MimeType]]
-  implicit val oTag: ClassTag[TextPlain.type] = implicitly[ClassTag[TextPlain.type]]
+  override implicit val mTag: ClassTag[TikaModel[TextPlain.type]] = implicitly[ClassTag[TikaModel[TextPlain.type]]]
+  override implicit val iTag: ClassTag[MimeType] = implicitly[ClassTag[MimeType]]
+  override implicit val oTag: ClassTag[TextPlain.type] = implicitly[ClassTag[TextPlain.type]]
   
   override protected def parser = new TikaTextParser()
 

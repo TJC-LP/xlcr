@@ -19,6 +19,8 @@ object SheetsDataSvgBridge extends SymmetricBridge[
 ] {
   implicit val mTag: ClassTag[SheetsData] = implicitly[ClassTag[SheetsData]]
   implicit val tTag: ClassTag[ImageSvgXml.type] = implicitly[ClassTag[ImageSvgXml.type]]
+  implicit val iTag: ClassTag[ImageSvgXml.type] = implicitly[ClassTag[ImageSvgXml.type]]
+  implicit val oTag: ClassTag[ImageSvgXml.type] = implicitly[ClassTag[ImageSvgXml.type]]
   
   override protected def renderer = new SheetsDataSvgRenderer()
 

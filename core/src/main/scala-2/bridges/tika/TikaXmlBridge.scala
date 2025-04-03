@@ -14,9 +14,9 @@ import scala.reflect.ClassTag
  * Falls back to plain text wrapped in XML if XML parsing fails.
  */
 object TikaXmlBridge extends TikaBridge[ApplicationXml.type] {
-  implicit val mTag: ClassTag[TikaModel[ApplicationXml.type]] = implicitly[ClassTag[TikaModel[ApplicationXml.type]]]
-  implicit val iTag: ClassTag[MimeType] = implicitly[ClassTag[MimeType]]
-  implicit val oTag: ClassTag[ApplicationXml.type] = implicitly[ClassTag[ApplicationXml.type]]
+  override implicit val mTag: ClassTag[TikaModel[ApplicationXml.type]] = implicitly[ClassTag[TikaModel[ApplicationXml.type]]]
+  override implicit val iTag: ClassTag[MimeType] = implicitly[ClassTag[MimeType]]
+  override implicit val oTag: ClassTag[ApplicationXml.type] = implicitly[ClassTag[ApplicationXml.type]]
   
   override protected def parser = new TikaXmlParser()
 

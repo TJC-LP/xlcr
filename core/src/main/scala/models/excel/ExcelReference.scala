@@ -112,6 +112,8 @@ object ExcelReference {
 
   object Row {
     def fromString(s: String): Option[Row] = {
+      // Use StringOps from compat in Scala 2.12
+      import com.tjclp.xlcr.compat._
       s.toIntOption.filter(_ >= 0).map(Row(_))
     }
 
