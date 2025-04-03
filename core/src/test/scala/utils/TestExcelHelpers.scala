@@ -1,15 +1,15 @@
 package com.tjclp.xlcr
 package utils
 
-import org.apache.poi.ss.usermodel.*
+import org.apache.poi.ss.usermodel.{Cell, CellType, FillPatternType, FormulaError, IndexedColors, BorderStyle, WorkbookFactory}
 import org.apache.poi.ss.util.CellReference
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.slf4j.LoggerFactory
 
-import java.io.FileOutputStream
+import java.io.{FileOutputStream, ByteArrayInputStream}
 import java.nio.file.Path
-import scala.util.boundary.break
-import scala.util.{Using, boundary}
+import scala.util.{Try, Success, Failure}
+import com.tjclp.xlcr.compat.Using
 
 object TestExcelHelpers {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -138,55 +138,63 @@ object TestExcelHelpers {
     val wb2 = WorkbookFactory.create(file2.toFile)
 
     try {
-      boundary {
-        // Check number of sheets
-        if wb1.getNumberOfSheets != wb2.getNumberOfSheets then
-          logger.error(s"Sheet count mismatch: ${wb1.getNumberOfSheets} vs ${wb2.getNumberOfSheets}")
-          break(false)
-
-        // Check each sheet
-        for sheetIndex <- 0 until wb1.getNumberOfSheets do
-          val sheet1 = wb1.getSheetAt(sheetIndex)
-          val sheet2 = wb2.getSheetAt(sheetIndex)
-
-          // Compare sheet structure
-          if sheet1.getLastRowNum != sheet2.getLastRowNum then
-            logger.error(s"Row count mismatch in sheet $sheetIndex: ${sheet1.getLastRowNum} vs ${sheet2.getLastRowNum}")
-            break(false)
-
-          // Compare sheet names
-          if sheet1.getSheetName != sheet2.getSheetName then
-            logger.error(s"Sheet name mismatch: ${sheet1.getSheetName} vs ${sheet2.getSheetName}")
-            break(false)
-
-          // Compare row content
-          for rowIndex <- 0 to sheet1.getLastRowNum do
-            val row1 = sheet1.getRow(rowIndex)
-            val row2 = sheet2.getRow(rowIndex)
-
-            if (row1 == null && row2 != null) || (row1 != null && row2 == null) then
-              logger.error(s"Row existence mismatch at index $rowIndex in sheet ${sheet1.getSheetName}")
-              break(false)
-
-            if row1 != null && row2 != null then
-              if row1.getLastCellNum != row2.getLastCellNum then
-                logger.error(s"Cell count mismatch in row $rowIndex: ${row1.getLastCellNum} vs ${row2.getLastCellNum}")
-                break(false)
-
-              // Compare cell content
-              for cellIndex <- 0 until row1.getLastCellNum do
-                val cell1 = row1.getCell(cellIndex)
-                val cell2 = row2.getCell(cellIndex)
-                if !compareCells(cell1, cell2) then
-                  val addr = s"${sheet1.getSheetName}!${CellReference.convertNumToColString(cellIndex)}${rowIndex + 1}"
-                  logger.error(s"Cell content mismatch at $addr")
-                  logger.error(s"Cell1: ${formatCellValue(cell1)}")
-                  logger.error(s"Cell2: ${formatCellValue(cell2)}")
-                  break(false)
-
-        // If we get here, files are considered equal
-        true
+      // Check number of sheets
+      if (wb1.getNumberOfSheets != wb2.getNumberOfSheets) {
+        logger.error(s"Sheet count mismatch: ${wb1.getNumberOfSheets} vs ${wb2.getNumberOfSheets}")
+        return false
       }
+
+      // Check each sheet
+      for (sheetIndex <- 0 until wb1.getNumberOfSheets) {
+        val sheet1 = wb1.getSheetAt(sheetIndex)
+        val sheet2 = wb2.getSheetAt(sheetIndex)
+
+        // Compare sheet structure
+        if (sheet1.getLastRowNum != sheet2.getLastRowNum) {
+          logger.error(s"Row count mismatch in sheet $sheetIndex: ${sheet1.getLastRowNum} vs ${sheet2.getLastRowNum}")
+          return false
+        }
+
+        // Compare sheet names
+        if (sheet1.getSheetName != sheet2.getSheetName) {
+          logger.error(s"Sheet name mismatch: ${sheet1.getSheetName} vs ${sheet2.getSheetName}")
+          return false
+        }
+
+        // Compare row content
+        for (rowIndex <- 0 to sheet1.getLastRowNum) {
+          val row1 = sheet1.getRow(rowIndex)
+          val row2 = sheet2.getRow(rowIndex)
+
+          if ((row1 == null && row2 != null) || (row1 != null && row2 == null)) {
+            logger.error(s"Row existence mismatch at index $rowIndex in sheet ${sheet1.getSheetName}")
+            return false
+          }
+
+          if (row1 != null && row2 != null) {
+            if (row1.getLastCellNum != row2.getLastCellNum) {
+              logger.error(s"Cell count mismatch in row $rowIndex: ${row1.getLastCellNum} vs ${row2.getLastCellNum}")
+              return false
+            }
+
+            // Compare cell content
+            for (cellIndex <- 0 until row1.getLastCellNum) {
+              val cell1 = row1.getCell(cellIndex)
+              val cell2 = row2.getCell(cellIndex)
+              if (!compareCells(cell1, cell2)) {
+                val addr = s"${sheet1.getSheetName}!${CellReference.convertNumToColString(cellIndex)}${rowIndex + 1}"
+                logger.error(s"Cell content mismatch at $addr")
+                logger.error(s"Cell1: ${formatCellValue(cell1)}")
+                logger.error(s"Cell2: ${formatCellValue(cell2)}")
+                return false
+              }
+            }
+          }
+        }
+      }
+
+      // If we get here, files are considered equal
+      true
     } finally {
       wb1.close()
       wb2.close()
@@ -205,16 +213,18 @@ object TestExcelHelpers {
     }
   }
 
-  private def compareCells(cell1: Cell, cell2: Cell): Boolean =
-    if (cell1 == null && cell2 == null) then true
-    else if (cell1 == null || cell2 == null) then false
+  private def compareCells(cell1: Cell, cell2: Cell): Boolean = {
+    if (cell1 == null && cell2 == null) true
+    else if (cell1 == null || cell2 == null) false
     else
       cell1.getCellType == cell2.getCellType && {
-        cell1.getCellType match
+        cell1.getCellType match {
           case CellType.NUMERIC => cell1.getNumericCellValue == cell2.getNumericCellValue
           case CellType.STRING => cell1.getStringCellValue == cell2.getStringCellValue
           case CellType.BOOLEAN => cell1.getBooleanCellValue == cell2.getBooleanCellValue
           case CellType.FORMULA => cell1.getCellFormula == cell2.getCellFormula
           case _ => true // Consider other types equal or handle specifically
+        }
       }
+  }
 }

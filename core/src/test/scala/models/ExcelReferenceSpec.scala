@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package models
 
-import models.excel.ExcelReference.{*, given}
+import models.excel.ExcelReference
+import models.excel.ExcelReference.{Cell, Row, Col, Range, Named}
 import utils.excel.ExcelUtils
 
 import org.scalatest.flatspec.AnyFlatSpec
@@ -10,11 +11,11 @@ import org.scalatest.matchers.should.Matchers
 class ExcelReferenceSpec extends AnyFlatSpec with Matchers {
 
   "parseA1" should "parse a simple cell reference" in {
-    parseA1("A1") shouldBe Some(Cell("", Row(1), Col(0)))
+    ExcelReference.parseA1("A1") shouldBe Some(Cell("", Row(1), Col(0)))
   }
 
   it should "parse a cell reference with a sheet name" in {
-    parseA1("Sheet1!B2") shouldBe Some(Cell("Sheet1", Row(2), Col(1)))
+    ExcelReference.parseA1("Sheet1!B2") shouldBe Some(Cell("Sheet1", Row(2), Col(1)))
   }
 
   it should "parse a range reference" in {
@@ -22,7 +23,7 @@ class ExcelReferenceSpec extends AnyFlatSpec with Matchers {
       Cell("", Row(1), Col(0)),
       Cell("", Row(2), Col(1))
     ))
-    parseA1("A1:B2") shouldBe expected
+    ExcelReference.parseA1("A1:B2") shouldBe expected
   }
 
   it should "parse a range reference with a sheet name" in {
@@ -30,19 +31,19 @@ class ExcelReferenceSpec extends AnyFlatSpec with Matchers {
       Cell("Sheet1", Row(1), Col(0)),
       Cell("Sheet1", Row(2), Col(1))
     ))
-    parseA1("Sheet1!A1:B2") shouldBe expected
+    ExcelReference.parseA1("Sheet1!A1:B2") shouldBe expected
   }
 
   it should "parse a named reference" in {
-    parseA1("MyNamedRange") shouldBe Some(Named("MyNamedRange"))
+    ExcelReference.parseA1("MyNamedRange") shouldBe Some(Named("MyNamedRange"))
   }
 
   it should "return None for invalid input" in {
-    parseA1("Invalid!") shouldBe None
+    ExcelReference.parseA1("Invalid!") shouldBe None
   }
 
   it should "handle multi-letter column references" in {
-    parseA1("AA1") shouldBe Some(Cell("", Row(1), Col(26)))
+    ExcelReference.parseA1("AA1") shouldBe Some(Cell("", Row(1), Col(26)))
   }
 
   "toA1" should "convert a cell reference to A1 notation" in {

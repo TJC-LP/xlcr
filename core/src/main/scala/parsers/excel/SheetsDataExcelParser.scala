@@ -1,6 +1,7 @@
 package com.tjclp.xlcr
 package parsers.excel
 
+import compat.Using
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
 import types.MimeType
@@ -9,7 +10,6 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 
 import java.io.ByteArrayInputStream
 import scala.util.Try
-import com.tjclp.xlcr.compat.Using
 
 /**
  * SheetsDataExcelParser parses Excel files (XLSX) into SheetsData.

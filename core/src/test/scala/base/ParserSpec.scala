@@ -1,11 +1,10 @@
 package com.tjclp.xlcr
 package base
 
-import com.tjclp.xlcr.*
 import com.tjclp.xlcr.parsers.Parser
 import com.tjclp.xlcr.models.{FileContent, Model}
 import com.tjclp.xlcr.types.MimeType
-import org.scalatest._
+import com.tjclp.xlcr.ParserError
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
