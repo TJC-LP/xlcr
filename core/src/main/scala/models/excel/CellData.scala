@@ -34,13 +34,7 @@ final case class CellData(
   def address: String = ExcelUtils.a1ToSheetAndAddress(referenceA1)._2
 }
 
-object CellData {
-  implicit val configuration: Configuration = Configuration.default.withDefaults
-
-  implicit val encoder: Encoder[CellData] = ConfiguredEncoder.derived[CellData]
-
-  implicit val decoder: Decoder[CellData] = ConfiguredDecoder.derived[CellData]
-
+object CellData extends CellDataCodecs {
   /**
    * Convert a POI cell to our CellData representation.
    */

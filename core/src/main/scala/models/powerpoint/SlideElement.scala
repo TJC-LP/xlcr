@@ -1,9 +1,6 @@
 package com.tjclp.xlcr
 package models.powerpoint
 
-import io.circe._
-import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
-
 /**
  * SlideElement represents an individual item on a slide,
  * such as text, image, or shape. It now includes an optional shapeType
@@ -18,8 +15,4 @@ final case class SlideElement(
                                style: Option[SlideElementStyle] = None
                              )
 
-object SlideElement {
-  implicit val configuration: Configuration = Configuration.default.withDefaults
-  implicit val encoder: Encoder[SlideElement] = ConfiguredEncoder.derived[SlideElement]
-  implicit val decoder: Decoder[SlideElement] = ConfiguredDecoder.derived[SlideElement]
-}
+object SlideElement extends SlideElementCodecs

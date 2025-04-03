@@ -16,7 +16,9 @@ import scala.util.{Failure, Success, Try}
  * M = Input mime type (the TikaModel's type)
  * O = Output mime type
  */
-trait TikaRenderer[O <: MimeType](implicit mimeTag: ClassTag[O]) extends Renderer[TikaModel[O], O] {
+trait TikaRenderer[O <: MimeType] extends Renderer[TikaModel[O], O] {
+  implicit val mimeTag: ClassTag[O]
+  
   // Explicitly declare mime type
   val mimeType: O
 
@@ -44,3 +46,5 @@ trait TikaRenderer[O <: MimeType](implicit mimeTag: ClassTag[O]) extends Rendere
     meta.map { case (k, v) => s"$k: $v" }.mkString("\n")
   }
 }
+
+class TikaRenderError(message: String, cause: Option[Throwable]) extends RendererError(message, cause)

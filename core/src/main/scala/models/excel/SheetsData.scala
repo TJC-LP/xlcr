@@ -4,8 +4,6 @@ package models.excel
 import models.Model
 import types.Mergeable
 
-import io.circe.generic.semiauto.*
-
 /**
  * SheetsData is a container for multiple SheetData instances.
  * It implements the Model trait so it can load (fromMimeType) or
@@ -30,4 +28,4 @@ final case class SheetsData(sheets: List[SheetData]) extends Model with Mergeabl
   }
 }
 
-object SheetsData extends Model
+object SheetsData extends SheetsDataCodecs with Model

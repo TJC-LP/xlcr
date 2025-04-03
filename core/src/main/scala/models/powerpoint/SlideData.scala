@@ -3,10 +3,6 @@ package models.powerpoint
 
 import types.Mergeable
 
-import io.circe._
-import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
-import io.circe.generic.semiauto.*
-
 final case class SlideData(
                             title: Option[String] = None,
                             index: Int,
@@ -27,9 +23,4 @@ final case class SlideData(
   }
 }
 
-object SlideData {
-  implicit val configuration: Configuration = Configuration.default.withDefaults
-
-  implicit val encoder: Encoder[SlideData] = ConfiguredEncoder.derived[SlideData]
-  implicit val decoder: Decoder[SlideData] = ConfiguredDecoder.derived[SlideData]
-}
+object SlideData extends SlideDataCodecs

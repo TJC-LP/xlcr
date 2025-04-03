@@ -10,7 +10,7 @@ import types.MimeType
  * @tparam M model type to render
  * @tparam O output MimeType
  */
-trait Renderer[M <: Model, O <: MimeType]:
+trait Renderer[M <: Model, O <: MimeType] {
   /**
    * Render model into output file content
    *
@@ -20,3 +20,4 @@ trait Renderer[M <: Model, O <: MimeType]:
    */
   @throws[RendererError]
   def render(model: M): FileContent[O]
+}

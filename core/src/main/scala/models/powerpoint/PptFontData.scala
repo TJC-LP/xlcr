@@ -1,9 +1,6 @@
 package com.tjclp.xlcr
 package models.powerpoint
 
-import io.circe._
-import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
-
 /**
  * Represents font information for a SlideElement in PowerPoint.
  */
@@ -16,10 +13,4 @@ final case class PptFontData(
                               color: Option[String] = None // e.g. "#RRGGBB"
                             )
 
-object PptFontData {
-  implicit val configuration: Configuration = Configuration.default.withDefaults
-
-  implicit val encoder: Encoder[PptFontData] = ConfiguredEncoder.derived[PptFontData]
-  implicit val decoder: Decoder[PptFontData] = ConfiguredDecoder.derived[PptFontData]
-}
-  
+object PptFontData extends PptFontDataCodecs

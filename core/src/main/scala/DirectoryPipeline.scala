@@ -32,11 +32,11 @@ object DirectoryPipeline {
    * @param diffMode    whether to merge changes if applicable
    */
   def runDirectoryToDirectory(
-      inputDir: String,
-      outputDir: String,
-      mimeMappings: Map[MimeType, MimeType],
-      diffMode: Boolean = false
-  ): Unit = {
+                               inputDir: String,
+                               outputDir: String,
+                               mimeMappings: Map[MimeType, MimeType],
+                               diffMode: Boolean = false
+                             ): Unit = {
     val inPath = Paths.get(inputDir)
     val outPath = Paths.get(outputDir)
 

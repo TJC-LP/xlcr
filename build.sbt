@@ -1,7 +1,14 @@
 import kotlin.Keys.{kotlinLib, kotlinVersion, kotlincJvmTarget}
 
+// Define Scala versions
+val scala212 = "2.12.18"
+val scala3 = "3.3.4"
+
 ThisBuild / version      := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := "3.3.4"
+ThisBuild / scalaVersion := scala3
+ThisBuild / crossScalaVersions := Seq(scala212, scala3)
+
+// For IDE compatibility
 
 val circeVersion = "0.14.10"
 val ktorVersion  = "3.0.3"
@@ -17,7 +24,18 @@ lazy val commonSettings = Seq(
     "ch.qos.logback" % "logback-classic" % "1.5.15",
     "org.apache.logging.log4j" % "log4j-api" % "2.24.3",
     "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.24.3"
-  )
+  ),
+  
+  // Source directory configuration for cross-compilation
+  Compile / unmanagedSourceDirectories ++= {
+    val sourceDir = (Compile / sourceDirectory).value
+    val baseDir = baseDirectory.value
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _)) => Seq(sourceDir / "scala", sourceDir / "scala-2", baseDir / "src" / "main" / "scala-2")
+      case Some((3, _)) => Seq(sourceDir / "scala", sourceDir / "scala-3", baseDir / "src" / "main" / "scala-3")
+      case _ => Seq(sourceDir / "scala") // Fallback
+    }
+  }
 )
 
 // Core Scala project
@@ -49,7 +67,20 @@ lazy val core = (project in file("core"))
 
       // XML
       "org.apache.xmlgraphics" % "batik-all" % "1.18"
-    )
+    ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq(
+        "io.circe" %% "circe-generic-extras" % "0.14.4",
+      )
+      case _ => Seq() // No special options for Scala 3
+    }),
+    scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq(
+        "-Ypartial-unification",
+        "-language:higherKinds",
+        "-language:implicitConversions"
+      )
+      case _ => Seq() // No special options for Scala 3
+    })
   )
 
 // New Aspose integration module

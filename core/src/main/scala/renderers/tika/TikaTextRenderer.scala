@@ -8,5 +8,6 @@ import types.MimeType.TextPlain
  */
 class TikaTextRenderer extends TikaRenderer[TextPlain.type] {
   override val mimeType: TextPlain.type = TextPlain
+  implicit val mimeTag: scala.reflect.ClassTag[TextPlain.type] = scala.reflect.ClassTag(TextPlain.getClass)
 }
   

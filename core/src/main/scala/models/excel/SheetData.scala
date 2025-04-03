@@ -4,7 +4,6 @@ package models.excel
 import types.Mergeable
 
 import io.circe._
-import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
 import io.circe.syntax._
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.XSSFSheet
@@ -52,13 +51,7 @@ case class SheetData(
   }
 }
 
-object SheetData {
-  // Configuration for circe codecs with default values
-  implicit val configuration: Configuration = Configuration.default.withDefaults
-
-  // Circe encoders and decoders for a single SheetData
-  implicit val sheetDataEncoder: Encoder[SheetData] = ConfiguredEncoder.derived[SheetData]
-  implicit val sheetDataDecoder: Decoder[SheetData] = ConfiguredDecoder.derived[SheetData]
+object SheetData extends SheetDataCodecs {
 
   /**
    * Generate a single JSON object representing one sheet.
