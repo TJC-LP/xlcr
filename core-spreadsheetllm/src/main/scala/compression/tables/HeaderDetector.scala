@@ -11,7 +11,7 @@ import scala.collection.mutable
  * HeaderDetector provides methods for detecting and analyzing header rows and columns
  * in a spreadsheet table, based on formatting cues and content analysis.
  */
-object HeaderDetector:
+object HeaderDetector {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -27,7 +27,7 @@ object HeaderDetector:
     // 2. Detect left headers (row headers)
     val leftHeaders = detectLeftHeaders(grid, region)
 
-    logger.info(s"Detected ${upHeaders.size} row headers and ${leftHeaders.size} column headers")
+    logger.info(s"Detected ${upHeaders.size} row headers (up) and ${leftHeaders.size} column headers (left)")
     (upHeaders, leftHeaders)
   }
 
@@ -67,7 +67,8 @@ object HeaderDetector:
     
     // If too few meaningful cells, not a header
     // This matches the C# check for sumContentExist.SubmatrixSum(header) <= 4
-    if (meaningfulCells.size <= 4 && meaningfulCells.size.toDouble / cells.size <= 0.5) return false
+    val meaningfulRatio = if (cells.nonEmpty) meaningfulCells.size.toDouble / cells.size else 0.0
+    if (meaningfulCells.size <= 4 && meaningfulRatio <= 0.5) return false
 
     // Check if cells are too uniform - similar to C# TextDistinctCount check
     // For larger areas, we should have more distinct values
@@ -92,9 +93,9 @@ object HeaderDetector:
     
     // Similar to C# HeaderRate calculation
     val formatScore = {
-      val boldRatio = if (meaningfulCells.nonEmpty) boldCells.toDouble / meaningfulCells.size else 0
-      val borderRatio = if (meaningfulCells.nonEmpty) borderCells.toDouble / meaningfulCells.size else 0
-      val colorRatio = if (meaningfulCells.nonEmpty) colorCells.toDouble / meaningfulCells.size else 0
+      val boldRatio = if (meaningfulCells.nonEmpty) boldCells.toDouble / meaningfulCells.size else 0.0
+      val borderRatio = if (meaningfulCells.nonEmpty) borderCells.toDouble / meaningfulCells.size else 0.0
+      val colorRatio = if (meaningfulCells.nonEmpty) colorCells.toDouble / meaningfulCells.size else 0.0
       
       // Weight the formatting signals similar to the C# implementation
       boldRatio * 0.4 + borderRatio * 0.3 + colorRatio * 0.3
@@ -103,7 +104,7 @@ object HeaderDetector:
     // Calculate content-based score - similar to C# implementation checks
     val contentScore = {
       val alphabetRatio = if (meaningfulCells.nonEmpty) 
-        alphabetDominatedCells.toDouble / meaningfulCells.size else 0
+        alphabetDominatedCells.toDouble / meaningfulCells.size else 0.0
         
       // Check for header keywords (similar to C# TextDistinctCount check)
       val hasHeaderKeywords = meaningfulCells.exists { cell =>
@@ -115,7 +116,7 @@ object HeaderDetector:
       }
       
       // Weight the content signals
-      alphabetRatio * 0.7 + (if (hasHeaderKeywords) 0.3 else 0)
+      alphabetRatio * 0.7 + (if (hasHeaderKeywords) 0.3 else 0.0)
     }
     
     // Check the right side of the row - similar to rightRegionOfHeader in C# code
@@ -126,11 +127,11 @@ object HeaderDetector:
     val rightSideFormatted = rightSideMeaningful.count(c => c.isBold || c.hasFillColor || 
                                                         c.hasTopBorder || c.hasBottomBorder)
     val rightSideFormatRatio = if (rightSideMeaningful.nonEmpty) 
-                              rightSideFormatted.toDouble / rightSideMeaningful.size else 0
+                              rightSideFormatted.toDouble / rightSideMeaningful.size else 0.0
     
     // Combine scores - similar to the C# implementation's final checks
     // ContentExistValueDensity > 2 * 0.3 && HeaderRate > 0.4 && HeaderRate(rightRegion) > 0.3
-    val contentDensity = meaningfulCells.size.toDouble / cells.size
+    val contentDensity = meaningfulRatio
     val isHeader = contentDensity > 0.3 && 
                   (formatScore > 0.4 || contentScore > 0.4) && 
                   rightSideFormatRatio > 0.3
@@ -197,7 +198,8 @@ object HeaderDetector:
     
     // If too few meaningful cells, not a header
     // This matches the C# check for sumContentExist.SubmatrixSum(header) <= 4
-    if (meaningfulCells.size <= 4 && meaningfulCells.size.toDouble / cells.size <= 0.5) return false
+    val meaningfulRatio = if (cells.nonEmpty) meaningfulCells.size.toDouble / cells.size else 0.0
+    if (meaningfulCells.size <= 4 && meaningfulRatio <= 0.5) return false
 
     // Check if cells are too uniform - similar to C# TextDistinctCount check
     // For larger areas, we should have more distinct values
@@ -219,9 +221,9 @@ object HeaderDetector:
     
     // Similar to C# HeaderRate calculation
     val formatScore = {
-      val boldRatio = if (meaningfulCells.nonEmpty) boldCells.toDouble / meaningfulCells.size else 0
-      val borderRatio = if (meaningfulCells.nonEmpty) borderCells.toDouble / meaningfulCells.size else 0
-      val colorRatio = if (meaningfulCells.nonEmpty) colorCells.toDouble / meaningfulCells.size else 0
+      val boldRatio = if (meaningfulCells.nonEmpty) boldCells.toDouble / meaningfulCells.size else 0.0
+      val borderRatio = if (meaningfulCells.nonEmpty) borderCells.toDouble / meaningfulCells.size else 0.0
+      val colorRatio = if (meaningfulCells.nonEmpty) colorCells.toDouble / meaningfulCells.size else 0.0
       
       // Weight the formatting signals similar to the C# implementation
       boldRatio * 0.4 + borderRatio * 0.3 + colorRatio * 0.3
@@ -230,7 +232,7 @@ object HeaderDetector:
     // Calculate content-based score
     val contentScore = {
       val alphabetRatio = if (meaningfulCells.nonEmpty) 
-        alphabetDominatedCells.toDouble / meaningfulCells.size else 0
+        alphabetDominatedCells.toDouble / meaningfulCells.size else 0.0
         
       // Check for header keywords
       val hasHeaderKeywords = meaningfulCells.exists { cell =>
@@ -241,21 +243,21 @@ object HeaderDetector:
       }
       
       // Weight the content signals
-      alphabetRatio * 0.7 + (if (hasHeaderKeywords) 0.3 else 0)
+      alphabetRatio * 0.7 + (if (hasHeaderKeywords) 0.3 else 0.0)
     }
     
     // Check the upper part of the column - similar to upRegionOfHeader in C# code
-    val upperRowIdx = math.max(topRow + 3, (topRow + bottomRow) / 2)
+    val upperRowIdx = math.min(bottomRow, topRow + 3)
     val upperCells = (topRow to upperRowIdx).flatMap(row => grid.cells.get((row, col)))
     val upperMeaningful = upperCells.filterNot(_.isEmpty)
     
     val upperFormatted = upperMeaningful.count(c => c.isBold || c.hasFillColor || 
                                                   c.hasLeftBorder || c.hasRightBorder)
     val upperFormatRatio = if (upperMeaningful.nonEmpty) 
-                          upperFormatted.toDouble / upperMeaningful.size else 0
+                          upperFormatted.toDouble / upperMeaningful.size else 0.0
     
     // Combine scores - similar to the C# implementation's final checks
-    val contentDensity = meaningfulCells.size.toDouble / cells.size
+    val contentDensity = meaningfulRatio
     val isHeader = contentDensity > 0.3 && 
                   (formatScore > 0.4 || contentScore > 0.4) && 
                   upperFormatRatio > 0.3
@@ -266,3 +268,4 @@ object HeaderDetector:
     
     isHeader
   }
+}

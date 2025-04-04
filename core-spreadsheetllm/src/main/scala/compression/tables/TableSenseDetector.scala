@@ -15,7 +15,7 @@ import scala.math.min
  * This is a more sophisticated multi-pass approach for smaller sheets
  * that uses gap analysis, boundary lines, and multiple criteria for high quality detection.
  */
-object TableSenseDetector:
+object TableSenseDetector {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -177,22 +177,23 @@ object TableSenseDetector:
     // Filter regions with general criteria
     val filteredCandidates = uniqueCandidates.filter { region =>
       val cellCount = SheetGridUtils.countCellsInRegion(grid, region)
-      val contentDensity = cellCount.toDouble / region.area
+      val regionArea = region.area
+      val contentDensity = if (regionArea > 0) cellCount.toDouble / regionArea else 0.0
 
       // Check minimum size
       val isBigEnough = region.width >= 2 && region.height >= 2
 
       // Calculate the width-to-height ratio to identify very wide or very tall tables
-      val widthToHeightRatio = if region.height > 0 then region.width.toDouble / region.height else 0.0
+      val widthToHeightRatio = if (region.height > 0) region.width.toDouble / region.height else Double.MaxValue
 
       // Calculate separate row and column densities for capturing sparse tables
-      val rowsCovered = if region.height > 0 then
+      val rowsCovered = if (region.height > 0) {
         anchorRows.count(r => r >= region.topRow && r <= region.bottomRow).toDouble / region.height
-      else 0.0
+      } else 0.0
 
-      val colsCovered = if region.width > 0 then
+      val colsCovered = if (region.width > 0) {
         anchorCols.count(c => c >= region.leftCol && c <= region.rightCol).toDouble / region.width
-      else 0.0
+      } else 0.0
 
       // Special case: if the region is significantly wider than tall, it's likely a row-oriented table
       val isRowDominantTable = widthToHeightRatio > 3.0 && rowsCovered > 0.4
@@ -738,3 +739,4 @@ object TableSenseDetector:
 
     result.toList
   }
+}

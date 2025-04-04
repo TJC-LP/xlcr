@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 /**
  * Utility functions for creating and working with CellInfo objects
  */
-object CellInfoUtils:
+object CellInfoUtils {
   private val logger = LoggerFactory.getLogger(getClass)
 
   // No predefined placeholder patterns - rely on pattern detection instead
@@ -20,7 +20,7 @@ object CellInfoUtils:
    * @param cellData The CellData from the core Excel model
    * @return CellInfo suitable for anchor extraction
    */
-  def fromCellData(cellData: CellData): CellInfo =
+  def fromCellData(cellData: CellData): CellInfo = {
     // Extract the row and column from the cell's A1 reference
     // Keep the original 1-based row index that Excel uses (don't subtract 1)
     val rowIndex = cellData.rowIndex
@@ -96,6 +96,7 @@ object CellInfoUtils:
       numberFormatString = cellData.dataFormat,
       cellData = Some(cellData)
     )
+  }
 
   /**
    * Detects if a cell value is likely just filler content
@@ -103,7 +104,7 @@ object CellInfoUtils:
    * @param value The cell value to check
    * @return true if the content appears to be filler
    */
-  def isLikelyFillerContent(value: String): Boolean =
+  def isLikelyFillerContent(value: String): Boolean = {
     val normalized = value.trim.toLowerCase
     
     if normalized.isEmpty then
@@ -118,6 +119,7 @@ object CellInfoUtils:
       return true
       
     false
+  }
 
   /**
    * Check if a string consists of a repeated pattern
@@ -125,7 +127,7 @@ object CellInfoUtils:
    * @param str The string to check
    * @return true if the string is a repeated pattern
    */
-  def isRepeatedPattern(str: String): Boolean =
+  def isRepeatedPattern(str: String): Boolean = {
     // Try different pattern lengths
     (1 to str.length / 2).exists { patternLength =>
       if str.length % patternLength != 0 then
@@ -134,27 +136,30 @@ object CellInfoUtils:
         val pattern = str.substring(0, patternLength)
         str.sliding(patternLength, patternLength).forall(_ == pattern)
     }
+  }
 
   /**
    * Helper method to determine the type pattern (sequence of cell types) in a row or column.
    */
-  def typePattern(cells: Seq[CellInfo]): String =
+  def typePattern(cells: Seq[CellInfo]): String = {
     cells.map { cell =>
       if cell.isEmpty then "E"
       else if cell.isNumeric then "N"
       else if cell.isDate then "D"
       else "T" // Text
     }.mkString
+  }
 
   /**
    * Helper method to determine the formatting pattern in a row or column.
    * This helps detect structure based on borders, colors, and formatting.
    */
-  def formatPattern(cells: Seq[CellInfo]): String =
+  def formatPattern(cells: Seq[CellInfo]): String = {
     cells.map { cell =>
       val borderPart = if cell.hasTopBorder || cell.hasBottomBorder ||
         cell.hasLeftBorder || cell.hasRightBorder then "B" else "-"
       val colorPart = if cell.hasFillColor then "C" else "-"
       val boldPart = if cell.isBold then "F" else "-"
       s"$borderPart$colorPart$boldPart"
-    }.mkString
+    }.mkString  }
+}
