@@ -78,13 +78,14 @@ lazy val core = (project in file("core"))
       // XML
       "org.apache.xmlgraphics" % "batik-all" % "1.18"
     ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 12)) => Seq(
+      case Some((2, _)) => Seq(
         "io.circe" %% "circe-generic-extras" % "0.14.4",
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value
       )
       case _ => Seq() // No special options for Scala 3
     }),
     scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 12)) => Seq(
+      case Some((2, _)) => Seq(
         "-Ypartial-unification",
         "-language:higherKinds",
         "-language:implicitConversions"
