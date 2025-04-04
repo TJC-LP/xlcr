@@ -18,8 +18,8 @@ object AsposeBridge {
     def createPdfSaveOptions(): com.aspose.cells.PdfSaveOptions =
       new com.aspose.cells.PdfSaveOptions()
       
-    val LANDSCAPE_ORIENTATION = com.aspose.cells.PageOrientationType.LANDSCAPE
-    val PAPER_A4 = com.aspose.cells.PaperSizeType.PAPER_A_4
+    val LANDSCAPE_ORIENTATION: Int = com.aspose.cells.PageOrientationType.LANDSCAPE
+    val PAPER_A4: Int = com.aspose.cells.PaperSizeType.PAPER_A_4
   }
   
   // ===== SLIDES =====
@@ -27,7 +27,7 @@ object AsposeBridge {
     def createPresentation(stream: java.io.InputStream): com.aspose.slides.Presentation =
       new com.aspose.slides.Presentation(stream)
       
-    val PDF_FORMAT = com.aspose.slides.SaveFormat.Pdf
+    val PDF_FORMAT: Int = com.aspose.slides.SaveFormat.Pdf
   }
   
   // ===== WORDS =====
@@ -41,8 +41,8 @@ object AsposeBridge {
     def createLoadOptions(): com.aspose.words.LoadOptions =
       new com.aspose.words.LoadOptions()
       
-    val MHTML_FORMAT = com.aspose.words.LoadFormat.MHTML
-    val PDF_FORMAT = com.aspose.words.SaveFormat.PDF
+    val MHTML_FORMAT: Int = com.aspose.words.LoadFormat.MHTML
+    val PDF_FORMAT: Int = com.aspose.words.SaveFormat.PDF
   }
   
   // ===== EMAIL =====
