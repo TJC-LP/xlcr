@@ -2,6 +2,7 @@ package com.tjclp.xlcr
 package compression
 
 import com.tjclp.xlcr.compression.models.{CellInfo, SheetGrid}
+import com.tjclp.xlcr.compat.StringOps
 import org.slf4j.LoggerFactory
 
 import scala.util.matching.Regex
@@ -225,12 +226,12 @@ object DataFormatAggregator {
     }
 
     // Log aggregation statistics
-    val aggregatedCount = typeCounts.view.filterKeys(k =>
+    val aggregatedCount = typeCounts.filter { case (k, _) =>
       k == DataType.Integer || k == DataType.Float || k == DataType.Currency ||
       k == DataType.Percentage || k == DataType.Date || k == DataType.Time ||
       k == DataType.Year || k == DataType.ScientificNotation ||
       k == DataType.Email || k == DataType.IpAddress || k == DataType.Fraction
-    ).values.sum
+    }.values.sum
 
     logger.info(f"Cell aggregation: $originalCellCount cells -> $aggregatedCount aggregated cells (${aggregatedCount * 100.0 / originalCellCount}%.1f%% aggregated)")
 
@@ -902,7 +903,7 @@ object DataFormatAggregator {
         )
 
         datePatterns.collectFirst {
-          case (pattern, format) if pattern.matches(value) => format
+          case (pattern, format) if pattern.findFirstIn(value).isDefined => format
         }.orElse(Some("yyyy-mm-dd"))
 
       case DataType.Time =>
@@ -914,7 +915,7 @@ object DataFormatAggregator {
         )
 
         timePatterns.collectFirst {
-          case (pattern, format) if pattern.matches(value) => format
+          case (pattern, format) if pattern.findFirstIn(value).isDefined => format
         }.orElse(Some("hh:mm:ss"))
 
       case DataType.Currency =>

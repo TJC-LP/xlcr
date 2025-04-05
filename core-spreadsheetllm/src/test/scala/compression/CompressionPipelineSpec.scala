@@ -53,14 +53,15 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
 
     // The cells should be compressed, but the references should maintain logical structure
     // "ID" and "Name" should be in the first row (if they were kept)
-    if compressedSheet.content.contains("ID") then
+    if (compressedSheet.content.contains("ID")) {
       compressedSheet.content("ID") match {
         case Left(address) => address should startWith("A") // Should be in column A
         case Right(_) => fail("Expected a single cell reference")
       }
+    }
 
     // "1" should be below "ID" if both were kept
-    if compressedSheet.content.contains("1") && compressedSheet.content.contains("ID") then
+    if (compressedSheet.content.contains("1") && compressedSheet.content.contains("ID")) {
       val idAddress = compressedSheet.content("ID") match {
         case Left(address) => address
         case Right(_) => fail("Expected a single cell reference")
@@ -74,6 +75,7 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
       val oneRow = oneAddress.drop(1).toInt
 
       oneRow shouldBe (idRow + 1) // The "1" should be in the row after "ID"
+    }
 
     // Check that metadata is present
     compressedSheet.compressionMetadata should not be empty

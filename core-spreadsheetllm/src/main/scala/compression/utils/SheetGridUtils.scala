@@ -73,7 +73,7 @@ object SheetGridUtils {
     // Get cells in the region
     val cells = getCellsInRegion(grid, region)
 
-    if cells.isEmpty then return 0.0
+    if (cells.isEmpty) return 0.0
 
     // Count different content types
     val numericCells = cells.count(_.isNumeric)
@@ -103,7 +103,7 @@ object SheetGridUtils {
    */
   def calculateDensity(grid: SheetGrid, region: TableRegion): Double = {
     val nonEmptyCellCount = countCellsInRegion(grid, region)
-    if region.area > 0 then nonEmptyCellCount.toDouble / region.area else 0.0
+    if (region.area > 0) nonEmptyCellCount.toDouble / region.area else 0.0
   }
 
   /**
@@ -115,7 +115,7 @@ object SheetGridUtils {
     val cells = (left to right).flatMap(col => grid.cells.get((row, col)))
 
     // If no cells exist in this range, the row is empty
-    if cells.isEmpty then return true
+    if (cells.isEmpty) return true
 
     // For table detection, we only care if cells are truly empty
     // This ensures that tables with "test" content are properly detected
@@ -134,7 +134,7 @@ object SheetGridUtils {
     val cells = (top to bottom).flatMap(row => grid.cells.get((row, col)))
 
     // If no cells exist in this range, the column is empty
-    if cells.isEmpty then return true
+    if (cells.isEmpty) return true
 
     // For table detection, we only care if cells are truly empty
     // This ensures that tables with "test" content are properly detected
@@ -162,7 +162,7 @@ object SheetGridUtils {
    */
   def countConsecutiveEmptyRows(grid: SheetGrid, startRow: Int, direction: Int,
                                 left: Int, right: Int, maxRows: Int): Int = {
-    val maxRowIndex = if direction > 0 then grid.rowCount - 1 else 0
+    val maxRowIndex = if (direction > 0) grid.rowCount - 1 else 0
     val range = (1 to maxRows).takeWhile { step =>
       val rowToCheck = startRow + (step * direction)
       rowToCheck >= 0 && rowToCheck <= maxRowIndex && isRowEmpty(grid, left, right, rowToCheck)
@@ -182,13 +182,14 @@ object SheetGridUtils {
    * @return Number of consecutive empty columns
    */
   def countConsecutiveEmptyCols(grid: SheetGrid, startCol: Int, direction: Int,
-                                top: Int, bottom: Int, maxCols: Int): Int =
-    val maxColIndex = if direction > 0 then grid.colCount - 1 else 0
+                                top: Int, bottom: Int, maxCols: Int): Int = {
+    val maxColIndex = if (direction > 0) grid.colCount - 1 else 0
     val range = (1 to maxCols).takeWhile { step =>
       val colToCheck = startCol + (step * direction)
       colToCheck >= 0 && colToCheck <= maxColIndex && isColEmpty(grid, top, bottom, colToCheck)
     }
     range.size
+  }
 
   /**
    * Checks if a row could be considered an anchor row based on its content and formatting

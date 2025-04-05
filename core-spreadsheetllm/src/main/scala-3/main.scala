@@ -1,5 +1,7 @@
 package com.tjclp.xlcr
 
+import bridges.spreadsheetllm.SpreadsheetLLMBridgeRegistry
+
 import org.slf4j.LoggerFactory
 import scopt.OParser
 
@@ -90,21 +92,21 @@ def main(args: String*): Unit =
   // Parse the command-line arguments
   OParser.parse(parser, args.toArray, SpreadsheetLLMConfig()) match
     case Some(config) =>
-      logger.info(s"Starting SpreadsheetLLM compression: $config")
+      logger.info(s"Starting SpreadsheetLLM compression with config: $config")
 
       // Run the pipeline using the bridges
-      import bridges.spreadsheetllm.SpreadsheetLLMBridgeRegistry
       // Initialize bridge registry with the configuration
       SpreadsheetLLMBridgeRegistry.registerAll(config)
 
       // Run the pipeline
       try
         Pipeline.run(config.input, config.output, config.diffMode)
+        logger.info("SpreadsheetLLM pipeline completed successfully.")
       catch
         case ex: Exception =>
-          logger.error("Error in SpreadsheetLLM pipeline", ex)
-          System.exit(1)
+          logger.error("Error executing SpreadsheetLLM pipeline", ex)
+          System.exit(1) // Exit with error code
 
     case None =>
-      // Arguments parsing failed or help was requested
-      System.exit(1)
+      // Arguments parsing failed or help was requested by scopt
+      System.exit(1) // Exit with error code

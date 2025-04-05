@@ -1,13 +1,11 @@
 package com.tjclp.xlcr
 package bridges.spreadsheetllm
 
-import bridges.{Bridge, SimpleBridge}
+import bridges.Bridge
 import models.spreadsheetllm.CompressedWorkbook
 import parsers.spreadsheetllm.ExcelToLLMParser
 import renderers.spreadsheetllm.LLMJsonRenderer
 import types.MimeType
-
-import scala.reflect.ClassTag
 
 /**
  * Bridge that converts Excel files to LLM-friendly JSON using the SpreadsheetLLM

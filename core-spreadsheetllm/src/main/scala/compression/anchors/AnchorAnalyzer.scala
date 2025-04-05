@@ -79,7 +79,7 @@ object AnchorAnalyzer {
     
     // Check for header-like characteristics
     val headerCheckThreshold = if (meaningfulCells.nonEmpty) meaningfulCells.size / 3.0 else 0.0
-    val hasHeaderCharacteristics = dim match
+    val hasHeaderCharacteristics = dim match {
       case Dimension.Row =>
         // Headers typically have more letters than numbers and may contain special characters
         (meaningfulCells.count(c => c.alphabetRatio > c.numberRatio && c.textLength > 0) > headerCheckThreshold) ||
@@ -87,6 +87,7 @@ object AnchorAnalyzer {
       case Dimension.Column => 
         // Column headers often have similar characteristics to row headers
         meaningfulCells.count(c => c.alphabetRatio > c.numberRatio && c.textLength > 0) > headerCheckThreshold
+    }
 
     // Check for type heterogeneity - mix of text, numbers, dates, etc.
     val hasNumbers = meaningfulCells.exists(_.isNumeric)

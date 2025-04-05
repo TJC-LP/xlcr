@@ -426,8 +426,8 @@ object CohesionDetector {
    */
   private def verifyBoxSplit(grid: SheetGrid, region: TableRegion): Boolean = {
     // Implementation for empty line detection and verification
-    val rowOffset = if region.height > 12 then 2 else 0
-    val colOffset = if region.width > 12 then 2 else 0
+    val rowOffset = if (region.height > 12) 2 else 0
+    val colOffset = if (region.width > 12) 2 else 0
     
     // Check for empty rows that split the region
     for (i <- region.topRow + 3 + rowOffset until region.bottomRow - 4) {
