@@ -1,12 +1,12 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import org.apache.poi.ss.usermodel.*
+import org.apache.poi.ss.usermodel.{Sheet, FillPatternType, FormulaError, IndexedColors, BorderStyle}
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 import java.io.FileOutputStream
 import java.nio.file.Path
-import scala.util.Using
+import com.tjclp.xlcr.compat.Using
 
 /**
  * Common utilities for Excel parser tests to reduce code duplication

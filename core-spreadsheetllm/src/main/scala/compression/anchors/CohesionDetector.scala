@@ -12,7 +12,7 @@ import scala.collection.mutable
  * Implements cohesion region detection and filtering based on original SheetCompressor spec.
  * Cohesion regions represent areas that should be kept together during table detection.
  */
-object CohesionDetector:
+object CohesionDetector {
   private val logger = LoggerFactory.getLogger(getClass)
   
   /**
@@ -34,10 +34,11 @@ object CohesionDetector:
     val mergedCellRegions = detectMergedCellRegions(grid)
     
     // 4. If formula correlation is enabled, find formula-based cohesion regions
-    val formulaRegions = if (config.enableFormulaCorrelation) 
+    val formulaRegions = if (config.enableFormulaCorrelation) {
       detectFormulaCohesionRegions(grid)
-    else 
+    } else {
       List.empty[CohesionRegion]
+    }
     
     // 5. Combine and refine all cohesion regions
     val allCohesionRegions = (formattingBasedRegions ++ contentBasedRegions ++ mergedCellRegions ++ formulaRegions)
@@ -236,12 +237,12 @@ object CohesionDetector:
     val components = formulaGraph.findConnectedComponents()
     
     // Convert components to cohesion regions
-    components.map { cells =>
+    components.flatMap { cells =>
       if (cells.size > 1) {
-        createCohesionRegionFromCells(cells, CohesionType.Formula)
+        Some(createCohesionRegionFromCells(cells, CohesionType.Formula))
       } else {
         // Skip single-cell components
-        null
+        None
       }
     }.filter(_ != null)
   }
@@ -425,8 +426,8 @@ object CohesionDetector:
    */
   private def verifyBoxSplit(grid: SheetGrid, region: TableRegion): Boolean = {
     // Implementation for empty line detection and verification
-    val rowOffset = if region.height > 12 then 2 else 0
-    val colOffset = if region.width > 12 then 2 else 0
+    val rowOffset = if (region.height > 12) 2 else 0
+    val colOffset = if (region.width > 12) 2 else 0
     
     // Check for empty rows that split the region
     for (i <- region.topRow + 3 + rowOffset until region.bottomRow - 4) {
@@ -466,3 +467,4 @@ object CohesionDetector:
     
     true // No splits found
   }
+}

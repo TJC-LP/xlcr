@@ -11,7 +11,7 @@ import com.tjclp.xlcr.ParserError
  * @tparam I input MimeType
  * @tparam M output model type
  */
-trait Parser[I <: MimeType, M <: Model]:
+trait Parser[I <: MimeType, M <: Model] {
   /**
    * Parse input file content into model
    *
@@ -21,3 +21,4 @@ trait Parser[I <: MimeType, M <: Model]:
    */
   @throws[ParserError]
   def parse(input: FileContent[I]): M
+}

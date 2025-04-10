@@ -6,13 +6,13 @@ import models.excel.{SheetData, SheetsData}
 import types.MimeType
 import types.MimeType.TextMarkdown
 
-import org.apache.poi.ss.usermodel.*
+import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable
 
-class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type]:
+class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
   // --------------------------------------------------------------------------
   // Parse: Markdown -> SheetsData
   // --------------------------------------------------------------------------
@@ -77,6 +77,9 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type]:
 
     for ((line, i) <- contentLines.zipWithIndex) {
       val cells = parseMarkdownRow(line)
+      // Import StringOps from compat package for Scala 2.12
+      import com.tjclp.xlcr.compat._
+      
       if (cells.nonEmpty) {
         val rowNumberString = cells.head.trim
         // row is 1-based
@@ -150,3 +153,4 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type]:
     }.toList
     (sheets, evaluator)
   }
+}

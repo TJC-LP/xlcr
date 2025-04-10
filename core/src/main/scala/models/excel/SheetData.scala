@@ -3,13 +3,13 @@ package models.excel
 
 import types.Mergeable
 
-import io.circe.*
-import io.circe.derivation.{Configuration, ConfiguredDecoder, ConfiguredEncoder}
-import io.circe.syntax.*
-import org.apache.poi.ss.usermodel.*
+import io.circe._
+import io.circe.syntax._
+import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.XSSFSheet
 
-import scala.jdk.CollectionConverters.*
+// Import the right collection converters based on Scala version
+import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
 
 /**
  * Represents the data of a single sheet in an Excel workbook:
@@ -52,26 +52,22 @@ case class SheetData(
   }
 }
 
-object SheetData {
-  // Configuration for circe codecs with default values
-  given Configuration = Configuration.default.withDefaults
-
-  // Circe encoders and decoders for a single SheetData
-  implicit val sheetDataEncoder: Encoder[SheetData] = ConfiguredEncoder.derived[SheetData]
-  implicit val sheetDataDecoder: Decoder[SheetData] = ConfiguredDecoder.derived[SheetData]
+object SheetData extends SheetDataCodecs {
 
   /**
    * Generate a single JSON object representing one sheet.
    */
-  def toJson(sheetData: SheetData): String =
+  def toJson(sheetData: SheetData): String = {
     sheetData.asJson.spaces2
+  }
 
   /**
    * Parse a single JSON object into a SheetData.
    * (Preserves backward compatibility for single-sheet usage.)
    */
-  def fromJson(json: String): Either[Error, SheetData] =
+  def fromJson(json: String): Either[Error, SheetData] = {
     io.circe.parser.decode[SheetData](json)
+  }
 
   // --------------------------------------------------------------------------
   // Multi-Sheet JSON Methods
@@ -80,8 +76,9 @@ object SheetData {
   /**
    * Convert a list of SheetData objects into a JSON array string.
    */
-  def toJsonMultiple(sheets: List[SheetData]): String =
+  def toJsonMultiple(sheets: List[SheetData]): String = {
     sheets.asJson.spaces2
+  }
 
   /**
    * Parse a JSON array (or single JSON object) into a list of SheetData objects.
@@ -107,7 +104,7 @@ object SheetData {
    * and building a list of CellData. We scan all rows and cells to determine
    * the maximum bounding box for this sheet.
    */
-  def fromSheet(sheet: Sheet, evaluator: FormulaEvaluator): SheetData =
+  def fromSheet(sheet: Sheet, evaluator: FormulaEvaluator): SheetData = {
     val formatter = new DataFormatter()
 
     // Convert rowIterator to a list for consistent iteration
@@ -123,13 +120,15 @@ object SheetData {
     val mergedRegions = sheet.getMergedRegions.asScala.map(_.formatAsString()).toList
 
     // Attempt to detect auto-filters (for demonstration only, can vary by usage)
-    val hasAutoFilter = sheet match
+    val hasAutoFilter = sheet match {
       case xssfSheet: XSSFSheet =>
         val sheetConditionalFormatting = xssfSheet.getSheetConditionalFormatting
-        (0 until sheetConditionalFormatting.getNumConditionalFormattings).exists: i =>
+        (0 until sheetConditionalFormatting.getNumConditionalFormattings).exists { i =>
           val cf = sheetConditionalFormatting.getConditionalFormattingAt(i)
           cf.getFormattingRanges.exists(_.isFullColumnRange)
+        }
       case _ => false
+    }
 
     SheetData(
       name = sheet.getSheetName,
@@ -139,4 +138,5 @@ object SheetData {
       mergedRegions = mergedRegions,
       hasAutoFilter = hasAutoFilter
     )
+  }
 }

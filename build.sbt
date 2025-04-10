@@ -1,7 +1,14 @@
 import kotlin.Keys.{kotlinLib, kotlinVersion, kotlincJvmTarget}
 
+// Define Scala versions
+val scala212 = "2.12.18"
+val scala3 = "3.3.4"
+
 ThisBuild / version      := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := "3.3.4"
+ThisBuild / scalaVersion := scala3
+ThisBuild / crossScalaVersions := Seq(scala212, scala3)
+
+// For IDE compatibility
 
 val circeVersion = "0.14.10"
 val ktorVersion  = "3.0.3"
@@ -17,7 +24,28 @@ lazy val commonSettings = Seq(
     "ch.qos.logback" % "logback-classic" % "1.5.15",
     "org.apache.logging.log4j" % "log4j-api" % "2.24.3",
     "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.24.3"
-  )
+  ),
+
+  // Source directory configuration for cross-compilation
+  Compile / unmanagedSourceDirectories ++= {
+    // sbt typically includes src/main/scala automatically.
+    // We explicitly add the version-specific directories here.
+    val base = baseDirectory.value / "src" / "main"
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _)) => Seq(base / "scala-2") // Add src/main/scala-2
+      case Some((3, _)) => Seq(base / "scala-3") // Add src/main/scala-3
+      case _            => Seq.empty // No extra directories for other versions
+    }
+  },
+  // Similarly for test sources if you use version-specific tests
+  Test / unmanagedSourceDirectories ++= {
+    val base = baseDirectory.value / "src" / "test"
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _)) => Seq(base / "scala-2") // Add src/test/scala-2
+      case Some((3, _)) => Seq(base / "scala-3") // Add src/test/scala-3
+      case _            => Seq.empty
+    }
+  }
 )
 
 // Core Scala project
@@ -49,7 +77,21 @@ lazy val core = (project in file("core"))
 
       // XML
       "org.apache.xmlgraphics" % "batik-all" % "1.18"
-    )
+    ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _)) => Seq(
+        "io.circe" %% "circe-generic-extras" % "0.14.4",
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value
+      )
+      case _ => Seq() // No special options for Scala 3
+    }),
+    scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _)) => Seq(
+        "-Ypartial-unification",
+        "-language:higherKinds",
+        "-language:implicitConversions"
+      )
+      case _ => Seq() // No special options for Scala 3
+    })
   )
 
 // New Aspose integration module
@@ -58,11 +100,38 @@ lazy val coreAspose = (project in file("core-aspose"))
   .settings(commonSettings)
   .settings(
     name := "xlcr-core-aspose",
+    // Added resolver settings specifically for Aspose
+    resolvers ++= Seq(
+      "Aspose Java Repository" at "https://releases.aspose.com/java/repo/"
+    ),
+    
+    // Add scala language features
+    scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq(
+        "-Ypartial-unification",
+        "-language:higherKinds",
+        "-language:implicitConversions",
+        // Add the following to help with name conflicts
+        "-Yresolve-term-conflict:package"
+      )
+      case _ => Seq() // No special options for Scala 3
+    }),
+    
     libraryDependencies ++= Seq(
       "com.aspose" % "aspose-cells" % "24.8",
       "com.aspose" % "aspose-words" % "24.8" classifier "jdk17",
-      "com.aspose" % "aspose-slides" % "24.8" classifier "jdk16",
+      "com.aspose" % "aspose-slides" % "24.8" classifier "jdk16", 
       "com.aspose" % "aspose-email" % "24.7" classifier "jdk16",
+      // Testing
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test
+    ),
+    
+    // Force these versions to resolve conflicts
+    dependencyOverrides ++= Seq(
+      "com.aspose" % "aspose-cells" % "24.8",
+      "com.aspose" % "aspose-words" % "24.8" classifier "jdk17",
+      "com.aspose" % "aspose-slides" % "24.8" classifier "jdk16",
+      "com.aspose" % "aspose-email" % "24.7" classifier "jdk16"
     )
   )
 

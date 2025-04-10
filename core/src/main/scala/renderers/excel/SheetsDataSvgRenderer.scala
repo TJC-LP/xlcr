@@ -119,7 +119,7 @@ class SheetsDataSvgRenderer extends SheetsDataRenderer[ImageSvgXml.type] {
   private def buildCompleteSvg(fonts: Set[FontData], body: String, totalWidth: Int, totalHeight: Int): String = {
     val sb = new StringBuilder
     sb.append("""<?xml version="1.0" encoding="UTF-8" standalone="no"?>""").append("\n")
-    sb.append(s"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" width=\"$totalWidth\" height=\"$totalHeight\">\n")
+    sb.append(s"""<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="$totalWidth" height="$totalHeight">""").append("\n")
     sb.append(generateFontStyles(fonts))
     sb.append(body)
     sb.append("</svg>\n")

@@ -11,7 +11,8 @@ import org.apache.tika.parser.{AutoDetectParser, ParseContext}
 import org.xml.sax.ContentHandler
 
 import java.io.ByteArrayInputStream
-import scala.util.{Try, Using}
+import scala.util.Try
+import com.tjclp.xlcr.compat.Using
 
 /**
  * TikaParser is a base trait for parsing content using Apache Tika.
@@ -19,7 +20,7 @@ import scala.util.{Try, Using}
  * I = Input MimeType
  * O = Output MimeType
  */
-trait TikaParser[I <: MimeType, O <: MimeType] extends Parser[I, TikaModel[O]]:
+trait TikaParser[I <: MimeType, O <: MimeType] extends Parser[I, TikaModel[O]] {
 
   /**
    * Parse the input FileContent using Tika, returning a TikaModel of type O.
@@ -28,7 +29,7 @@ trait TikaParser[I <: MimeType, O <: MimeType] extends Parser[I, TikaModel[O]]:
    * @return TikaModel representing extracted text and metadata
    * @throws ParserError on failure
    */
-  def parse(input: FileContent[I]): TikaModel[O] =
+  def parse(input: FileContent[I]): TikaModel[O] = {
     Try {
       val parser = new AutoDetectParser()
       val metadata = new Metadata()
@@ -48,14 +49,17 @@ trait TikaParser[I <: MimeType, O <: MimeType] extends Parser[I, TikaModel[O]]:
           Some(ex)
         )
     }.get
+  }
 
   /**
    * Converts Tika Metadata into a Map[String, String]
    */
-  protected def parseMetadata(meta: Metadata): Map[String, String] =
+  protected def parseMetadata(meta: Metadata): Map[String, String] = {
     meta.names().map(name => name -> meta.get(name)).toMap
+  }
 
   /**
    * The content handler to be used for parsing. Usually created in the concrete parser.
    */
   protected def contentHandler: ContentHandler
+}

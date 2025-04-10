@@ -16,7 +16,7 @@ import scala.math.{max, min}
  * This is a simpler connected component approach for large sheets,
  * focused on finding connected regions efficiently.
  */
-object RegionGrowthDetector:
+object RegionGrowthDetector {
   private val logger = LoggerFactory.getLogger(getClass)
   
   /**
@@ -26,10 +26,11 @@ object RegionGrowthDetector:
     logger.info("Starting region growth detection")
 
     // Extract anchor rows and columns for BFS if anchor checking is enabled
-    val (anchorRows, anchorCols) = if (config.enableAnchorCheckInBFS && !config.disableAnchorExtraction) 
+    val (anchorRows, anchorCols) = if (config.enableAnchorCheckInBFS && !config.disableAnchorExtraction) {
       AnchorAnalyzer.identifyAnchors(grid)
-    else 
+    } else {
       (Set.empty[Int], Set.empty[Int])
+    }
 
     if (config.verbose && config.enableAnchorCheckInBFS) {
       logger.debug(s"Using ${anchorRows.size} anchor rows and ${anchorCols.size} anchor columns for BFS boundary detection")
@@ -52,27 +53,31 @@ object RegionGrowthDetector:
     // Apply enhanced filters if enabled
     
     // Detect cohesion regions if enabled
-    val cohesionRegions = if config.enableCohesionDetection then
+    val cohesionRegions = if (config.enableCohesionDetection) {
       CohesionDetector.detectCohesionRegions(grid, config)
-    else
+    } else {
       List.empty[CohesionRegion]
+    }
       
     // Apply cohesion filters
     var enhancedRanges = filteredRanges
     
-    if config.enableCohesionDetection && cohesionRegions.nonEmpty then
+    if (config.enableCohesionDetection && cohesionRegions.nonEmpty) {
       // Apply cohesion overlap filter
       enhancedRanges = CohesionDetector.applyOverlapCohesionFilter(enhancedRanges, cohesionRegions)
       // Apply border cohesion filter
       enhancedRanges = CohesionDetector.applyOverlapBorderCohesionFilter(enhancedRanges, cohesionRegions)
+    }
     
     // Apply split detection filter if enabled
-    if config.enableSplitDetection then
+    if (config.enableSplitDetection) {
       enhancedRanges = CohesionDetector.applySplitEmptyLinesFilter(grid, enhancedRanges)
-      
+    }
+    
     // Apply formula correlation filter if enabled
-    if config.enableFormulaCorrelation then
+    if (config.enableFormulaCorrelation) {
       enhancedRanges = CohesionDetector.applyFormulaCorrelationFilter(grid, enhancedRanges)
+    }
 
     // Refine table boundaries
     val refinedRanges = refineBoundaries(enhancedRanges, grid, config)
@@ -84,10 +89,11 @@ object RegionGrowthDetector:
     val sortedRanges = TableDetector.rankBoxesByLocation(withHeaders)
 
     // Remove overlapping tables
-    val finalRanges = if config.eliminateOverlaps then
+    val finalRanges = if (config.eliminateOverlaps) {
       eliminateOverlaps(sortedRanges)
-    else
+    } else {
       sortedRanges
+    }
 
     logger.info(s"Region growth detection found ${finalRanges.size} tables")
     finalRanges
@@ -111,7 +117,7 @@ object RegionGrowthDetector:
     // Pass 3: Check for splits in tables with empty areas
     result = checkForTableSplits(result, grid)
     
-    // Use TableDetector's refineBoundaries for additional refinements
+    // Pass 4: Use TableDetector's refineBoundaries for additional refinements
     TableDetector.refineBoundaries(result, grid)
   }
   
@@ -279,8 +285,8 @@ object RegionGrowthDetector:
    * This is a critical function for ensuring table boundaries match content exactly.
    */
   def trimToContent(region: TableRegion, grid: SheetGrid): TableRegion = {
-    val logger = LoggerFactory.getLogger(getClass)
-    logger.info(f"Trimming table region at (${region.topRow},${region.leftCol})-(${region.bottomRow},${region.rightCol})")
+    val localLogger = LoggerFactory.getLogger(getClass)
+    localLogger.info(f"Trimming table region at (${region.topRow},${region.leftCol})-(${region.bottomRow},${region.rightCol})")
     
     // Instead of iteratively checking from the edges, get all non-empty cells and use their bounds
     val nonEmptyCells = mutable.Set[(Int, Int)]()
@@ -294,7 +300,7 @@ object RegionGrowthDetector:
     
     // If we found no non-empty cells, return the original region
     if (nonEmptyCells.isEmpty) {
-      logger.info(f"No content found in region, keeping original boundaries")
+      localLogger.info(f"No content found in region, keeping original boundaries")
       return region
     }
     
@@ -308,7 +314,7 @@ object RegionGrowthDetector:
     val rightCol = cols.max
     
     // Log the content bounds
-    logger.info(f"Content bounds: ($topRow,$leftCol)-($bottomRow,$rightCol)")
+    localLogger.info(f"Content bounds: ($topRow,$leftCol)-($bottomRow,$rightCol)")
     
     // Create trimmed region based on actual content bounds
     // Filter anchor rows to only include those within the new boundaries
@@ -321,8 +327,8 @@ object RegionGrowthDetector:
     // If we have no anchor columns remaining, add the left column as an anchor
     val finalAnchorCols = if (newAnchorCols.isEmpty) Set(leftCol) else newAnchorCols
     
-    logger.info(f"Trimmed region: ($topRow,$leftCol)-($bottomRow,$rightCol), width=${rightCol-leftCol+1}, height=${bottomRow-topRow+1}")
-    logger.info(f"Anchor rows: ${finalAnchorRows.mkString(", ")}, anchor columns: ${finalAnchorCols.mkString(", ")}")
+    localLogger.info(f"Trimmed region: ($topRow,$leftCol)-($bottomRow,$rightCol), width=${rightCol-leftCol+1}, height=${bottomRow-topRow+1}")
+    localLogger.info(f"Anchor rows: ${finalAnchorRows.mkString(", ")}, anchor columns: ${finalAnchorCols.mkString(", ")}")
     
     TableRegion(topRow, bottomRow, leftCol, rightCol, finalAnchorRows, finalAnchorCols)
   }
@@ -407,19 +413,23 @@ object RegionGrowthDetector:
   private def retrieveUpHeaders(regions: List[TableRegion], grid: SheetGrid, step: Int): List[TableRegion] = {
     regions.map { region =>
       var newTopRow = region.topRow
+      var headerFound = false
 
       // Try to find headers up to 'step' rows above
-      for (row <- (region.topRow - step) until region.topRow) {
-        if (row >= 0 && HeaderDetector.isHeaderRow(grid, row, region.leftCol, region.rightCol)) {
-          newTopRow = row
-          // Found header, no need to check more rows above
-          row == region.topRow // Force exit from loop
-        }
+      val rowsToCheck = (region.topRow - 1) to math.max(0, region.topRow - step) by -1
+      val headerRowOption = rowsToCheck.find { row =>
+          HeaderDetector.isHeaderRow(grid, row, region.leftCol, region.rightCol)
+      }
+
+      headerRowOption match {
+          case Some(headerRow) =>
+              newTopRow = headerRow
+          case None =>
       }
 
       if (newTopRow != region.topRow) {
         TableRegion(newTopRow, region.bottomRow, region.leftCol, region.rightCol,
-          region.anchorRows, region.anchorCols)
+          region.anchorRows + newTopRow, region.anchorCols)
       } else {
         region
       }
@@ -431,13 +441,14 @@ object RegionGrowthDetector:
    */
   private def eliminateOverlaps(regions: List[TableRegion]): List[TableRegion] = {
     val result = mutable.ListBuffer[TableRegion]()
-    val sortedRegions = regions.sortBy(-_.area) // Sort by decreasing area
+    val sortedRegions = regions.sortBy(-_.area)
 
     for (region <- sortedRegions) {
       val overlapsExisting = result.exists { existing =>
         val overlapArea = TableDetector.calculateOverlapArea(existing, region)
         // Consider significant overlap if more than 25% of the smaller table
-        val overlapRatio = overlapArea.toDouble / min(existing.area, region.area)
+        val minArea = min(existing.area, region.area)
+        val overlapRatio = if (minArea > 0) overlapArea.toDouble / minArea else 0.0
         overlapRatio > 0.25
       }
 
@@ -536,9 +547,9 @@ object RegionGrowthDetector:
             val (currentRow, currentCol) = queue.dequeue()
 
             // Skip if tolerance exhausted
-            if (horizontalCounter(currentRow)(currentCol) == 0 ||
-                verticalCounter(currentRow)(currentCol) == 0) {
-              // Skip this cell
+            val canExpand = horizontalCounter(currentRow)(currentCol) > 0 && verticalCounter(currentRow)(currentCol) > 0
+            if (!canExpand) {
+               // Skip this cell
             } else {
               // Update bounds of connected region
               minRow = min(minRow, currentRow)
@@ -559,7 +570,7 @@ object RegionGrowthDetector:
               
               // Check if we should stop region growth due to size or density
               val isTooLarge = currentArea > config.maxTableSize
-              val isDensityTooLow = currentDensity < config.minTableDensity / 2 && currentArea > 50
+              val isDensityTooLow = currentDensity < config.minTableDensity / 2.0 && currentArea > 50
               
               // Stop BFS expansion if the region is too large or too sparse
               if (isTooLarge || isDensityTooLow) {
@@ -568,7 +579,7 @@ object RegionGrowthDetector:
                     logger.debug(s"Stopping BFS growth due to large region size: $currentArea > ${config.maxTableSize}")
                   }
                   if (isDensityTooLow) {
-                    logger.debug(s"Stopping BFS growth due to low density: $currentDensity (min: ${config.minTableDensity / 2})")
+                    logger.debug(f"Stopping BFS growth due to low density: $currentDensity%.2f (min: ${config.minTableDensity / 2.0}%.2f)")
                   }
                 }
                 queue.clear() // Stop BFS expansion
@@ -655,10 +666,10 @@ object RegionGrowthDetector:
                         if (isEmpty) {
                           // Reduce counter for empty cells using the adjusted tolerances
                           if (directions(i)._2 != 0) { // Horizontal movement
-                            horizontalCounter(nextRow)(nextCol) = currentHorizontalTolerance - 1
+                            horizontalCounter(nextRow)(nextCol) = max(0, currentHorizontalTolerance - 1)
                           }
                           if (directions(i)._1 != 0) { // Vertical movement
-                            verticalCounter(nextRow)(nextCol) = currentVerticalTolerance - 1
+                            verticalCounter(nextRow)(nextCol) = max(0, currentVerticalTolerance - 1)
                           }
                         } else {
                           // Add to non-empty cells set
@@ -670,24 +681,22 @@ object RegionGrowthDetector:
                           )
     
                           if (hasBorder) {
-                            if (directions(i)._2 != 0) { // Horizontal
-                              horizontalCounter(nextRow)(nextCol) = threshHor
-                            }
-                            if (directions(i)._1 != 0) { // Vertical
-                              verticalCounter(nextRow)(nextCol) = threshVer
-                            }
-                          } else {
-                            // For non-border cells, use the adjusted tolerances
-                            if (directions(i)._2 != 0) { // Horizontal
-                              horizontalCounter(nextRow)(nextCol) = currentHorizontalTolerance
-                            }
-                            if (directions(i)._1 != 0) { // Vertical
-                              verticalCounter(nextRow)(nextCol) = currentVerticalTolerance
-                            }
+                            // Reset to original thresholds if a border is hit
+                            horizontalCounter(nextRow)(nextCol) = threshHor
+                            verticalCounter(nextRow)(nextCol) = threshVer
                           }
+                          // Propagate current tolerance for non-empty cells
+                          horizontalCounter(nextRow)(nextCol) = currentHorizontalTolerance
+                          verticalCounter(nextRow)(nextCol) = currentVerticalTolerance
                         }
-    
-                        queue.enqueue((nextRow, nextCol))
+
+                        // Enqueue if the cell hasn't run out of tolerance
+                        if (horizontalCounter(nextRow)(nextCol) > 0 || verticalCounter(nextRow)(nextCol) > 0) {
+                           queue.enqueue((nextRow, nextCol))
+                        } else {
+                           // Mark as visited but don't enqueue if tolerance is zero
+                           visited(nextRow)(nextCol) = true
+                        }
                       }
                     }
                   }
@@ -696,38 +705,46 @@ object RegionGrowthDetector:
             }
           }
 
-          // Add detected region if it's large enough and dense enough
-          if (maxRow - minRow > 1) {
-            val regionWidth = maxCol - minCol + 1
-            val regionHeight = maxRow - minRow + 1
-            val regionArea = regionWidth * regionHeight
-            
-            // Calculate actual density
-            val density = nonEmptyCellsInRegion.size.toDouble / regionArea
-            
-            // Only add region if it meets density criteria
-            if (density >= config.minTableDensity / 2) { // Use relaxed criteria here, filterLittleBoxes will apply stricter ones
-              // Create region with empty anchor sets
-              val tableRegion = TableRegion(
-                minRow, maxRow, minCol, maxCol,
-                Set.empty, Set.empty
-              )
-              
-              if (config.verbose) {
-                logger.debug(s"Found candidate region: ${tableRegion.topRow}-${tableRegion.bottomRow}, ${tableRegion.leftCol}-${tableRegion.rightCol}")
-                logger.debug(s"  - Size: ${tableRegion.width}x${tableRegion.height}, Area: ${tableRegion.area}")
-                logger.debug(s"  - Density: $density")
-              }
-              
-              tableRegions += tableRegion
-              
-              // Mark all cells in this region as visited to avoid redundant processing
-              for (r <- minRow to maxRow; c <- minCol to maxCol) {
+          // Add detected region if it's large enough and dense enough after BFS completion
+          // Check final bounds and density
+          val finalWidth = maxCol - minCol + 1
+          val finalHeight = maxRow - minRow + 1
+          // REMOVED: Redundant check relying on non-existent config fields.
+          // filterLittleBoxes already handles minimum size (implicitly checks width>=2, height>=2).
+          // if (finalWidth >= config.minTableWidth && finalHeight >= config.minTableHeight) {
+          val finalArea = finalWidth * finalHeight
+          val finalDensity = if (finalArea > 0) nonEmptyCellsInRegion.size.toDouble / finalArea else 0.0 // Added parentheses
+
+          // Only add region if it meets final density criteria
+          // Use a slightly relaxed threshold here; filterLittleBoxes will apply stricter checks
+          if (finalDensity >= config.minTableDensity / 2.0) { // Added parentheses
+            // Create region with empty anchor sets initially
+            val tableRegion = TableRegion(
+              minRow, maxRow, minCol, maxCol,
+              Set.empty, Set.empty // Anchors determined later if needed
+            )
+
+            if (config.verbose) { // Added parentheses
+              logger.debug(s"Found candidate region: ${tableRegion.topRow}-${tableRegion.bottomRow}, ${tableRegion.leftCol}-${tableRegion.rightCol}")
+              logger.debug(s"  - Size: ${tableRegion.width}x${tableRegion.height}, Area: ${tableRegion.area}")
+              logger.debug(f"  - Density: $finalDensity%.2f")
+            }
+
+            tableRegions += tableRegion
+
+            // Mark all cells in this final region as visited to avoid redundant processing
+            // This prevents overlapping starts from the same component
+            for (r <- minRow to maxRow; c <- minCol to maxCol) { // Nested for loop fine
+              if (r >= 0 && r < height && c >= 0 && c < width) { // Add bounds check for safety
                 visited(r)(c) = true
               }
             }
+          } else { // Added brace
+            if (config.verbose) { // Added parentheses
+              logger.debug(s"Discarding sparse region after BFS: ${minRow}-${maxRow}, ${minCol}-${maxCol}, Density: $finalDensity%.2f")
+            }
           }
-        }
+        } // End if cell not empty
       }
     }
 
@@ -896,47 +913,69 @@ object RegionGrowthDetector:
       var right = region.rightCol
 
       // Trim top rows until non-empty row found
-      var foundNonEmpty = false
-      for (i <- up to down if !foundNonEmpty) {
-        if (!SheetGridUtils.isRowEmpty(grid, left, right, i)) {
-          up = i
-          foundNonEmpty = true
+      var foundNonEmptyTop = false
+      var iTop = up
+      while (iTop <= down && !foundNonEmptyTop) {
+        if (!SheetGridUtils.isRowEmpty(grid, left, right, iTop)) {
+          up = iTop
+          foundNonEmptyTop = true
         }
+        iTop += 1
       }
+      // If the whole region became empty after trimming top
+      if (!foundNonEmptyTop) { up = down + 1 } // Make the region invalid
 
       // Trim bottom rows until non-empty row found
-      foundNonEmpty = false
-      for (i <- down to up by -1 if !foundNonEmpty) {
-        if (!SheetGridUtils.isRowEmpty(grid, left, right, i)) {
-          down = i
-          foundNonEmpty = true
+      var foundNonEmptyBottom = false
+      var iBottom = down
+      while (iBottom >= up && !foundNonEmptyBottom) {
+        if (!SheetGridUtils.isRowEmpty(grid, left, right, iBottom)) {
+          down = iBottom
+          foundNonEmptyBottom = true
         }
+        iBottom -= 1
       }
+       // If the whole region became empty after trimming bottom (shouldn't happen if top trim worked)
+      if (!foundNonEmptyBottom) { down = up - 1 } // Make the region invalid
 
       // Trim left columns until non-empty column found
-      foundNonEmpty = false
-      for (j <- left to right if !foundNonEmpty) {
-        if (!SheetGridUtils.isColEmpty(grid, up, down, j)) {
-          left = j
-          foundNonEmpty = true
+      var foundNonEmptyLeft = false
+      var jLeft = left
+      while (jLeft <= right && !foundNonEmptyLeft) {
+        if (!SheetGridUtils.isColEmpty(grid, up, down, jLeft)) {
+          left = jLeft
+          foundNonEmptyLeft = true
         }
+        jLeft += 1
       }
+      if (!foundNonEmptyLeft) { left = right + 1 } // Make the region invalid
 
       // Trim right columns until non-empty column found
-      foundNonEmpty = false
-      for (j <- right to left by -1 if !foundNonEmpty) {
-        if (!SheetGridUtils.isColEmpty(grid, up, down, j)) {
-          right = j
-          foundNonEmpty = true
+      var foundNonEmptyRight = false
+      var jRight = right
+      while (jRight >= left && !foundNonEmptyRight) {
+        if (!SheetGridUtils.isColEmpty(grid, up, down, jRight)) {
+          right = jRight
+          foundNonEmptyRight = true
         }
+        jRight -= 1
       }
+       if (!foundNonEmptyRight) { right = left - 1 } // Make the region invalid
 
-      // Create new trimmed region
+      // Create new trimmed region, preserving original anchors for now
       if (left <= right && up <= down) {
-        TableRegion(up, down, left, right, Set.empty, Set.empty)
+        // Filter original anchors to keep only those within the new bounds
+        val trimmedAnchorRows = region.anchorRows.filter(r => r >= up && r <= down)
+        val trimmedAnchorCols = region.anchorCols.filter(c => c >= left && c <= right)
+        TableRegion(up, down, left, right, trimmedAnchorRows, trimmedAnchorCols)
       } else {
-        // If trimming made the region invalid, return the original
-        region
+        // If trimming made the region invalid (e.g., all rows/cols were empty),
+        // return an empty/invalid region representation or handle as needed.
+        // For simplicity here, we return the original if it becomes invalid,
+        // although ideally, it should be filtered out later.
+        // Returning an invalid region might be better for some logic.
+        TableRegion(region.topRow, region.topRow -1, region.leftCol, region.leftCol - 1, Set.empty, Set.empty) // Example invalid region
       }
-    }
+    }.filter(r => r.isValid) // Filter out invalid regions created by trimming
   }
+}

@@ -15,7 +15,7 @@ import scala.math.min
  * This is a more sophisticated multi-pass approach for smaller sheets
  * that uses gap analysis, boundary lines, and multiple criteria for high quality detection.
  */
-object TableSenseDetector:
+object TableSenseDetector {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -61,8 +61,8 @@ object TableSenseDetector:
 
     // Always log gap detection info since this is critical for table detection
     logger.info(s"Using gap sizes: row=${config.minGapSize}, column=$columnGapSize")
-    logger.info(s"Non-empty rows: ${if sortedRows.size > 20 then s"${sortedRows.size} rows" else sortedRows.mkString(", ")}")
-    logger.info(s"Non-empty columns: ${if sortedCols.size > 20 then s"${sortedCols.size} columns" else sortedCols.mkString(", ")}")
+    logger.info(s"Non-empty rows: ${if (sortedRows.size > 20) s"${sortedRows.size} rows" else sortedRows.mkString(", ")}")
+    logger.info(s"Non-empty columns: ${if (sortedCols.size > 20) s"${sortedCols.size} columns" else sortedCols.mkString(", ")}")
     logger.info(s"Row gaps (${rowGaps.size}): ${rowGaps.map(g => s"${g._1}-${g._2}").mkString(", ")}")
     logger.info(s"Column gaps (${colGaps.size}): ${colGaps.map(g => s"${g._1}-${g._2}").mkString(", ")}")
     
@@ -75,16 +75,18 @@ object TableSenseDetector:
     }
 
     // Step 3: Define row segments based on gaps
-    val rowSegments = if rowGaps.isEmpty then
+    val rowSegments = if (rowGaps.isEmpty) {
       List((0, grid.rowCount - 1))
-    else
+    } else {
       TableDetector.segmentsFromGaps(rowGaps, grid.rowCount)
+    }
 
     // Step 4: Define column segments based on gaps
-    val colSegments = if colGaps.isEmpty then
+    val colSegments = if (colGaps.isEmpty) {
       List((0, grid.colCount - 1))
-    else
+    } else {
       TableDetector.segmentsFromGaps(colGaps, grid.colCount)
+    }
 
     // Step 5: Use connected range detection as an additional approach
     // Use the enhanced BFS detection with anchor awareness
@@ -109,11 +111,12 @@ object TableSenseDetector:
     // This is critical for spreadsheets with distinct blocks of content separated by empty areas
     val contentRegions = detectDistinctContentRegions(grid, config)
     
-    if config.verbose then
+    if (config.verbose) {
       logger.info(s"Found ${contentRegions.size} distinct content regions through direct detection")
       contentRegions.foreach { region =>
         logger.info(f"Content region at (${region.topRow},${region.leftCol}) to (${region.bottomRow},${region.rightCol}): ${region.width}x${region.height}")
       }
+    }
     
     // Add anchor information to content regions to make them proper tables
     // Make sure we always include content regions as detected tables
@@ -124,15 +127,17 @@ object TableSenseDetector:
       val regionAnchorCols = anchorCols.filter(c => c >= region.leftCol && c <= region.rightCol)
       
       // If no anchors are found in the region, add the boundaries as anchors
-      val finalAnchorRows = if regionAnchorRows.isEmpty then
+      val finalAnchorRows = if (regionAnchorRows.isEmpty) {
         Set(region.topRow, region.bottomRow)
-      else
+      } else {
         regionAnchorRows
+      }
         
-      val finalAnchorCols = if regionAnchorCols.isEmpty then
+      val finalAnchorCols = if (regionAnchorCols.isEmpty) {
         Set(region.leftCol, region.rightCol)
-      else
+      } else {
         regionAnchorCols
+      }
       
       // Log this content region to help with debugging
       logger.info(f"Adding content region as table: (${region.topRow},${region.leftCol})-(${region.bottomRow},${region.rightCol}): ${region.width}x${region.height}")
@@ -147,17 +152,18 @@ object TableSenseDetector:
       )
     }
     
-    if config.verbose then
+    if (config.verbose) {
       logger.info(s"Added anchor information to ${contentRegionsWithAnchors.size} content regions")
+    }
       
     connectedRanges ++= foundRanges
     connectedRanges ++= contentRegionsWithAnchors
 
     // Step 6: Create candidate table regions from both approaches
-    val gapBasedCandidates = for
+    val gapBasedCandidates = for {
       (topRow, bottomRow) <- rowSegments
       (leftCol, rightCol) <- colSegments
-    yield
+    } yield {
       // Find anchors within this region
       val regionAnchorRows = anchorRows.filter(r => r >= topRow && r <= bottomRow)
       val regionAnchorCols = anchorCols.filter(c => c >= leftCol && c <= rightCol)
@@ -167,6 +173,7 @@ object TableSenseDetector:
         leftCol, rightCol,
         regionAnchorRows, regionAnchorCols
       )
+    }
 
     // Combine both sets of candidates
     val allCandidates = gapBasedCandidates ++ connectedRanges
@@ -177,22 +184,23 @@ object TableSenseDetector:
     // Filter regions with general criteria
     val filteredCandidates = uniqueCandidates.filter { region =>
       val cellCount = SheetGridUtils.countCellsInRegion(grid, region)
-      val contentDensity = cellCount.toDouble / region.area
+      val regionArea = region.area
+      val contentDensity = if (regionArea > 0) cellCount.toDouble / regionArea else 0.0
 
       // Check minimum size
       val isBigEnough = region.width >= 2 && region.height >= 2
 
       // Calculate the width-to-height ratio to identify very wide or very tall tables
-      val widthToHeightRatio = if region.height > 0 then region.width.toDouble / region.height else 0.0
+      val widthToHeightRatio = if (region.height > 0) region.width.toDouble / region.height else Double.MaxValue
 
       // Calculate separate row and column densities for capturing sparse tables
-      val rowsCovered = if region.height > 0 then
+      val rowsCovered = if (region.height > 0) {
         anchorRows.count(r => r >= region.topRow && r <= region.bottomRow).toDouble / region.height
-      else 0.0
+      } else 0.0
 
-      val colsCovered = if region.width > 0 then
+      val colsCovered = if (region.width > 0) {
         anchorCols.count(c => c >= region.leftCol && c <= region.rightCol).toDouble / region.width
-      else 0.0
+      } else 0.0
 
       // Special case: if the region is significantly wider than tall, it's likely a row-oriented table
       val isRowDominantTable = widthToHeightRatio > 3.0 && rowsCovered > 0.4
@@ -206,16 +214,17 @@ object TableSenseDetector:
       val hasUniformContent = SheetGridUtils.hasUniformContent(grid, region)
 
       // Verbose logging
-      if config.verbose then
+      if (config.verbose) {
         val tableType =
-          if isRowDominantTable then "row-dominant"
-          else if isColumnDominantTable then "column-dominant"
-          else if hasUniformContent then "uniform-content"
+          if (isRowDominantTable) "row-dominant"
+          else if (isColumnDominantTable) "column-dominant"
+          else if (hasUniformContent) "uniform-content"
           else "standard"
         logger.debug(f"Table candidate at (${region.topRow},${region.leftCol}) to (${region.bottomRow},${region.rightCol}): " +
           f"${region.width}x${region.height}, type=$tableType, density=$contentDensity%.2f, " +
           f"row coverage=$rowsCovered%.2f, col coverage=$colsCovered%.2f, ratio=$widthToHeightRatio%.2f, " +
           f"has borders=$hasBorderedCells, uniform content=$hasUniformContent")
+      }
 
       // Keep the region if it meets our criteria - for test cases with uniform content,
       // we need to be more lenient with the density check
@@ -224,10 +233,11 @@ object TableSenseDetector:
       // Special case for uniform content sheets - look at number of cells
       val hasSignificantCellCount = cellCount >= 5
       
-      if config.verbose then
+      if (config.verbose) {
         logger.debug(f"  - Final decision: big enough=$isBigEnough, content dense=$isContentDense, " +
           f"significant cells=$hasSignificantCellCount, row dominant=$isRowDominantTable, column dominant=$isColumnDominantTable, " +
           f"bordered=$hasBorderedCells, uniform=$hasUniformContent")
+      }
       
       isBigEnough &&
         (isContentDense || isRowDominantTable || isColumnDominantTable || hasBorderedCells || hasSignificantCellCount || hasUniformContent)
@@ -242,27 +252,31 @@ object TableSenseDetector:
     // Apply enhanced filters if enabled
     
     // Detect cohesion regions if enabled
-    val cohesionRegions = if config.enableCohesionDetection then
+    val cohesionRegions = if (config.enableCohesionDetection) {
       CohesionDetector.detectCohesionRegions(grid, config)
-    else
+    } else {
       List.empty[CohesionRegion]
+    }
       
     // Apply cohesion filters
     var enhancedRegions = trimmedCandidates
     
-    if config.enableCohesionDetection && cohesionRegions.nonEmpty then
+    if (config.enableCohesionDetection && cohesionRegions.nonEmpty) {
       // Apply cohesion overlap filter
       enhancedRegions = CohesionDetector.applyOverlapCohesionFilter(enhancedRegions, cohesionRegions)
       // Apply border cohesion filter
       enhancedRegions = CohesionDetector.applyOverlapBorderCohesionFilter(enhancedRegions, cohesionRegions)
+    }
     
     // Apply split detection filter if enabled
-    if config.enableSplitDetection then
+    if (config.enableSplitDetection) {
       enhancedRegions = CohesionDetector.applySplitEmptyLinesFilter(grid, enhancedRegions)
+    }
       
     // Apply formula correlation filter if enabled
-    if config.enableFormulaCorrelation then
+    if (config.enableFormulaCorrelation) {
       enhancedRegions = CohesionDetector.applyFormulaCorrelationFilter(grid, enhancedRegions)
+    }
     
     // Refine remaining tables
     val refinedRegions = filterLittleBoxes(enhancedRegions, grid)
@@ -271,10 +285,11 @@ object TableSenseDetector:
     val sortedRegions = TableDetector.rankBoxesByLocation(refinedRegions)
 
     // Remove overlapping tables
-    val unsortedFinalRegions = if config.eliminateOverlaps then
+    val unsortedFinalRegions = if (config.eliminateOverlaps) {
       eliminateOverlaps(sortedRegions)
-    else
+    } else {
       sortedRegions
+    }
       
     // Apply one final round of trimming to ensure tight boundaries on all tables
     val finalRegions = unsortedFinalRegions.map { region =>
@@ -738,3 +753,4 @@ object TableSenseDetector:
 
     result.toList
   }
+}

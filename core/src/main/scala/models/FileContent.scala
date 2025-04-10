@@ -12,8 +12,12 @@ class FileContent[T <: MimeType](
                                   val mimeType: T
                                 ) extends Model
 
-object FileContent extends Model {
+object FileContent {
   private val tika = new Tika()
+
+  def apply[T <: MimeType](data: Array[Byte], mimeType: T): FileContent[T] = {
+    new FileContent[T](data, mimeType)
+  }
 
   def fromPath[T <: MimeType](path: Path): FileContent[T] = {
     val bytes = Files.readAllBytes(path)

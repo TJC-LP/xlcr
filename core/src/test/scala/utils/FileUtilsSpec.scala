@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import java.nio.file.{Files, Paths}
 import scala.util.{Failure, Success}
 
-class FileUtilsSpec extends AnyFlatSpec with Matchers:
+class FileUtilsSpec extends AnyFlatSpec with Matchers {
 
   it should "correctly detect MIME types from file extensions" in {
     val jsonPath = Paths.get("test.json")
@@ -137,3 +137,4 @@ class FileUtilsSpec extends AnyFlatSpec with Matchers:
       readBack shouldBe testData
     }
   }
+}

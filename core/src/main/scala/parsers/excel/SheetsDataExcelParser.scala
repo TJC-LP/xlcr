@@ -1,6 +1,7 @@
 package com.tjclp.xlcr
 package parsers.excel
 
+import compat.Using
 import models.FileContent
 import models.excel.{SheetData, SheetsData}
 import types.MimeType
@@ -8,13 +9,13 @@ import types.MimeType
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
 import java.io.ByteArrayInputStream
-import scala.util.{Try, Using}
+import scala.util.Try
 
 /**
  * SheetsDataExcelParser parses Excel files (XLSX) into SheetsData.
  */
-class SheetsDataExcelParser extends SheetsDataParser[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]:
-  override def parse(input: FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]): SheetsData =
+class SheetsDataExcelParser extends SheetsDataParser[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] {
+  override def parse(input: FileContent[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]): SheetsData = {
     Try {
       Using.resource(new ByteArrayInputStream(input.data)) { bais =>
         val workbook = WorkbookFactory.create(bais)
@@ -31,3 +32,5 @@ class SheetsDataExcelParser extends SheetsDataParser[MimeType.ApplicationVndOpen
       case ex: Exception =>
         throw ParserError(s"Failed to parse Excel to SheetsData: ${ex.getMessage}", Some(ex))
     }.get
+  }
+}

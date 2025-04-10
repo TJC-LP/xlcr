@@ -7,8 +7,8 @@ import types.MimeType
 
 import java.nio.charset.StandardCharsets
 
-class SheetsDataJsonParser extends SheetsDataParser[MimeType.ApplicationJson.type]:
-  override def parse(input: FileContent[MimeType.ApplicationJson.type]): SheetsData =
+class SheetsDataJsonParser extends SheetsDataParser[MimeType.ApplicationJson.type] {
+  override def parse(input: FileContent[MimeType.ApplicationJson.type]): SheetsData = {
     val jsonString = new String(input.data, StandardCharsets.UTF_8)
     SheetData.fromJsonMultiple(jsonString) match {
       case Left(err) =>
@@ -16,3 +16,5 @@ class SheetsDataJsonParser extends SheetsDataParser[MimeType.ApplicationJson.typ
       case Right(sheets) =>
         SheetsData(sheets)
     }
+  }
+}

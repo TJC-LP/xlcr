@@ -6,7 +6,7 @@ import models.Model
 /**
  * Companion object for CompressedSheet.
  */
-object CompressedSheet:
+object CompressedSheet {
   /**
    * Represents information about a detected table in the sheet
    *
@@ -21,6 +21,7 @@ object CompressedSheet:
                         hasHeaders: Boolean,
                         headerRow: Option[Int]
                       )
+}
 
 /**
  * Represents a compressed spreadsheet after applying the SpreadsheetLLM compression techniques.
@@ -42,7 +43,7 @@ case class CompressedSheet(
                             originalRowCount: Int,
                             originalColumnCount: Int,
                             compressionMetadata: Map[String, String] = Map.empty
-                          ) extends Model:
+                          ) extends Model {
 
   /**
    * Returns statistics about the compression.
@@ -68,27 +69,29 @@ case class CompressedSheet(
    * @param range A range of cells (e.g., "A1:B10")
    * @return A new CompressedSheet with the added content
    */
-  def addContentRange(value: String, range: String): CompressedSheet =
+  def addContentRange(value: String, range: String): CompressedSheet = {
     addContent(value, range)
+  }
 
   /**
    * Adds a single content entry to this sheet.
+   * Handles merging with existing ranges or lists correctly.
    *
    * @param value   The content value (text or format descriptor)
-   * @param address A single cell address (e.g., "A1")
+   * @param addressOrRange A single cell address (e.g., "A1") or a range (e.g., "A1:B2")
    * @return A new CompressedSheet with the added content
    */
-  def addContent(value: String, address: String): CompressedSheet = {
+  def addContent(value: String, addressOrRange: String): CompressedSheet = {
     val updatedContent = content.get(value) match {
-      case Some(Left(existingRange)) =>
-        // If this is already a range, convert to list and add new address
-        content + (value -> Right(List(existingRange, address)))
-      case Some(Right(existingAddresses)) =>
-        // Add to existing list of addresses
-        content + (value -> Right(existingAddresses :+ address))
+      case Some(Left(existingRangeOrAddress)) =>
+        // If existing was single, convert to list with both
+        content + (value -> Right(List(existingRangeOrAddress, addressOrRange)))
+      case Some(Right(existingList)) =>
+        // Add to existing list
+        content + (value -> Right(existingList :+ addressOrRange))
       case None =>
-        // Create new entry with single address
-        content + (value -> Left(address))
+        // Create new entry as single (Left)
+        content + (value -> Left(addressOrRange))
     }
     this.copy(content = updatedContent)
   }
@@ -100,8 +103,9 @@ case class CompressedSheet(
    * @param target  The target cell where the formula is located (e.g., "A11")
    * @return A new CompressedSheet with the added formula
    */
-  def addFormula(formula: String, target: String): CompressedSheet =
+  def addFormula(formula: String, target: String): CompressedSheet = {
     this.copy(formulas = formulas + (formula -> target))
+  }
 
   /**
    * Adds a detected table to the sheet.
@@ -111,15 +115,19 @@ case class CompressedSheet(
    * @param headerRow  Optional row index of the headers (if present)
    * @return A new CompressedSheet with the added table
    */
-  def addTable(range: String, hasHeaders: Boolean, headerRow: Option[Int] = None): CompressedSheet =
+  def addTable(range: String, hasHeaders: Boolean, headerRow: Option[Int] = None): CompressedSheet = {
     val tableId = s"table_${tables.size + 1}"
     addTable(CompressedSheet.TableInfo(tableId, range, hasHeaders, headerRow))
+  }
 
   /**
-   * Adds a detected table to the sheet.
+   * Adds a detected table to the sheet using a pre-built TableInfo object.
    *
    * @param tableInfo Information about the detected table
    * @return A new CompressedSheet with the added table
    */
-  def addTable(tableInfo: CompressedSheet.TableInfo): CompressedSheet =
+  def addTable(tableInfo: CompressedSheet.TableInfo): CompressedSheet = {
     this.copy(tables = tables :+ tableInfo)
+  }
+
+}

@@ -5,7 +5,7 @@ import models.{FileContent, Model}
 import renderers.Renderer
 import types.MimeType
 
-import org.scalatest.*
+import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

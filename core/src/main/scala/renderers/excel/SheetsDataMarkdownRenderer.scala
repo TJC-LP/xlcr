@@ -7,12 +7,13 @@ import types.MimeType.TextMarkdown
 
 import java.nio.charset.StandardCharsets
 
-class SheetsDataMarkdownRenderer extends SheetsDataRenderer[TextMarkdown.type]:
-  override def render(model: SheetsData): FileContent[TextMarkdown.type] =
+class SheetsDataMarkdownRenderer extends SheetsDataRenderer[TextMarkdown.type] {
+  override def render(model: SheetsData): FileContent[TextMarkdown.type] = {
     val markdown = model.sheets.map(sheetToMarkdown).mkString("\n\n---\n\n")
     FileContent(markdown.getBytes(StandardCharsets.UTF_8), TextMarkdown)
+  }
 
-  private def sheetToMarkdown(sheetData: SheetData): String =
+  private def sheetToMarkdown(sheetData: SheetData): String = {
     val sb = new StringBuilder
     sb.append(s"# ${sheetData.name}\n\n")
 
@@ -41,6 +42,7 @@ class SheetsDataMarkdownRenderer extends SheetsDataRenderer[TextMarkdown.type]:
     }
 
     sb.toString
+  }
 
   private def formatCellContent(cellData: models.excel.CellData): String = {
     val value = escapeMarkdown(cellData.formattedValue.getOrElse(cellData.value.getOrElse("")))
@@ -53,11 +55,12 @@ class SheetsDataMarkdownRenderer extends SheetsDataRenderer[TextMarkdown.type]:
     s"VALUE:``$value``<br>$otherDetails"
   }
 
-  private def escapeMarkdown(s: String): String =
+  private def escapeMarkdown(s: String): String = {
     s.replace("|", "\\|").replace("\n", "<br>")
+  }
 
   private def generateColumnHeaders(columnCount: Int): Seq[String] = {
-    def toColumnName(n: Int): String =
+    def toColumnName(n: Int): String = {
       if (n < 0) ""
       else {
         val quotient = n / 26
@@ -65,6 +68,8 @@ class SheetsDataMarkdownRenderer extends SheetsDataRenderer[TextMarkdown.type]:
         if (quotient == 0) (remainder + 'A').toChar.toString
         else toColumnName(quotient - 1) + (remainder + 'A').toChar
       }
+    }
 
     (0 until columnCount).map(toColumnName)
   }
+}

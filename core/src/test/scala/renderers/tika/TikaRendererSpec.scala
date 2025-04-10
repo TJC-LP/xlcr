@@ -11,6 +11,7 @@ class TikaRendererSpec extends RendererSpec {
   "TikaRenderer" should "render TikaModel to bytes" in {
     val renderer = new TikaRenderer[MimeType.TextPlain.type] {
       val mimeType = MimeType.TextPlain
+      val mimeTag = implicitly[scala.reflect.ClassTag[MimeType.TextPlain.type]]
     }
     val model = TikaModel[MimeType.TextPlain.type]("Some text", Map.empty)
     val result = renderer.render(model)

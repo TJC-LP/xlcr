@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package renderers.excel
 
-import models.excel.*
+import models.excel.{SheetsData, SheetData, CellData, CellDataStyle, FontData}
 
 import org.apache.poi.ss.usermodel.{BorderStyle, CellType, FillPatternType}
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.io.ByteArrayInputStream
-import scala.util.Using
+import com.tjclp.xlcr.compat.Using
 
 class SheetsDataExcelRendererSpec extends AnyFlatSpec with Matchers {
   private val renderer = new SheetsDataExcelRenderer()

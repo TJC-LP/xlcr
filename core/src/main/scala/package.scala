@@ -20,7 +20,8 @@ package object xlcr {
 
     override def getMessage: String = message
 
-    override def getCause: Throwable | Null = causeOpt.orNull
+    // Scala 2.12 doesn't have union types, use plain Throwable
+    override def getCause: Throwable = causeOpt.orNull
   }
 
   case class TikaParseError(message: String, causeOpt: Option[Throwable] = None) extends TikaError

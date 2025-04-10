@@ -5,7 +5,8 @@ import com.tjclp.xlcr.types.{FileType, MimeType}
 import org.slf4j.LoggerFactory
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
-import scala.jdk.CollectionConverters._
+// Import the right collection converters based on Scala version
+import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -32,11 +33,11 @@ object DirectoryPipeline {
    * @param diffMode    whether to merge changes if applicable
    */
   def runDirectoryToDirectory(
-      inputDir: String,
-      outputDir: String,
-      mimeMappings: Map[MimeType, MimeType],
-      diffMode: Boolean = false
-  ): Unit = {
+                               inputDir: String,
+                               outputDir: String,
+                               mimeMappings: Map[MimeType, MimeType],
+                               diffMode: Boolean = false
+                             ): Unit = {
     val inPath = Paths.get(inputDir)
     val outPath = Paths.get(outputDir)
 

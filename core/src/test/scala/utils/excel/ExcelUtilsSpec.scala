@@ -2,6 +2,7 @@ package com.tjclp.xlcr
 package utils.excel
 
 import models.excel.ExcelReference
+import models.excel.ExcelReference.Col.ColOps
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

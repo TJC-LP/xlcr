@@ -2,21 +2,22 @@ package com.tjclp.xlcr
 package renderers.excel
 
 import models.FileContent
-import models.excel.*
+import models.excel._
 import types.MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
 
-import org.apache.poi.ss.usermodel.*
+import org.apache.poi.ss.usermodel._
 import org.apache.poi.ss.util.CellRangeAddress
-import org.apache.poi.xssf.usermodel.*
+import org.apache.poi.xssf.usermodel._
 
 import java.io.ByteArrayOutputStream
-import scala.util.{Try, Using}
+import scala.util.Try
+import com.tjclp.xlcr.compat.Using
 
 /**
  * Renders SheetsData back to Excel format (XLSX)
  */
-class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]:
-  override def render(model: SheetsData): FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] =
+class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] {
+  override def render(model: SheetsData): FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] = {
     Try {
       val workbook = new XSSFWorkbook()
 
@@ -37,10 +38,11 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
         )
       }
     }.recover { case ex =>
-      throw RendererError(s"Failed to render SheetsData to Excel: ${ex.getMessage}", Some(ex))
+      throw new RendererError(s"Failed to render SheetsData to Excel: ${ex.getMessage}", Some(ex))
     }.get
+  }
 
-  private def renderSheet(sheet: XSSFSheet, sheetData: SheetData, workbook: XSSFWorkbook): Unit =
+  private def renderSheet(sheet: XSSFSheet, sheetData: SheetData, workbook: XSSFWorkbook): Unit = {
     // Track existing styles/fonts to avoid duplicates
     val styleCache = collection.mutable.Map[CellDataStyle, XSSFCellStyle]()
     val fontCache = collection.mutable.Map[FontData, XSSFFont]()
@@ -69,9 +71,10 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
 
     // Set column widths (optional - could be based on content)
     sheet.setDefaultColumnWidth(12)
+  }
 
-  private def setCellContent(cell: XSSFCell, cellData: CellData): Unit =
-    cellData.cellType match
+  private def setCellContent(cell: XSSFCell, cellData: CellData): Unit = {
+    cellData.cellType match {
       case "NUMERIC" =>
         cellData.value.foreach { v =>
           cell.setCellValue(v.toDouble)
@@ -96,6 +99,8 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
         cellData.value.foreach { v =>
           cell.setCellValue(v)
         }
+    }
+  }
 
   private def applyCellStyle(
                               cell: XSSFCell,
@@ -103,7 +108,7 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
                               workbook: XSSFWorkbook,
                               styleCache: collection.mutable.Map[CellDataStyle, XSSFCellStyle],
                               fontCache: collection.mutable.Map[FontData, XSSFFont]
-                            ): Unit =
+                            ): Unit = {
     // Get or create style based on cellData
     val style = cellData.style.map { styleData =>
       styleCache.getOrElseUpdate(styleData, createCellStyle(workbook, styleData))
@@ -115,7 +120,7 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
     }
 
     // Apply style and font if present
-    (style, font) match
+    (style, font) match {
       case (Some(s), Some(f)) =>
         s.setFont(f)
         cell.setCellStyle(s)
@@ -126,8 +131,10 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
         s.setFont(f)
         cell.setCellStyle(s)
       case _ => ()
+    }
+  }
 
-  private def createCellStyle(workbook: XSSFWorkbook, style: CellDataStyle): XSSFCellStyle =
+  private def createCellStyle(workbook: XSSFWorkbook, style: CellDataStyle): XSSFCellStyle = {
     val xstyle = workbook.createCellStyle()
 
     // Background color
@@ -163,17 +170,19 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
     style.borderColors.foreach { case (side, color) =>
       val rgb = parseColor(color)
       val xcolor = new XSSFColor(rgb)
-      side match
+      side match {
         case "top" => xstyle.setTopBorderColor(xcolor)
         case "right" => xstyle.setRightBorderColor(xcolor)
         case "bottom" => xstyle.setBottomBorderColor(xcolor)
         case "left" => xstyle.setLeftBorderColor(xcolor)
         case _ => ()
+      }
     }
 
     xstyle
+  }
 
-  private def createFont(workbook: XSSFWorkbook, font: FontData): XSSFFont =
+  private def createFont(workbook: XSSFWorkbook, font: FontData): XSSFFont = {
     val xfont = workbook.createFont()
 
     xfont.setFontName(font.name)
@@ -191,8 +200,9 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
     }
 
     xfont
+  }
 
-  private def parseColor(hexColor: String): Array[Byte] =
+  private def parseColor(hexColor: String): Array[Byte] = {
     // Parse "#RRGGBB" format
     require(hexColor.startsWith("#") && hexColor.length == 7,
       s"Invalid color format: $hexColor, expected #RRGGBB")
@@ -203,4 +213,5 @@ class SheetsDataExcelRenderer extends SheetsDataRenderer[ApplicationVndOpenXmlFo
 
     require(rgb.length == 3, s"Invalid RGB color: $hexColor")
     rgb
-    
+  }
+}

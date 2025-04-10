@@ -6,17 +6,17 @@ import models.excel.CellData
 
 import scala.collection.mutable
 
-/**
- * The type of cohesion that created a CohesionRegion
- */
-enum CohesionType:
-  case Format       // Based on formatting cues like borders, colors, etc
-  case Content      // Based on content relationships
-  case Merged       // Based on merged cells
-  case Formula      // Based on formula relationships
-  case Border       // Based on border patterns
-  case Pivot        // Part of a pivot table
-  case ForcedLayout // Based on layout patterns that suggest strong cohesion
+// Scala 2 compatible CohesionType
+sealed trait CohesionType
+object CohesionType {
+  case object Format extends CohesionType       // Based on formatting cues like borders, colors, etc
+  case object Content extends CohesionType      // Based on content relationships
+  case object Merged extends CohesionType       // Based on merged cells
+  case object Formula extends CohesionType      // Based on formula relationships
+  case object Border extends CohesionType       // Based on border patterns
+  case object Pivot extends CohesionType        // Part of a pivot table
+  case object ForcedLayout extends CohesionType // Based on layout patterns that suggest strong cohesion
+}
 
 /**
  * Represents a cohesion region within a sheet - an area where cells should be kept together
@@ -82,7 +82,8 @@ case class CohesionRegion(
     if (exceptForward && this.contains(other)) return false
     
     // Skip if other fully contains this and we're excepting backward containment
-    if (exceptBackward && other.contains(this.toTableRegion())) return false
+    val thisAsTableRegion = TableRegion(topRow, bottomRow, leftCol, rightCol, Set.empty, Set.empty)
+    if (exceptBackward && other.contains(thisAsTableRegion)) return false
     
     // Standard overlap check
     overlaps(other)
@@ -216,13 +217,14 @@ case class CellInfo(
                      originalRow: Option[Int] = None,
                      originalCol: Option[Int] = None,
                      cellData: Option[CellData] = None
-                   ):
+                   ) {
   /**
    * Determines if this cell is effectively empty (either truly empty or just filler content)
    * 
    * @return true if the cell is empty or contains only filler content
    */
   def isEffectivelyEmpty: Boolean = isEmpty || isFillerContent
+}
 
 /**
  * Information about a table detected in the grid
@@ -241,12 +243,18 @@ case class TableRegion(
                         rightCol: Int,
                         anchorRows: Set[Int],
                         anchorCols: Set[Int]
-                      ):
+                      ) {
+  /** Calculate width, ensuring non-negative result */
+  def width: Int = math.max(0, rightCol - leftCol + 1)
+
+  /** Calculate height, ensuring non-negative result */
+  def height: Int = math.max(0, bottomRow - topRow + 1)
+
+  /** Calculate area, ensuring non-negative result */
   def area: Int = width * height
 
-  def width: Int = rightCol - leftCol + 1
-
-  def height: Int = bottomRow - topRow + 1
+  /** Check if the region is valid (non-negative dimensions) */
+  def isValid: Boolean = width > 0 && height > 0
 
   /** Get all rows in this table region */
   def allRows: Set[Int] = (topRow to bottomRow).toSet
@@ -256,20 +264,22 @@ case class TableRegion(
   
   /** Check if this region contains the given cell coordinates */
   def contains(row: Int, col: Int): Boolean =
-    row >= topRow && row <= bottomRow && col >= leftCol && col <= rightCol
+    isValid && row >= topRow && row <= bottomRow && col >= leftCol && col <= rightCol
     
   /** Check if this region fully contains another region */
   def contains(other: TableRegion): Boolean =
-    topRow <= other.topRow && bottomRow >= other.bottomRow &&
+    isValid && other.isValid && topRow <= other.topRow && bottomRow >= other.bottomRow &&
     leftCol <= other.leftCol && rightCol >= other.rightCol
     
   /** Check if this region contains another region with some tolerance for boundary differences */
   def containsWithTolerance(other: TableRegion, tolerance: Int): Boolean =
+    isValid && other.isValid &&
     (topRow - tolerance) <= other.topRow && (bottomRow + tolerance) >= other.bottomRow &&
     (leftCol - tolerance) <= other.leftCol && (rightCol + tolerance) >= other.rightCol
     
   /** Check if this region overlaps with another region */
   def overlaps(other: TableRegion): Boolean =
+    isValid && other.isValid &&
     !(rightCol < other.leftCol || leftCol > other.rightCol ||
       bottomRow < other.topRow || topRow > other.bottomRow)
       
@@ -290,6 +300,7 @@ case class TableRegion(
     // Standard overlap check
     overlaps(other)
   }
+}
 
 /**
  * Represents a spreadsheet grid for anchor extraction.
@@ -298,73 +309,98 @@ case class SheetGrid(
                       cells: Map[(Int, Int), CellInfo],
                       rowCount: Int,
                       colCount: Int
-                    ):
+                    ) {
   /**
    * Get all cells in a specific row or column based on dimension.
    */
-  def getCells(dim: Dimension, index: Int): Seq[CellInfo] = dim match
-    case Dimension.Row => getRow(index)
-    case Dimension.Column => getCol(index)
+  def getCells(dim: Dimension, index: Int): Seq[CellInfo] = {
+     dim match {
+      case Dimension.Row => getRow(index)
+      case Dimension.Column => getCol(index)
+     }
+  }
 
   /**
    * Get all cells in a specific row.
    */
-  def getRow(row: Int): Seq[CellInfo] =
-    (0 until colCount).flatMap(col => cells.get((row, col)))
+  def getRow(row: Int): Seq[CellInfo] = {
+    // Ensure row index is valid
+    if (row >= 0 && row < rowCount) {
+        (0 until colCount).flatMap(col => cells.get((row, col)))
+    } else {
+        Seq.empty
+    }
+  }
 
   /**
    * Get all cells in a specific column.
    */
-  def getCol(col: Int): Seq[CellInfo] =
-    (0 until rowCount).flatMap(row => cells.get((row, col)))
+  def getCol(col: Int): Seq[CellInfo] = {
+     // Ensure col index is valid
+     if (col >= 0 && col < colCount) {
+        (0 until rowCount).flatMap(row => cells.get((row, col)))
+     } else {
+        Seq.empty
+     }
+  }
 
   /**
    * Get dimension count (rowCount or colCount).
    */
-  def getDimCount(dim: Dimension): Int = dim match
-    case Dimension.Row => rowCount
-    case Dimension.Column => colCount
+  def getDimCount(dim: Dimension): Int = {
+    dim match {
+      case Dimension.Row => rowCount
+      case Dimension.Column => colCount
+    }
+  }
 
   /**
    * Filter the grid to only include cells in the specified rows and columns.
+   * Preserves original row/col counts.
    */
-  def filterToKeep(rowsToKeep: Set[Int], colsToKeep: Set[Int]): SheetGrid =
+  def filterToKeep(rowsToKeep: Set[Int], colsToKeep: Set[Int]): SheetGrid = {
     val filteredCells = cells.filter { case ((r, c), _) =>
       rowsToKeep.contains(r) && colsToKeep.contains(c)
     }
+    // Return new grid with filtered cells but original dimensions
     SheetGrid(filteredCells, rowCount, colCount)
+  }
 
   /**
    * Remap coordinates to close gaps after pruning.
    * This maintains logical structure while creating a more compact representation.
+   * Updates the rowCount and colCount of the returned grid.
    */
-  def remapCoordinates(): SheetGrid =
-    // Create new row and column indices that are continuous
-    val sortedRows = cells.keys.map(_._1).toSeq.distinct.sorted
-    val sortedCols = cells.keys.map(_._2).toSeq.distinct.sorted
+  def remapCoordinates(): SheetGrid = {
+    // Get the unique, sorted row and column indices present in the filtered cells
+    val presentRows = cells.keys.map(_._1).toSeq.distinct.sorted
+    val presentCols = cells.keys.map(_._2).toSeq.distinct.sorted
 
-    val rowMap = sortedRows.zipWithIndex.toMap
-    val colMap = sortedCols.zipWithIndex.toMap
+    // Create mapping from old index to new compact index
+    val rowMap = presentRows.zipWithIndex.toMap
+    val colMap = presentCols.zipWithIndex.toMap
 
     // Remap each cell to its new coordinates
     val remappedCells = cells.map { case ((oldRow, oldCol), cellInfo) =>
       val newRow = rowMap(oldRow)
       val newCol = colMap(oldCol)
 
-      // Store original row/col in the cell info for later debugging
-      val originalRow = cellInfo.originalRow.getOrElse(oldRow)
-      val originalCol = cellInfo.originalCol.getOrElse(oldCol)
+      // Store original row/col in the cell info if not already present
+      val originalRow = cellInfo.originalRow.orElse(Some(oldRow))
+      val originalCol = cellInfo.originalCol.orElse(Some(oldCol))
 
       // Important: We need to update both the map key AND the CellInfo's internal coordinates
       (newRow, newCol) -> cellInfo.copy(
         row = newRow,
         col = newCol,
-        originalRow = Some(originalRow),
-        originalCol = Some(originalCol)
+        originalRow = originalRow,
+        originalCol = originalCol
       )
     }
 
-    SheetGrid(remappedCells, sortedRows.size, sortedCols.size)
+    // Return new grid with remapped cells and updated dimensions
+    SheetGrid(remappedCells, presentRows.size, presentCols.size)
+  }
     
   /**
    * Checks if the given cell coordinates are within the valid bounds of the grid
@@ -378,11 +414,12 @@ case class SheetGrid(
    */
   def extractFormulaReferences(): Map[(Int, Int), Set[(Int, Int)]] = {
     cells.filter { case (_, cell) => cell.isFormula }
-      .map { case (coords, cell) => 
-        coords -> cell.cellData.flatMap(_.formula)
-          .map(parseFormulaReferences)
-          .getOrElse(Set.empty[(Int, Int)])
-      }
+      .flatMap { case (coords, cell) =>
+        cell.cellData.flatMap(_.formula)
+          .map { formula =>
+             coords -> parseFormulaReferences(formula)
+          }
+      }.toMap
   }
   
   /**
@@ -397,13 +434,21 @@ case class SheetGrid(
     val refs = mutable.Set[(Int, Int)]()
     
     // Extract single cell references like A1, B2, etc.
-    for (matched <- cellRefPattern.findAllMatchIn(formula)) {
-      val col = matched.group(1)
-      val row = matched.group(2)
-      val colIndex = colNameToIndex(col)
-      val rowIndex = row.toInt - 1 // Convert from 1-based to 0-based
-      if (isInBounds(rowIndex, colIndex)) {
-        refs.add((rowIndex, colIndex))
+    cellRefPattern.findAllMatchIn(formula).foreach { matched =>
+      try {
+        val col = matched.group(1)
+        val rowStr = matched.group(2)
+        val colIndex = colNameToIndex(col)
+        val rowIndex = rowStr.toInt - 1 // Convert from 1-based to 0-based
+
+        // Check bounds before adding
+        if (isInBounds(rowIndex, colIndex)) {
+          refs.add((rowIndex, colIndex))
+        }
+      } catch {
+        case e: NumberFormatException =>
+          // Log error or ignore invalid reference
+          // logger.warn(s"Could not parse row number from reference in formula: $formula", e)
       }
     }
     
@@ -414,7 +459,29 @@ case class SheetGrid(
    * Convert an Excel column name to a 0-based index (A->0, B->1, Z->25, AA->26, etc.)
    */
   private def colNameToIndex(colName: String): Int = {
-    colName.foldLeft(0) { (acc, c) =>
-      acc * 26 + (c.toUpper - 'A' + 1)
-    } - 1
+    // Input validation
+    if (colName == null || colName.isEmpty || !colName.forall(c => c >= 'A' && c <= 'Z')) {
+         // Handle invalid input, e.g., return -1 or throw exception
+         // logger.warn(s"Invalid column name format: $colName")
+         return -1 // Or throw new IllegalArgumentException(s"Invalid column name: $colName")
+    }
+
+    var result = 0
+    var power = 1
+    // Iterate from right to left
+    for (i <- colName.length - 1 to 0 by -1) {
+       val charValue = colName(i) - 'A' + 1
+       result += charValue * power
+       if (i > 0) { // Avoid overflow on power for the last character
+           // Check for potential overflow before multiplying
+           if (power > Int.MaxValue / 26) {
+              // Handle potential overflow if column names get extremely long (e.g., > "XFD")
+              // logger.error(s"Column name $colName is too long, potential overflow")
+              return -1 // Or throw exception
+           }
+           power *= 26
+       }
+    }
+    result - 1 // Convert from 1-based result to 0-based index
   }
+}
