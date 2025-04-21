@@ -47,11 +47,13 @@ object Main {
 
         opt[String]("strategy")
           .action((x, c) => c.copy(splitStrategy = Some(x)))
-          .text("Split strategy: sheet, page, slide, attachment, embedded, etc. (optional, split mode only)"),
+          .text("Split strategy (used with --split): page (PDF), sheet (Excel), slide (PowerPoint), " +
+            "attachment (emails), embedded (archives), heading (Word), paragraph, row, column, sentence"),
 
         opt[String]("type")
           .action((x, c) => c.copy(outputType = Some(x)))
-          .text("Override output MIME type/extension for split chunks (optional, split mode only)"),
+          .text("Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
+            "or extension (pdf). Used with --split only."),
         opt[Seq[String]]("mapping")
           .valueName("mimeOrExt1=mimeOrExt2,...")
           .action((xs, c) => c.copy(mappings = xs))

@@ -131,12 +131,23 @@ object Pipeline {
 
     val splitCfg = utils.SplitConfig(effStrategy)
 
-    val chunks = utils.DocumentSplitter.split(fileContent, splitCfg)
+    val chunks = try {
+      utils.DocumentSplitter.split(fileContent, splitCfg)
+    } catch {
+      case ex: Exception =>
+        logger.error(s"Failed to split file using strategy $effStrategy: ${ex.getMessage}")
+        throw new RuntimeException(s"Failed to split file using strategy $effStrategy", ex)
+    }
 
-    if (chunks.size <= 1) {
+    if (chunks.isEmpty) {
+      val msg = "Split operation produced no chunks."
+      logger.error(msg)
+      throw new RuntimeException(msg)
+    } else if (chunks.size <= 1) {
       logger.warn("Split operation produced only one chunk – file may not be splittable using the chosen strategy.")
     }
 
+    var successCount = 0
     chunks.foreach { chunk =>
       val chunkMime: MimeType = outputType.getOrElse(chunk.content.mimeType)
 
@@ -149,11 +160,16 @@ object Pipeline {
       val outPath = outDir.resolve(fileName)
 
       utils.FileUtils.writeBytes(outPath, chunk.content.data) match {
-        case Success(_) => logger.info(s"Wrote chunk #${chunk.index} to $outPath")
+        case Success(_) => 
+          logger.info(s"Wrote chunk #${chunk.index} to $outPath")
+          successCount += 1
         case Failure(ex) =>
           logger.error(s"Failed to write chunk #${chunk.index} to $outPath: ${ex.getMessage}")
       }
     }
+    
+    // Log a summary message
+    logger.info(s"Split operation complete: $successCount of ${chunks.size} chunks successfully written to $outputDir")
   }
 
   /** Default split strategy if the user hasn't specified one. */
