@@ -103,6 +103,10 @@ object DocumentSplitter {
     // Outlook MSG
     val msgSplitter = new OutlookMsgSplitter
     register(MimeType.ApplicationVndMsOutlook, msgSplitter)
+
+    // ZIP archives
+    val zipSplitter = new ZipEntrySplitter
+    register(MimeType.ApplicationZip, zipSplitter)
   }
 
   initBuiltIns()
