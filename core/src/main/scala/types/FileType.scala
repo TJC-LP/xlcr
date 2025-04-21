@@ -18,7 +18,7 @@ object FileType {
   case object ExcelXlsm extends FileType(Extension.XLSM, MimeType.ApplicationVndMsExcel)
 
   // PowerPoint File Types
-  case object PowerPointPptx extends FileType(Extension.PPTX, MimeType.ApplicationVndMsPowerpoint)
+  case object PowerPointPptx extends FileType(Extension.PPTX, MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation)
   case object PowerPointPpt extends FileType(Extension.PPT, MimeType.ApplicationVndMsPowerpoint)
 
   // PDF File Type

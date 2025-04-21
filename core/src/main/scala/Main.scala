@@ -13,6 +13,9 @@ object Main {
                                input: String = "",
                                output: String = "",
                                diffMode: Boolean = false,
+                               splitMode: Boolean = false,
+                               splitStrategy: Option[String] = None,
+                               outputType: Option[String] = None,
                                mappings: Seq[String] = Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
                              )
 
@@ -37,6 +40,18 @@ object Main {
         opt[Boolean]('d', "diff")
           .action((x, c) => c.copy(diffMode = x))
           .text("enable diff mode to merge with existing output file"),
+
+        opt[Unit]("split")
+          .action((_, c) => c.copy(splitMode = true))
+          .text("Enable split mode (file-to-directory split)"),
+
+        opt[String]("strategy")
+          .action((x, c) => c.copy(splitStrategy = Some(x)))
+          .text("Split strategy: sheet, page, slide, attachment, embedded, etc. (optional, split mode only)"),
+
+        opt[String]("type")
+          .action((x, c) => c.copy(outputType = Some(x)))
+          .text("Override output MIME type/extension for split chunks (optional, split mode only)"),
         opt[Seq[String]]("mapping")
           .valueName("mimeOrExt1=mimeOrExt2,...")
           .action((xs, c) => c.copy(mappings = xs))
@@ -69,23 +84,58 @@ object Main {
         val inputPath = Paths.get(config.input)
         val outputPath = Paths.get(config.output)
 
-        // Check if input path is a directory
-        if (Files.isDirectory(inputPath)) {
-          // Directory-based approach
-          if (mimeMap.nonEmpty) {
-            DirectoryPipeline.runDirectoryToDirectory(
-              inputDir = config.input,
-              outputDir = config.output,
-              mimeMappings = mimeMap,
-              diffMode = config.diffMode
-            )
-          } else {
-            System.err.println("No mime mappings provided for directory-based operation.")
+        // Branch logic based on split vs convert modes
+        if (config.splitMode) {
+          // Split mode: expect input to be a single file and output to be a directory
+          if (Files.isDirectory(inputPath)) {
+            System.err.println("Split mode expects --input to be a file, not a directory.")
             sys.exit(1)
           }
+
+          // Ensure output directory exists or can be created
+          if (!Files.exists(outputPath)) {
+            try Files.createDirectories(outputPath)
+            catch {
+              case ex: Exception =>
+                System.err.println(s"Failed to create output directory: ${ex.getMessage}")
+                sys.exit(1)
+            }
+          } else if (!Files.isDirectory(outputPath)) {
+            System.err.println("--output must be a directory when using --split mode.")
+            sys.exit(1)
+          }
+
+          // Parse optional strategy and output type
+          val splitStrategyOpt = config.splitStrategy.flatMap(utils.SplitStrategy.fromString)
+          val outputMimeOpt = config.outputType.flatMap(parseMimeOrExtension)
+
+          Pipeline.split(
+            inputPath = config.input,
+            outputDir = config.output,
+            strategy = splitStrategyOpt,
+            outputType = outputMimeOpt
+          )
+
         } else {
-          // Single file approach
-          Pipeline.run(config.input, config.output, config.diffMode)
+          // Conversion mode (existing behavior)
+          // Check if input path is a directory
+          if (Files.isDirectory(inputPath)) {
+            // Directory-based approach
+            if (mimeMap.nonEmpty) {
+              DirectoryPipeline.runDirectoryToDirectory(
+                inputDir = config.input,
+                outputDir = config.output,
+                mimeMappings = mimeMap,
+                diffMode = config.diffMode
+              )
+            } else {
+              System.err.println("No mime mappings provided for directory-based operation.")
+              sys.exit(1)
+            }
+          } else {
+            // Single file conversion
+            Pipeline.run(config.input, config.output, config.diffMode)
+          }
         }
 
       case _ =>

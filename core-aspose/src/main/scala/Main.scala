@@ -21,6 +21,24 @@ import scala.util.Try
 object Main {
 
   private val logger = LoggerFactory.getLogger(getClass)
+  
+  /**
+   * Attempt to interpret a string as either a known MIME type or a known file extension.
+   */
+  private def parseMimeOrExtension(str: String): Option[types.MimeType] = {
+    // First try direct MIME type parse
+    types.MimeType.fromString(str) match {
+      case someMime@Some(_) => someMime
+      case None =>
+        // Attempt to interpret it as an extension
+        // remove any leading dot, e.g. ".xlsx" -> "xlsx"
+        val ext = if (str.startsWith(".")) str.substring(1).toLowerCase else str.toLowerCase
+
+        // See if there's a matching FileType
+        val maybeFt = types.FileType.fromExtension(ext)
+        maybeFt.map(_.getMimeType)
+    }
+  }
 
   // ---------- CLI definition -----------------------------------------------------
   private val builder = OParser.builder[AsposeConfig]
@@ -41,6 +59,20 @@ object Main {
       opt[Boolean]('d', "diff")
         .action((x, c) => c.copy(diffMode = x))
         .text("Enable diff/merge mode if supported"),
+
+      opt[Unit]("split")
+        .action((_, c) => c.copy(splitMode = true))
+        .text("Enable split mode (file-to-directory split)"),
+
+      opt[String]("strategy")
+        .action((x, c) => c.copy(splitStrategy = Some(x)))
+        .text("Split strategy (used with --split): page (PDF), sheet (Excel), slide (PowerPoint), " +
+          "attachment (emails), embedded (archives), heading (Word), paragraph, row, column, sentence"),
+
+      opt[String]("type")
+        .action((x, c) => c.copy(outputType = Some(x)))
+        .text("Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
+          "or extension (pdf). Used with --split only."),
 
       // Optional per‑product license paths (overrides env / auto) -----------------
       opt[String]("licenseTotal").valueName("<path>")
@@ -63,17 +95,62 @@ object Main {
   def main(args: Array[String]): Unit =
     OParser.parse(parser, args, AsposeConfig()) match {
       case Some(cfg) =>
-        logger.info(s"Starting conversion – cfg: $cfg")
-
+        // Initialize Aspose licenses and registries
         applyLicenses(cfg)
         AsposeBridgeRegistry.registerAll()
         utils.aspose.AsposeSplitterRegistry.registerAll()
 
-        Try(Pipeline.run(cfg.input, cfg.output, cfg.diffMode))
-          .recover { case ex =>
-            logger.error("Pipeline failed", ex)
+        // Handle split mode vs conversion mode
+        if (cfg.splitMode) {
+          logger.info(s"Starting split operation – cfg: $cfg")
+          
+          import java.nio.file.{Files, Paths}
+          val inputPath = Paths.get(cfg.input)
+          val outputPath = Paths.get(cfg.output)
+          
+          // Verify input is a file
+          if (Files.isDirectory(inputPath)) {
+            logger.error("Split mode expects --input to be a file, not a directory.")
             sys.exit(1)
           }
+          
+          // Ensure output directory exists or can be created
+          if (!Files.exists(outputPath)) {
+            try Files.createDirectories(outputPath)
+            catch {
+              case ex: Exception =>
+                logger.error(s"Failed to create output directory: ${ex.getMessage}")
+                sys.exit(1)
+            }
+          } else if (!Files.isDirectory(outputPath)) {
+            logger.error("--output must be a directory when using --split mode.")
+            sys.exit(1)
+          }
+          
+          // Parse strategy and output type
+          val splitStrategyOpt = cfg.splitStrategy.flatMap(utils.SplitStrategy.fromString)
+          val outputMimeOpt = cfg.outputType.flatMap(parseMimeOrExtension)
+          
+          // Run the split operation
+          Try(Pipeline.split(
+            inputPath = cfg.input,
+            outputDir = cfg.output,
+            strategy = splitStrategyOpt,
+            outputType = outputMimeOpt
+          )).recover { case ex =>
+            logger.error("Split operation failed", ex)
+            sys.exit(1)
+          }
+        } else {
+          // Standard conversion mode
+          logger.info(s"Starting conversion – cfg: $cfg")
+          
+          Try(Pipeline.run(cfg.input, cfg.output, cfg.diffMode))
+            .recover { case ex =>
+              logger.error("Pipeline failed", ex)
+              sys.exit(1)
+            }
+        }
       case None => // Scopt already displayed help / error
     }
 

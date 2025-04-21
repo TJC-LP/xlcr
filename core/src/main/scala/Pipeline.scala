@@ -84,6 +84,113 @@ object Pipeline {
     BridgeRegistry.supportsMerging(inputMime, outputMime)
   }
 
+  /* =====================================================================
+   * File‑to‑Directory split entry‑point
+   * =================================================================== */
+
+  /**
+   * Split a single input document into multiple output files inside the
+   * provided directory.
+   *
+   * @param inputPath  Path to the file that should be split.
+   * @param outputDir  Target directory where individual chunks will be saved.
+   * @param strategy   Optional user‑supplied split strategy (page, sheet, …).
+   * @param outputType Optional MIME type override for the produced chunks.
+   */
+  def split(
+             inputPath: String,
+             outputDir: String,
+             strategy: Option[utils.SplitStrategy] = None,
+             outputType: Option[MimeType] = None
+           ): Unit = {
+
+    logger.info(s"Starting split process. Input file: $inputPath, Output dir: $outputDir, " +
+      s"Strategy: ${strategy.map(_.toString).getOrElse("default")}, OverrideType: ${outputType.map(_.mimeType).getOrElse("auto")}")
+
+    val inPath = Paths.get(inputPath)
+    val outDir = Paths.get(outputDir)
+
+    if (!Files.exists(inPath) || Files.isDirectory(inPath)) {
+      val msg = s"Input path must be an existing file: $inputPath"
+      logger.error(msg)
+      throw new InputFileNotFoundException(msg)
+    }
+
+    if (!Files.exists(outDir)) Files.createDirectories(outDir)
+    else if (!Files.isDirectory(outDir)) {
+      val msg = s"Output path must be a directory for split operation: $outputDir"
+      logger.error(msg)
+      throw new IllegalArgumentException(msg)
+    }
+
+    // Read file content and detect mime
+    val fileContent = models.FileContent.fromPath[MimeType](inPath)
+
+    // Decide on strategy (user override or default)
+    val effStrategy: utils.SplitStrategy = strategy.getOrElse(defaultStrategyForMime(fileContent.mimeType))
+
+    val splitCfg = utils.SplitConfig(effStrategy)
+
+    val chunks = utils.DocumentSplitter.split(fileContent, splitCfg)
+
+    if (chunks.size <= 1) {
+      logger.warn("Split operation produced only one chunk – file may not be splittable using the chosen strategy.")
+    }
+
+    chunks.foreach { chunk =>
+      val chunkMime: MimeType = outputType.getOrElse(chunk.content.mimeType)
+
+      val ext: String = findExtensionForMime(chunkMime).getOrElse("dat")
+
+      val baseLabel = sanitizeLabel(chunk.label)
+      val indexPadded = f"${chunk.index + 1}%03d"
+      val fileName = s"${indexPadded}_${baseLabel}.$ext"
+
+      val outPath = outDir.resolve(fileName)
+
+      utils.FileUtils.writeBytes(outPath, chunk.content.data) match {
+        case Success(_) => logger.info(s"Wrote chunk #${chunk.index} to $outPath")
+        case Failure(ex) =>
+          logger.error(s"Failed to write chunk #${chunk.index} to $outPath: ${ex.getMessage}")
+      }
+    }
+  }
+
+  /** Default split strategy if the user hasn't specified one. */
+  private def defaultStrategyForMime(mime: MimeType): utils.SplitStrategy = mime match {
+    case MimeType.ApplicationPdf => utils.SplitStrategy.Page
+
+    // Excel formats
+    case MimeType.ApplicationVndMsExcel | MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet =>
+      utils.SplitStrategy.Sheet
+
+    // PowerPoint formats
+    case MimeType.ApplicationVndMsPowerpoint | MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation =>
+      utils.SplitStrategy.Slide
+
+    // Archive / containers default to embedded entries
+    case MimeType.ApplicationZip | MimeType.ApplicationGzip | MimeType.ApplicationSevenz |
+         MimeType.ApplicationTar | MimeType.ApplicationBzip2 | MimeType.ApplicationXz =>
+      utils.SplitStrategy.Embedded
+
+    // Emails default to attachments
+    case MimeType.MessageRfc822 | MimeType.ApplicationVndMsOutlook => utils.SplitStrategy.Attachment
+
+    case _ => utils.SplitStrategy.Page // generic fallback
+  }
+
+  /** Map a MIME type to a known file extension, if possible. */
+  private def findExtensionForMime(mime: MimeType): Option[String] = {
+    types.FileType.values.find(_.getMimeType == mime).map(_.getExtension.extension)
+  }
+
+  /** Sanitize chunk label to obtain a safe filename component. */
+  private def sanitizeLabel(label: String): String = {
+    val replaced = label.replaceAll("[\\\\/:*?\"<>|]", "_") // Windows‑invalid chars
+    // collapse whitespace
+    replaced.trim.replaceAll("\\s+", "_")
+  }
+
   /**
    * Perform a normal single-step conversion via convertDynamic.
    */
