@@ -104,9 +104,14 @@ object DocumentSplitter {
     val msgSplitter = new OutlookMsgSplitter
     register(MimeType.ApplicationVndMsOutlook, msgSplitter)
 
-    // ZIP archives
-    val zipSplitter = new ZipEntrySplitter
-    register(MimeType.ApplicationZip, zipSplitter)
+    // Archive formats
+    val archiveSplitter = new ArchiveEntrySplitter
+    register(MimeType.ApplicationZip, archiveSplitter)
+    register(MimeType.ApplicationGzip, archiveSplitter)
+    register(MimeType.ApplicationSevenz, archiveSplitter)
+    register(MimeType.ApplicationTar, archiveSplitter)
+    register(MimeType.ApplicationBzip2, archiveSplitter)
+    register(MimeType.ApplicationXz, archiveSplitter)
   }
 
   initBuiltIns()

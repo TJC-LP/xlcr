@@ -14,6 +14,11 @@ object MimeType {
   case object ApplicationXml extends MimeType("application/xml")
   case object ApplicationPdf extends MimeType("application/pdf")
   case object ApplicationZip extends MimeType("application/zip")
+  case object ApplicationGzip extends MimeType("application/gzip")
+  case object ApplicationSevenz extends MimeType("application/x-7z-compressed")
+  case object ApplicationTar extends MimeType("application/x-tar")
+  case object ApplicationBzip2 extends MimeType("application/x-bzip2")
+  case object ApplicationXz extends MimeType("application/x-xz")
   case object ApplicationVndMsOutlook extends MimeType("application/vnd.ms-outlook")
   case object ApplicationOctet extends MimeType("application/octet-stream")
   case object ApplicationMsWord extends MimeType("application/msword")
@@ -38,8 +43,9 @@ object MimeType {
   // Get all MimeType values
   val values: Seq[MimeType] = Seq(
     TextPlain, TextHtml, TextMarkdown,
-    ApplicationJson, ApplicationXml, ApplicationPdf, ApplicationZip, ApplicationOctet,
-    ApplicationVndMsOutlook,
+    ApplicationJson, ApplicationXml, ApplicationPdf, 
+    ApplicationZip, ApplicationGzip, ApplicationSevenz, ApplicationTar, ApplicationBzip2, ApplicationXz, 
+    ApplicationOctet, ApplicationVndMsOutlook,
     ApplicationMsWord, ApplicationVndMsExcel, ApplicationVndMsPowerpoint,
     ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
     ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,

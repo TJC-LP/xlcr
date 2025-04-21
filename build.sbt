@@ -72,6 +72,8 @@ lazy val core = (project in file("core"))
       "org.apache.tika" % "tika-core" % tikaVersion,
       "org.apache.tika" % "tika-parsers" % tikaVersion,
       "org.apache.tika" % "tika-parsers-standard-package" % tikaVersion,
+      // Apache Commons Compress for archive formats
+      "org.apache.commons" % "commons-compress" % "1.25.0",
       // Jakarta Mail for email parsing
       "com.sun.mail" % "jakarta.mail" % "2.0.1",
       // JAI
@@ -135,7 +137,8 @@ lazy val coreAspose = (project in file("core-aspose"))
       "com.aspose" % "aspose-cells" % "25.4",
       "com.aspose" % "aspose-words" % "25.4" classifier "jdk17",
       "com.aspose" % "aspose-slides" % "25.4" classifier "jdk16",
-      "com.aspose" % "aspose-email" % "25.3" classifier "jdk16"
+      "com.aspose" % "aspose-email" % "25.3" classifier "jdk16",
+      "com.aspose" % "aspose-zip" % "25.3"
     )
   )
 
