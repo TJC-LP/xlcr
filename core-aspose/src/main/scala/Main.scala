@@ -65,6 +65,7 @@ object Main {
 
         applyLicenses(cfg)
         AsposeBridgeRegistry.registerAll()
+        utils.aspose.AsposeSplitterRegistry.registerAll()
 
         Try(Pipeline.run(cfg.input, cfg.output, cfg.diffMode))
           .recover { case ex =>

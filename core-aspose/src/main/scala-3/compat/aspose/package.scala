@@ -25,6 +25,7 @@ package object aspose {
   
   object AsposeSlidesFormat {
     val Pdf = com.aspose.slides.SaveFormat.Pdf
+    val Ppt = com.aspose.slides.SaveFormat.Ppt
   }
   
   // Words
