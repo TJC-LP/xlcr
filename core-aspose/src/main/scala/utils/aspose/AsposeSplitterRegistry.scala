@@ -32,5 +32,15 @@ object AsposeSplitterRegistry {
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       ExcelXSheetAsposeSplitter
     )
+    
+    DocumentSplitter.register(
+      MimeType.ApplicationVndMsExcelSheetMacroEnabled,
+      ExcelXlsmSheetAsposeSplitter
+    )
+    
+    DocumentSplitter.register(
+      MimeType.ApplicationVndMsExcelSheetBinary,
+      ExcelXlsbSheetAsposeSplitter
+    )
   }
 }

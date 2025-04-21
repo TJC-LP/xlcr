@@ -21,6 +21,8 @@ object MimeType {
   case object ApplicationVndMsPowerpoint extends MimeType("application/vnd.ms-powerpoint")
   case object ApplicationVndOpenXmlFormatsWordprocessingmlDocument extends MimeType("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
   case object ApplicationVndOpenXmlFormatsSpreadsheetmlSheet extends MimeType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+  case object ApplicationVndMsExcelSheetMacroEnabled extends MimeType("application/vnd.ms-excel.sheet.macroEnabled.12")
+  case object ApplicationVndMsExcelSheetBinary extends MimeType("application/vnd.ms-excel.sheet.binary.macroEnabled.12")
   case object ApplicationVndOpenXmlFormatsPresentationmlPresentation extends MimeType("application/vnd.openxmlformats-officedocument.presentationml.presentation")
 
   // Image MIME types
@@ -41,6 +43,7 @@ object MimeType {
     ApplicationMsWord, ApplicationVndMsExcel, ApplicationVndMsPowerpoint,
     ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
     ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
+    ApplicationVndMsExcelSheetMacroEnabled, ApplicationVndMsExcelSheetBinary,
     ApplicationVndOpenXmlFormatsPresentationmlPresentation,
     ImageJpeg, ImagePng, ImageGif, ImageBmp, ImageSvgXml,
     MessageRfc822
