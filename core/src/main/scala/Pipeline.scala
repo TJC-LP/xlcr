@@ -105,12 +105,19 @@ object Pipeline {
              strategy: Option[utils.SplitStrategy] = None,
              outputType: Option[MimeType] = None,
              recursive: Boolean = false,
-             maxRecursionDepth: Int = 5
+             maxRecursionDepth: Int = 5,
+             outputFormat: Option[String] = None,
+             maxImageWidth: Int = 2000,
+             maxImageHeight: Int = 2000,
+             maxImageSizeBytes: Long = 1024 * 1024 * 5,
+             imageDpi: Int = 300,
+             jpegQuality: Float = 0.85f
            ): Unit = {
 
     logger.info(s"Starting split process. Input file: $inputPath, Output dir: $outputDir, " +
       s"Strategy: ${strategy.map(_.toString).getOrElse("default")}, OverrideType: ${outputType.map(_.mimeType).getOrElse("auto")}, " +
-      s"Recursive: $recursive, MaxDepth: $maxRecursionDepth")
+      s"Recursive: $recursive, MaxDepth: $maxRecursionDepth}, " +
+      s"OutputFormat: ${outputFormat.getOrElse("default")}")
 
     val inPath = Paths.get(inputPath)
     val outDir = Paths.get(outputDir)
@@ -134,11 +141,17 @@ object Pipeline {
     // Decide on strategy (user override or default)
     val effStrategy: utils.SplitStrategy = strategy.getOrElse(defaultStrategyForMime(fileContent.mimeType))
 
-    // Create split config with recursive flag
+    // Create split config with recursive flag and image parameters
     val splitCfg = utils.SplitConfig(
       strategy = effStrategy,
       recursive = recursive,
-      maxRecursionDepth = maxRecursionDepth
+      maxRecursionDepth = maxRecursionDepth,
+      outputFormat = outputFormat,
+      maxImageWidth = maxImageWidth,
+      maxImageHeight = maxImageHeight,
+      maxImageSizeBytes = maxImageSizeBytes,
+      imageDpi = imageDpi,
+      jpegQuality = jpegQuality
     )
 
     // Start with current depth = 0

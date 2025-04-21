@@ -74,6 +74,32 @@ object Main {
         .text("Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
           "or extension (pdf). Used with --split only."),
           
+      // PDF to image conversion options
+      opt[String]("format")
+        .action((x, c) => c.copy(outputFormat = Some(x)))
+        .text("Output format for PDF page splitting: pdf (default), png, or jpg"),
+        
+      opt[Int]("max-width")
+        .action((x, c) => c.copy(maxImageWidth = x))
+        .text("Maximum width in pixels for image output (default: 2000)"),
+        
+      opt[Int]("max-height")
+        .action((x, c) => c.copy(maxImageHeight = x))
+        .text("Maximum height in pixels for image output (default: 2000)"),
+        
+      opt[Long]("max-size")
+        .action((x, c) => c.copy(maxImageSizeBytes = x))
+        .text("Maximum size in bytes for image output (default: 5MB)"),
+        
+      opt[Int]("dpi")
+        .action((x, c) => c.copy(imageDpi = x))
+        .text("DPI for PDF rendering (default: 300)"),
+        
+      opt[Double]("quality")
+        .action((x, c) => c.copy(jpegQuality = x.toFloat))
+        .text("JPEG quality (0.0-1.0, default: 0.85)"),
+        
+      // Recursive extraction options  
       opt[Unit]("recursive")
         .action((_, c) => c.copy(recursiveExtraction = true))
         .text("Enable recursive extraction of archives (ZIP within ZIP). Used with --split and embedded strategy."),
@@ -146,7 +172,13 @@ object Main {
             strategy = splitStrategyOpt,
             outputType = outputMimeOpt,
             recursive = cfg.recursiveExtraction,
-            maxRecursionDepth = cfg.maxRecursionDepth
+            maxRecursionDepth = cfg.maxRecursionDepth,
+            outputFormat = cfg.outputFormat,
+            maxImageWidth = cfg.maxImageWidth,
+            maxImageHeight = cfg.maxImageHeight,
+            maxImageSizeBytes = cfg.maxImageSizeBytes,
+            imageDpi = cfg.imageDpi,
+            jpegQuality = cfg.jpegQuality
           )).recover { case ex =>
             logger.error("Split operation failed", ex)
             sys.exit(1)

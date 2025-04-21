@@ -95,6 +95,9 @@ Examples:
 
 # Split a PowerPoint presentation into individual PNG images
 > core/run --input "data/import/powerpoint.pptx" --output "data/export/slides/" --split --type "png"
+
+# Convert PDF to high-quality JPEG images
+> core/run --input "document.pdf" --output "images/" --split --strategy page --format jpg --dpi 300 --quality 0.9
 ```
 
 ### Aspose Module
@@ -120,16 +123,31 @@ Examples:
 
 # Recursively extract nested ZIP archives (handles ZIP files within ZIP files)
 > coreAspose/run --input "nested_archive.zip" --output "extracted/" --split --recursive
+
+# Convert PDF to PNG images with specific dimensions and quality settings
+> coreAspose/run --input "document.pdf" --output "images/" --split --strategy page --format png --max-width 1600 --max-height 1200 --dpi 150
 ```
 
 Additional Aspose module options:
+
+Archive extraction options:
+- `--recursive`: Enable recursive extraction of archives (ZIP within ZIP)
+- `--max-recursion-depth <n>`: Maximum recursion depth for nested archives (default: 5)
+
+PDF to image conversion options:
+- `--format`: Output format for PDF pages: pdf (default), png, or jpg
+- `--max-width`: Maximum width in pixels for image output (default: 2000)
+- `--max-height`: Maximum height in pixels for image output (default: 2000)
+- `--max-size`: Maximum size in bytes for image output (default: 5MB)
+- `--dpi`: DPI for PDF rendering (default: 300)
+- `--quality`: JPEG quality (0.0-1.0, default: 0.85)
+
+License options:
 - `--licenseWords`: Aspose.Words license path
 - `--licenseCells`: Aspose.Cells license path
 - `--licenseEmail`: Aspose.Email license path
 - `--licenseSlides`: Aspose.Slides license path
 - `--licenseZip`: Aspose.ZIP license path
-- `--recursive`: Enable recursive extraction of archives (ZIP within ZIP)
-- `--max-recursion-depth <n>`: Maximum recursion depth for nested archives (default: 5)
 
 ### SpreadsheetLLM Module
 Compress Excel spreadsheets for LLM processing:

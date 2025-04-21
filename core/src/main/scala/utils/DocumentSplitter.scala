@@ -51,7 +51,15 @@ case class SplitConfig(
     overlap: Int = 0,
     recursive: Boolean = false,
     maxRecursionDepth: Int = 5,
-    maxTotalSize: Long = 1024 * 1024 * 100 // 100MB zipbomb protection
+    maxTotalSize: Long = 1024 * 1024 * 100, // 100MB zipbomb protection
+    
+    // PDF to image conversion parameters
+    outputFormat: Option[String] = None,       // "pdf", "png", or "jpg"
+    maxImageWidth: Int = 2000,                // Max width in pixels
+    maxImageHeight: Int = 2000,               // Max height in pixels
+    maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default limit
+    imageDpi: Int = 300,                      // DPI for rendering
+    jpegQuality: Float = 0.85f                // JPEG quality factor (0.0-1.0)
 )
 
 /** Generic trait for splitting a document. */

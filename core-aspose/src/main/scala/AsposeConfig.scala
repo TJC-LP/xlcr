@@ -24,6 +24,12 @@ case class AsposeConfig(
                        splitMode: Boolean = false,
                        splitStrategy: Option[String] = None,
                        outputType: Option[String] = None,
+                       outputFormat: Option[String] = None,
+                       maxImageWidth: Int = 2000,
+                       maxImageHeight: Int = 2000,
+                       maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default
+                       imageDpi: Int = 300,
+                       jpegQuality: Float = 0.85f,
                        recursiveExtraction: Boolean = false,
                        maxRecursionDepth: Int = 5,
                        licenseWords: Option[String] = None,

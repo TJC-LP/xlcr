@@ -16,6 +16,14 @@ object Main {
                                splitMode: Boolean = false,
                                splitStrategy: Option[String] = None,
                                outputType: Option[String] = None,
+                               outputFormat: Option[String] = None,
+                               maxImageWidth: Int = 2000,
+                               maxImageHeight: Int = 2000,
+                               maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default
+                               imageDpi: Int = 300,
+                               jpegQuality: Float = 0.85f,
+                               recursiveExtraction: Boolean = false,
+                               maxRecursionDepth: Int = 5,
                                mappings: Seq[String] = Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
                              )
 
@@ -54,6 +62,40 @@ object Main {
           .action((x, c) => c.copy(outputType = Some(x)))
           .text("Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
             "or extension (pdf). Used with --split only."),
+        // PDF to image conversion options
+        opt[String]("format")
+          .action((x, c) => c.copy(outputFormat = Some(x)))
+          .text("Output format for PDF page splitting: pdf (default), png, or jpg"),
+          
+        opt[Int]("max-width")
+          .action((x, c) => c.copy(maxImageWidth = x))
+          .text("Maximum width in pixels for image output (default: 2000)"),
+          
+        opt[Int]("max-height")
+          .action((x, c) => c.copy(maxImageHeight = x))
+          .text("Maximum height in pixels for image output (default: 2000)"),
+          
+        opt[Long]("max-size")
+          .action((x, c) => c.copy(maxImageSizeBytes = x))
+          .text("Maximum size in bytes for image output (default: 5MB)"),
+          
+        opt[Int]("dpi")
+          .action((x, c) => c.copy(imageDpi = x))
+          .text("DPI for PDF rendering (default: 300)"),
+          
+        opt[Double]("quality")
+          .action((x, c) => c.copy(jpegQuality = x.toFloat))
+          .text("JPEG quality (0.0-1.0, default: 0.85)"),
+          
+        // Recursive extraction options
+        opt[Unit]("recursive")
+          .action((_, c) => c.copy(recursiveExtraction = true))
+          .text("Enable recursive extraction of archives (ZIP within ZIP)"),
+          
+        opt[Int]("max-recursion-depth")
+          .action((x, c) => c.copy(maxRecursionDepth = x))
+          .text("Maximum recursion depth for nested archives (default: 5)"),
+          
         opt[Seq[String]]("mapping")
           .valueName("mimeOrExt1=mimeOrExt2,...")
           .action((xs, c) => c.copy(mappings = xs))
@@ -115,7 +157,15 @@ object Main {
             inputPath = config.input,
             outputDir = config.output,
             strategy = splitStrategyOpt,
-            outputType = outputMimeOpt
+            outputType = outputMimeOpt,
+            recursive = config.recursiveExtraction,
+            maxRecursionDepth = config.maxRecursionDepth,
+            outputFormat = config.outputFormat,
+            maxImageWidth = config.maxImageWidth,
+            maxImageHeight = config.maxImageHeight,
+            maxImageSizeBytes = config.maxImageSizeBytes,
+            imageDpi = config.imageDpi,
+            jpegQuality = config.jpegQuality
           )
 
         } else {
