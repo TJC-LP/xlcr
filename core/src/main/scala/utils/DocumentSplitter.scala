@@ -48,7 +48,10 @@ object SplitStrategy {
 case class SplitConfig(
     strategy: SplitStrategy,
     maxChars: Int = 8000,
-    overlap: Int = 0
+    overlap: Int = 0,
+    recursive: Boolean = false,
+    maxRecursionDepth: Int = 5,
+    maxTotalSize: Long = 1024 * 1024 * 100 // 100MB zipbomb protection
 )
 
 /** Generic trait for splitting a document. */

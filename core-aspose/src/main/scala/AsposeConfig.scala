@@ -24,6 +24,8 @@ case class AsposeConfig(
                        splitMode: Boolean = false,
                        splitStrategy: Option[String] = None,
                        outputType: Option[String] = None,
+                       recursiveExtraction: Boolean = false,
+                       maxRecursionDepth: Int = 5,
                        licenseWords: Option[String] = None,
                        licenseCells: Option[String] = None,
                        licenseEmail: Option[String] = None,

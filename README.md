@@ -11,7 +11,7 @@ Core Module (`core/run`):
 - Tika-based text and XML extraction from various formats
 - SVG to PNG conversion support
 - Document splitting (pages, sheets, slides, archive entries, etc.)
-- ZIP and other archive format extraction
+- ZIP and other archive format extraction with recursive support
 - Extensible bridge architecture for format conversions
 - Diff/merge support for compatible formats
 - Directory-based batch processing
@@ -19,7 +19,7 @@ Core Module (`core/run`):
 Aspose Module (`coreAspose/run`):
 - Professional PDF output from Word, Excel, PowerPoint, and Email files
 - High-quality document conversion using Aspose libraries
-- Enhanced ZIP archive extraction using Aspose.ZIP
+- Enhanced ZIP archive extraction using Aspose.ZIP with recursive capabilities and zipbomb protection
 - Professional-grade document splitting
 - Requires valid Aspose license(s) for production use
 
@@ -67,7 +67,7 @@ sbt
 Split documents into individual pieces (pages, sheets, slides, archive entries, etc.):
 ```
 sbt
-> core/run --input "<input_file>" --output "<output_directory>" --split [--strategy <strategy>] [--type <output_type>]
+> core/run --input "<input_file>" --output "<output_directory>" --split [--strategy <strategy>] [--type <output_type>] [--recursive] [--max-recursion-depth <n>]
 ```
 
 Available split strategies:
@@ -90,6 +90,9 @@ Examples:
 # Extract all files from a ZIP archive
 > core/run --input "archive.zip" --output "extracted/" --split --strategy "embedded"
 
+# Recursively extract nested ZIP archives (with zipbomb protection)
+> core/run --input "nested_archive.zip" --output "extracted/" --split --strategy "embedded" --recursive
+
 # Split a PowerPoint presentation into individual PNG images
 > core/run --input "data/import/powerpoint.pptx" --output "data/export/slides/" --split --type "png"
 ```
@@ -104,7 +107,7 @@ sbt
 The Aspose module also supports split mode with enhanced capabilities:
 ```
 sbt
-> coreAspose/run --input "<input_file>" --output "<output_directory>" --split [--strategy <strategy>]
+> coreAspose/run --input "<input_file>" --output "<output_directory>" --split [--strategy <strategy>] [--recursive] [--max-recursion-depth <n>]
 ```
 
 Examples:
@@ -114,14 +117,19 @@ Examples:
 
 # Extract files from ZIP archive using Aspose.ZIP
 > coreAspose/run --input "archive.zip" --output "extracted/" --split
+
+# Recursively extract nested ZIP archives (handles ZIP files within ZIP files)
+> coreAspose/run --input "nested_archive.zip" --output "extracted/" --split --recursive
 ```
 
-Additional Aspose license options:
+Additional Aspose module options:
 - `--licenseWords`: Aspose.Words license path
 - `--licenseCells`: Aspose.Cells license path
 - `--licenseEmail`: Aspose.Email license path
 - `--licenseSlides`: Aspose.Slides license path
 - `--licenseZip`: Aspose.ZIP license path
+- `--recursive`: Enable recursive extraction of archives (ZIP within ZIP)
+- `--max-recursion-depth <n>`: Maximum recursion depth for nested archives (default: 5)
 
 ### SpreadsheetLLM Module
 Compress Excel spreadsheets for LLM processing:

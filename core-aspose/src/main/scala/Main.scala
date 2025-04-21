@@ -73,6 +73,14 @@ object Main {
         .action((x, c) => c.copy(outputType = Some(x)))
         .text("Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
           "or extension (pdf). Used with --split only."),
+          
+      opt[Unit]("recursive")
+        .action((_, c) => c.copy(recursiveExtraction = true))
+        .text("Enable recursive extraction of archives (ZIP within ZIP). Used with --split and embedded strategy."),
+        
+      opt[Int]("max-recursion-depth")
+        .action((x, c) => c.copy(maxRecursionDepth = x))
+        .text("Maximum recursion depth for nested archives (default: 5). Used with --recursive."),
 
       // Optional per‑product license paths (overrides env / auto) -----------------
       opt[String]("licenseTotal").valueName("<path>")
@@ -136,7 +144,9 @@ object Main {
             inputPath = cfg.input,
             outputDir = cfg.output,
             strategy = splitStrategyOpt,
-            outputType = outputMimeOpt
+            outputType = outputMimeOpt,
+            recursive = cfg.recursiveExtraction,
+            maxRecursionDepth = cfg.maxRecursionDepth
           )).recover { case ex =>
             logger.error("Split operation failed", ex)
             sys.exit(1)

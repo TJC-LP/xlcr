@@ -96,16 +96,21 @@ object Pipeline {
    * @param outputDir  Target directory where individual chunks will be saved.
    * @param strategy   Optional user‑supplied split strategy (page, sheet, …).
    * @param outputType Optional MIME type override for the produced chunks.
+   * @param recursive  Whether to recursively extract nested archives.
+   * @param maxRecursionDepth Maximum recursion depth for nested archives.
    */
   def split(
              inputPath: String,
              outputDir: String,
              strategy: Option[utils.SplitStrategy] = None,
-             outputType: Option[MimeType] = None
+             outputType: Option[MimeType] = None,
+             recursive: Boolean = false,
+             maxRecursionDepth: Int = 5
            ): Unit = {
 
     logger.info(s"Starting split process. Input file: $inputPath, Output dir: $outputDir, " +
-      s"Strategy: ${strategy.map(_.toString).getOrElse("default")}, OverrideType: ${outputType.map(_.mimeType).getOrElse("auto")}")
+      s"Strategy: ${strategy.map(_.toString).getOrElse("default")}, OverrideType: ${outputType.map(_.mimeType).getOrElse("auto")}, " +
+      s"Recursive: $recursive, MaxDepth: $maxRecursionDepth")
 
     val inPath = Paths.get(inputPath)
     val outDir = Paths.get(outputDir)
@@ -129,47 +134,153 @@ object Pipeline {
     // Decide on strategy (user override or default)
     val effStrategy: utils.SplitStrategy = strategy.getOrElse(defaultStrategyForMime(fileContent.mimeType))
 
-    val splitCfg = utils.SplitConfig(effStrategy)
+    // Create split config with recursive flag
+    val splitCfg = utils.SplitConfig(
+      strategy = effStrategy,
+      recursive = recursive,
+      maxRecursionDepth = maxRecursionDepth
+    )
 
+    // Start with current depth = 0
+    splitRecursive(fileContent, outDir, splitCfg, outputType, depth = 0)
+  }
+  
+  /**
+   * Recursive implementation of the split operation.
+   *
+   * @param content The file content to split
+   * @param outputDir The output directory for chunks
+   * @param cfg Split configuration with recursion settings
+   * @param outputType Optional MIME type override
+   * @param depth Current recursion depth
+   * @param pathPrefix Optional prefix for output filenames (used for nested archives)
+   * @return Number of successfully processed chunks
+   */
+  private def splitRecursive(
+    content: FileContent[MimeType],
+    outputDir: java.nio.file.Path,
+    cfg: utils.SplitConfig,
+    outputType: Option[MimeType],
+    depth: Int,
+    pathPrefix: Option[String] = None
+  ): Int = {
+    
+    // Get chunks for the current content
     val chunks = try {
-      utils.DocumentSplitter.split(fileContent, splitCfg)
+      utils.DocumentSplitter.split(content, cfg)
     } catch {
       case ex: Exception =>
-        logger.error(s"Failed to split file using strategy $effStrategy: ${ex.getMessage}")
-        throw new RuntimeException(s"Failed to split file using strategy $effStrategy", ex)
+        logger.error(s"Failed to split file using strategy ${cfg.strategy}: ${ex.getMessage}")
+        throw new RuntimeException(s"Failed to split file using strategy ${cfg.strategy}", ex)
     }
-
+    
     if (chunks.isEmpty) {
-      val msg = "Split operation produced no chunks."
-      logger.error(msg)
-      throw new RuntimeException(msg)
-    } else if (chunks.size <= 1) {
+      logger.warn("Split operation produced no chunks.")
+      return 0
+    } else if (chunks.size <= 1 && depth == 0) {
       logger.warn("Split operation produced only one chunk – file may not be splittable using the chosen strategy.")
     }
-
+    
     var successCount = 0
+    
+    // Process each chunk
     chunks.foreach { chunk =>
       val chunkMime: MimeType = outputType.getOrElse(chunk.content.mimeType)
-
       val ext: String = findExtensionForMime(chunkMime).getOrElse("dat")
-
+      
+      // Create filename with optional path prefix for nested archives
       val baseLabel = sanitizeLabel(chunk.label)
       val indexPadded = f"${chunk.index + 1}%03d"
-      val fileName = s"${indexPadded}_${baseLabel}.$ext"
-
-      val outPath = outDir.resolve(fileName)
-
+      val fileName = pathPrefix match {
+        case Some(prefix) => s"${prefix}_${indexPadded}_${baseLabel}.$ext"
+        case None => s"${indexPadded}_${baseLabel}.$ext"
+      }
+      
+      val outPath = outputDir.resolve(fileName)
+      
+      // First write the current chunk
       utils.FileUtils.writeBytes(outPath, chunk.content.data) match {
         case Success(_) => 
           logger.info(s"Wrote chunk #${chunk.index} to $outPath")
           successCount += 1
+          
+          // If this is an archive and we're doing recursive extraction, continue processing
+          if (cfg.recursive && depth < cfg.maxRecursionDepth && isArchiveType(chunk.content.mimeType)) {
+            
+            // Create a subdirectory for nested content
+            val subDirName = s"${fileName}_contents"
+            val subDir = outputDir.resolve(subDirName)
+            
+            if (!Files.exists(subDir)) {
+              try {
+                Files.createDirectory(subDir)
+              } catch {
+                case ex: Exception =>
+                  logger.error(s"Failed to create subdirectory for nested archive: ${ex.getMessage}")
+                  // Return early with current success count
+                  return successCount
+              }
+            }
+            
+            // Use same recursion settings for nested content
+            val nestedCfg = utils.SplitConfig(
+              strategy = utils.SplitStrategy.Embedded, // Always use embedded for nested archives
+              recursive = cfg.recursive,
+              maxRecursionDepth = cfg.maxRecursionDepth
+            )
+            
+            // Create new prefix for nested files
+            val newPrefix = pathPrefix match {
+              case Some(prefix) => s"${prefix}_${indexPadded}"
+              case None => indexPadded
+            }
+            
+            // Process the nested archive
+            logger.info(s"Processing nested archive at depth ${depth + 1}: $outPath")
+            val nestedCount = splitRecursive(
+              chunk.content.asInstanceOf[FileContent[MimeType]],
+              subDir,
+              nestedCfg,
+              outputType,
+              depth + 1,
+              Some(newPrefix)
+            )
+            
+            // If no nested content found, remove the empty directory
+            if (nestedCount == 0) {
+              try {
+                Files.delete(subDir)
+                logger.info(s"Removed empty nested directory: $subDir")
+              } catch {
+                case ex: Exception =>
+                  logger.warn(s"Failed to remove empty directory $subDir: ${ex.getMessage}")
+              }
+            } else {
+              logger.info(s"Processed $nestedCount nested files in $subDir")
+              successCount += nestedCount
+            }
+          }
+          
         case Failure(ex) =>
           logger.error(s"Failed to write chunk #${chunk.index} to $outPath: ${ex.getMessage}")
       }
     }
     
-    // Log a summary message
-    logger.info(s"Split operation complete: $successCount of ${chunks.size} chunks successfully written to $outputDir")
+    // Log summary for top-level only
+    if (depth == 0) {
+      logger.info(s"Split operation complete: $successCount total files written to $outputDir")
+    }
+    
+    successCount
+  }
+  
+  /**
+   * Check if a MIME type represents an archive format that can be recursively extracted
+   */
+  private def isArchiveType(mime: MimeType): Boolean = mime match {
+    case MimeType.ApplicationZip | MimeType.ApplicationGzip | MimeType.ApplicationSevenz |
+         MimeType.ApplicationTar | MimeType.ApplicationBzip2 | MimeType.ApplicationXz => true
+    case _ => false
   }
 
   /** Default split strategy if the user hasn't specified one. */
@@ -202,9 +313,17 @@ object Pipeline {
 
   /** Sanitize chunk label to obtain a safe filename component. */
   private def sanitizeLabel(label: String): String = {
-    val replaced = label.replaceAll("[\\\\/:*?\"<>|]", "_") // Windows‑invalid chars
-    // collapse whitespace
-    replaced.trim.replaceAll("\\s+", "_")
+    // Handle macOS hidden files by removing the "._" prefix
+    val macCleaned = if (label.startsWith("._")) label.substring(2) else label
+    
+    // Replace Windows-invalid chars
+    val replaced = macCleaned.replaceAll("[\\\\/:*?\"<>|]", "_")
+    
+    // Handle directory paths by keeping only the filename part
+    val fileNameOnly = replaced.split("/").last
+    
+    // Collapse whitespace
+    fileNameOnly.trim.replaceAll("\\s+", "_")
   }
 
   /**
