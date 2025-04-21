@@ -42,5 +42,16 @@ object AsposeSplitterRegistry {
       MimeType.ApplicationVndMsExcelSheetBinary,
       ExcelXlsbSheetAsposeSplitter
     )
+    
+    // Register Email splitters
+    DocumentSplitter.register(
+      MimeType.MessageRfc822,
+      EmailAttachmentAsposeSplitter
+    )
+    
+    DocumentSplitter.register(
+      MimeType.ApplicationVndMsOutlook,
+      OutlookMsgAsposeSplitter
+    )
   }
 }
