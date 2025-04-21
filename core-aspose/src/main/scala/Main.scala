@@ -53,7 +53,9 @@ object Main {
       opt[String]("licenseEmail") .valueName("<path>") .action((p, c) => c.copy(licenseEmail  = Some(p)))
         .text("Aspose.Email license path"),
       opt[String]("licenseSlides").valueName("<path>") .action((p, c) => c.copy(licenseSlides = Some(p)))
-        .text("Aspose.Slides license path")
+        .text("Aspose.Slides license path"),
+      opt[String]("licenseZip").valueName("<path>") .action((p, c) => c.copy(licenseZip = Some(p)))
+        .text("Aspose.Zip license path")
     )
   }
 
@@ -87,7 +89,8 @@ object Main {
           AsposeLicense.Product.Words  -> cfg.licenseWords,
           AsposeLicense.Product.Cells  -> cfg.licenseCells,
           AsposeLicense.Product.Email  -> cfg.licenseEmail,
-          AsposeLicense.Product.Slides -> cfg.licenseSlides
+          AsposeLicense.Product.Slides -> cfg.licenseSlides,
+          AsposeLicense.Product.Zip    -> cfg.licenseZip
         )
 
         val anyExplicit = paths.exists(_._2.isDefined)

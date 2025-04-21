@@ -53,5 +53,11 @@ object AsposeSplitterRegistry {
       MimeType.ApplicationVndMsOutlook,
       OutlookMsgAsposeSplitter
     )
+    
+    // Register Archive splitters using Aspose.ZIP
+    DocumentSplitter.register(
+      MimeType.ApplicationZip,
+      ZipArchiveAsposeSplitter
+    )
   }
 }

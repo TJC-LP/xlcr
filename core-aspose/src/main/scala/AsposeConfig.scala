@@ -15,6 +15,7 @@ package com.tjclp.xlcr
  * - Aspose.Java.Cells.lic (for Excel-specific license)
  * - Aspose.Java.Email.lic (for Email-specific license)
  * - Aspose.Java.Slides.lic (for PowerPoint-specific license)
+ * - Aspose.Java.Zip.lic (for ZIP/archive-specific license)
  */
 case class AsposeConfig(
                        input: String = "",
@@ -24,5 +25,6 @@ case class AsposeConfig(
                        licenseCells: Option[String] = None,
                        licenseEmail: Option[String] = None,
                        licenseSlides: Option[String] = None,
+                       licenseZip: Option[String] = None,
                        licenseTotal: Option[String] = None
                      )
