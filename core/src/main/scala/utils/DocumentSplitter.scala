@@ -95,6 +95,14 @@ object DocumentSplitter {
     // Word
     val wordSplitter = new WordHeadingSplitter
     register(MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument, wordSplitter)
+
+    // Email (.eml)
+    val emailSplitter = new EmailAttachmentSplitter
+    register(MimeType.MessageRfc822, emailSplitter)
+
+    // Outlook MSG
+    val msgSplitter = new OutlookMsgSplitter
+    register(MimeType.ApplicationVndMsOutlook, msgSplitter)
   }
 
   initBuiltIns()

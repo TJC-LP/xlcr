@@ -15,6 +15,7 @@ val ktorVersion  = "3.0.3"
 val zioVersion   = "2.1.0"
 val zioConfigVersion = "4.0.1"
 val zioHttpVersion = "3.0.0-RC4"
+val tikaVersion = "2.9.0"
 
 // Common settings and dependencies
 lazy val commonSettings = Seq(
@@ -71,9 +72,12 @@ lazy val core = (project in file("core"))
       "io.circe" %% "circe-parser" % circeVersion,
 
       // Apache Tika
-      "org.apache.tika" % "tika-core" % "3.1.0",
-      "org.apache.tika" % "tika-parsers" % "3.1.0",
-      "org.apache.tika" % "tika-parsers-standard-package" % "3.1.0",
+      "org.apache.tika" % "tika-core" % tikaVersion,
+      "org.apache.tika" % "tika-parsers" % tikaVersion,
+      "org.apache.tika" % "tika-parsers-standard-package" % tikaVersion,
+
+      // Jakarta Mail for email parsing
+      "com.sun.mail" % "jakarta.mail" % "2.0.1",
 
       // JAI
       "com.github.jai-imageio" % "jai-imageio-core" % "1.4.0",
