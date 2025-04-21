@@ -12,6 +12,9 @@ ThisBuild / crossScalaVersions := Seq(scala212, scala3)
 
 val circeVersion = "0.14.10"
 val ktorVersion  = "3.0.3"
+val zioVersion   = "2.1.0"
+val zioConfigVersion = "4.0.1"
+val zioHttpVersion = "3.0.0-RC4"
 
 // Common settings and dependencies
 lazy val commonSettings = Seq(
@@ -23,7 +26,11 @@ lazy val commonSettings = Seq(
     "org.slf4j" % "slf4j-api" % "2.0.16",
     "ch.qos.logback" % "logback-classic" % "1.5.15",
     "org.apache.logging.log4j" % "log4j-api" % "2.24.3",
-    "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.24.3"
+    "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.24.3",
+    
+    // ZIO core (for all modules)
+    "dev.zio" %% "zio" % zioVersion,
+    "dev.zio" %% "zio-streams" % zioVersion
   ),
 
   // Source directory configuration for cross-compilation
@@ -76,7 +83,14 @@ lazy val core = (project in file("core"))
       "org.apache.pdfbox" % "pdfbox" % "3.0.4",
 
       // XML
-      "org.apache.xmlgraphics" % "batik-all" % "1.18"
+      "org.apache.xmlgraphics" % "batik-all" % "1.18",
+      
+      // ZIO specific dependencies
+      "dev.zio" %% "zio-config" % zioConfigVersion,
+      "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
+      "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
+      "dev.zio" %% "zio-test" % zioVersion % Test,
+      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
     ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, _)) => Seq(
         "io.circe" %% "circe-generic-extras" % "0.14.4",
@@ -180,6 +194,13 @@ lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
       
       // CLI argument parsing
       "com.github.scopt" %% "scopt" % "4.1.0",
+      
+      // ZIO specific dependencies
+      "dev.zio" %% "zio-config" % zioConfigVersion,
+      "dev.zio" %% "zio-config-magnolia" % zioConfigVersion, 
+      "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
+      "dev.zio" %% "zio-test" % zioVersion % Test,
+      "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
       
       // Testing
       "org.scalatest" %% "scalatest" % "3.2.19" % Test
