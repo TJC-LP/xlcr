@@ -5,7 +5,7 @@ val scala212 = "2.12.18"
 val scala3 = "3.3.4"
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := scala3
+ThisBuild / scalaVersion := scala212
 ThisBuild / crossScalaVersions := Seq(scala212, scala3)
 
 // For IDE compatibility
@@ -16,6 +16,7 @@ val zioVersion = "2.1.0"
 val zioConfigVersion = "4.0.1"
 val zioHttpVersion = "3.0.0-RC4"
 val tikaVersion = "2.9.0"
+val sparkVersion = "3.5.2"
 
 // Common settings and dependencies
 lazy val commonSettings = Seq(
@@ -154,6 +155,26 @@ lazy val coreAspose = (project in file("core-aspose"))
     )
   )
 
+// ---------------------------------------------------------------------------
+// Spark composable pipeline module (Scala 2.12 / 2.13)
+// ---------------------------------------------------------------------------
+
+lazy val coreSpark = (project in file("core-spark"))
+  .dependsOn(core, coreAspose, coreSpreadsheetLLM)
+  .settings(commonSettings)
+  .settings(
+    name := "xlcr-core-spark",
+    scalaVersion := "2.12.18",
+    crossScalaVersions := Seq("2.12.18", "2.13.14"),
+    libraryDependencies ++= Seq(
+      "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
+      "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion % "provided",
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test
+    )
+  )
+
 // Kotlin server project
 lazy val server = (project in file("server"))
   .enablePlugins(KotlinPlugin)
@@ -262,7 +283,7 @@ lazy val assembleSpreadsheetLLM = taskKey[File]("Assemble the spreadsheetLLM mod
 
 // Root project for aggregating
 lazy val root = (project in file("."))
-  .aggregate(core, coreAspose, coreSpreadsheetLLM, server)
+  .aggregate(core, coreAspose, coreSpreadsheetLLM, coreSpark, server)
   .settings(
     name := "xlcr",
     // Don't publish the root project
