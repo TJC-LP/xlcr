@@ -3,7 +3,6 @@ package pipeline.spark
 
 import scala.collection.concurrent.TrieMap
 
-/** Simple in‑memory registry for SparkPipelineStep singletons. */
 object SparkPipelineRegistry {
   private val steps = TrieMap.empty[String, SparkPipelineStep]
 

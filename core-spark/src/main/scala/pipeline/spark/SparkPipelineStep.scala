@@ -2,16 +2,11 @@ package com.tjclp.xlcr
 package pipeline.spark
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
-
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeoutException
 
-/**
- * Serialisable, lineage‑aware Spark pipeline step.
- */
 trait SparkPipelineStep extends Serializable { self =>
-
   def name: String
   def meta: Map[String, String] = Map.empty
 
@@ -22,21 +17,20 @@ trait SparkPipelineStep extends Serializable { self =>
 
   final def andThen(next: SparkPipelineStep): SparkPipelineStep = new SparkPipelineStep {
     val name = s"${self.name}>>>${next.name}"
-    def transform(df: DataFrame)(implicit spark: SparkSession): DataFrame =
+    def transform(df: DataFrame)(implicit s: SparkSession): DataFrame =
       next.transform(self.transform(df))
   }
 
   final def withTimeout(timeout: Duration): SparkPipelineStep = new SparkPipelineStep {
     val name = s"${self.name}.timeout(${timeout.toMillis}ms)"
-    override val meta: Map[String, String] = self.meta + ("timeout" -> timeout.toString())
+    override val meta = self.meta + ("timeout" -> timeout.toString())
 
     def transform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
       implicit val ec: ExecutionContext = ExecutionContext.global
       val fut = Future(self.transform(df))
       try Await.result(fut, timeout)
       catch {
-        case _: TimeoutException =>
-          self.apply(df).withColumn("error", F.lit(s"timeout $timeout"))
+        case _: TimeoutException => self.apply(df).withColumn("error", F.lit(s"timeout $timeout"))
       }
     }
   }
