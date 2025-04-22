@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{SparkPipelineRegistry, ZSparkStep, ZSparkStepRegistry}
+import pipeline.spark.{SparkPipelineRegistry, ZSparkStep, UdfHelpers}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
@@ -13,12 +13,16 @@ import types.MimeType
  * Enhanced conversion step using ZSparkStep for better error handling and metrics.
  * This step converts content from one MIME type to another using the BridgeRegistry.
  */
-case class ZConvertStep(to: MimeType) extends ZSparkStep {
+import scala.concurrent.duration.{Duration => ScalaDuration}
+
+case class ZConvertStep(to: MimeType, rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(30, "seconds")) extends ZSparkStep {
   override val name: String = s"to${to.mimeType.split('/').last.capitalize}"
   override val meta: Map[String, String] = Map("out" -> to.mimeType)
 
+  import UdfHelpers._
+
   // Wrap conversion logic in a UDF that captures timing and errors
-  private val convertUdf = wrapUdf2 { (bytes: Array[Byte], mimeStr: String) =>
+  private val convertUdf = wrapUdf2(rowTimeout) { (bytes: Array[Byte], mimeStr: String) =>
     val inMime = MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
     val fc = FileContent(bytes, inMime)
 

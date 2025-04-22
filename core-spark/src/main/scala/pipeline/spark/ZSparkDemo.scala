@@ -27,8 +27,7 @@ object ZSparkDemo {
       .getOrCreate()
     
     try {
-      // Register all built-in steps
-      ZSparkStepRegistry.registerAll()
+      // built‑in steps are registered on object initialisation now
       
       // Create a DataFrame from the input files using spark.read.binaryFiles
       val inputDf = spark.read.format("binaryFile")

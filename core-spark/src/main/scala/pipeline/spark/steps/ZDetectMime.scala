@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{ZSparkStep, SparkPipelineRegistry, ZSparkStepRegistry}
+import pipeline.spark.{ZSparkStep, SparkPipelineRegistry, UdfHelpers}
+import scala.concurrent.duration.{Duration => ScalaDuration}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
@@ -18,7 +19,9 @@ object ZDetectMime extends ZSparkStep {
   override val name: String = "zdetectMime"
 
   // Wrap Tika detection in a UDF with timing and error handling
-  private val detectUdf = wrapUdf { bytes: Array[Byte] =>
+  import UdfHelpers._
+
+  private val detectUdf = wrapUdf(scala.concurrent.duration.Duration(30, "seconds")) { bytes: Array[Byte] =>
     val md = new Metadata()
     new AutoDetectParser().parse(
       TikaInputStream.get(bytes),

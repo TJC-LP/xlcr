@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{ZSparkStep, SparkPipelineRegistry, ZSparkStepRegistry}
+import pipeline.spark.{ZSparkStep, SparkPipelineRegistry, UdfHelpers}
+import scala.concurrent.duration.{Duration => ScalaDuration}
 import com.tjclp.xlcr.pipeline.ZStep
 
 import org.apache.spark.sql.{DataFrame, Row, SparkSession, functions => F}
@@ -21,7 +22,8 @@ import scala.util.{Try, Success, Failure}
 case class ZSplitStep(
   strategy: Option[SplitStrategy] = None,
   recursive: Boolean = false,
-  maxRecursionDepth: Int = 3
+  maxRecursionDepth: Int = 3,
+  rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
 ) extends ZSparkStep {
   
   override val name: String = s"zSplit${strategy.map(_.toString.capitalize).getOrElse("")}"
@@ -39,8 +41,10 @@ case class ZSplitStep(
     .add("content", BinaryType)
     .add("mime", StringType)
   
+  import UdfHelpers._
+
   // UDF that splits a document using the DocumentSplitter
-  private val splitUdf = wrapUdf2 { (bytes: Array[Byte], mimeStr: String) =>
+  private val splitUdf = wrapUdf2(rowTimeout) { (bytes: Array[Byte], mimeStr: String) =>
     val mime = MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
     val content = FileContent(bytes, mime)
     val config = SplitConfig(
