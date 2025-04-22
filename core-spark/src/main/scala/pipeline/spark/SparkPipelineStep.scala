@@ -12,16 +12,16 @@ trait SparkPipelineStep extends Serializable { self =>
 
   def transform(df: DataFrame)(implicit spark: SparkSession): DataFrame
 
-  final def apply(df: DataFrame)(implicit spark: SparkSession): DataFrame =
+  def apply(df: DataFrame)(implicit spark: SparkSession): DataFrame =
     appendLineage(transform(df))
 
-  final def andThen(next: SparkPipelineStep): SparkPipelineStep = new SparkPipelineStep {
+  def andThen(next: SparkPipelineStep): SparkPipelineStep = new SparkPipelineStep {
     val name = s"${self.name}>>>${next.name}"
     def transform(df: DataFrame)(implicit s: SparkSession): DataFrame =
       next.transform(self.transform(df))
   }
 
-  final def withTimeout(timeout: Duration): SparkPipelineStep = new SparkPipelineStep {
+  def withTimeout(timeout: Duration): SparkPipelineStep = new SparkPipelineStep {
     val name = s"${self.name}.timeout(${timeout.toMillis}ms)"
     override val meta = self.meta + ("timeout" -> timeout.toString())
 
@@ -35,7 +35,7 @@ trait SparkPipelineStep extends Serializable { self =>
     }
   }
 
-  final def fanOut(left: SparkPipelineStep, right: SparkPipelineStep): SparkPipelineStep = new SparkPipelineStep {
+  def fanOut(left: SparkPipelineStep, right: SparkPipelineStep): SparkPipelineStep = new SparkPipelineStep {
     val name = s"fanOut(${left.name},${right.name})"
     def transform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
       val base = self.transform(df)

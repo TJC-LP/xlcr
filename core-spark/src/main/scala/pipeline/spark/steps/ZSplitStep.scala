@@ -1,0 +1,163 @@
+package com.tjclp.xlcr
+package pipeline.spark.steps
+
+import pipeline.spark.{ZSparkStep, SparkPipelineRegistry, ZSparkStepRegistry}
+import com.tjclp.xlcr.pipeline.ZStep
+
+import org.apache.spark.sql.{DataFrame, Row, SparkSession, functions => F}
+import org.apache.spark.sql.types.{ArrayType, BinaryType, StringType, StructType, StructField}
+
+import models.FileContent
+import types.MimeType
+import utils.{DocumentSplitter, SplitConfig, SplitStrategy}
+
+import zio.{Task, ZIO}
+import scala.util.{Try, Success, Failure}
+
+/**
+ * Enhanced document splitting step with comprehensive metrics and error handling.
+ * Splits documents into chunks according to the specified strategy.
+ */
+case class ZSplitStep(
+  strategy: Option[SplitStrategy] = None,
+  recursive: Boolean = false,
+  maxRecursionDepth: Int = 3
+) extends ZSparkStep {
+  
+  override val name: String = s"zSplit${strategy.map(_.toString.capitalize).getOrElse("")}"
+  
+  override val meta: Map[String, String] = Map(
+    "strategy" -> strategy.map(_.toString).getOrElse("auto"),
+    "recursive" -> recursive.toString,
+    "maxDepth" -> maxRecursionDepth.toString
+  )
+  
+  // Schema for split results
+  private val chunkSchema = new StructType()
+    .add("index", org.apache.spark.sql.types.IntegerType)
+    .add("label", StringType)
+    .add("content", BinaryType)
+    .add("mime", StringType)
+  
+  // UDF that splits a document using the DocumentSplitter
+  private val splitUdf = wrapUdf2 { (bytes: Array[Byte], mimeStr: String) =>
+    val mime = MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
+    val content = FileContent(bytes, mime)
+    val config = SplitConfig(
+      strategy = strategy.getOrElse(defaultStrategyForMime(mime)),
+      recursive = recursive,
+      maxRecursionDepth = maxRecursionDepth
+    )
+    
+    val chunks = DocumentSplitter.split(content, config)
+    
+    // Convert to a structure compatible with Spark
+    chunks.map { chunk =>
+      Row(
+        chunk.index,
+        chunk.label,
+        chunk.content.data,
+        chunk.content.mimeType.mimeType
+      )
+    }.toArray
+  }
+  
+  override def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
+    import spark.implicits._
+    
+    // Apply splitting and capture results
+    val withResult = df.withColumn("result", splitUdf(F.col("content"), F.col("mime")))
+    
+    // Add metrics columns using Unix timestamps
+    val withMetrics = withResult
+      .withColumn("step_name", F.expr("result.stepName"))
+      .withColumn("duration_ms", F.expr("result.durationMs"))
+      .withColumn("start_time_ms", F.expr("result.startTimeMs"))
+      .withColumn("end_time_ms", F.expr("result.endTimeMs"))
+      .withColumn("error", F.when(F.expr("result.isFailure"), F.expr("result.error")).otherwise(F.lit(null)))
+    
+    // Extract the chunks array or empty array as fallback
+    val withChunks = withMetrics.withColumn(
+      "chunks", 
+      F.when(F.expr("result.isSuccess"), F.expr("result.data"))
+       .otherwise(F.typedLit(Array.empty[Row]))
+    )
+    
+    // Explode the chunks array into individual rows
+    val chunksDF = withChunks
+      .select(
+        F.col("id"),  // Keep document ID for reference
+        F.col("file_path"),
+        F.explode_outer(F.col("chunks")).as("chunk"),
+        F.col("start_time_ms"),
+        F.col("end_time_ms"),
+        F.col("duration_ms"),
+        F.col("error"),
+        F.col("metrics"),
+        F.col("step_name")
+      )
+      .select(
+        F.col("id"),
+        F.col("file_path"),
+        F.col("chunk").getItem("index").as("chunk_index"),
+        F.col("chunk").getItem("label").as("chunk_label"),
+        F.col("chunk").getItem("content").as("content"),
+        F.col("chunk").getItem("mime").as("mime"),
+        F.col("start_time_ms"),
+        F.col("end_time_ms"),
+        F.col("duration_ms"),
+        F.col("error"),
+        F.col("metrics"),
+        F.col("step_name")
+      )
+    
+    // Add a flag to show if the split produced chunks
+    // This helps identify documents that couldn't be split
+    val flaggedDF = chunksDF.withColumn(
+      "split_success", 
+      F.when(F.col("chunk_index").isNotNull, F.lit(true)).otherwise(F.lit(false))
+    )
+    
+    flaggedDF
+  }
+  
+  /** Default split strategy if the user hasn't specified one. */
+  private def defaultStrategyForMime(mime: MimeType): SplitStrategy = mime match {
+    case MimeType.ApplicationPdf => SplitStrategy.Page
+    
+    // Excel formats
+    case MimeType.ApplicationVndMsExcel | MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet =>
+      SplitStrategy.Sheet
+      
+    // PowerPoint formats  
+    case MimeType.ApplicationVndMsPowerpoint | MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation =>
+      SplitStrategy.Slide
+      
+    // Archive / containers default to embedded entries  
+    case MimeType.ApplicationZip | MimeType.ApplicationGzip | MimeType.ApplicationSevenz |
+         MimeType.ApplicationTar | MimeType.ApplicationBzip2 | MimeType.ApplicationXz =>
+      SplitStrategy.Embedded
+      
+    // Emails default to attachments  
+    case MimeType.MessageRfc822 | MimeType.ApplicationVndMsOutlook => SplitStrategy.Attachment
+    
+    case _ => SplitStrategy.Page // generic fallback
+  }
+}
+
+// Convenience singletons for common split strategies
+object ZSplitByPage extends ZSplitStep(Some(SplitStrategy.Page)) {
+  SparkPipelineRegistry.register(this)
+}
+
+object ZSplitBySheet extends ZSplitStep(Some(SplitStrategy.Sheet)) {
+  SparkPipelineRegistry.register(this)
+}
+
+object ZSplitBySlide extends ZSplitStep(Some(SplitStrategy.Slide)) {
+  SparkPipelineRegistry.register(this)
+}
+
+object ZSplitRecursive extends ZSplitStep(recursive = true) {
+  SparkPipelineRegistry.register(this)
+}
