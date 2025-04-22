@@ -3,9 +3,10 @@ package bridges.aspose
 
 import bridges.BridgeRegistry
 import bridges.aspose.email.EmailToPdfAsposeBridge
-import bridges.aspose.excel.ExcelToPdfAsposeBridge
-import bridges.aspose.powerpoint.PowerPointToPdfAsposeBridge
-import bridges.aspose.word.WordToPdfAsposeBridge
+import bridges.aspose.email.OutlookMsgToPdfAsposeBridge
+import bridges.aspose.excel.{ExcelToPdfAsposeBridge, ExcelXlsToPdfAsposeBridge, ExcelXlsmToPdfAsposeBridge, ExcelXlsbToPdfAsposeBridge}
+import bridges.aspose.powerpoint.{PowerPointToPdfAsposeBridge, PowerPointPptxToPdfAsposeBridge}
+import bridges.aspose.word.{WordToPdfAsposeBridge, WordDocxToPdfAsposeBridge}
 import types.MimeType
 import types.MimeType._
 
@@ -23,12 +24,23 @@ object AsposeBridgeRegistry {
     BridgeRegistry.register(ApplicationMsWord, ApplicationPdf, WordToPdfAsposeBridge)
 
     // Excel -> PDF
+    // Modern XLSX
     BridgeRegistry.register(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ApplicationPdf, ExcelToPdfAsposeBridge)
+
+    // Legacy Excel formats
+    BridgeRegistry.register(ApplicationVndMsExcel, ApplicationPdf, excel.ExcelXlsToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndMsExcelSheetMacroEnabled, ApplicationPdf, excel.ExcelXlsmToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndMsExcelSheetBinary, ApplicationPdf, excel.ExcelXlsbToPdfAsposeBridge)
 
     // Email -> PDF
     BridgeRegistry.register(MessageRfc822, ApplicationPdf, EmailToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndMsOutlook, ApplicationPdf, OutlookMsgToPdfAsposeBridge)
 
-    // PowerPoint -> PDF
+    // PowerPoint -> PDF (PPT & PPTX)
     BridgeRegistry.register(ApplicationVndMsPowerpoint, ApplicationPdf, PowerPointToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndOpenXmlFormatsPresentationmlPresentation, ApplicationPdf, powerpoint.PowerPointPptxToPdfAsposeBridge)
+
+    // DOCX -> PDF
+    BridgeRegistry.register(ApplicationVndOpenXmlFormatsWordprocessingmlDocument, ApplicationPdf, word.WordDocxToPdfAsposeBridge)
   }
 }
