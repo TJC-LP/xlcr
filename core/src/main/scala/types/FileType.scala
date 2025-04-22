@@ -18,7 +18,7 @@ object FileType {
   case object ExcelXlsm extends FileType(Extension.XLSM, MimeType.ApplicationVndMsExcel)
 
   // PowerPoint File Types
-  case object PowerPointPptx extends FileType(Extension.PPTX, MimeType.ApplicationVndMsPowerpoint)
+  case object PowerPointPptx extends FileType(Extension.PPTX, MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation)
   case object PowerPointPpt extends FileType(Extension.PPT, MimeType.ApplicationVndMsPowerpoint)
 
   // PDF File Type
@@ -28,8 +28,14 @@ object FileType {
   case object EmailEml extends FileType(Extension.EML, MimeType.MessageRfc822)
   case object EmailMsg extends FileType(Extension.MSG, MimeType.MessageRfc822)
 
-  // Archive File Type
+  // Archive File Types
   case object Zip extends FileType(Extension.ZIP, MimeType.ApplicationZip)
+  case object Gzip extends FileType(Extension.GZIP, MimeType.ApplicationGzip)
+  case object SevenZ extends FileType(Extension.SEVENZ, MimeType.ApplicationSevenz)
+  case object Tar extends FileType(Extension.TAR, MimeType.ApplicationTar)
+  case object Bzip2 extends FileType(Extension.BZIP2, MimeType.ApplicationBzip2)
+  case object TarXz extends FileType(Extension.TARXZ, MimeType.ApplicationTar)
+  case object Xz extends FileType(Extension.XZ, MimeType.ApplicationXz)
 
   // Text File Type
   case object TextTxt extends FileType(Extension.TXT, MimeType.TextPlain)
@@ -58,7 +64,7 @@ object FileType {
     PowerPointPptx, PowerPointPpt,
     PDF,
     EmailEml, EmailMsg,
-    Zip,
+    Zip, Gzip, SevenZ, Tar, Bzip2, TarXz, Xz,
     TextTxt,
     ImageJpg, ImageJpeg, ImagePng, ImageGif, ImageBmp,
     HTML, HTM,

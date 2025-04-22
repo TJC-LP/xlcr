@@ -15,14 +15,27 @@ package com.tjclp.xlcr
  * - Aspose.Java.Cells.lic (for Excel-specific license)
  * - Aspose.Java.Email.lic (for Email-specific license)
  * - Aspose.Java.Slides.lic (for PowerPoint-specific license)
+ * - Aspose.Java.Zip.lic (for ZIP/archive-specific license)
  */
 case class AsposeConfig(
                        input: String = "",
                        output: String = "",
                        diffMode: Boolean = false,
+                       splitMode: Boolean = false,
+                       splitStrategy: Option[String] = None,
+                       outputType: Option[String] = None,
+                       outputFormat: Option[String] = None,
+                       maxImageWidth: Int = 2000,
+                       maxImageHeight: Int = 2000,
+                       maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default
+                       imageDpi: Int = 300,
+                       jpegQuality: Float = 0.85f,
+                       recursiveExtraction: Boolean = false,
+                       maxRecursionDepth: Int = 5,
                        licenseWords: Option[String] = None,
                        licenseCells: Option[String] = None,
                        licenseEmail: Option[String] = None,
                        licenseSlides: Option[String] = None,
+                       licenseZip: Option[String] = None,
                        licenseTotal: Option[String] = None
                      )

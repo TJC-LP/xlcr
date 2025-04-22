@@ -16,6 +16,12 @@ object Extension {
   case object EML extends Extension("eml")
   case object MSG extends Extension("msg")
   case object ZIP extends Extension("zip")
+  case object GZIP extends Extension("gz")
+  case object SEVENZ extends Extension("7z")
+  case object TAR extends Extension("tar")
+  case object BZIP2 extends Extension("bz2")
+  case object TARXZ extends Extension("txz")
+  case object XZ extends Extension("xz")
   case object TXT extends Extension("txt")
   case object JPG extends Extension("jpg")
   case object JPEG extends Extension("jpeg")
@@ -43,6 +49,12 @@ object Extension {
     case "eml" => Some(EML)
     case "msg" => Some(MSG)
     case "zip" => Some(ZIP)
+    case "gz" => Some(GZIP)
+    case "7z" => Some(SEVENZ)
+    case "tar" => Some(TAR)
+    case "bz2" => Some(BZIP2)
+    case "txz" => Some(TARXZ)
+    case "xz" => Some(XZ)
     case "txt" => Some(TXT)
     case "jpg" => Some(JPG)
     case "jpeg" => Some(JPEG)
@@ -60,7 +72,7 @@ object Extension {
 
   // Get all extensions
   val values: Seq[Extension] = Seq(
-    DOCX, DOC, XLSX, XLS, XLSB, XLSM, PPTX, PPT, PDF, EML, MSG, ZIP,
+    DOCX, DOC, XLSX, XLS, XLSB, XLSM, PPTX, PPT, PDF, EML, MSG, ZIP, GZIP, SEVENZ, TAR, BZIP2, TARXZ, XZ,
     TXT, JPG, JPEG, PNG, GIF, BMP, HTML, HTM, XML, JSON, MD, SVG
   )
 }

@@ -13,6 +13,17 @@ object Main {
                                input: String = "",
                                output: String = "",
                                diffMode: Boolean = false,
+                               splitMode: Boolean = false,
+                               splitStrategy: Option[String] = None,
+                               outputType: Option[String] = None,
+                               outputFormat: Option[String] = None,
+                               maxImageWidth: Int = 2000,
+                               maxImageHeight: Int = 2000,
+                               maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default
+                               imageDpi: Int = 300,
+                               jpegQuality: Float = 0.85f,
+                               recursiveExtraction: Boolean = false,
+                               maxRecursionDepth: Int = 5,
                                mappings: Seq[String] = Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
                              )
 
@@ -37,6 +48,54 @@ object Main {
         opt[Boolean]('d', "diff")
           .action((x, c) => c.copy(diffMode = x))
           .text("enable diff mode to merge with existing output file"),
+
+        opt[Unit]("split")
+          .action((_, c) => c.copy(splitMode = true))
+          .text("Enable split mode (file-to-directory split)"),
+
+        opt[String]("strategy")
+          .action((x, c) => c.copy(splitStrategy = Some(x)))
+          .text("Split strategy (used with --split): page (PDF), sheet (Excel), slide (PowerPoint), " +
+            "attachment (emails), embedded (archives), heading (Word), paragraph, row, column, sentence"),
+
+        opt[String]("type")
+          .action((x, c) => c.copy(outputType = Some(x)))
+          .text("Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
+            "or extension (pdf). Used with --split only."),
+        // PDF to image conversion options
+        opt[String]("format")
+          .action((x, c) => c.copy(outputFormat = Some(x)))
+          .text("Output format for PDF page splitting: pdf (default), png, or jpg"),
+          
+        opt[Int]("max-width")
+          .action((x, c) => c.copy(maxImageWidth = x))
+          .text("Maximum width in pixels for image output (default: 2000)"),
+          
+        opt[Int]("max-height")
+          .action((x, c) => c.copy(maxImageHeight = x))
+          .text("Maximum height in pixels for image output (default: 2000)"),
+          
+        opt[Long]("max-size")
+          .action((x, c) => c.copy(maxImageSizeBytes = x))
+          .text("Maximum size in bytes for image output (default: 5MB)"),
+          
+        opt[Int]("dpi")
+          .action((x, c) => c.copy(imageDpi = x))
+          .text("DPI for PDF rendering (default: 300)"),
+          
+        opt[Double]("quality")
+          .action((x, c) => c.copy(jpegQuality = x.toFloat))
+          .text("JPEG quality (0.0-1.0, default: 0.85)"),
+          
+        // Recursive extraction options
+        opt[Unit]("recursive")
+          .action((_, c) => c.copy(recursiveExtraction = true))
+          .text("Enable recursive extraction of archives (ZIP within ZIP)"),
+          
+        opt[Int]("max-recursion-depth")
+          .action((x, c) => c.copy(maxRecursionDepth = x))
+          .text("Maximum recursion depth for nested archives (default: 5)"),
+          
         opt[Seq[String]]("mapping")
           .valueName("mimeOrExt1=mimeOrExt2,...")
           .action((xs, c) => c.copy(mappings = xs))
@@ -69,23 +128,66 @@ object Main {
         val inputPath = Paths.get(config.input)
         val outputPath = Paths.get(config.output)
 
-        // Check if input path is a directory
-        if (Files.isDirectory(inputPath)) {
-          // Directory-based approach
-          if (mimeMap.nonEmpty) {
-            DirectoryPipeline.runDirectoryToDirectory(
-              inputDir = config.input,
-              outputDir = config.output,
-              mimeMappings = mimeMap,
-              diffMode = config.diffMode
-            )
-          } else {
-            System.err.println("No mime mappings provided for directory-based operation.")
+        // Branch logic based on split vs convert modes
+        if (config.splitMode) {
+          // Split mode: expect input to be a single file and output to be a directory
+          if (Files.isDirectory(inputPath)) {
+            System.err.println("Split mode expects --input to be a file, not a directory.")
             sys.exit(1)
           }
+
+          // Ensure output directory exists or can be created
+          if (!Files.exists(outputPath)) {
+            try Files.createDirectories(outputPath)
+            catch {
+              case ex: Exception =>
+                System.err.println(s"Failed to create output directory: ${ex.getMessage}")
+                sys.exit(1)
+            }
+          } else if (!Files.isDirectory(outputPath)) {
+            System.err.println("--output must be a directory when using --split mode.")
+            sys.exit(1)
+          }
+
+          // Parse optional strategy and output type
+          val splitStrategyOpt = config.splitStrategy.flatMap(utils.SplitStrategy.fromString)
+          val outputMimeOpt = config.outputType.flatMap(parseMimeOrExtension)
+
+          Pipeline.split(
+            inputPath = config.input,
+            outputDir = config.output,
+            strategy = splitStrategyOpt,
+            outputType = outputMimeOpt,
+            recursive = config.recursiveExtraction,
+            maxRecursionDepth = config.maxRecursionDepth,
+            outputFormat = config.outputFormat,
+            maxImageWidth = config.maxImageWidth,
+            maxImageHeight = config.maxImageHeight,
+            maxImageSizeBytes = config.maxImageSizeBytes,
+            imageDpi = config.imageDpi,
+            jpegQuality = config.jpegQuality
+          )
+
         } else {
-          // Single file approach
-          Pipeline.run(config.input, config.output, config.diffMode)
+          // Conversion mode (existing behavior)
+          // Check if input path is a directory
+          if (Files.isDirectory(inputPath)) {
+            // Directory-based approach
+            if (mimeMap.nonEmpty) {
+              DirectoryPipeline.runDirectoryToDirectory(
+                inputDir = config.input,
+                outputDir = config.output,
+                mimeMappings = mimeMap,
+                diffMode = config.diffMode
+              )
+            } else {
+              System.err.println("No mime mappings provided for directory-based operation.")
+              sys.exit(1)
+            }
+          } else {
+            // Single file conversion
+            Pipeline.run(config.input, config.output, config.diffMode)
+          }
         }
 
       case _ =>
