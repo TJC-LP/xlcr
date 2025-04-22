@@ -129,10 +129,38 @@ SparkPipelineRegistry.register(MyAdvancedStep())
 
 ## Aspose Integration
 
-The module automatically integrates with Aspose when enabled via environment variable:
+The module automatically integrates with Aspose when license files are detected or when explicitly enabled. There are several ways to use Aspose:
+
+### Automatic License Detection
+
+The system automatically detects Aspose licenses from:
+
+1. Environment variables with Base64-encoded license data:
+   - `ASPOSE_TOTAL_LICENSE_B64` - For all Aspose products
+   - `ASPOSE_WORDS_LICENSE_B64` - For Word documents
+   - `ASPOSE_CELLS_LICENSE_B64` - For Excel spreadsheets
+   - `ASPOSE_SLIDES_LICENSE_B64` - For PowerPoint presentations
+   - `ASPOSE_EMAIL_LICENSE_B64` - For email formats
+   - `ASPOSE_ZIP_LICENSE_B64` - For archives
+
+2. License files in the current working directory or classpath:
+   - `Aspose.Java.Total.lic` - For all Aspose products
+   - `Aspose.Java.Words.lic` - For Word documents
+   - `Aspose.Java.Cells.lic` - For Excel spreadsheets
+   - `Aspose.Java.Slides.lic` - For PowerPoint presentations
+   - `Aspose.Java.Email.lic` - For email formats
+   - `Aspose.Java.Zip.lic` - For archives
+
+### Explicit Enablement
+
+You can also explicitly enable Aspose:
 
 ```
 export XLCR_ASPOSE_ENABLED=true
 ```
 
-This enables high-fidelity document processing for Office formats.
+This enables high-fidelity document processing for Office formats. 
+
+### Running Without a License
+
+If Aspose is enabled but no valid license is found, the system will operate in evaluation mode with watermarks on output documents.

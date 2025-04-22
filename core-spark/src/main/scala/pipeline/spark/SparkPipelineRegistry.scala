@@ -56,13 +56,56 @@ object SparkPipelineRegistry {
         s != null && (s.equalsIgnoreCase("true") ||
           s.equalsIgnoreCase("yes") || s == "1")
 
-      truthy(sys.props.get("xlcr.aspose.enabled").orNull) ||
-      truthy(sys.env.getOrElse("XLCR_ASPOSE_ENABLED", null))
+      // Check explicit enable flags first
+      val explicitlyEnabled = 
+        truthy(sys.props.get("xlcr.aspose.enabled").orNull) ||
+        truthy(sys.env.getOrElse("XLCR_ASPOSE_ENABLED", null))
+
+      // If not explicitly enabled, check for license presence
+      if (explicitlyEnabled) true else {
+        // Check for Aspose license environment variables
+        val envLicenseVars = Seq(
+          "ASPOSE_TOTAL_LICENSE_B64",
+          "ASPOSE_WORDS_LICENSE_B64",
+          "ASPOSE_CELLS_LICENSE_B64",
+          "ASPOSE_EMAIL_LICENSE_B64",
+          "ASPOSE_SLIDES_LICENSE_B64",
+          "ASPOSE_ZIP_LICENSE_B64"
+        )
+        
+        val hasEnvLicense = envLicenseVars.exists { envVar =>
+          Option(System.getenv(envVar)).exists(_.nonEmpty)
+        }
+        
+        // Check for license files
+        val licenseFiles = Seq(
+          "Aspose.Java.Total.lic",
+          "Aspose.Java.Words.lic", 
+          "Aspose.Java.Cells.lic",
+          "Aspose.Java.Email.lic",
+          "Aspose.Java.Slides.lic",
+          "Aspose.Java.Zip.lic"
+        )
+        
+        val userDir = new java.io.File(System.getProperty("user.dir"))
+        val hasLicenseFile = licenseFiles.exists { fileName =>
+          val file = new java.io.File(userDir, fileName)
+          file.isFile && file.canRead
+        } || licenseFiles.exists { fileName =>
+          Option(getClass.getResourceAsStream(s"/$fileName")).isDefined
+        }
+        
+        hasEnvLicense || hasLicenseFile
+      }
     }
 
     if (asposeEnabled) {
+      // Attempt to apply licenses first
+      val licenseResult = Try(com.tjclp.xlcr.utils.aspose.AsposeLicense.initializeIfNeeded())
+      
+      // Register Aspose components
       logger.info(
-        "[core‑spark] Aspose integration enabled – registering Aspose bridges and splitters …"
+        "[core‑spark] Aspose integration enabled – registering Aspose bridges and splitters"
       )
 
       Try(AsposeBridgeRegistry.registerAll()).failed.foreach { e =>
@@ -73,17 +116,19 @@ object SparkPipelineRegistry {
         logger.warn("Failed to register Aspose splitters", e)
       }
 
-      // Best‑effort attempt to apply licenses so we avoid watermarks/eval‑mode.
-      Try(com.tjclp.xlcr.utils.aspose.AsposeLicense.initializeIfNeeded()).failed
-        .foreach { e =>
-          logger.debug(
-            "Aspose license could not be initialised (may run in evaluation mode)",
-            e
-          )
-        }
+      // Log license status
+      licenseResult.failed.foreach { e =>
+        logger.warn(
+          "Aspose license could not be initialized (will run in evaluation mode). " +
+          "Documents will have watermarks. Error: " + e.getMessage, 
+          e
+        )
+      }
     } else {
       logger.debug(
-        "[core‑spark] Aspose integration disabled – using core converters / splitters only"
+        "[core‑spark] Aspose integration disabled – using core converters / splitters only. " +
+        "To enable Aspose and avoid watermarks, set XLCR_ASPOSE_ENABLED=true and provide license " +
+        "via environment variables or license files."
       )
     }
   }
