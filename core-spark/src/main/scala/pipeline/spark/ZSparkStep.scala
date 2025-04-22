@@ -34,11 +34,8 @@ trait ZSparkStep extends Serializable { self =>
   private val logger = LoggerFactory.getLogger(getClass)
 
   final def transform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
-    val start = Instant.now()
     try {
-      val out  = doTransform(df)
-      val end  = Instant.now()
-      addStepMetrics(out, start, end)
+      doTransform(df)
     } catch {
       case e: Exception =>
         logger.error(s"Step $name failed: ${e.getMessage}", e)
@@ -100,11 +97,6 @@ trait ZSparkStep extends Serializable { self =>
     init.withColumn(col, F.array_union(F.col(col), F.array(F.lit(entry))))
   }
 
-  private def addStepMetrics(df: DataFrame, start: Instant, end: Instant): DataFrame =
-    df.withColumn("start_time_ms", F.lit(start.toEpochMilli))
-      .withColumn("end_time_ms",   F.lit(end.toEpochMilli))
-      .withColumn("duration_ms",   F.lit(end.toEpochMilli - start.toEpochMilli))
-      .withColumn("step_name",     F.lit(name))
 }
 
 // (type alias provided in package object)

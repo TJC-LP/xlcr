@@ -42,23 +42,9 @@ case class ZConvertStep(to: MimeType, rowTimeout: ScalaDuration = scala.concurre
       convertUdf(F.col("content"), F.col("mime"))
     )
     
-      // Add metrics columns using Unix timestamps
-    val withMetrics = withResult
-      .withColumn("step_name", F.expr("result.stepName"))
-      .withColumn("duration_ms", F.expr("result.durationMs"))
-      .withColumn("start_time_ms", F.expr("result.startTimeMs"))
-      .withColumn("end_time_ms", F.expr("result.endTimeMs"))
-      .withColumn("error", F.when(F.expr("result.isFailure"), F.expr("result.error")).otherwise(F.lit(null)))
-    
-    // Extract the actual data from StepResult, using original content as fallback
-    val withContent = withMetrics
-      .withColumn("content", 
-        F.when(F.expr("result.isSuccess"), F.expr("result.data"))
-         .otherwise(F.col("content")))
+    // Unpack the result with our helper
+    UdfHelpers.unpackResult(withResult)
       .withColumn("mime", F.lit(to.mimeType))
-      
-    // Drop the intermediate result column and return
-    withContent.drop("result")
   }
 }
 

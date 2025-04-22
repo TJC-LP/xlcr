@@ -35,29 +35,17 @@ object ZDetectMime extends ZSparkStep {
     // Apply the UDF and capture result in a StepResult
     val withResult = df.withColumn("result", detectUdf(F.col("content")))
     
-    // Add metrics columns using Unix timestamps
-    val withMetrics = withResult
-      .withColumn("step_name", F.expr("result.stepName"))
-      .withColumn("duration_ms", F.expr("result.durationMs"))
-      .withColumn("start_time_ms", F.expr("result.startTimeMs"))
-      .withColumn("end_time_ms", F.expr("result.endTimeMs"))
-      .withColumn("error", F.when(F.expr("result.isFailure"), F.expr("result.error")).otherwise(F.lit(null)))
-    
-    // Extract the metadata map from StepResult, with empty map as fallback
-    val withMetadata = withMetrics.withColumn(
-      "metadata", 
-      F.when(F.expr("result.isSuccess"), F.expr("result.data"))
-       .otherwise(F.typedLit(Map.empty[String, String]))
-    )
+    // Unpack result and extract metadata into its own column
+    val withMetadata = UdfHelpers.unpackResult(withResult, dataCol = "metadata", fallbackCol = "metadata")
+      .withColumn("metadata", 
+        F.when(F.col("metadata").isNotNull, F.col("metadata"))
+          .otherwise(F.typedLit(Map.empty[String, String])))
     
     // Set MIME type from metadata or use octet-stream as fallback
-    val withMime = withMetadata.withColumn(
+    withMetadata.withColumn(
       "mime",
       F.coalesce(F.expr("metadata['Content-Type']"), F.lit("application/octet-stream"))
     )
-    
-    // Drop the intermediate result column
-    withMime.drop("result")
   }
 
   // Register with the pipeline registry

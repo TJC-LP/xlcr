@@ -32,8 +32,13 @@ case class ExtractStep(to: MimeType, outCol: String, rowTimeout: ScalaDuration =
       .getOrElse("")
   }
 
-  override protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame =
-    df.withColumn(outCol, extractUdf(F.col("content"), F.col("mime")))
+  override protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
+    // Apply extraction UDF and capture result in a StepResult
+    val withResult = df.withColumn("result", extractUdf(F.col("content"), F.col("mime")))
+    
+    // Unpack result and put the extracted text in the specified output column
+    UdfHelpers.unpackResult(withResult, dataCol = outCol, fallbackCol = outCol)
+  }
 }
 
 // convenience singletons ---------------------------------------------------

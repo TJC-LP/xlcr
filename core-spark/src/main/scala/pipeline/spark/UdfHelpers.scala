@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package pipeline.spark
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.{functions => F}
+import org.apache.spark.sql.{DataFrame, functions => F}
 
 import scala.reflect.runtime.universe.TypeTag
 
@@ -49,6 +49,44 @@ case class StepResult[T](
                                                  (f: (A, B) => R): UserDefinedFunction = {
     val safe = (a: A, b: B) => executeTimed(timeout) { f(a, b) }
     F.udf(safe)
+  }
+
+  // -----------------------------------------------------------------------
+  // Helper to unpack StepResult in DataFrame
+  // -----------------------------------------------------------------------
+  
+  /**
+   * Unpacks a DataFrame column containing a StepResult into separate metrics columns
+   * and extracts the data, using a fallback value if the operation failed.
+   * 
+   * @param df The DataFrame with a result column containing a StepResult
+   * @param resultCol The name of the column containing the StepResult
+   * @param dataCol The name of the column to store the extracted data
+   * @param fallbackCol The name of the column to use as fallback if the operation failed
+   * @return A DataFrame with unpacked metrics and data
+   */
+  def unpackResult(
+    df: DataFrame, 
+    resultCol: String = "result", 
+    dataCol: String = "content",
+    fallbackCol: String = "content"
+  ): DataFrame = {
+    // Add metrics columns using Unix timestamps
+    val withMetrics = df
+      .withColumn("step_name", F.expr(s"$resultCol.stepName"))
+      .withColumn("duration_ms", F.expr(s"$resultCol.durationMs"))
+      .withColumn("start_time_ms", F.expr(s"$resultCol.startTimeMs"))
+      .withColumn("end_time_ms", F.expr(s"$resultCol.endTimeMs"))
+      .withColumn("error", F.when(F.expr(s"$resultCol.isFailure"), F.expr(s"$resultCol.error")).otherwise(F.lit(null)))
+    
+    // Extract the actual data from StepResult, using fallback as backup
+    val withData = withMetrics
+      .withColumn(dataCol, 
+        F.when(F.expr(s"$resultCol.isSuccess"), F.expr(s"$resultCol.data"))
+         .otherwise(F.col(fallbackCol)))
+      
+    // Drop the intermediate result column and return
+    withData.drop(resultCol)
   }
 
   /* ---------------- private helpers ------------------------------------ */

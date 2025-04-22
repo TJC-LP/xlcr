@@ -72,20 +72,11 @@ case class ZSplitStep(
     // Apply splitting and capture results
     val withResult = df.withColumn("result", splitUdf(F.col("content"), F.col("mime")))
     
-    // Add metrics columns using Unix timestamps
-    val withMetrics = withResult
-      .withColumn("step_name", F.expr("result.stepName"))
-      .withColumn("duration_ms", F.expr("result.durationMs"))
-      .withColumn("start_time_ms", F.expr("result.startTimeMs"))
-      .withColumn("end_time_ms", F.expr("result.endTimeMs"))
-      .withColumn("error", F.when(F.expr("result.isFailure"), F.expr("result.error")).otherwise(F.lit(null)))
-    
-    // Extract the chunks array or empty array as fallback
-    val withChunks = withMetrics.withColumn(
-      "chunks", 
-      F.when(F.expr("result.isSuccess"), F.expr("result.data"))
-       .otherwise(F.typedLit(Array.empty[Row]))
-    )
+    // Unpack result using common helper and extract chunks array
+    val withChunks = UdfHelpers.unpackResult(withResult, dataCol = "chunks", fallbackCol = "chunks")
+      .withColumn("chunks",
+        F.when(F.col("chunks").isNotNull, F.col("chunks"))
+         .otherwise(F.typedLit(Array.empty[Row])))
     
     // Explode the chunks array into individual rows
     val chunksDF = withChunks
