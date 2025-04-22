@@ -4,7 +4,7 @@ package utils
 import models.FileContent
 import types.MimeType
 
-import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
 
 /** Metadata‑enriched chunk produced by a DocumentSplitter. */
 case class DocChunk[T <: MimeType](
@@ -69,7 +69,8 @@ trait DocumentSplitter[I <: MimeType] {
 
 /** Registry + façade */
 object DocumentSplitter {
-  private val registry: mutable.Map[MimeType, DocumentSplitter[_ <: MimeType]] = mutable.Map.empty
+  /** Thread‑safe registry */
+  private val registry: TrieMap[MimeType, DocumentSplitter[_ <: MimeType]] = TrieMap.empty
 
   /* API ------------------------------------------------------------------ */
 

@@ -10,14 +10,16 @@ import models.powerpoint.SlidesData
 import types.MimeType
 import types.MimeType._
 
+import scala.collection.concurrent.TrieMap
+
 /**
  * BridgeRegistry manages a set of registered Bridges between mime types.
  * We store them in a mutable map, so we can add more at runtime (e.g. Aspose bridges).
  */
 object BridgeRegistry {
 
-  /** Our internal registry from (inMime, outMime) -> Bridge */
-  private var registry: Map[(MimeType, MimeType), Bridge[_, _, _]] = Map.empty
+  /** Thread‑safe registry from (inMime, outMime) -> Bridge */
+  private val registry: TrieMap[(MimeType, MimeType), Bridge[_, _, _]] = TrieMap.empty
 
   /**
    * Initialize the default bridging from the "core" module.
@@ -64,7 +66,7 @@ object BridgeRegistry {
    * Register a single Bridge for (inMime, outMime).
    */
   def register(inMime: MimeType, outMime: MimeType, bridge: Bridge[_, _, _]): Unit = {
-    registry = registry + ((inMime, outMime) -> bridge)
+    registry.update((inMime, outMime), bridge)
   }
 
   /**
