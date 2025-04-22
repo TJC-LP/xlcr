@@ -9,41 +9,48 @@ import bridges.{Bridge, BridgeRegistry}
 import models.FileContent
 import types.MimeType
 
-/**
- * Conversion step that transforms content from one MIME type to another.
- * Uses the BridgeRegistry to find appropriate converters with error handling and metrics.
- */
+/** Conversion step that transforms content from one MIME type to another.
+  * Uses the BridgeRegistry to find appropriate converters with error handling and metrics.
+  */
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
-case class ConvertStep(to: MimeType, rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(30, "seconds")) extends SparkStep {
+case class ConvertStep(
+    to: MimeType,
+    rowTimeout: ScalaDuration =
+      scala.concurrent.duration.Duration(30, "seconds")
+) extends SparkStep {
   override val name: String = s"to${to.mimeType.split('/').last.capitalize}"
   override val meta: Map[String, String] = Map("out" -> to.mimeType)
 
   import UdfHelpers._
 
   // Wrap conversion logic in a UDF that captures timing and errors
-  private val convertUdf = wrapUdf2(rowTimeout) { (bytes: Array[Byte], mimeStr: String) =>
-    val inMime = MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
-    val fc = FileContent(bytes, inMime)
+  private val convertUdf = wrapUdf2(rowTimeout) {
+    (bytes: Array[Byte], mimeStr: String) =>
+      val inMime =
+        MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
+      val fc = FileContent(bytes, inMime)
 
-    BridgeRegistry
-      .findBridge(inMime, to)
-      .collect { case b: Bridge[_, MimeType, _] =>
-        b.convert(fc).data
-      }
-      .getOrElse {
-        throw new UnsupportedConversionException(inMime.mimeType, to.mimeType)
-      }
+      BridgeRegistry
+        .findBridge(inMime, to)
+        .collect { case b: Bridge[_, MimeType, _] =>
+          b.convert(fc).data
+        }
+        .getOrElse {
+          throw new UnsupportedConversionException(inMime.mimeType, to.mimeType)
+        }
   }
 
-  override def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
+  override def doTransform(
+      df: DataFrame
+  )(implicit spark: SparkSession): DataFrame = {
     // Apply conversion and capture results in a StepResult
-    val withResult = df.withColumn("result", 
-      convertUdf(F.col("content"), F.col("mime"))
-    )
-    
+    val withResult =
+      df.withColumn("result", convertUdf(F.col("content"), F.col("mime")))
+
     // Unpack the result with our helper
-    UdfHelpers.unpackResult(withResult)
+    UdfHelpers
+      .unpackResult(withResult)
       .withColumn("mime", F.lit(to.mimeType))
   }
 }

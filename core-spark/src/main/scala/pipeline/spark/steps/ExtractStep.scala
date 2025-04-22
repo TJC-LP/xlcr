@@ -12,30 +12,41 @@ import types.MimeType
 /** Binary‑to‑string extraction (e.g. text, XML) using BridgeRegistry. */
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
-case class ExtractStep(to: MimeType, outCol: String, rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(30, "seconds")) extends SparkStep {
+case class ExtractStep(
+    to: MimeType,
+    outCol: String,
+    rowTimeout: ScalaDuration =
+      scala.concurrent.duration.Duration(30, "seconds")
+) extends SparkStep {
 
-  override val name: String = s"extract${to.mimeType.split('/').last.capitalize}"
+  override val name: String =
+    s"extract${to.mimeType.split('/').last.capitalize}"
   override val meta: Map[String, String] = Map("out" -> to.mimeType)
 
   import UdfHelpers._
 
-  private val extractUdf = wrapUdf2(rowTimeout) { (bytes: Array[Byte], mimeStr: String) =>
-    val inMime = MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
-    val fc     = FileContent(bytes, inMime)
+  private val extractUdf = wrapUdf2(rowTimeout) {
+    (bytes: Array[Byte], mimeStr: String) =>
+      val inMime =
+        MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
+      val fc = FileContent(bytes, inMime)
 
-    BridgeRegistry
-      .findBridge(inMime, to)
-      .collect { case b: Bridge[_, MimeType, _] =>
-        val out = b.convert(fc)
-        new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
-      }
-      .getOrElse("")
+      BridgeRegistry
+        .findBridge(inMime, to)
+        .collect { case b: Bridge[_, MimeType, _] =>
+          val out = b.convert(fc)
+          new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
+        }
+        .getOrElse("")
   }
 
-  override protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
+  override protected def doTransform(
+      df: DataFrame
+  )(implicit spark: SparkSession): DataFrame = {
     // Apply extraction UDF and capture result in a StepResult
-    val withResult = df.withColumn("result", extractUdf(F.col("content"), F.col("mime")))
-    
+    val withResult =
+      df.withColumn("result", extractUdf(F.col("content"), F.col("mime")))
+
     // Unpack result and put the extracted text in the specified output column
     UdfHelpers.unpackResult(withResult, dataCol = outCol, fallbackCol = outCol)
   }

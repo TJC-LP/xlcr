@@ -12,25 +12,24 @@ import org.slf4j.LoggerFactory
 import scala.util.Try
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Central registry for Spark‑based [[SparkPipelineStep]]s.
- *
- * Besides keeping track of the steps themselves, this object also takes care
- * of boot‑strapping the converter (BridgeRegistry) and splitter
- * (DocumentSplitter) infrastructure that those steps rely on.  In particular
- * we:
- *
- *   1. Always call [[BridgeRegistry.init]] so that the core set of converters
- *      is available.
- *   2. Optionally register Aspose‑powered converters and splitters *afterwards*
- *      so they override the core defaults when desired.
- *
- * Aspose integration is enabled when either of the following is set to a
- * value that resolves to logical *true* ("true", "1", or "yes"):
- *
- *   • JVM system property  `xlcr.aspose.enabled`
- *   • Environment variable `XLCR_ASPOSE_ENABLED`
- */
+/** Central registry for Spark‑based [[SparkPipelineStep]]s.
+  *
+  * Besides keeping track of the steps themselves, this object also takes care
+  * of boot‑strapping the converter (BridgeRegistry) and splitter
+  * (DocumentSplitter) infrastructure that those steps rely on.  In particular
+  * we:
+  *
+  *   1. Always call [[BridgeRegistry.init]] so that the core set of converters
+  *      is available.
+  *   2. Optionally register Aspose‑powered converters and splitters *afterwards*
+  *      so they override the core defaults when desired.
+  *
+  * Aspose integration is enabled when either of the following is set to a
+  * value that resolves to logical *true* ("true", "1", or "yes"):
+  *
+  *   • JVM system property  `xlcr.aspose.enabled`
+  *   • Environment variable `XLCR_ASPOSE_ENABLED`
+  */
 object SparkPipelineRegistry {
 
   private val logger = LoggerFactory.getLogger(getClass)
@@ -53,15 +52,18 @@ object SparkPipelineRegistry {
 
     // 2) Optional Aspose integration --------------------------------------
     val asposeEnabled = {
-      def truthy(s: String): Boolean = s != null && (s.equalsIgnoreCase("true") ||
-        s.equalsIgnoreCase("yes") || s == "1")
+      def truthy(s: String): Boolean =
+        s != null && (s.equalsIgnoreCase("true") ||
+          s.equalsIgnoreCase("yes") || s == "1")
 
       truthy(sys.props.get("xlcr.aspose.enabled").orNull) ||
       truthy(sys.env.getOrElse("XLCR_ASPOSE_ENABLED", null))
     }
 
     if (asposeEnabled) {
-      logger.info("[core‑spark] Aspose integration enabled – registering Aspose bridges and splitters …")
+      logger.info(
+        "[core‑spark] Aspose integration enabled – registering Aspose bridges and splitters …"
+      )
 
       Try(AsposeBridgeRegistry.registerAll()).failed.foreach { e =>
         logger.warn("Failed to register Aspose bridges", e)
@@ -72,11 +74,17 @@ object SparkPipelineRegistry {
       }
 
       // Best‑effort attempt to apply licenses so we avoid watermarks/eval‑mode.
-      Try(com.tjclp.xlcr.utils.aspose.AsposeLicense.initializeIfNeeded()).failed.foreach { e =>
-        logger.debug("Aspose license could not be initialised (may run in evaluation mode)", e)
-      }
+      Try(com.tjclp.xlcr.utils.aspose.AsposeLicense.initializeIfNeeded()).failed
+        .foreach { e =>
+          logger.debug(
+            "Aspose license could not be initialised (may run in evaluation mode)",
+            e
+          )
+        }
     } else {
-      logger.debug("[core‑spark] Aspose integration disabled – using core converters / splitters only")
+      logger.debug(
+        "[core‑spark] Aspose integration disabled – using core converters / splitters only"
+      )
     }
   }
 
@@ -93,7 +101,10 @@ object SparkPipelineRegistry {
   /** Fetch a step by name or throw if it doesn't exist. */
   def get(id: String): SparkStep = {
     initIfNeeded()
-    steps.getOrElse(id, throw new NoSuchElementException(s"Spark step '$id' not found"))
+    steps.getOrElse(
+      id,
+      throw new NoSuchElementException(s"Spark step '$id' not found")
+    )
   }
 
   /** List all registered step names. */
