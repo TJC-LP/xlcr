@@ -10,13 +10,14 @@ import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
 /**
- * Unified ZIO‑powered Spark pipeline step.
+ * Unified Spark pipeline step with ZIO-powered execution.
  *
  *  – Concrete steps implement `doTransform`.
  *  – Provides composition (`andThen`, `fanOut`) and timeout helpers.
- *  – Automatically appends lineage + basic timing / error metrics.
+ *  – Automatically appends lineage tracking for provenance.
+ *  – UDF-based operations provide detailed timing metrics.
  */
-trait ZSparkStep extends Serializable { self =>
+trait SparkStep extends Serializable { self =>
 
   /* --------------------------------------------------------------------- */
   /* Required by concrete steps                                            */
@@ -50,14 +51,14 @@ trait ZSparkStep extends Serializable { self =>
   /* Composition helpers                                                   */
   /* --------------------------------------------------------------------- */
 
-  final def andThen(next: ZSparkStep): ZSparkStep = new ZSparkStep {
+  final def andThen(next: SparkStep): SparkStep = new SparkStep {
     val name = s"${self.name}>>>${next.name}"
     override def meta: Map[String, String] = self.meta ++ next.meta
     protected def doTransform(df: DataFrame)(implicit s: SparkSession): DataFrame =
       next.doTransform(self.doTransform(df))
   }
 
-  final def fanOut(left: ZSparkStep, right: ZSparkStep): ZSparkStep = new ZSparkStep {
+  final def fanOut(left: SparkStep, right: SparkStep): SparkStep = new SparkStep {
     val name = s"fanOut(${left.name},${right.name})"
     protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
       val base = self.doTransform(df)
@@ -71,7 +72,7 @@ trait ZSparkStep extends Serializable { self =>
   /* Timeout helper (ZIO)                                                  */
   /* --------------------------------------------------------------------- */
 
-  final def withTimeout(timeout: ScalaDuration): ZSparkStep = new ZSparkStep {
+  final def withTimeout(timeout: ScalaDuration): SparkStep = new SparkStep {
     val name = s"${self.name}.timeout(${timeout.toMillis}ms)"
     override val meta: Map[String, String] = self.meta + ("timeout" -> timeout.toString())
 
@@ -98,5 +99,3 @@ trait ZSparkStep extends Serializable { self =>
   }
 
 }
-
-// (type alias provided in package object)

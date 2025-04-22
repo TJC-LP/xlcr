@@ -36,7 +36,7 @@ object SparkPipelineRegistry {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /** Mutable registry of pipeline steps. */
-  private val steps = TrieMap.empty[String, SparkPipelineStep]
+  private val steps = TrieMap.empty[String, SparkStep]
 
   /* -----------------------------------------------------------------------
    * One‑time initialisation logic (guarded by AtomicBoolean)
@@ -85,13 +85,13 @@ object SparkPipelineRegistry {
    * --------------------------------------------------------------------- */
 
   /** Register a pipeline step instance. */
-  def register(step: SparkPipelineStep): Unit = {
+  def register(step: SparkStep): Unit = {
     initIfNeeded()
     steps.update(step.name, step)
   }
 
   /** Fetch a step by name or throw if it doesn't exist. */
-  def get(id: String): SparkPipelineStep = {
+  def get(id: String): SparkStep = {
     initIfNeeded()
     steps.getOrElse(id, throw new NoSuchElementException(s"Spark step '$id' not found"))
   }

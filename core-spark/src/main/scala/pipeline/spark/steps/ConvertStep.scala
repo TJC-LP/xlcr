@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{SparkPipelineRegistry, ZSparkStep, UdfHelpers}
+import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
@@ -10,12 +10,12 @@ import models.FileContent
 import types.MimeType
 
 /**
- * Enhanced conversion step using ZSparkStep for better error handling and metrics.
- * This step converts content from one MIME type to another using the BridgeRegistry.
+ * Conversion step that transforms content from one MIME type to another.
+ * Uses the BridgeRegistry to find appropriate converters with error handling and metrics.
  */
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
-case class ZConvertStep(to: MimeType, rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(30, "seconds")) extends ZSparkStep {
+case class ConvertStep(to: MimeType, rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(30, "seconds")) extends SparkStep {
   override val name: String = s"to${to.mimeType.split('/').last.capitalize}"
   override val meta: Map[String, String] = Map("out" -> to.mimeType)
 
@@ -49,14 +49,14 @@ case class ZConvertStep(to: MimeType, rowTimeout: ScalaDuration = scala.concurre
 }
 
 // Convenience singletons for common conversions
-object ZToPdf extends ZConvertStep(MimeType.ApplicationPdf) {
+object ToPdf extends ConvertStep(MimeType.ApplicationPdf) {
   SparkPipelineRegistry.register(this)
 }
 
-object ZToPng extends ZConvertStep(MimeType.ImagePng) {
+object ToPng extends ConvertStep(MimeType.ImagePng) {
   SparkPipelineRegistry.register(this)
 }
 
-object ZToText extends ZConvertStep(MimeType.TextPlain) {
+object ToText extends ConvertStep(MimeType.TextPlain) {
   SparkPipelineRegistry.register(this)
 }

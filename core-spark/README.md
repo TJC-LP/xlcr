@@ -2,7 +2,7 @@
 
 `core-spark` brings the composable XLCR document‑processing pipeline to Apache Spark 3.x.
 
-Each **ZSparkStep** is serialisable and composable (`andThen`, `fanOut`, `withTimeout`) just like the in‑memory `ZStep`, with automatic lineage tracking for full provenance.
+Each **SparkStep** is serialisable and composable (`andThen`, `fanOut`, `withTimeout`) just like the in‑memory core steps, with automatic lineage tracking for full provenance.
 
 ## Key Features
 
@@ -17,15 +17,15 @@ Each **ZSparkStep** is serialisable and composable (`andThen`, `fanOut`, `withTi
 
 | Step name       | Description                                        |
 |-----------------|----------------------------------------------------|
-| `zdetectMime`   | Run Tika to produce `metadata` map + `mime`        |
-| `zSplitAuto`    | Auto-split based on mime type (PDF→pages, Excel→sheets, etc.) |
-| `zSplitByPage`  | Split PDFs into pages                              |
-| `zSplitBySheet` | Split Excel files into sheets                      |
-| `zSplitBySlide` | Split PowerPoint files into slides                 |
-| `zSplitRecursive` | Recursive splitting (ZIP→files→pages, etc.)      |
-| `zToPdf`        | Convert documents to PDF format                    |
-| `zToPng`        | Convert documents to PNG images                    |
-| `zToText`       | Convert documents to plain text                    |
+| `detectMime`    | Run Tika to produce `metadata` map + `mime`        |
+| `splitAuto`     | Auto-split based on mime type (PDF→pages, Excel→sheets, etc.) |
+| `splitByPage`   | Split PDFs into pages                              |
+| `splitBySheet`  | Split Excel files into sheets                      |
+| `splitBySlide`  | Split PowerPoint files into slides                 |
+| `splitRecursive`| Recursive splitting (ZIP→files→pages, etc.)       |
+| `toPdf`         | Convert documents to PDF format                    |
+| `toPng`         | Convert documents to PNG images                    |
+| `toText`        | Convert documents to plain text                    |
 | `extractText`   | Extract text from documents                        |
 | `extractXml`    | Extract XML from documents                         |
 
@@ -46,7 +46,7 @@ implicit val spark = SparkSession.builder()
 // 1) Build pipeline from DSL
 // ------------------------------------------------------------------
 
-val dsl = "zdetectMime|zSplitByPage|zToPdf|extractText"
+val dsl = "detectMime|splitByPage|toPdf|extractText"
 val pipeline = dsl.split("\\|").map(SparkPipelineRegistry.get).reduce(_ andThen _)
 
 // ------------------------------------------------------------------
@@ -87,13 +87,13 @@ query.awaitTermination()
 
 ## Extend with your own step
 
-Create a new step by extending `ZSparkStep`:
+Create a new step by extending `SparkStep`:
 
 ```scala
 import scala.concurrent.duration._
 
 // Basic implementation
-case class MyCustomStep() extends ZSparkStep {
+case class MyCustomStep() extends SparkStep {
   override val name: String = "myCustomStep"
   
   override protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
@@ -103,7 +103,7 @@ case class MyCustomStep() extends ZSparkStep {
 }
 
 // Step with UDF and timing metrics
-case class MyAdvancedStep() extends ZSparkStep {
+case class MyAdvancedStep() extends SparkStep {
   override val name: String = "myAdvancedStep"
   
   // Define UDF with timeout using UdfHelpers

@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{ZSparkStep, SparkPipelineRegistry, UdfHelpers}
+import pipeline.spark.{SparkStep, SparkPipelineRegistry, UdfHelpers}
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
@@ -12,11 +12,11 @@ import org.apache.tika.sax.BodyContentHandler
 import org.apache.tika.io.TikaInputStream
 
 /**
- * Enhanced MIME type detection using Tika with comprehensive error handling and metrics.
+ * MIME type detection using Apache Tika with comprehensive error handling and metrics.
  * Detects MIME type and metadata from binary content.
  */
-object ZDetectMime extends ZSparkStep {
-  override val name: String = "zdetectMime"
+object DetectMime extends SparkStep {
+  override val name: String = "detectMime"
 
   // Wrap Tika detection in a UDF with timing and error handling
   import UdfHelpers._

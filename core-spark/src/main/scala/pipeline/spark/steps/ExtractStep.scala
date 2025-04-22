@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{ZSparkStep, SparkPipelineRegistry, UdfHelpers}
+import pipeline.spark.{SparkStep, SparkPipelineRegistry, UdfHelpers}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
@@ -12,7 +12,7 @@ import types.MimeType
 /** Binary‑to‑string extraction (e.g. text, XML) using BridgeRegistry. */
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
-case class ExtractStep(to: MimeType, outCol: String, rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(30, "seconds")) extends ZSparkStep {
+case class ExtractStep(to: MimeType, outCol: String, rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(30, "seconds")) extends SparkStep {
 
   override val name: String = s"extract${to.mimeType.split('/').last.capitalize}"
   override val meta: Map[String, String] = Map("out" -> to.mimeType)

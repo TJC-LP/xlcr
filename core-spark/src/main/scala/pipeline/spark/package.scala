@@ -1,8 +1,9 @@
-package com.tjclp.xlcr.pipeline
+package com.tjclp.xlcr
+package pipeline
 
 package object spark {
-  /** Alias kept for transitional compatibility while migrating classic
-    * Future‑based steps to the unified ZIO implementation.
+
+  /** SparkPipelineStep is kept for backward compatibility with existing code.
     */
-  type SparkPipelineStep = ZSparkStep
+  type SparkPipelineStep = SparkStep
 }
