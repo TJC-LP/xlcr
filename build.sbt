@@ -57,6 +57,7 @@ lazy val commonSettings = Seq(
 // Core Scala project
 lazy val core = (project in file("core"))
   .settings(commonSettings)
+  .settings(assemblySettings)
   .settings(
     name := "xlcr-core",
     libraryDependencies ++= Seq(
@@ -112,15 +113,23 @@ lazy val core = (project in file("core"))
 lazy val coreAspose = (project in file("core-aspose"))
   .dependsOn(core)
   .settings(commonSettings)
+  .settings(assemblySettings)
   .settings(
     name := "xlcr-core-aspose",
     // Added resolver settings specifically for Aspose
     resolvers ++= Seq(
       "Aspose Java Repository" at "https://releases.aspose.com/java/repo/"
     ),
+    // WORKAROUND: Disable Scaladoc generation to avoid name conflicts in Aspose libraries
+    // There's a name clash in the Aspose slides library where both a package and an object 
+    // with the same name "ms" exist under "com.aspose.slides", which causes Scaladoc to fail
+    // with: "package com.aspose.slides contains object and package with same name: ms"
+    Compile / doc / sources := Seq.empty,
+    // Don't add the Scaladoc jar to the publishing task
+    Compile / packageDoc / publishArtifact := false,
     // Add scala language features
     scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 12)) =>
+      case Some((2, _)) =>
         Seq(
           "-Ypartial-unification",
           "-language:higherKinds",
@@ -130,7 +139,10 @@ lazy val coreAspose = (project in file("core-aspose"))
         )
       case _ =>
         Seq(
-          "-Yresolve-term-conflict:package" // tell Scala to prefer the package
+          "-language:higherKinds",
+          "-language:implicitConversions",
+          // Add the following to help with name conflicts
+          "-Yresolve-term-conflict:package"
         )
     }),
     libraryDependencies ++= Seq(
@@ -147,6 +159,7 @@ lazy val server = (project in file("server"))
   .enablePlugins(KotlinPlugin)
   .dependsOn(core)
   .settings(commonSettings)
+  .settings(assemblySettings)
   .settings(
     name := "xlcr-server",
     kotlinVersion := "1.9.10",
@@ -170,6 +183,7 @@ lazy val server = (project in file("server"))
 lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
   .dependsOn(core)
   .settings(commonSettings)
+  .settings(assemblySettings)
   .settings(
     name := "xlcr-core-spreadsheetllm",
     libraryDependencies ++= Seq(
@@ -193,6 +207,59 @@ lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
     )
   )
 
+// Assembly settings
+lazy val assemblySettings = Seq(
+  // Set the assembly file name to include the module name
+  assembly / assemblyJarName := s"${name.value}-assembly-${version.value}.jar",
+  
+  // Configure merge strategy
+  assembly / assemblyMergeStrategy := {
+    // Handle logback.xml - use the first one
+    case "logback.xml" => MergeStrategy.first
+    
+    // Handle Main class conflicts (for modules that all have Main.class)
+    case PathList(ps @ _*) if ps.last == "Main.class" => MergeStrategy.first
+    case PathList(ps @ _*) if ps.last == "Main$.class" => MergeStrategy.first
+    case PathList(ps @ _*) if ps.last == "Main.tasty" => MergeStrategy.first
+    
+    // Handle module-info.class conflicts
+    case PathList("module-info.class") => MergeStrategy.discard
+    case PathList("META-INF", "versions", "9", "module-info.class") => MergeStrategy.discard
+    
+    // Handle META-INF conflicts
+    case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+    case PathList("META-INF", "mailcap") => MergeStrategy.first
+    case PathList("META-INF", "kotlin-project-structure-metadata.json") => MergeStrategy.discard
+    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".DSA")) => MergeStrategy.discard
+    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".SF")) => MergeStrategy.discard
+    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".RSA")) => MergeStrategy.discard
+    
+    // Handle Log implementation conflicts
+    case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
+    
+    // Handle overlaps between xml-apis-ext and xml-apis
+    case PathList("license", "LICENSE.dom-software.txt") => MergeStrategy.first
+    
+    // Handle Kotlin-specific files
+    case PathList(ps @ _*) if ps.last == "manifest" => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.last == "module" && ps.exists(_ == "linkdata") => MergeStrategy.discard
+    
+    // Handle CommonMain/Native/Posix/etc linkdata
+    case PathList(ps @ _*) if ps.contains("Main") && ps.contains("linkdata") => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.contains("Main") && ps.contains("default") => MergeStrategy.discard
+    
+    // Default strategy
+    case x => 
+      val oldStrategy = (assembly / assemblyMergeStrategy).value
+      oldStrategy(x)
+  }
+)
+
+// Custom assembly tasks
+lazy val assembleCore = taskKey[File]("Assemble the core module")
+lazy val assembleAspose = taskKey[File]("Assemble the aspose module")
+lazy val assembleSpreadsheetLLM = taskKey[File]("Assemble the spreadsheetLLM module")
+
 // Root project for aggregating
 lazy val root = (project in file("."))
   .aggregate(core, coreAspose, coreSpreadsheetLLM, server)
@@ -200,5 +267,11 @@ lazy val root = (project in file("."))
     name := "xlcr",
     // Don't publish the root project
     publish := {},
-    publishLocal := {}
+    publishLocal := {},
+    
+    // Custom assembly tasks
+    assembleCore := (core / assembly).value,
+    assembleAspose := (coreAspose / assembly).value,
+    assembleSpreadsheetLLM := (coreSpreadsheetLLM / assembly).value
   )
+  .settings(assemblySettings)
