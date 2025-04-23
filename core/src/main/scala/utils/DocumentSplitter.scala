@@ -13,7 +13,7 @@ case class DocChunk[T <: MimeType](
     index: Int,                  // 0‑based position within parent
     total: Int,                  // total number of chunks produced
     attrs: Map[String, String] = Map.empty
-)
+) extends Serializable
 
 /** Splitting strategies supported for different document types. */
 sealed trait SplitStrategy

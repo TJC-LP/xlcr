@@ -7,6 +7,6 @@ package models
  * This allows custom logic for each mimeType, or
  * you can unify your bridging logic here.
  */
-trait Model {
+trait Model extends Serializable {
   def children: Option[List[Model]] = None
 }

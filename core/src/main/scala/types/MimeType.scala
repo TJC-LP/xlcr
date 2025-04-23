@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package types
 
-sealed abstract class MimeType(val mimeType: String)
+abstract class MimeType(val mimeType: String) extends Serializable
 
 object MimeType {
   // Text MIME types

@@ -53,16 +53,15 @@ case class SplitStep(
       )
 
       val chunks = DocumentSplitter.split(content, config)
-
-      // Convert to a structure compatible with Spark
-      chunks.map { chunk =>
-        Row(
+      chunks.map {
+        chunk => (
+          chunk.content.data,
+          chunk.content.mimeType.mimeType,
           chunk.index,
           chunk.label,
-          chunk.content.data,
-          chunk.content.mimeType.mimeType
+          chunk.total
         )
-      }.toArray
+      }
   }
 
   override def doTransform(
@@ -75,38 +74,30 @@ case class SplitStep(
 
     // Unpack result using common helper and extract chunks array
     val withChunks = UdfHelpers
-      .unpackResult(withResult, dataCol = "chunks", fallbackCol = Some("chunks"))
-      .withColumn(
-        "chunks",
-        F.when(F.col("chunks").isNotNull, F.col("chunks"))
-          .otherwise(F.typedLit(Array.empty[Row]))
-      )
+      .unpackResult(withResult, dataCol = "chunks")
 
     // Explode the chunks array into individual rows
     val chunksDF = withChunks
       .select(
-        F.col("id"), // Keep document ID for reference
-        F.col("file_path"),
+        F.col("path"),
         F.explode_outer(F.col("chunks")).as("chunk"),
         F.col("start_time_ms"),
         F.col("end_time_ms"),
         F.col("duration_ms"),
         F.col("error"),
-        F.col("metrics"),
         F.col("step_name")
       )
       .select(
-        F.col("id"),
-        F.col("file_path"),
-        F.col("chunk").getItem("index").as("chunk_index"),
-        F.col("chunk").getItem("label").as("chunk_label"),
-        F.col("chunk").getItem("content").as("content"),
-        F.col("chunk").getItem("mime").as("mime"),
+        F.col("path"),
+        F.col("chunk._1").as("content"),
+        F.col("chunk._2").as("mime"),
+        F.col("chunk._3").as("chunk_index"),
+        F.col("chunk._4").as("chunk_label"),
+        F.col("chunk._5").as("chunk_total"),
         F.col("start_time_ms"),
         F.col("end_time_ms"),
         F.col("duration_ms"),
         F.col("error"),
-        F.col("metrics"),
         F.col("step_name")
       )
 
