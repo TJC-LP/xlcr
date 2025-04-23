@@ -160,6 +160,42 @@ object MimeType extends Serializable {
   }
   
   /**
+   * Extract just the base MIME type without parameters.
+   * Useful for consistent matching and lookups.
+   * 
+   * @param mimeTypeStr Full MIME type string potentially with parameters
+   * @return The base MIME type without parameters (e.g. "text/plain" from "text/plain; charset=utf-8")
+   */
+  def stripParameters(mimeTypeStr: String): String = {
+    // Split on semicolon and take the first part (the base MIME type)
+    mimeTypeStr.split(";", 2)(0).trim
+  }
+  
+  /**
+   * Get a MimeType from a string, ignoring any parameters
+   * This is useful for more reliable matching and bridge lookups
+   * 
+   * @param mimeTypeStr Full MIME type string potentially with parameters
+   * @return Option[MimeType] for the base type (if it matches a known type)
+   */
+  def fromStringNoParams(mimeTypeStr: String): Option[MimeType] = {
+    // Extract just the base MIME type without parameters
+    val baseTypeStr = stripParameters(mimeTypeStr)
+    fromString(baseTypeStr)
+  }
+  
+  /**
+   * Get a MimeType from a string, ignoring any parameters, with a fallback
+   * 
+   * @param mimeTypeStr Full MIME type string potentially with parameters
+   * @param fallback Fallback MimeType to use if no match is found
+   * @return MimeType for the base type or the fallback
+   */
+  def fromStringNoParams(mimeTypeStr: String, fallback: MimeType): MimeType = {
+    fromStringNoParams(mimeTypeStr).getOrElse(fallback)
+  }
+  
+  /**
    * Get a MimeType from a string without Option wrapping
    * Will return the parsed MimeType even if it doesn't match a predefined type
    */

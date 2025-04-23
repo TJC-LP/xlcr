@@ -27,7 +27,7 @@ case class ConvertStep(
   // Wrap conversion logic in a UDF that captures timing and errors
   private val convertUdf = wrapUdf2(rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
-      val inMime = MimeType.fromString(mimeStr, MimeType.ApplicationOctet)
+      val inMime = MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)
       
       // Skip conversion if input and output MIME types match
       if (inMime.matches(to)) {

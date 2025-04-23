@@ -27,7 +27,7 @@ case class ExtractStep(
 
   private val extractUdf = wrapUdf2(rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
-      val inMime = MimeType.fromString(mimeStr, MimeType.ApplicationOctet)
+      val inMime = MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)
       val fc = FileContent[inMime.type](bytes, inMime)
 
       BridgeRegistry
