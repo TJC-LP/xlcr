@@ -27,18 +27,25 @@ case class ConvertStep(
   // Wrap conversion logic in a UDF that captures timing and errors
   private val convertUdf = wrapUdf2(rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
-      val inMime =
-        MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
-      val fc = FileContent(bytes, inMime)
+      val inMime = MimeType.fromString(mimeStr, MimeType.ApplicationOctet)
+      
+      // Skip conversion if input and output MIME types match
+      if (inMime.matches(to)) {
+        // No conversion needed, return original bytes
+        bytes
+      } else {
+        // Create FileContent with the specific MIME type
+        val fc = FileContent[inMime.type](bytes, inMime)
 
-      BridgeRegistry
-        .findBridge(inMime, to)
-        .collect { case b: Bridge[_, MimeType, _] =>
-          b.convert(fc).data
-        }
-        .getOrElse {
-          throw new UnsupportedConversionException(inMime.mimeType, to.mimeType)
-        }
+        BridgeRegistry
+          .findBridge(inMime, to)
+          .collect {
+            case b: Bridge[_, inMime.type, to.type] => b.convert(fc).data
+          }
+          .getOrElse {
+            throw new UnsupportedConversionException(inMime.mimeType, to.mimeType)
+          }
+      }
   }
 
   override def doTransform(

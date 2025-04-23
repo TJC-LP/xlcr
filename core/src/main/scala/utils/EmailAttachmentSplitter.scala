@@ -46,7 +46,7 @@ class EmailAttachmentSplitter extends DocumentSplitter[MimeType.MessageRfc822.ty
 
         if (Part.ATTACHMENT.equalsIgnoreCase(disposition) || disposition == "inline" && ctype.startsWith("image/")) {
           val bytes = part.getInputStream.readAllBytes()
-          val mime  = MimeType.fromString(ctype.split(";")(0)).getOrElse(MimeType.ApplicationOctet)
+          val mime  = MimeType.fromString(ctype.split(";")(0), MimeType.ApplicationOctet)
           val name  = Option(part.getFileName).getOrElse(s"attachment_${chunks.length}")
           addChunk(bytes, mime, name)
         } else if (!bodyCaptured && (part.isMimeType("text/plain") || part.isMimeType("text/html"))) {

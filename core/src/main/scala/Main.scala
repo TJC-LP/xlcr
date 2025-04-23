@@ -201,16 +201,18 @@ object Main {
    */
   private def parseMimeOrExtension(str: String): Option[MimeType] = {
     // First try direct MIME type parse
-    MimeType.fromString(str) match {
-      case someMime@Some(_) => someMime
-      case None =>
-        // Attempt to interpret it as an extension
-        // remove any leading dot, e.g. ".xlsx" -> "xlsx"
-        val ext = if (str.startsWith(".")) str.substring(1).toLowerCase else str.toLowerCase
+    val parsedMime = MimeType.fromString(str)
+    
+    if (parsedMime.isDefined) {
+      parsedMime
+    } else {
+      // Attempt to interpret it as an extension
+      // remove any leading dot, e.g. ".xlsx" -> "xlsx"
+      val ext = if (str.startsWith(".")) str.substring(1).toLowerCase else str.toLowerCase
 
-        // See if there's a matching FileType
-        val maybeFt = FileType.fromExtension(ext)
-        maybeFt.map(_.getMimeType)
+      // See if there's a matching FileType
+      val maybeFt = FileType.fromExtension(ext)
+      maybeFt.map(_.getMimeType)
     }
   }
 }

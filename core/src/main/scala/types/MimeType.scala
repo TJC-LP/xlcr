@@ -141,8 +141,29 @@ object MimeType extends Serializable {
     }
   }
 
-  // Get a MimeType from a string, using predefined constants if available
-  def fromString(mimeTypeStr: String): MimeType = {
+  /**
+   * Get a MimeType from a string, using predefined constants if available
+   * Returns an Option to maintain backward compatibility
+   * Returns Some(MimeType) only if it matches a known predefined type
+   */
+  def fromString(mimeTypeStr: String): Option[MimeType] = {
+    val parsed = parse(mimeTypeStr)
+    
+    // Try to find a matching predefined type
+    val baseMatch = values.find(_.matches(parsed))
+    
+    // If found, create a new instance with the same parameters
+    baseMatch.map { base =>
+      if (parsed.parameters.isEmpty) base
+      else new MimeType(base.baseType, base.subType, parsed.parameters)
+    }
+  }
+  
+  /**
+   * Get a MimeType from a string without Option wrapping
+   * Will return the parsed MimeType even if it doesn't match a predefined type
+   */
+  def fromStringDirect(mimeTypeStr: String): MimeType = {
     val parsed = parse(mimeTypeStr)
 
     // Try to find a matching predefined type
@@ -304,6 +325,6 @@ object MimeType extends Serializable {
    * Backward compatibility with the old API
    */
   def fromString(mimeTypeStr: String, fallback: MimeType): MimeType = {
-    fromString(mimeTypeStr)
+    fromString(mimeTypeStr).getOrElse(fallback)
   }
 }

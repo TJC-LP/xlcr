@@ -7,7 +7,7 @@ import org.apache.tika.Tika
 
 import java.nio.file.{Files, Path}
 
-class FileContent[T <: MimeType](
+class FileContent[+T <: MimeType](
                                   val data: Array[Byte],
                                   val mimeType: T
                                 ) extends Model

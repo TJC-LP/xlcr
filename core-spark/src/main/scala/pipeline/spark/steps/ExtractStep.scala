@@ -27,13 +27,12 @@ case class ExtractStep(
 
   private val extractUdf = wrapUdf2(rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
-      val inMime =
-        MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
-      val fc = FileContent(bytes, inMime)
+      val inMime = MimeType.fromString(mimeStr, MimeType.ApplicationOctet)
+      val fc = FileContent[inMime.type](bytes, inMime)
 
       BridgeRegistry
         .findBridge(inMime, to)
-        .collect { case b: Bridge[_, MimeType, _] =>
+        .collect { case b: Bridge[_, inMime.type, to.type] =>
           val out = b.convert(fc)
           new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
         }
