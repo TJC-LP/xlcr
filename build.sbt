@@ -77,7 +77,8 @@ lazy val core = (project in file("core"))
       // Apache Commons Compress for archive formats
       "org.apache.commons" % "commons-compress" % "1.25.0",
       // Jakarta Mail for email parsing
-      "jakarta.mail" % "jakarta.mail-api" % "2.1.3",
+      "org.eclipse.angus" % "jakarta.mail" % "2.0.2",
+      "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
       // JAI
       "com.github.jai-imageio" % "jai-imageio-core" % "1.4.0",
       "com.github.jai-imageio" % "jai-imageio-jpeg2000" % "1.4.0",
@@ -251,6 +252,8 @@ lazy val assemblySettings = Seq(
     // Handle META-INF conflicts
     case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
     case PathList("META-INF", "mailcap") => MergeStrategy.first
+    case PathList("META-INF", "mailcap.default") => MergeStrategy.first
+    case PathList("META-INF", "mimetypes.default") => MergeStrategy.first
     case PathList("META-INF", "kotlin-project-structure-metadata.json") => MergeStrategy.discard
     case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".DSA")) => MergeStrategy.discard
     case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".SF")) => MergeStrategy.discard
@@ -258,6 +261,15 @@ lazy val assemblySettings = Seq(
 
     // Handle Log implementation conflicts
     case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
+
+    // Handle Jakarta/Javax activation and mail conflicts
+    case PathList("META-INF", "services", "javax.activation.DataContentHandler") => MergeStrategy.filterDistinctLines
+    case PathList("META-INF", "services", "jakarta.activation.DataContentHandler") => MergeStrategy.filterDistinctLines
+    case PathList("javax", "activation", xs @ _*) => MergeStrategy.first
+    case PathList("jakarta", "activation", xs @ _*) => MergeStrategy.first
+    case PathList("jakarta", "mail", xs @ _*) => MergeStrategy.first
+    case PathList("com", "sun", "activation", xs @ _*) => MergeStrategy.first
+    case PathList("com", "sun", "mail", xs @ _*) => MergeStrategy.first
 
     // Handle overlaps between xml-apis-ext and xml-apis
     case PathList("license", "LICENSE.dom-software.txt") => MergeStrategy.first
