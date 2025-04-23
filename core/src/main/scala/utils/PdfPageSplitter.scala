@@ -7,7 +7,6 @@ import bridges.image.PdfImageRenderer
 import bridges.image.PdfImageRenderer.RenderConfig
 
 import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.Loader
 import org.slf4j.LoggerFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
@@ -35,7 +34,7 @@ class PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
       jpegQuality = cfg.jpegQuality
     )
 
-    val original = Loader.loadPDF(content.data)
+    val original = PDDocument.load(content.data)
     try {
       val total = original.getNumberOfPages
       

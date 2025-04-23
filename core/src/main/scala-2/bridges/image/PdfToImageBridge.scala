@@ -10,7 +10,6 @@ import types.MimeType.{ApplicationPdf, ImagePng, ImageJpeg}
 
 import scala.reflect.ClassTag
 
-import org.apache.pdfbox.Loader
 import org.apache.pdfbox.rendering.{PDFRenderer, ImageType}
 import org.apache.pdfbox.pdmodel.PDDocument
 
@@ -61,7 +60,7 @@ object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
     
     // Default to 300 DPI for good quality without excessive size
     private def renderPdfPage(pdfBytes: Array[Byte], pageIndex: Int, format: String, dpi: Int): Array[Byte] = {
-      val document = Loader.loadPDF(pdfBytes)
+      val document = PDDocument.load(pdfBytes)
       try {
         val renderer = new PDFRenderer(document)
         // Render the specified page at the given DPI
@@ -114,7 +113,7 @@ object PdfToJpegBridge extends SimpleBridge[ApplicationPdf.type, ImageJpeg.type]
     
     // Default to 300 DPI and 85% quality for JPEG
     private def renderPdfPage(pdfBytes: Array[Byte], pageIndex: Int, dpi: Int, quality: Float): Array[Byte] = {
-      val document = Loader.loadPDF(pdfBytes)
+      val document = PDDocument.load(pdfBytes)
       try {
         val renderer = new PDFRenderer(document)
         // Render the specified page at the given DPI
@@ -193,7 +192,7 @@ object PdfImageRenderer {
    * Internal method to render a PDF page as an image with constraints.
    */
   private def renderPageAsImage(pdfBytes: Array[Byte], pageIndex: Int, format: String, config: RenderConfig): Array[Byte] = {
-    val document = Loader.loadPDF(pdfBytes)
+    val document = PDDocument.load(pdfBytes)
     try {
       val renderer = new PDFRenderer(document)
       

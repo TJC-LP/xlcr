@@ -15,7 +15,7 @@ val ktorVersion = "3.0.3"
 val zioVersion = "2.1.0"
 val zioConfigVersion = "4.0.1"
 val zioHttpVersion = "3.0.0-RC4"
-val tikaVersion = "2.9.0"
+val tikaVersion = "2.9.1"
 val sparkVersion = "3.5.2"
 
 // Common settings and dependencies
@@ -77,12 +77,12 @@ lazy val core = (project in file("core"))
       // Apache Commons Compress for archive formats
       "org.apache.commons" % "commons-compress" % "1.25.0",
       // Jakarta Mail for email parsing
-      "com.sun.mail" % "jakarta.mail" % "2.0.1",
+      "jakarta.mail" % "jakarta.mail-api" % "2.1.3",
       // JAI
       "com.github.jai-imageio" % "jai-imageio-core" % "1.4.0",
       "com.github.jai-imageio" % "jai-imageio-jpeg2000" % "1.4.0",
       // PDF
-      "org.apache.pdfbox" % "pdfbox" % "3.0.4",
+      "org.apache.pdfbox" % "pdfbox" % "2.0.29",
       // XML
       "org.apache.xmlgraphics" % "batik-all" % "1.18",
       // ZIO specific dependencies
