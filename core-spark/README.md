@@ -15,19 +15,19 @@ Each **SparkStep** is serialisable and composable (`andThen`, `fanOut`, `withTim
 
 ## Built-in steps
 
-| Step name       | Description                                        |
-|-----------------|----------------------------------------------------|
-| `detectMime`    | Run Tika to produce `metadata` map + `mime`        |
-| `splitAuto`     | Auto-split based on mime type (PDF→pages, Excel→sheets, etc.) |
-| `splitByPage`   | Split PDFs into pages                              |
-| `splitBySheet`  | Split Excel files into sheets                      |
-| `splitBySlide`  | Split PowerPoint files into slides                 |
-| `splitRecursive`| Recursive splitting (ZIP→files→pages, etc.)       |
-| `toPdf`         | Convert documents to PDF format                    |
-| `toPng`         | Convert documents to PNG images                    |
-| `toText`        | Convert documents to plain text                    |
-| `extractText`   | Extract text from documents                        |
-| `extractXml`    | Extract XML from documents                         |
+| Step name        | Description                                                   |
+|------------------|---------------------------------------------------------------|
+| `detectMime`     | Run Tika to produce `metadata` map + `mime`                   |
+| `splitAuto`      | Auto-split based on mime type (PDF→pages, Excel→sheets, etc.) |
+| `splitByPage`    | Split PDFs into pages                                         |
+| `splitBySheet`   | Split Excel files into sheets                                 |
+| `splitBySlide`   | Split PowerPoint files into slides                            |
+| `splitRecursive` | Recursive splitting (ZIP→files→pages, etc.)                   |
+| `toPdf`          | Convert documents to PDF format                               |
+| `toPng`          | Convert documents to PNG images                               |
+| `toText`         | Convert documents to plain text                               |
+| `extractText`    | Extract text from documents                                   |
+| `extractXml`     | Extract XML from documents                                    |
 
 All steps self-register in `SparkPipelineRegistry`, so you can reference them in a DSL string.
 

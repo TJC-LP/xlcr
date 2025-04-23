@@ -75,7 +75,7 @@ case class SplitStep(
 
     // Unpack result using common helper and extract chunks array
     val withChunks = UdfHelpers
-      .unpackResult(withResult, dataCol = "chunks", fallbackCol = "chunks")
+      .unpackResult(withResult, dataCol = "chunks", fallbackCol = Some("chunks"))
       .withColumn(
         "chunks",
         F.when(F.col("chunks").isNotNull, F.col("chunks"))

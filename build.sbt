@@ -162,6 +162,7 @@ lazy val coreAspose = (project in file("core-aspose"))
 lazy val coreSpark = (project in file("core-spark"))
   .dependsOn(core, coreAspose, coreSpreadsheetLLM)
   .settings(commonSettings)
+  .settings(assemblySettings)
   .settings(
     name := "xlcr-core-spark",
     scalaVersion := "2.12.18",
@@ -232,21 +233,21 @@ lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
 lazy val assemblySettings = Seq(
   // Set the assembly file name to include the module name
   assembly / assemblyJarName := s"${name.value}-assembly-${version.value}.jar",
-  
+
   // Configure merge strategy
   assembly / assemblyMergeStrategy := {
     // Handle logback.xml - use the first one
     case "logback.xml" => MergeStrategy.first
-    
+
     // Handle Main class conflicts (for modules that all have Main.class)
     case PathList(ps @ _*) if ps.last == "Main.class" => MergeStrategy.first
     case PathList(ps @ _*) if ps.last == "Main$.class" => MergeStrategy.first
     case PathList(ps @ _*) if ps.last == "Main.tasty" => MergeStrategy.first
-    
+
     // Handle module-info.class conflicts
     case PathList("module-info.class") => MergeStrategy.discard
     case PathList("META-INF", "versions", "9", "module-info.class") => MergeStrategy.discard
-    
+
     // Handle META-INF conflicts
     case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
     case PathList("META-INF", "mailcap") => MergeStrategy.first
@@ -254,23 +255,23 @@ lazy val assemblySettings = Seq(
     case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".DSA")) => MergeStrategy.discard
     case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".SF")) => MergeStrategy.discard
     case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".RSA")) => MergeStrategy.discard
-    
+
     // Handle Log implementation conflicts
     case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
-    
+
     // Handle overlaps between xml-apis-ext and xml-apis
     case PathList("license", "LICENSE.dom-software.txt") => MergeStrategy.first
-    
+
     // Handle Kotlin-specific files
     case PathList(ps @ _*) if ps.last == "manifest" => MergeStrategy.discard
     case PathList(ps @ _*) if ps.last == "module" && ps.exists(_ == "linkdata") => MergeStrategy.discard
-    
+
     // Handle CommonMain/Native/Posix/etc linkdata
     case PathList(ps @ _*) if ps.contains("Main") && ps.contains("linkdata") => MergeStrategy.discard
     case PathList(ps @ _*) if ps.contains("Main") && ps.contains("default") => MergeStrategy.discard
-    
+
     // Default strategy
-    case x => 
+    case x =>
       val oldStrategy = (assembly / assemblyMergeStrategy).value
       oldStrategy(x)
   }
@@ -280,6 +281,7 @@ lazy val assemblySettings = Seq(
 lazy val assembleCore = taskKey[File]("Assemble the core module")
 lazy val assembleAspose = taskKey[File]("Assemble the aspose module")
 lazy val assembleSpreadsheetLLM = taskKey[File]("Assemble the spreadsheetLLM module")
+lazy val assembleSpark = taskKey[File]("Assemble the spark module")
 
 // Root project for aggregating
 lazy val root = (project in file("."))
@@ -293,6 +295,7 @@ lazy val root = (project in file("."))
     // Custom assembly tasks
     assembleCore := (core / assembly).value,
     assembleAspose := (coreAspose / assembly).value,
-    assembleSpreadsheetLLM := (coreSpreadsheetLLM / assembly).value
+    assembleSpreadsheetLLM := (coreSpreadsheetLLM / assembly).value,
+    assembleSpark := (coreSpark / assembly).value
   )
   .settings(assemblySettings)

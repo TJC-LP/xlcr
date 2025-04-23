@@ -37,13 +37,7 @@ object DetectMime extends SparkStep {
     val withResult = df.withColumn("result", detectUdf(F.col("content")))
 
     // Unpack result and extract metadata into its own column
-    val withMetadata = UdfHelpers
-      .unpackResult(withResult, dataCol = "metadata", fallbackCol = "metadata")
-      .withColumn(
-        "metadata",
-        F.when(F.col("metadata").isNotNull, F.col("metadata"))
-          .otherwise(F.typedLit(Map.empty[String, String]))
-      )
+    val withMetadata = UdfHelpers.unpackResult(withResult, dataCol = "metadata")
 
     // Set MIME type from metadata or use octet-stream as fallback
     withMetadata.withColumn(

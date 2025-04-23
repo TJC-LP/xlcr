@@ -48,7 +48,7 @@ case class ExtractStep(
       df.withColumn("result", extractUdf(F.col("content"), F.col("mime")))
 
     // Unpack result and put the extracted text in the specified output column
-    UdfHelpers.unpackResult(withResult, dataCol = outCol, fallbackCol = outCol)
+    UdfHelpers.unpackResult(withResult, dataCol = outCol, fallbackCol = Some(outCol))
   }
 }
 

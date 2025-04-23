@@ -50,7 +50,7 @@ case class ConvertStep(
 
     // Unpack the result with our helper
     UdfHelpers
-      .unpackResult(withResult)
+      .unpackResult(withResult, fallbackCol = Some("content"))
       .withColumn("mime", F.lit(to.mimeType))
   }
 }

@@ -25,10 +25,7 @@ object UdfHelpers {
       durationMs: Long,
       error: Option[String] = None,
       stepName: String = ""
-  ) {
-    def isSuccess: Boolean = error.isEmpty
-    def isFailure: Boolean = !isSuccess
-  }
+  )
 
   // -----------------------------------------------------------------------
   // Single‑arg variant with per‑row timeout
@@ -66,30 +63,30 @@ object UdfHelpers {
     * @return A DataFrame with unpacked metrics and data
     */
   def unpackResult(
-      df: DataFrame,
-      resultCol: String = "result",
-      dataCol: String = "content",
-      fallbackCol: String = "content"
-  ): DataFrame = {
+                    df: DataFrame,
+                    resultCol: String = "result",
+                    dataCol: String = "content",
+                    fallbackCol: Option[String] = None
+                  ): DataFrame = {
     // Add metrics columns using Unix timestamps
     val withMetrics = df
       .withColumn("step_name", F.expr(s"$resultCol.stepName"))
       .withColumn("duration_ms", F.expr(s"$resultCol.durationMs"))
       .withColumn("start_time_ms", F.expr(s"$resultCol.startTimeMs"))
       .withColumn("end_time_ms", F.expr(s"$resultCol.endTimeMs"))
-      .withColumn(
-        "error",
-        F.when(F.expr(s"$resultCol.isFailure"), F.expr(s"$resultCol.error"))
-          .otherwise(F.lit(null))
-      )
+      .withColumn("error", F.expr(s"$resultCol.error"))
 
-    // Extract the actual data from StepResult, using fallback as backup
-    val withData = withMetrics
-      .withColumn(
-        dataCol,
-        F.when(F.expr(s"$resultCol.isSuccess"), F.expr(s"$resultCol.data"))
-          .otherwise(F.col(fallbackCol))
-      )
+    // Extract the actual data from StepResult, using fallback as backup if provided
+    val withData = fallbackCol match {
+      case Some(fallback) =>
+        withMetrics.withColumn(
+          dataCol,
+          F.when(F.col("error").isNull, F.expr(s"$resultCol.data"))
+            .otherwise(F.col(fallback))
+        )
+      case None =>
+        withMetrics.withColumn(dataCol, F.expr(s"$resultCol.data"))
+    }
 
     // Drop the intermediate result column and return
     withData.drop(resultCol)
