@@ -38,7 +38,17 @@ trait SparkStep extends Serializable { self =>
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     try {
-      doTransform(df)
+      // Ensure that input DataFrame has the required core schema
+      CoreSchema.ensure(df)
+      
+      // Run the step transformation
+      val transformedDf = doTransform(df)
+      
+      // Ensure the transformed DataFrame maintains the core schema
+      val ensuredDf = CoreSchema.ensure(transformedDf)
+      
+      // Return the validated DataFrame
+      ensuredDf
     } catch {
       case e: Exception =>
         logger.error(s"Step $name failed: ${e.getMessage}", e)
