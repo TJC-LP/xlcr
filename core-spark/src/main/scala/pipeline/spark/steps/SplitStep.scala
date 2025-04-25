@@ -14,24 +14,18 @@ import scala.concurrent.duration.{Duration => ScalaDuration}
   * Splits documents into chunks according to the specified strategy.
   */
 case class SplitStep(
-    strategy: Option[SplitStrategy] = None,
-    recursive: Boolean = false,
-    maxRecursionDepth: Int = 3,
     rowTimeout: ScalaDuration =
       scala.concurrent.duration.Duration(60, "seconds"),
     // When provided this exact config wins.
-    cfg: Option[SplitConfig] = None,
-    // Fallback policy used when neither cfg nor strategy is supplied.
-    policy: SplitPolicy = SplitPolicy.Default
+    config: SplitConfig = SplitConfig()
 ) extends SparkStep {
 
-  override val name: String =
-    s"split${strategy.map(_.toString.capitalize).getOrElse("")}"
+  override val name: String = "split"
 
   override val meta: Map[String, String] = Map(
-    "strategy" -> strategy.map(_.toString).getOrElse("auto"),
-    "recursive" -> recursive.toString,
-    "maxDepth" -> maxRecursionDepth.toString
+    "strategy" -> config.strategy.map(_.toString).getOrElse("auto"),
+    "recursive" -> config.recursive.toString,
+    "maxDepth" -> config.maxRecursionDepth.toString
   )
 
   import UdfHelpers._
@@ -42,20 +36,6 @@ case class SplitStep(
       val mime =
         MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
       val content = FileContent(bytes, mime)
-
-      // Either use the explicit config provided by caller or build one from
-      // the lightweight parameters still accepted for backward compatibility.
-      val config = cfg.getOrElse(
-        strategy
-          .map(s =>
-            SplitConfig(
-              s,
-              recursive = recursive,
-              maxRecursionDepth = maxRecursionDepth
-            )
-          )
-          .getOrElse(policy(mime))
-      )
 
       val chunks = DocumentSplitter.split(content, config)
       chunks.map { chunk =>
@@ -91,7 +71,7 @@ case class SplitStep(
     val passthroughCols = withChunks.columns.filterNot(_ == Chunks).map(F.col)
 
     val exploded =
-      withChunks.withColumn(Chunks, F.explode_outer(F.col(Chunks)))
+      withChunks.withColumn(Chunk, F.explode_outer(F.col(Chunks)))
 
     // Build final dataframe: all passthrough columns + expanded chunk fields
     val chunkColumns: Seq[org.apache.spark.sql.Column] = Seq(
@@ -111,50 +91,4 @@ case class SplitStep(
 
     exploded.select(passthroughCols ++ chunkColumns: _*)
   }
-
-}
-
-/* --------------------------------------------------------------------- */
-/* Companion object                                                      */
-/* --------------------------------------------------------------------- */
-
-object SplitStep {
-
-  /** Build a SplitStep directly from a full SplitConfig. */
-  def fromConfig(
-      config: SplitConfig,
-      rowTimeout: ScalaDuration =
-        scala.concurrent.duration.Duration(60, "seconds")
-  ): SplitStep =
-    SplitStep(
-      strategy = Some(config.strategy),
-      recursive = config.recursive,
-      maxRecursionDepth = config.maxRecursionDepth,
-      rowTimeout = rowTimeout,
-      cfg = Some(config)
-    )
-
-  /** Build SplitStep from a SplitPolicy (recommended). */
-  def withPolicy(
-      policy: SplitPolicy,
-      rowTimeout: ScalaDuration =
-        scala.concurrent.duration.Duration(60, "seconds")
-  ): SplitStep = SplitStep(rowTimeout = rowTimeout, policy = policy)
-}
-
-// Convenience singletons for common split strategies
-object SplitByPage extends SplitStep(Some(SplitStrategy.Page)) {
-  SparkPipelineRegistry.register(this)
-}
-
-object SplitBySheet extends SplitStep(Some(SplitStrategy.Sheet)) {
-  SparkPipelineRegistry.register(this)
-}
-
-object SplitBySlide extends SplitStep(Some(SplitStrategy.Slide)) {
-  SparkPipelineRegistry.register(this)
-}
-
-object SplitRecursive extends SplitStep(recursive = true) {
-  SparkPipelineRegistry.register(this)
 }

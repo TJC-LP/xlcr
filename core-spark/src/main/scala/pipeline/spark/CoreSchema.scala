@@ -32,18 +32,18 @@ object CoreSchema {
   // lineage element
   val LineageType: DataType = StructType(
     Seq(
-      StructField("name", StringType, nullable = false),
-      StructField("startMs", LongType, nullable = false),
-      StructField("endMs", LongType, nullable = false),
-      StructField("duration", LongType, nullable = false),
-      StructField("error", StringType, nullable = true)
+      StructField("startTimeMs", LongType, nullable = false),
+      StructField("endTimeMs", LongType, nullable = false),
+      StructField("durationMs", LongType, nullable = false),
+      StructField("error", StringType, nullable = true),
+      StructField("name", StringType, nullable = true),
     )
   )
-  val LineageArrayType: DataType = ArrayType(LineageType, containsNull = false)
+  val LineageArrayType: DataType = ArrayType(LineageType, containsNull = true)
 
   // Temporary columns
   val LineageEntry = "lineageEntry"
-  val LineageEntryError = "lineageEntry.error"
+  val LineageEntryError = "result.lineage.error"
   val Result = "result"
   val ResultData = "result.data"
   val ResultLineage = "result.lineage"
@@ -65,7 +65,7 @@ object CoreSchema {
     StructField(Mime, StringType, nullable = false),
     StructField(
       Metadata,
-      MapType(StringType, ArrayType(StringType, containsNull = false)),
+      MapType(StringType, StringType),
       nullable = true
     ),
     StructField(
@@ -81,17 +81,22 @@ object CoreSchema {
   )
 
   /** Validate that the provided DataFrame contains the core columns with the
-    * expected data types. Throws `IllegalStateException` on mismatch.
-    */
+   * expected data types. Throws `IllegalStateException` on mismatch.
+   */
   def requireCore(df: DataFrame, stepName: String = "<unknown>"): Unit = {
     val missing = required.filterNot(f => hasField(df, f.name, f.dataType))
     if (missing.nonEmpty) {
+      // Create a StructType from the required fields for comparison
+      val goldenSchema = StructType(required)
+
       val msg =
         s"Step $stepName violated core contract; missing / mistyped columns: ${missing.map(_.name).mkString(", ")}.\n" +
-          s"DF schema:\n${df.schema.treeString}"
+          s"Expected schema:\n${goldenSchema.treeString}\n" +
+          s"Actual schema:\n${df.schema.treeString}"
       throw new IllegalStateException(msg)
     }
   }
+
 
   /** Initialise an arbitrary DataFrame so that it satisfies the core schema.
     * Missing columns are added with NULL / default values; existing columns are

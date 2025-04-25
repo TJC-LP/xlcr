@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{SparkStep, SparkPipelineRegistry, UdfHelpers}
+import pipeline.spark.{CoreSchema, SparkStep, SparkPipelineRegistry, UdfHelpers}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
@@ -42,12 +42,13 @@ case class ExtractStep(
   override protected def doTransform(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
+    import CoreSchema._
     // Apply extraction UDF and capture result in a StepResult
-    df.withColumn("result", extractUdf(F.col("content"), F.col("mime")))
-      .withColumn("content", F.col("result.data"))
-      .withColumn("mime", F.lit(to))
-      .withColumn("lineageEntry", F.col("result.lineage"))
-      .drop("result")
+    df.withColumn(Result, extractUdf(F.col(Content), F.col(Mime)))
+      .withColumn(Content, F.col(ResultData))
+      .withColumn(Mime, F.lit(to))
+      .withColumn(LineageEntry, F.col(ResultLineage))
+      .drop(Result)
   }
 }
 

@@ -143,7 +143,7 @@ object Pipeline {
 
     // Create split config with recursive flag and image parameters
     val splitCfg = utils.SplitConfig(
-      strategy = effStrategy,
+      strategy = Some(effStrategy),
       recursive = recursive,
       maxRecursionDepth = maxRecursionDepth,
       outputFormat = outputFormat,
@@ -237,7 +237,7 @@ object Pipeline {
             
             // Use same recursion settings for nested content
             val nestedCfg = utils.SplitConfig(
-              strategy = utils.SplitStrategy.Embedded, // Always use embedded for nested archives
+              strategy = Some(utils.SplitStrategy.Embedded), // Always use embedded for nested archives
               recursive = cfg.recursive,
               maxRecursionDepth = cfg.maxRecursionDepth
             )

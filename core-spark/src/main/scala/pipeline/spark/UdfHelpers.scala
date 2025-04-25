@@ -69,7 +69,7 @@ object UdfHelpers {
         Instant.now().toEpochMilli,
         Instant.now().toEpochMilli - start,
         Some(msg),
-        name = name
+        name
       )
     )
 

@@ -46,7 +46,7 @@ object SplitStrategy {
 
 /** Configuration for document splitting. */
 case class SplitConfig(
-    strategy: SplitStrategy,
+    strategy: Option[SplitStrategy] = None,
     maxChars: Int = 8000,
     overlap: Int = 0,
     recursive: Boolean = false,
@@ -74,7 +74,7 @@ object SplitConfig {
       maxRecursionDepth: Int = 5
   ): SplitConfig =
     SplitConfig(
-      strategy = defaultStrategyForMime(mime),
+      strategy = Some(defaultStrategyForMime(mime)),
       recursive = recursive,
       maxRecursionDepth = maxRecursionDepth
     )
@@ -125,7 +125,7 @@ object DocumentSplitter {
   /** Primary entry‑point returning enriched chunks. */
   def split(content: FileContent[_ <: MimeType], cfg: SplitConfig): Seq[DocChunk[_ <: MimeType]] =
     forMime(content.mimeType)
-      .map(_.asInstanceOf[DocumentSplitter[MimeType]].split(content.asInstanceOf[FileContent[MimeType]], cfg))
+      .map(_.asInstanceOf[DocumentSplitter[MimeType]].split(content cfg))
       .getOrElse(Seq(DocChunk(content, label = "document", index = 0, total = 1)))
 
   /** Convenience method for code that only needs the bytes. */
