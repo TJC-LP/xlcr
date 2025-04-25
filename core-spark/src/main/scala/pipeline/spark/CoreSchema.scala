@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package pipeline.spark
 
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
+import org.apache.spark.sql.{Column, DataFrame, functions => F}
 
 /** Central place that defines the **core contract** that every row in the Spark
   * pipeline must satisfy.
@@ -14,6 +14,43 @@ import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
   * type) a single-point change.
   */
 object CoreSchema {
+  /* --------------------------------------------------------------------- */
+  /* Column names & nested types                                           */
+  /* --------------------------------------------------------------------- */
+
+  val Id = "id"
+  val Content = "content"
+  val Mime = "mime"
+  val Metadata = "metadata"
+  val Lineage = "lineage"
+  val LastStep = "last_step"
+
+  // chunk info
+  val ChunkId = "chunk_id"
+  val ChunkIndex = "chunk_index"
+  val ChunkLabel = "chunk_label"
+  val ChunkTotal = "chunk_total"
+
+  // lineage element
+  val LineageType: DataType = StructType(
+    Seq(
+      StructField("name", StringType, nullable = false),
+      StructField("start_ms", LongType, nullable = false),
+      StructField("end_ms", LongType, nullable = false),
+      StructField("error", StringType, nullable = true)
+    )
+  )
+
+  // last step struct (duplicate of lineage last element but separate for convenience)
+  val LastStepType: DataType = StructType(
+    Seq(
+      StructField("name", StringType, nullable = true),
+      StructField("start_ms", LongType, nullable = true),
+      StructField("end_ms", LongType, nullable = true),
+      StructField("duration_ms", LongType, nullable = true),
+      StructField("error", StringType, nullable = true)
+    )
+  )
 
   /* --------------------------------------------------------------------- */
   /* Public API                                                            */
@@ -64,7 +101,7 @@ object CoreSchema {
     * Missing columns are added with NULL / default values; existing columns are
     * kept as-is.
     */
-  def ensure(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
+  def ensure(df: DataFrame): DataFrame = {
 
     // add each required column if it does not exist
     val withCore = required.foldLeft(df) { case (acc, field) =>
@@ -92,45 +129,7 @@ object CoreSchema {
         .map(F.col): _*
     )
   }
-
-  /* --------------------------------------------------------------------- */
-  /* Column names & nested types                                           */
-  /* --------------------------------------------------------------------- */
-
-  val Id = "id"
-  val Content = "content"
-  val Mime = "mime"
-  val Metadata = "metadata"
-  val Lineage = "lineage"
-  val LastStep = "last_step"
-
-  // chunk info
-  val ChunkId = "chunk_id"
-  val ChunkIndex = "chunk_index"
-  val ChunkLabel = "chunk_label"
-  val ChunkTotal = "chunk_total"
-
-  // lineage element
-  val LineageType: DataType = StructType(
-    Seq(
-      StructField("name", StringType, nullable = false),
-      StructField("start_ms", LongType, nullable = false),
-      StructField("end_ms", LongType, nullable = false),
-      StructField("error", StringType, nullable = true)
-    )
-  )
-
-  // last step struct (duplicate of lineage last element but separate for convenience)
-  val LastStepType: DataType = StructType(
-    Seq(
-      StructField("name", StringType, nullable = true),
-      StructField("start_ms", LongType, nullable = true),
-      StructField("end_ms", LongType, nullable = true),
-      StructField("duration_ms", LongType, nullable = true),
-      StructField("error", StringType, nullable = true)
-    )
-  )
-
+  
   /* --------------------------------------------------------------------- */
   /* Internals                                                             */
   /* --------------------------------------------------------------------- */
