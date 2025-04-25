@@ -23,7 +23,7 @@ final case class SplitStep(
     val strategy = strategyOverride.getOrElse(defaultStrategyForMime(input.mimeType))
 
     val cfg = SplitConfig(
-      strategy = strategy,
+      strategy = Some(strategy),
       recursive = recursive,
       maxRecursionDepth = maxRecursionDepth
     )
