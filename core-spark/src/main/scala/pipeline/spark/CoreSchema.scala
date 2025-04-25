@@ -23,8 +23,6 @@ object CoreSchema {
   val Mime = "mime"
   val Metadata = "metadata"
   val Lineage = "lineage"
-  val LastStep = "last_step"
-
   // chunk info
   val ChunkId = "chunk_id"
   val ChunkIndex = "chunk_index"
@@ -41,16 +39,7 @@ object CoreSchema {
     )
   )
 
-  // last step struct (duplicate of lineage last element but separate for convenience)
-  val LastStepType: DataType = StructType(
-    Seq(
-      StructField("name", StringType, nullable = true),
-      StructField("start_ms", LongType, nullable = true),
-      StructField("end_ms", LongType, nullable = true),
-      StructField("duration_ms", LongType, nullable = true),
-      StructField("error", StringType, nullable = true)
-    )
-  )
+
 
   /* --------------------------------------------------------------------- */
   /* Public API                                                            */
@@ -75,7 +64,6 @@ object CoreSchema {
       ArrayType(LineageType, containsNull = false),
       nullable = false
     ),
-    StructField(LastStep, LastStepType, nullable = true),
 
     // chunk context – null when row is not a chunk
     StructField(ChunkId, StringType, nullable = true),

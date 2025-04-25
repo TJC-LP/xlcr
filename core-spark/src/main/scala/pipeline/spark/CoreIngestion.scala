@@ -36,8 +36,7 @@ object CoreIngestion {
     *   – `path`    (string)  – original file path
     * Other columns (length, modificationTime, …) are kept intact.
     */
-  def fromBinaryFilesDf(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
-
+  def fromBinaryFilesDf(df: DataFrame): DataFrame = {
     val initial = df
       .withColumn(CoreSchema.Id, md5(F.col("content")))
       .withColumn(CoreSchema.Mime, F.lit("application/octet-stream"))

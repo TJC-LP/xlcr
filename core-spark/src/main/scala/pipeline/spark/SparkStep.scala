@@ -112,13 +112,38 @@ trait SparkStep extends Serializable { self =>
   private def appendLineage(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
-    val col = "lineage"
-    val init =
-      if (df.columns.contains(col)) df else df.withColumn(col, F.array())
-    val entry =
-      if (meta.isEmpty) name
-      else s"$name(${meta.map { case (k, v) => s"$k=$v" }.mkString(";")})"
-    init.withColumn(col, F.array_union(F.col(col), F.array(F.lit(entry))))
+
+    import CoreSchema.{Id, Lineage}
+
+    // Ensure lineage array column exists
+    val withArray =
+      if (df.columns.contains(Lineage)) df else df.withColumn(Lineage, F.array())
+
+    // If this step produced timing cols, build a proper struct; otherwise just
+    // record the step name so we never lose provenance.
+    val hasTiming =
+      Seq("step_name", "start_time_ms", "end_time_ms").forall(withArray.columns.contains)
+
+    val lineageEntry =
+      if (hasTiming)
+        F.struct(
+          F.col("step_name").as("name"),
+          F.col("start_time_ms").as("start_ms"),
+          F.col("end_time_ms").as("end_ms"),
+          F.col("error")
+        )
+      else
+        F.struct(
+          F.lit(name).as("name"),
+          F.lit(System.currentTimeMillis()).as("start_ms"),
+          F.lit(System.currentTimeMillis()).as("end_ms"),
+          F.lit(null).as("error")
+        )
+
+    // Append to lineage and materialise last_step struct for convenience
+    withArray
+      .withColumn(Lineage, F.array_union(F.col(Lineage), F.array(lineageEntry)))
+      // last_step column removed to keep schema minimal
   }
 
 }
