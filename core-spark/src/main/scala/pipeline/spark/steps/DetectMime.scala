@@ -24,7 +24,8 @@ object DetectMime extends SparkStep {
 
   private val detectUdf = wrapUdf(
     name,
-    scala.concurrent.duration.Duration(30, "seconds")
+    scala.concurrent.duration.Duration(30, "seconds"),
+    Some("TikaAutoDetectParser")
   ) { bytes: Array[Byte] =>
     val md = new TikaMetadata()
     try {
@@ -38,8 +39,15 @@ object DetectMime extends SparkStep {
       // Log the exception if needed
       // logger.warn(s"Error during MIME detection: ${e.getMessage}")
     }
+    
     // Always return the metadata, even if an exception occurred
-    md.names().map(n => n -> md.get(n)).toMap
+    val metadataMap = md.names().map(n => n -> md.get(n)).toMap
+    
+    // Get detected MIME type for parameters
+    val detectedMime = Option(md.get("Content-Type")).getOrElse("application/octet-stream")
+    val params = Map("detectedMime" -> detectedMime)
+    
+    (metadataMap, Some("TikaAutoDetectParser"), Some(params))
   }
 
   override def doTransform(

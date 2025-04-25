@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers, CoreSchema}
+import pipeline.spark.{AsposeBroadcastManager, SparkPipelineRegistry, SparkStep, UdfHelpers, CoreSchema}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F, Column}
 import bridges.{Bridge, BridgeRegistry}
@@ -19,7 +19,7 @@ case class ConvertStep(
       scala.concurrent.duration.Duration(30, "seconds")
 ) extends SparkStep {
   override val name: String = s"to${to.mimeType.split('/').last.capitalize}"
-  override val meta: Map[String, String] = Map("out" -> to.mimeType)
+  override val meta: Map[String, String] = super.meta ++ Map("out" -> to.mimeType)
 
   import UdfHelpers._
 
@@ -31,8 +31,8 @@ case class ConvertStep(
 
       // Skip conversion if input and output MIME types match
       if (inMime.matches(to)) {
-        // No conversion needed, return original bytes
-        bytes
+        // No conversion needed, return original bytes with identity bridge info
+        (bytes, Some("IdentityBridge"), Some(Map("conversion" -> "identity")))
       } else {
         // Create FileContent with the specific MIME type
         val fc = FileContent[inMime.type](bytes, inMime)
@@ -40,7 +40,30 @@ case class ConvertStep(
         BridgeRegistry
           .findBridge(inMime, to)
           .collect { case b: Bridge[_, inMime.type, to.type] =>
-            b.convert(fc).data
+            // Return both the converted data and the bridge implementation name
+            val bridgeImpl = b.getClass.getSimpleName
+            
+            // Create parameters map with conversion info
+            val paramsBuilder = scala.collection.mutable.Map[String, String](
+              "fromMime" -> inMime.mimeType,
+              "toMime" -> to.mimeType
+            )
+            
+            // Check if we're using an Aspose bridge implementation
+            val isAsposeBridge = bridgeImpl.toLowerCase.contains("aspose")
+            
+            // Add Aspose license info if applicable
+            if (isAsposeBridge) {
+              // Check if Aspose is enabled and get license status
+              if (AsposeBroadcastManager.isEnabled) {
+                val licenseStatus = AsposeBroadcastManager.getLicenseStatus
+                licenseStatus.foreach { case (k, v) => paramsBuilder.put(k, v) }
+              } else {
+                paramsBuilder.put("asposeStatus", "disabled")
+              }
+            }
+            
+            (b.convert(fc).data, Some(bridgeImpl), Some(paramsBuilder.toMap))
           }
           .getOrElse {
             throw UnsupportedConversionException(

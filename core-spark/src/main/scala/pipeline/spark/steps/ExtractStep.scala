@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{CoreSchema, SparkStep, SparkPipelineRegistry, UdfHelpers}
+import pipeline.spark.{AsposeBroadcastManager, CoreSchema, SparkStep, SparkPipelineRegistry, UdfHelpers}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
@@ -21,7 +21,7 @@ case class ExtractStep(
 
   override val name: String =
     s"extract${to.mimeType.split('/').last.capitalize}"
-  override val meta: Map[String, String] = Map("out" -> to.mimeType)
+  override val meta: Map[String, String] = super.meta ++ Map("out" -> to.mimeType)
 
   import UdfHelpers._
 
@@ -34,9 +34,38 @@ case class ExtractStep(
         .findBridge(inMime, to)
         .collect { case b: Bridge[_, inMime.type, to.type] =>
           val out = b.convert(fc)
-          new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
+          val extractedText = new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
+          
+          // Get the bridge implementation info
+          val bridgeImpl = b.getClass.getSimpleName
+          
+          // Create parameters map with extraction info
+          val paramsBuilder = scala.collection.mutable.Map[String, String](
+            "fromMime" -> inMime.mimeType,
+            "toMime" -> to.mimeType,
+            "outputColumn" -> outCol
+          )
+          
+          // Check if we're using an Aspose bridge implementation
+          val isAsposeBridge = bridgeImpl.toLowerCase.contains("aspose")
+          
+          // Add Aspose license info if applicable
+          if (isAsposeBridge) {
+            // Check if Aspose is enabled and get license status
+            if (AsposeBroadcastManager.isEnabled) {
+              val licenseStatus = AsposeBroadcastManager.getLicenseStatus
+              licenseStatus.foreach { case (k, v) => paramsBuilder.put(k, v) }
+            } else {
+              paramsBuilder.put("asposeStatus", "disabled")
+            }
+          }
+          
+          (extractedText, Some(bridgeImpl), Some(paramsBuilder.toMap))
         }
-        .getOrElse("")
+        .getOrElse {
+          // If no bridge found, return empty string with error info
+          ("", Some("NoBridgeFound"), Some(Map("error" -> s"No bridge from ${inMime.mimeType} to ${to.mimeType}")))
+        }
   }
 
   override protected def doTransform(

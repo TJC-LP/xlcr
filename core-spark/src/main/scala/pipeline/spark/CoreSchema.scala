@@ -35,6 +35,8 @@ object CoreSchema {
       StructField("durationMs", LongType, nullable = false),
       StructField("error", StringType, nullable = true),
       StructField("name", StringType, nullable = true),
+      StructField("implementation", StringType, nullable = true),
+      StructField("params", MapType(StringType, StringType), nullable = true)
     )
   )
   val LineageArrayType: DataType = ArrayType(LineageType, containsNull = true)

@@ -8,21 +8,31 @@ import zio.{Runtime, ZIO, Duration => ZDuration}
 import java.util.concurrent.TimeoutException
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
-/** Unified Spark pipeline step with ZIO-powered execution.
+/** Unified Spark pipeline step with ZIO-powered execution and license-aware UDFs.
   *
   *  – Concrete steps implement `doTransform`.
   *  – Provides composition (`andThen`, `fanOut`) and timeout helpers.
   *  – Automatically appends lineage tracking for provenance.
   *  – UDF-based operations provide detailed timing metrics.
+  *  – License-aware UDFs ensure Aspose licenses are properly initialized across workers.
   */
-trait SparkStep extends Serializable { self =>
+trait SparkStep extends Serializable with LicenseAwareUdfWrapper { self =>
 
   /* --------------------------------------------------------------------- */
   /* Required by concrete steps                                            */
   /* --------------------------------------------------------------------- */
 
   def name: String
-  def meta: Map[String, String] = Map.empty
+  
+  def meta: Map[String, String] = {
+    // Include Aspose license status in metadata if Aspose is enabled
+    if (AsposeBroadcastManager.isEnabled) {
+      Map("asposeEnabled" -> "true") ++ 
+      AsposeBroadcastManager.getLicenseStatus.get("status").map(s => Map("asposeStatus" -> s)).getOrElse(Map.empty)
+    } else {
+      Map.empty
+    }
+  }
 
   protected def doTransform(df: DataFrame)(implicit
       spark: SparkSession
@@ -35,6 +45,9 @@ trait SparkStep extends Serializable { self =>
   final def transform(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
+    // Initialize Aspose licenses broadcasting
+    AsposeBroadcastManager.initBroadcast(spark)
+    
     // Ensure that input DataFrame has the required core schema
     val ensuredDf = CoreSchema.ensure(df)
 

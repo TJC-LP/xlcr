@@ -22,37 +22,64 @@ case class SplitStep(
 
   override val name: String = s"split${config.strategy.getOrElse(SplitStrategy.Auto).displayName.capitalize}"
 
-  override val meta: Map[String, String] = Map(
-    "strategy" -> config.strategy.map(_.toString).getOrElse("auto"),
+  override val meta: Map[String, String] = super.meta ++ Map(
+    "strategy" -> config.strategy.map(_.displayName).getOrElse("auto"),
     "recursive" -> config.recursive.toString,
     "maxDepth" -> config.maxRecursionDepth.toString
   )
 
   import UdfHelpers._
 
-  // UDF that splits a document using the DocumentSplitter
-  private val splitUdf = wrapUdf2(name, rowTimeout) {
+  // UDF that splits a document using the DocumentSplitter with license awareness
+  private def createSplitUdf(implicit spark: SparkSession) = licenseAwareUdf2(name, rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
       val mime =
         MimeType.fromStringNoParams(mimeStr).getOrElse(MimeType.ApplicationOctet)
       val content = FileContent(bytes, mime)
+      
+      // Get the splitter implementation if available
+      val splitterImpl = DocumentSplitter.forMime(mime)
+        .map(s => s.getClass.getSimpleName)
+      
+      // Determine the actual strategy used (can be different if Auto was specified)
+      val effectiveStrategy = config.strategy match {
+        case Some(SplitStrategy.Auto) => 
+          Some(SplitConfig.defaultStrategyForMime(mime).displayName)
+        case Some(strategy) => 
+          Some(strategy.displayName)
+        case None => 
+          Some(SplitConfig.defaultStrategyForMime(mime).displayName)
+      }
+      
+      // Create parameters map with strategy info
+      val paramsBuilder = scala.collection.mutable.Map[String, String]()
+      effectiveStrategy.foreach(s => paramsBuilder.put("strategy", s))
+      
+      // Create final parameters map
+      val params = Some(paramsBuilder.toMap)
 
       val chunks = DocumentSplitter.split(content, config)
-      chunks.map { chunk =>
+      
+      // Return the chunks data along with implementation info
+      (chunks.map { chunk =>
         (
           chunk.content.data,
           chunk.content.mimeType.mimeType,
-          chunk.index,
+          chunk.index, 
           chunk.label,
           chunk.total
         )
-      }
+      }, splitterImpl, params)
   }
 
   override def doTransform(
                             df: DataFrame
                           )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
+    
+    // Create the license-aware UDF
+    val splitUdf = createSplitUdf
+    
     // Apply splitting and capture results
     val withResult =
       df.withColumn(Result, splitUdf(F.col(Content), F.col(Mime)))

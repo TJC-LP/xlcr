@@ -23,7 +23,9 @@ object UdfHelpers {
       endTimeMs: Long,
       durationMs: Long,
       error: Option[String] = None,
-      name: String
+      name: String,
+      implementation: Option[String] = None,  // Added to track the specific implementation used
+      params: Option[Map[String, String]] = None  // Added to track additional parameters
   )
 
   case class StepResult[T](
@@ -57,10 +59,22 @@ object UdfHelpers {
 
   def wrapUdf[A: TypeTag, R: TypeTag](
       name: String,
-      timeout: ScalaDuration = ScalaDuration.Inf
-  )(f: A => R): UserDefinedFunction = {
-    val safe = (a: A) => executeTimed(timeout, name) { f(a) }
+      timeout: ScalaDuration = ScalaDuration.Inf,
+      implementation: Option[String] = None,
+      params: Option[Map[String, String]] = None
+  )(f: A => (R, Option[String], Option[Map[String, String]])): UserDefinedFunction = {
+    val safe = (a: A) => executeTimed(timeout, name, implementation, params) { f(a) }
     F.udf(safe)
+  }
+
+  // For compatibility with existing code that doesn't track implementation
+  def wrapUdf[A: TypeTag, R: TypeTag](
+      name: String,
+      timeout: ScalaDuration,
+      f: A => R
+  ): UserDefinedFunction = {
+    val wrappedF = (a: A) => (f(a), None: Option[String], None: Option[Map[String, String]])
+    wrapUdf(name, timeout, None, None)(wrappedF)
   }
 
   // -----------------------------------------------------------------------
@@ -69,18 +83,32 @@ object UdfHelpers {
 
   def wrapUdf2[A: TypeTag, B: TypeTag, R: TypeTag](
       name: String,
-      timeout: ScalaDuration = ScalaDuration.Inf
-  )(f: (A, B) => R): UserDefinedFunction = {
-    val safe = (a: A, b: B) => executeTimed(timeout, name) { f(a, b) }
+      timeout: ScalaDuration = ScalaDuration.Inf,
+      implementation: Option[String] = None,
+      params: Option[Map[String, String]] = None
+  )(f: (A, B) => (R, Option[String], Option[Map[String, String]])): UserDefinedFunction = {
+    val safe = (a: A, b: B) => executeTimed(timeout, name, implementation, params) { f(a, b) }
     F.udf(safe)
+  }
+  
+  // For compatibility with existing code that doesn't track implementation
+  def wrapUdf2[A: TypeTag, B: TypeTag, R: TypeTag](
+      name: String,
+      timeout: ScalaDuration,
+      f: (A, B) => R
+  ): UserDefinedFunction = {
+    val wrappedF = (a: A, b: B) => (f(a, b), None: Option[String], None: Option[Map[String, String]])
+    wrapUdf2(name, timeout, None, None)(wrappedF)
   }
 
   /* ---------------- private helpers ------------------------------------ */
 
   private def executeTimed[R](
       timeout: ScalaDuration,
-      name: String
-  )(thunk: => R): StepResult[R] = {
+      name: String,
+      defaultImplementation: Option[String] = None,
+      defaultParams: Option[Map[String, String]] = None
+  )(thunk: => (R, Option[String], Option[Map[String, String]])): StepResult[R] = {
     val start = Instant.now().toEpochMilli
     def fail(msg: String) = StepResult[R](
       None,
@@ -89,12 +117,14 @@ object UdfHelpers {
         Instant.now().toEpochMilli,
         Instant.now().toEpochMilli - start,
         Some(msg),
-        name
+        name,
+        defaultImplementation,
+        defaultParams
       )
     )
 
     try {
-      val r: R =
+      val (result, implName, params): (R, Option[String], Option[Map[String, String]]) =
         if (timeout.isFinite()) {
           val task = ZIO
             .attempt(thunk)
@@ -107,7 +137,14 @@ object UdfHelpers {
         } else thunk
 
       val end = Instant.now().toEpochMilli
-      StepResult(Some(r), Lineage(start, end, end - start, None, name))
+      // Use provided implementation info or fall back to defaults
+      val finalImplName = implName.orElse(defaultImplementation)
+      val finalParams = params.orElse(defaultParams)
+      
+      StepResult(
+        Some(result), 
+        Lineage(start, end, end - start, None, name, finalImplName, finalParams)
+      )
     } catch {
       case t: Throwable => fail(t.getMessage)
     }
