@@ -20,7 +20,7 @@ class ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     // If not requesting entry-level split, return the whole archive
-    if (cfg.strategy != SplitStrategy.Embedded)
+    if (!cfg.hasStrategy(SplitStrategy.Embedded))
       return Seq(DocChunk(content, "archive", 0, 1))
 
     val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]

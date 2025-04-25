@@ -18,7 +18,7 @@ class PowerPointSlideSplitter extends DocumentSplitter[MimeType] {
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (cfg.strategy != SplitStrategy.Slide ||
+    if (!cfg.hasStrategy(SplitStrategy.Slide) ||
         content.mimeType != MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation)
       return Seq(DocChunk(content, "presentation", 0, 1))
 

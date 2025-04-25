@@ -19,7 +19,7 @@ class PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (cfg.strategy != SplitStrategy.Page)
+    if (!cfg.hasStrategy(SplitStrategy.Page))
       return Seq(DocChunk(content, "document", 0, 1))
       
     // Determine output format - use PDF by default

@@ -23,7 +23,7 @@ class OutlookMsgSplitter
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (cfg.strategy != SplitStrategy.Attachment)
+    if (!cfg.hasStrategy(SplitStrategy.Attachment))
       return Seq(DocChunk(content, "msg", 0, 1))
 
     val msg = new MAPIMessage(new java.io.ByteArrayInputStream(content.data))

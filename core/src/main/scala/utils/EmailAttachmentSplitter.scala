@@ -22,7 +22,7 @@ class EmailAttachmentSplitter extends DocumentSplitter[MimeType.MessageRfc822.ty
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (cfg.strategy != SplitStrategy.Attachment)
+    if (!cfg.hasStrategy(SplitStrategy.Attachment))
       return Seq(DocChunk(content, "email", 0, 1))
 
     val session = Session.getDefaultInstance(new Properties())

@@ -22,7 +22,7 @@ class ExcelSheetSplitter extends DocumentSplitter[MimeType] {
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (cfg.strategy != SplitStrategy.Sheet || !supported.exists(_ == content.mimeType))
+    if (!cfg.hasStrategy(SplitStrategy.Sheet) || !supported.exists(_ == content.mimeType))
       return Seq(DocChunk(content, "workbook", 0, 1))
 
     val tempWb = WorkbookFactory.create(new ByteArrayInputStream(content.data))

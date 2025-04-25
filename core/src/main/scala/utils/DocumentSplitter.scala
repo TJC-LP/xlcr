@@ -60,7 +60,10 @@ case class SplitConfig(
     maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default limit
     imageDpi: Int = 300, // DPI for rendering
     jpegQuality: Float = 0.85f // JPEG quality factor (0.0-1.0)
-)
+) {
+  /** Helper method to check if a strategy is set to a specific value */
+  def hasStrategy(s: SplitStrategy): Boolean = strategy.contains(s)
+}
 
 object SplitConfig {
 

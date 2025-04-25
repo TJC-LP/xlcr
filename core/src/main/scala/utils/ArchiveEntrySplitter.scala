@@ -89,7 +89,7 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     // If not handling this MIME type or not requesting split, return the original
-    if (!supportedMimeTypes.contains(content.mimeType) || cfg.strategy != SplitStrategy.Embedded)
+    if (!supportedMimeTypes.contains(content.mimeType) || !cfg.hasStrategy(SplitStrategy.Embedded))
       return Seq(DocChunk(content, "archive", 0, 1))
       
     // Initialize zipbomb protection

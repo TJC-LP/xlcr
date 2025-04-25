@@ -21,7 +21,7 @@ class WordHeadingSplitter
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (cfg.strategy != SplitStrategy.Heading)
+    if (!cfg.hasStrategy(SplitStrategy.Heading))
       return Seq(DocChunk(content, "document", 0, 1))
 
     val src = new XWPFDocument(new ByteArrayInputStream(content.data))
