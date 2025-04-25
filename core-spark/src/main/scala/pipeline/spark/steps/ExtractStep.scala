@@ -54,7 +54,7 @@ case class ExtractStep(
     
     // Update content and mime type for the extracted data
     withLineage
-      .withColumn(Content, F.col(ResultData))
+      .withColumn(outCol, F.col(ResultData))
       .withColumn(Mime, F.lit(to))
       .drop(Result, LineageEntry)
   }

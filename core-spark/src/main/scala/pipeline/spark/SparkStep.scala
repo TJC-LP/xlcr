@@ -32,22 +32,17 @@ trait SparkStep extends Serializable { self =>
   /* Public façade                                                         */
   /* --------------------------------------------------------------------- */
 
-  private val logger = LoggerFactory.getLogger(getClass)
-
   final def transform(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
-    try {
-      // Ensure that input DataFrame has the required core schema
-      val ensuredDf = CoreSchema.ensure(df)
-      
-      // Run the step transformation with lineage tracking directly
-      doTransform(ensuredDf)
-    } catch {
-      case e: Exception =>
-        logger.error(s"Step $name failed: ${e.getMessage}", e)
-        df.withColumn("error", F.lit(e.getMessage))
-    }
+    // Ensure that input DataFrame has the required core schema
+    val ensuredDf = CoreSchema.ensure(df)
+
+    // Run the step transformation with lineage tracking directly
+    doTransform(ensuredDf).withColumn(
+      CoreSchema.Id,
+      F.md5(F.col(CoreSchema.Content))
+    )
   }
 
   final def apply(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
@@ -67,8 +62,8 @@ trait SparkStep extends Serializable { self =>
     protected def doTransform(df: DataFrame)(implicit
         s: SparkSession
     ): DataFrame = {
-      val intermediateResult = self.transform(df)
-      next.transform(intermediateResult)
+      val intermediateResult = self.doTransform(df)
+      next.doTransform(intermediateResult)
     }
   }
 

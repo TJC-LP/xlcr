@@ -56,21 +56,25 @@ case class ConvertStep(
   )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
     // Apply conversion and capture results in a StepResult
-    val withResult = df.withColumn(Result, convertUdf(F.col(Content), F.col(Mime)))
-    
+    val withResult =
+      df.withColumn(Result, convertUdf(F.col(Content), F.col(Mime)))
+
+    val failSafe = (x: String, y: String, z: String) =>
+      F.when(F.col(x).isNull, F.lit(y))
+        .otherwise(F.col(z))
+
     // Append the lineage entry to the lineage column
     val withLineage = UdfHelpers.appendLineageEntry(
-      withResult, 
+      withResult,
       F.col(ResultLineage)
     )
-    
+
     // Update content and mime type based on the conversion result
     withLineage
-      .withColumn(Content, F.col(ResultData))
+      .withColumn(Content, failSafe(LineageEntryError, ResultData, Content))
       .withColumn(
         Mime,
-        F.when(F.col(LineageEntryError).isNull, F.lit(to.mimeType))
-          .otherwise(F.col(Mime))
+        failSafe(LineageEntryError, to.mimeType, Mime)
       )
       .drop(Result, LineageEntry)
   }

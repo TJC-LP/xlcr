@@ -59,10 +59,10 @@ case class SplitStep(
 
     // Append the lineage entry to the lineage column
     val withLineage = UdfHelpers.appendLineageEntry(
-      withResult, 
+      withResult,
       F.col(ResultLineage)
     )
-    
+
     // Unpack result using common helper and extract chunks array
     val withChunks = withLineage
       .withColumn(Chunks, F.col(ResultData))
@@ -83,24 +83,23 @@ case class SplitStep(
       // Always replace content and mime columns with the chunk's content and mime
       F.col(s"$Chunk._1").as(Content),
       F.col(s"$Chunk._2").as(Mime),
-      
       // Only set chunk columns if they're not already set or if we're exploding multiple chunks
       // This prevents overwriting existing chunk information when nested splitting occurs
       F.when(
         F.col(CoreSchema.ChunkIndex).isNull || F.size(F.col(Chunks)) > 1,
         F.col(s"$Chunk._3").cast("long")
-      ).otherwise(F.col(CoreSchema.ChunkIndex)).as(CoreSchema.ChunkIndex),
-      
+      ).otherwise(F.col(CoreSchema.ChunkIndex))
+        .as(CoreSchema.ChunkIndex),
       F.when(
-        F.col(CoreSchema.ChunkLabel).isNull || F.size(F.col(Chunks)) > 1, 
+        F.col(CoreSchema.ChunkLabel).isNull || F.size(F.col(Chunks)) > 1,
         F.col(s"$Chunk._4")
-      ).otherwise(F.col(CoreSchema.ChunkLabel)).as(CoreSchema.ChunkLabel),
-      
+      ).otherwise(F.col(CoreSchema.ChunkLabel))
+        .as(CoreSchema.ChunkLabel),
       F.when(
         F.col(CoreSchema.ChunkTotal).isNull || F.size(F.col(Chunks)) > 1,
         F.col(s"$Chunk._5").cast("long")
-      ).otherwise(F.col(CoreSchema.ChunkTotal)).as(CoreSchema.ChunkTotal),
-      
+      ).otherwise(F.col(CoreSchema.ChunkTotal))
+        .as(CoreSchema.ChunkTotal),
       // Only create a new chunk ID if it doesn't exist already or if we're exploding multiple chunks
       F.when(
         F.col(CoreSchema.ChunkId).isNull || F.size(F.col(Chunks)) > 1,
@@ -110,7 +109,8 @@ case class SplitStep(
           F.lit(s"::$Chunk:"),
           F.col(s"$Chunk._3")
         )
-      ).otherwise(F.col(CoreSchema.ChunkId)).as(CoreSchema.ChunkId)
+      ).otherwise(F.col(CoreSchema.ChunkId))
+        .as(CoreSchema.ChunkId)
     )
 
     exploded.select(passthroughCols ++ chunkColumns: _*)
