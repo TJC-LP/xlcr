@@ -72,8 +72,13 @@ trait SparkStep extends Serializable { self =>
     override def meta: Map[String, String] = self.meta ++ next.meta
     protected def doTransform(df: DataFrame)(implicit
         s: SparkSession
-    ): DataFrame =
-      next.doTransform(self.doTransform(df))
+    ): DataFrame = {
+      // Apply the first step through its full pipeline with lineage tracking
+      val intermediateResult = self.apply(df)
+      
+      // Apply the second step, also with lineage tracking
+      next.transform(intermediateResult)
+    }
   }
 
   final def fanOut(left: SparkStep, right: SparkStep): SparkStep =
@@ -82,9 +87,14 @@ trait SparkStep extends Serializable { self =>
       protected def doTransform(
           df: DataFrame
       )(implicit spark: SparkSession): DataFrame = {
-        val base = self.doTransform(df)
-        val l = left.doTransform(base).withColumn("branch", F.lit("left"))
-        val r = right.doTransform(base).withColumn("branch", F.lit("right"))
+        // Apply the base step with full lineage tracking
+        val base = self.apply(df)
+        
+        // Apply both branches with full lineage tracking
+        val l = left.apply(base).withColumn("branch", F.lit("left"))
+        val r = right.apply(base).withColumn("branch", F.lit("right"))
+        
+        // Union the results
         l.unionByName(r, allowMissingColumns = true)
       }
     }
@@ -102,7 +112,7 @@ trait SparkStep extends Serializable { self =>
         df: DataFrame
     )(implicit spark: SparkSession): DataFrame = {
       val task = ZIO
-        .attempt(self.transform(df))
+        .attempt(self.apply(df))  // Use apply to ensure lineage is properly tracked
         .timeoutFail(new TimeoutException("timeout"))(
           ZDuration.fromScala(timeout)
         )
