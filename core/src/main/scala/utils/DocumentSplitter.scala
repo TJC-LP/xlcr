@@ -53,6 +53,9 @@ object SplitStrategy {
   case object Heading extends SplitStrategy {
     override def displayName: String = "heading"
   }
+  case object Chunk extends SplitStrategy {
+    override def displayName: String = "chunk"
+  }
 
   /** Automatically selects the appropriate strategy based on the input MIME type */
   case object Auto extends SplitStrategy {
@@ -70,6 +73,7 @@ object SplitStrategy {
     case "paragraph"  => Some(Paragraph)
     case "sentence"   => Some(Sentence)
     case "heading"    => Some(Heading)
+    case "chunk"      => Some(Chunk)
     case "auto"       => Some(Auto)
     case _            => None
   }
@@ -139,6 +143,14 @@ object SplitConfig {
     // Emails
     case MimeType.MessageRfc822 | MimeType.ApplicationVndMsOutlook =>
       SplitStrategy.Attachment
+      
+    // Text files
+    case MimeType.TextPlain =>
+      SplitStrategy.Chunk
+      
+    // CSV files
+    case MimeType.TextCsv =>
+      SplitStrategy.Row
 
     case _ => SplitStrategy.Page
   }

@@ -1,7 +1,13 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{AsposeBroadcastManager, SparkPipelineRegistry, SparkStep, UdfHelpers, CoreSchema}
+import pipeline.spark.{
+  AsposeBroadcastManager,
+  SparkPipelineRegistry,
+  SparkStep,
+  UdfHelpers,
+  CoreSchema
+}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F, Column}
 import bridges.{Bridge, BridgeRegistry}
@@ -19,12 +25,11 @@ case class ConvertStep(
       scala.concurrent.duration.Duration(30, "seconds")
 ) extends SparkStep {
   override val name: String = s"to${to.mimeType.split('/').last.capitalize}"
-  override val meta: Map[String, String] = super.meta ++ Map("out" -> to.mimeType)
-
-  import UdfHelpers._
+  override val meta: Map[String, String] =
+    super.meta ++ Map("out" -> to.mimeType)
 
   // Wrap conversion logic in a UDF that captures timing and errors
-  private val convertUdf = wrapUdf2(name, rowTimeout) {
+  private def createConvertUdf(implicit spark: SparkSession) = licenseAwareUdf2(name, rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
       val inMime =
         MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)
@@ -42,16 +47,16 @@ case class ConvertStep(
           .collect { case b: Bridge[_, inMime.type, to.type] =>
             // Return both the converted data and the bridge implementation name
             val bridgeImpl = b.getClass.getSimpleName
-            
+
             // Create parameters map with conversion info
             val paramsBuilder = scala.collection.mutable.Map[String, String](
               "fromMime" -> inMime.mimeType,
               "toMime" -> to.mimeType
             )
-            
+
             // Check if we're using an Aspose bridge implementation
             val isAsposeBridge = bridgeImpl.toLowerCase.contains("aspose")
-            
+
             // Add Aspose license info if applicable
             if (isAsposeBridge) {
               // Check if Aspose is enabled and get license status
@@ -62,7 +67,7 @@ case class ConvertStep(
                 paramsBuilder.put("asposeStatus", "disabled")
               }
             }
-            
+
             (b.convert(fc).data, Some(bridgeImpl), Some(paramsBuilder.toMap))
           }
           .getOrElse {
@@ -78,6 +83,9 @@ case class ConvertStep(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
+    // Create the UDF with the current SparkSession
+    val convertUdf = createConvertUdf
+    
     // Apply conversion and capture results in a StepResult
     val withResult =
       df.withColumn(Result, convertUdf(F.col(Content), F.col(Mime)))
@@ -94,7 +102,10 @@ case class ConvertStep(
     // Update content and mime type based on the conversion result
     withLineage
       // Keep original content column if conversion fails (helps with retries)
-      .withColumn(Content, failSafe(F.col(LineageEntryError), F.col(ResultData), F.col(Content)))
+      .withColumn(
+        Content,
+        failSafe(F.col(LineageEntryError), F.col(ResultData), F.col(Content))
+      )
       .withColumn(
         Mime,
         failSafe(F.col(LineageEntryError), F.lit(to.mimeType), F.col(Mime))
