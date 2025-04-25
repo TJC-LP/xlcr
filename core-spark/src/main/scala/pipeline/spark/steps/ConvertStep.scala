@@ -3,7 +3,7 @@ package pipeline.spark.steps
 
 import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers, CoreSchema}
 
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F, Column}
 import bridges.{Bridge, BridgeRegistry}
 import models.FileContent
 import types.MimeType
@@ -59,9 +59,8 @@ case class ConvertStep(
     val withResult =
       df.withColumn(Result, convertUdf(F.col(Content), F.col(Mime)))
 
-    val failSafe = (x: String, y: String, z: String) =>
-      F.when(F.col(x).isNull, F.lit(y))
-        .otherwise(F.col(z))
+    val failSafe = (x: Column, y: Column, z: Column) =>
+      F.when(x.isNull, y).otherwise(z)
 
     // Append the lineage entry to the lineage column
     val withLineage = UdfHelpers.appendLineageEntry(
@@ -71,10 +70,11 @@ case class ConvertStep(
 
     // Update content and mime type based on the conversion result
     withLineage
-      .withColumn(Content, failSafe(LineageEntryError, ResultData, Content))
+      // Keep original content column if conversion fails (helps with retries)
+      .withColumn(Content, failSafe(F.col(LineageEntryError), F.col(ResultData), F.col(Content)))
       .withColumn(
         Mime,
-        failSafe(LineageEntryError, to.mimeType, Mime)
+        failSafe(F.col(LineageEntryError), F.lit(to.mimeType), F.col(Mime))
       )
       .drop(Result, LineageEntry)
   }

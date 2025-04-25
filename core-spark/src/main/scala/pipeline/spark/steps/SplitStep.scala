@@ -20,7 +20,7 @@ case class SplitStep(
     config: SplitConfig = SplitConfig(strategy = Some(SplitStrategy.Auto))
 ) extends SparkStep {
 
-  override val name: String = "split"
+  override val name: String = s"split${config.strategy.getOrElse(SplitStrategy.Auto).displayName.capitalize}"
 
   override val meta: Map[String, String] = Map(
     "strategy" -> config.strategy.map(_.toString).getOrElse("auto"),
