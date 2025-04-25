@@ -30,7 +30,7 @@ object BasePowerPointSlideAsposeSplitter {
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     // Only run when the caller requested slide‑level splitting.
-    if (cfg.strategy != SplitStrategy.Slide)
+    if (!cfg.hasStrategy(SplitStrategy.Slide))
       return Seq(DocChunk(content, "presentation", 0, 1))
 
     // Load the source presentation once so we can access slide metadata.

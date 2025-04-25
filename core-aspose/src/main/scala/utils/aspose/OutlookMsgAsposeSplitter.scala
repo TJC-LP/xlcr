@@ -22,7 +22,7 @@ object OutlookMsgAsposeSplitter
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (cfg.strategy != SplitStrategy.Attachment)
+    if (!cfg.hasStrategy(SplitStrategy.Attachment))
       return Seq(DocChunk(content, "msg", 0, 1))
 
     // Load the .msg file using Aspose.Email

@@ -33,7 +33,7 @@ object ExcelSheetAsposeSplitter {
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     // Only run when the caller requested sheet-level splitting.
-    if (cfg.strategy != SplitStrategy.Sheet)
+    if (!cfg.hasStrategy(SplitStrategy.Sheet))
       return Seq(DocChunk(content, "workbook", 0, 1))
 
     // Load the source workbook to access sheet metadata

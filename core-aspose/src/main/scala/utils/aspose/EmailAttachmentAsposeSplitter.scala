@@ -23,7 +23,7 @@ object EmailAttachmentAsposeSplitter
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (cfg.strategy != SplitStrategy.Attachment)
+    if (!cfg.hasStrategy(SplitStrategy.Attachment))
       return Seq(DocChunk(content, "email", 0, 1))
 
     val msg = MailMessage.load(new ByteArrayInputStream(content.data))
