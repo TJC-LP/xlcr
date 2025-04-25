@@ -38,7 +38,7 @@ object UdfHelpers {
   // -----------------------------------------------------------------------
   
   def appendLineageEntry(df: DataFrame, lineageEntry: Column): DataFrame = {
-    import org.apache.spark.sql.functions.{col, array, when, array_union}
+    import org.apache.spark.sql.functions.{col, array, when, array_append}
     
     // Ensure lineage column exists with proper type
     val withLineageCol = 
@@ -49,7 +49,7 @@ object UdfHelpers {
     withLineageCol.withColumn(
       CoreSchema.Lineage, 
       when(col(CoreSchema.Lineage).isNull, array(lineageEntry))
-        .otherwise(array_union(col(CoreSchema.Lineage), array(lineageEntry)))
+        .otherwise(array_append(col(CoreSchema.Lineage), lineageEntry))
     )
   }
   
