@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package pipeline.spark
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.{DataFrame, functions => F}
+import org.apache.spark.sql.{DataFrame, Column, functions => F}
 import zio.{Runtime, Unsafe, ZIO, Duration => ZDuration}
 
 import java.time.Instant
@@ -31,6 +31,26 @@ object UdfHelpers {
       lineage: Lineage
   )
 
+  // -----------------------------------------------------------------------
+  // Helper to append lineage entry to lineage array
+  // -----------------------------------------------------------------------
+  
+  def appendLineageEntry(df: DataFrame, lineageEntry: Column): DataFrame = {
+    import org.apache.spark.sql.functions.{col, array, when, array_union}
+    
+    // Ensure lineage column exists with proper type
+    val withLineageCol = 
+      if (df.columns.contains(CoreSchema.Lineage)) df
+      else df.withColumn(CoreSchema.Lineage, array().cast(CoreSchema.LineageArrayType))
+    
+    // Add the lineage entry to the lineage array
+    withLineageCol.withColumn(
+      CoreSchema.Lineage, 
+      when(col(CoreSchema.Lineage).isNull, array(lineageEntry))
+        .otherwise(array_union(col(CoreSchema.Lineage), array(lineageEntry)))
+    )
+  }
+  
   // -----------------------------------------------------------------------
   // Single‑arg variant with per‑row timeout
   // -----------------------------------------------------------------------

@@ -44,11 +44,19 @@ case class ExtractStep(
   )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
     // Apply extraction UDF and capture result in a StepResult
-    df.withColumn(Result, extractUdf(F.col(Content), F.col(Mime)))
+    val withResult = df.withColumn(Result, extractUdf(F.col(Content), F.col(Mime)))
+    
+    // Append the lineage entry to the lineage column
+    val withLineage = UdfHelpers.appendLineageEntry(
+      withResult, 
+      F.col(ResultLineage)
+    )
+    
+    // Update content and mime type for the extracted data
+    withLineage
       .withColumn(Content, F.col(ResultData))
       .withColumn(Mime, F.lit(to))
-      .withColumn(LineageEntry, F.col(ResultLineage))
-      .drop(Result)
+      .drop(Result, LineageEntry)
   }
 }
 

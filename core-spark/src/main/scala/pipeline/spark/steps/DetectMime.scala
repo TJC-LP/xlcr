@@ -47,11 +47,18 @@ object DetectMime extends SparkStep {
   )(implicit spark: SparkSession): DataFrame = {
     // Apply the UDF and capture result in a StepResult
     import CoreSchema._
-    val withMetadata = df
-      .withColumn(Result, detectUdf(F.col(Content)))
+    val withResult = df.withColumn(Result, detectUdf(F.col(Content)))
+    
+    // Append the lineage entry to the lineage column
+    val withLineage = UdfHelpers.appendLineageEntry(
+      withResult, 
+      F.col(ResultLineage)
+    )
+    
+    // Extract metadata and update the dataframe
+    val withMetadata = withLineage
       .withColumn(Metadata, F.col(ResultData))
-      .withColumn(LineageEntry, F.col(ResultLineage))
-      .drop(Result)
+      .drop(Result, LineageEntry)
 
     // Set MIME type from metadata or use octet-stream as fallback
     withMetadata.withColumn(

@@ -57,11 +57,16 @@ case class SplitStep(
     val withResult =
       df.withColumn(Result, splitUdf(F.col(Content), F.col(Mime)))
 
+    // Append the lineage entry to the lineage column
+    val withLineage = UdfHelpers.appendLineageEntry(
+      withResult, 
+      F.col(ResultLineage)
+    )
+    
     // Unpack result using common helper and extract chunks array
-    val withChunks = withResult
+    val withChunks = withLineage
       .withColumn(Chunks, F.col(ResultData))
-      .withColumn(LineageEntry, F.col(ResultLineage))
-      .drop(Result)
+      .drop(Result, LineageEntry)
 
     /* ------------------------------------------------------------------ */
     /* Explode chunks while preserving *all* pass-through columns          */

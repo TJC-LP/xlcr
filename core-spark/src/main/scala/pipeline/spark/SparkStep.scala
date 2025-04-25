@@ -39,16 +39,10 @@ trait SparkStep extends Serializable { self =>
   )(implicit spark: SparkSession): DataFrame = {
     try {
       // Ensure that input DataFrame has the required core schema
-      CoreSchema.ensure(df)
+      val ensuredDf = CoreSchema.ensure(df)
       
-      // Run the step transformation
-      val transformedDf = doTransform(df)
-      
-      // Ensure the transformed DataFrame maintains the core schema
-      val ensuredDf = CoreSchema.ensure(transformedDf)
-      
-      // Return the validated DataFrame
-      ensuredDf
+      // Run the step transformation with lineage tracking directly
+      doTransform(ensuredDf)
     } catch {
       case e: Exception =>
         logger.error(s"Step $name failed: ${e.getMessage}", e)
@@ -57,10 +51,10 @@ trait SparkStep extends Serializable { self =>
   }
 
   final def apply(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
-    val out = appendLineage(transform(df))
+    val result = transform(df)
     // Enforce core contract – throws if violated
-    CoreSchema.requireCore(out, stepName = name)
-    out
+    CoreSchema.requireCore(result, stepName = name)
+    result
   }
 
   /* --------------------------------------------------------------------- */
@@ -73,10 +67,7 @@ trait SparkStep extends Serializable { self =>
     protected def doTransform(df: DataFrame)(implicit
         s: SparkSession
     ): DataFrame = {
-      // Apply the first step through its full pipeline with lineage tracking
-      val intermediateResult = self.apply(df)
-      
-      // Apply the second step, also with lineage tracking
+      val intermediateResult = self.transform(df)
       next.transform(intermediateResult)
     }
   }
@@ -87,14 +78,9 @@ trait SparkStep extends Serializable { self =>
       protected def doTransform(
           df: DataFrame
       )(implicit spark: SparkSession): DataFrame = {
-        // Apply the base step with full lineage tracking
-        val base = self.apply(df)
-        
-        // Apply both branches with full lineage tracking
-        val l = left.apply(base).withColumn("branch", F.lit("left"))
-        val r = right.apply(base).withColumn("branch", F.lit("right"))
-        
-        // Union the results
+        val base = self.transform(df)
+        val l = left.transform(base).withColumn("branch", F.lit("left"))
+        val r = right.transform(base).withColumn("branch", F.lit("right"))
         l.unionByName(r, allowMissingColumns = true)
       }
     }
@@ -112,7 +98,7 @@ trait SparkStep extends Serializable { self =>
         df: DataFrame
     )(implicit spark: SparkSession): DataFrame = {
       val task = ZIO
-        .attempt(self.apply(df))  // Use apply to ensure lineage is properly tracked
+        .attempt(self.transform(df))
         .timeoutFail(new TimeoutException("timeout"))(
           ZDuration.fromScala(timeout)
         )
@@ -127,21 +113,4 @@ trait SparkStep extends Serializable { self =>
   /* --------------------------------------------------------------------- */
   /* Helpers                                                               */
   /* --------------------------------------------------------------------- */
-
-  private def appendLineage(
-      df: DataFrame
-  ): DataFrame = {
-
-    import CoreSchema.{Lineage, LineageEntry, LineageArrayType}
-
-    // Ensure lineage array column exists
-    val withArray =
-      if (df.columns.contains(Lineage)) df
-      else df.withColumn(Lineage, F.array().cast(LineageArrayType))
-
-    // Append to lineage and materialise last_step struct for convenience
-    withArray
-      .withColumn(Lineage, F.array_union(F.col(Lineage), F.array(LineageEntry)))
-      .drop(LineageEntry)
-  }
 }
