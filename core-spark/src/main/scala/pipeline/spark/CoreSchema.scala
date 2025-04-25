@@ -71,12 +71,15 @@ object CoreSchema {
       if (acc.columns.contains(field.name)) acc
       else {
         val col: Column = field.dataType match {
-          case BinaryType       => F.lit(null).cast(BinaryType)
-          case StringType       => F.lit(null).cast(StringType)
-          case MapType(_, _, _) => F.lit(null).cast(field.dataType)
-          case ArrayType(_, _)  => F.lit(null).cast(field.dataType)
-          case StructType(_)    => F.lit(null).cast(field.dataType)
-          case _                => F.lit(null).cast(field.dataType)
+          case BinaryType  => F.lit(null).cast(BinaryType)
+          case StringType  => F.lit(null).cast(StringType)
+          case MapType(_, _, _) =>
+            // Spark cannot cast NULL to MapType directly; provide empty map literal instead.
+            F.typedLit(Map.empty[String, Seq[String]]).cast(field.dataType)
+          case ArrayType(_, _) =>
+            F.array().cast(field.dataType) // empty array of correct element type
+          case StructType(_) => F.lit(null).cast(field.dataType)
+          case _             => F.lit(null).cast(field.dataType)
         }
         acc.withColumn(field.name, col)
       }
