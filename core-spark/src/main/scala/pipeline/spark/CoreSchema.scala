@@ -30,9 +30,9 @@ object CoreSchema {
   // lineage element
   val LineageType: DataType = StructType(
     Seq(
-      StructField("startTimeMs", LongType, nullable = false),
-      StructField("endTimeMs", LongType, nullable = false),
-      StructField("durationMs", LongType, nullable = false),
+      StructField("startTimeMs", LongType, nullable = true),
+      StructField("endTimeMs", LongType, nullable = true),
+      StructField("durationMs", LongType, nullable = true),
       StructField("error", StringType, nullable = true),
       StructField("name", StringType, nullable = true),
       StructField("implementation", StringType, nullable = true),
@@ -62,7 +62,7 @@ object CoreSchema {
       BinaryType,
       nullable = true
     ), // may be null after extraction
-    StructField(Mime, StringType, nullable = false),
+    StructField(Mime, StringType, nullable = true),
     StructField(
       Metadata,
       MapType(StringType, StringType),
@@ -71,7 +71,7 @@ object CoreSchema {
     StructField(
       Lineage,
       LineageArrayType,
-      nullable = false
+      nullable = true
     ),
     // chunk context – null when row is not a chunk
     StructField(ChunkIndex, LongType, nullable = true),
