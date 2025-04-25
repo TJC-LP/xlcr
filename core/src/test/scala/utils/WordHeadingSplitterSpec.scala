@@ -29,7 +29,7 @@ class WordHeadingSplitterSpec extends AnyFlatSpec with Matchers {
     }
 
     val fc = FileContent(docBytes, MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument)
-    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = SplitStrategy.Heading))
+    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = Some(SplitStrategy.Heading)))
 
     chunks should have length 2
     chunks.map(_.label) shouldBe Seq("Intro", "Details")

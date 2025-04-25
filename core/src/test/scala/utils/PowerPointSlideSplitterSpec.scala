@@ -29,7 +29,7 @@ class PowerPointSlideSplitterSpec extends AnyFlatSpec with Matchers {
     }
 
     val fc = FileContent(pptBytes, MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation)
-    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = SplitStrategy.Slide))
+    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = Some(SplitStrategy.Slide)))
 
     chunks should have length 2
     all(chunks.map(_.content.mimeType)) shouldBe MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation

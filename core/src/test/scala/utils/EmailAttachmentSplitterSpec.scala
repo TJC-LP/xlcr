@@ -21,7 +21,7 @@ class EmailAttachmentSplitterSpec extends AnyFlatSpec with Matchers {
 
     val fc = FileContent(eml.getBytes("UTF-8"), MimeType.MessageRfc822)
 
-    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = SplitStrategy.Attachment))
+    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = Some(SplitStrategy.Attachment)))
 
     chunks.head.label shouldBe "Greetings"
     val body = chunks.head

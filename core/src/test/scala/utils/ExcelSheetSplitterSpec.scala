@@ -26,7 +26,7 @@ class ExcelSheetSplitterSpec extends AnyFlatSpec with Matchers {
     }
 
     val fc = FileContent(bytes, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
-    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = SplitStrategy.Sheet))
+    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = Some(SplitStrategy.Sheet)))
 
     chunks should have length 3
     all(chunks.map(_.content.mimeType)) shouldBe MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet

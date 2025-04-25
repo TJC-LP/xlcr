@@ -31,7 +31,7 @@ class DocumentSplitterSpec extends AnyFlatSpec with Matchers {
 
     val fc = FileContent(pdfBytes, MimeType.ApplicationPdf)
 
-    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = SplitStrategy.Page))
+    val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = Some(SplitStrategy.Page)))
 
     chunks should have length 2
     all(chunks.map(_.content.mimeType)) shouldBe MimeType.ApplicationPdf
