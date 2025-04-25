@@ -1,11 +1,11 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers}
+import pipeline.spark.{SparkPipelineRegistry, SparkStep, CoreSchema, UdfHelpers}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.Metadata
+import org.apache.tika.metadata.{Metadata => TikaMetadata}
 import org.apache.tika.parser.AutoDetectParser
 import org.apache.tika.sax.BodyContentHandler
 import org.apache.tika.parser.ParseContext
@@ -23,12 +23,14 @@ object DetectMime extends SparkStep {
   import UdfHelpers._
 
   private val detectUdf = wrapUdf(
+    name,
     scala.concurrent.duration.Duration(30, "seconds")
   ) { bytes: Array[Byte] =>
-    val md = new Metadata()
+    val md = new TikaMetadata()
     try {
       val parser = new AutoDetectParser()
-      val handler = new BodyContentHandler(1) // body truncated, we only need headers
+      val handler =
+        new BodyContentHandler(1) // body truncated, we only need headers
       val stream = TikaInputStream.get(bytes)
       parser.parse(stream, handler, md, new ParseContext())
     } catch {
@@ -44,16 +46,18 @@ object DetectMime extends SparkStep {
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     // Apply the UDF and capture result in a StepResult
-    val withResult = df.withColumn("result", detectUdf(F.col("content")))
-
-    // Unpack result and extract metadata into its own column
-    val withMetadata = UdfHelpers.unpackResult(withResult, dataCol = "metadata")
+    import CoreSchema._
+    val withMetadata = df
+      .withColumn(Result, detectUdf(F.col(Content)))
+      .withColumn(Metadata, F.col(ResultData))
+      .withColumn(LineageEntry, F.col(ResultLineage))
+      .drop(Result)
 
     // Set MIME type from metadata or use octet-stream as fallback
     withMetadata.withColumn(
-      "mime",
+      Mime,
       F.coalesce(
-        F.expr("metadata['Content-Type']"),
+        F.expr(s"$Metadata['Content-Type']"),
         F.lit("application/octet-stream")
       )
     )

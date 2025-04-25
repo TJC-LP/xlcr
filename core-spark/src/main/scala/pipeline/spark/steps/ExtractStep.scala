@@ -25,7 +25,7 @@ case class ExtractStep(
 
   import UdfHelpers._
 
-  private val extractUdf = wrapUdf2(rowTimeout) {
+  private val extractUdf = wrapUdf2(name, rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
       val inMime = MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)
       val fc = FileContent[inMime.type](bytes, inMime)
@@ -43,11 +43,11 @@ case class ExtractStep(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     // Apply extraction UDF and capture result in a StepResult
-    val withResult =
-      df.withColumn("result", extractUdf(F.col("content"), F.col("mime")))
-
-    // Unpack result and put the extracted text in the specified output column
-    UdfHelpers.unpackResult(withResult, dataCol = outCol)
+    df.withColumn("result", extractUdf(F.col("content"), F.col("mime")))
+      .withColumn("content", F.col("result.data"))
+      .withColumn("mime", F.lit(to))
+      .withColumn("lineageEntry", F.col("result.lineage"))
+      .drop("result")
   }
 }
 

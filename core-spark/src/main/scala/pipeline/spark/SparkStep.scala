@@ -46,13 +46,12 @@ trait SparkStep extends Serializable { self =>
     }
   }
 
-  final def apply(df: DataFrame)(implicit spark: SparkSession): DataFrame =
-    {
-      val out = appendLineage(transform(df))
-      // Enforce core contract – throws if violated
-      CoreSchema.requireCore(out, stepName = name)
-      out
-    }
+  final def apply(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
+    val out = appendLineage(transform(df))
+    // Enforce core contract – throws if violated
+    CoreSchema.requireCore(out, stepName = name)
+    out
+  }
 
   /* --------------------------------------------------------------------- */
   /* Composition helpers                                                   */
@@ -87,7 +86,7 @@ trait SparkStep extends Serializable { self =>
   final def withTimeout(timeout: ScalaDuration): SparkStep = new SparkStep {
     val name = s"${self.name}.timeout(${timeout.toMillis}ms)"
     override val meta: Map[String, String] =
-      self.meta + ("timeout" -> timeout.toString())
+      self.meta + ("timeout" -> timeout.toString)
 
     protected def doTransform(
         df: DataFrame
@@ -111,39 +110,18 @@ trait SparkStep extends Serializable { self =>
 
   private def appendLineage(
       df: DataFrame
-  )(implicit spark: SparkSession): DataFrame = {
+  ): DataFrame = {
 
-    import CoreSchema.{Id, Lineage}
+    import CoreSchema.{Lineage, LineageEntry, LineageArrayType}
 
     // Ensure lineage array column exists
     val withArray =
-      if (df.columns.contains(Lineage)) df else df.withColumn(Lineage, F.array())
-
-    // If this step produced timing cols, build a proper struct; otherwise just
-    // record the step name so we never lose provenance.
-    val hasTiming =
-      Seq("step_name", "start_time_ms", "end_time_ms").forall(withArray.columns.contains)
-
-    val lineageEntry =
-      if (hasTiming)
-        F.struct(
-          F.col("step_name").as("name"),
-          F.col("start_time_ms").as("start_ms"),
-          F.col("end_time_ms").as("end_ms"),
-          F.col("error")
-        )
-      else
-        F.struct(
-          F.lit(name).as("name"),
-          F.lit(System.currentTimeMillis()).as("start_ms"),
-          F.lit(System.currentTimeMillis()).as("end_ms"),
-          F.lit(null).as("error")
-        )
+      if (df.columns.contains(Lineage)) df
+      else df.withColumn(Lineage, F.array().cast(LineageArrayType))
 
     // Append to lineage and materialise last_step struct for convenience
     withArray
-      .withColumn(Lineage, F.array_union(F.col(Lineage), F.array(lineageEntry)))
-      // last_step column removed to keep schema minimal
+      .withColumn(Lineage, F.array_union(F.col(Lineage), F.array(LineageEntry)))
+      .drop(LineageEntry)
   }
-
 }

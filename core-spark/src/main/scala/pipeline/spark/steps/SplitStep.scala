@@ -2,14 +2,11 @@ package com.tjclp.xlcr
 package pipeline.spark.steps
 
 import models.FileContent
-import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers}
+import pipeline.spark.{CoreSchema, SparkPipelineRegistry, SparkStep, UdfHelpers}
 import types.MimeType
-import utils.{DocumentSplitter, SplitConfig, SplitStrategy}
-import utils.SplitPolicy
-import pipeline.spark.CoreSchema
+import utils.{DocumentSplitter, SplitConfig, SplitPolicy, SplitStrategy}
 
-import org.apache.spark.sql.types.{BinaryType, StringType, StructType}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession, functions => F}
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
 import scala.concurrent.duration.{Duration => ScalaDuration}
 
@@ -37,17 +34,10 @@ case class SplitStep(
     "maxDepth" -> maxRecursionDepth.toString
   )
 
-  // Schema for split results
-  private val chunkSchema = new StructType()
-    .add("index", org.apache.spark.sql.types.IntegerType)
-    .add("label", StringType)
-    .add("content", BinaryType)
-    .add("mime", StringType)
-
   import UdfHelpers._
 
   // UDF that splits a document using the DocumentSplitter
-  private val splitUdf = wrapUdf2(rowTimeout) {
+  private val splitUdf = wrapUdf2(name, rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
       val mime =
         MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
@@ -57,13 +47,19 @@ case class SplitStep(
       // the lightweight parameters still accepted for backward compatibility.
       val config = cfg.getOrElse(
         strategy
-          .map(s => SplitConfig(s, recursive = recursive, maxRecursionDepth = maxRecursionDepth))
+          .map(s =>
+            SplitConfig(
+              s,
+              recursive = recursive,
+              maxRecursionDepth = maxRecursionDepth
+            )
+          )
           .getOrElse(policy(mime))
       )
 
       val chunks = DocumentSplitter.split(content, config)
-      chunks.map {
-        chunk => (
+      chunks.map { chunk =>
+        (
           chunk.content.data,
           chunk.content.mimeType.mimeType,
           chunk.index,
@@ -76,46 +72,44 @@ case class SplitStep(
   override def doTransform(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
-
+    import CoreSchema._
     // Apply splitting and capture results
     val withResult =
-      df.withColumn("result", splitUdf(F.col("content"), F.col("mime")))
+      df.withColumn(Result, splitUdf(F.col(Content), F.col(Mime)))
 
     // Unpack result using common helper and extract chunks array
-    val withChunks = UdfHelpers
-      .unpackResult(withResult, dataCol = "chunks")
+    val withChunks = withResult
+      .withColumn(Chunks, F.col(ResultData))
+      .withColumn(LineageEntry, F.col(ResultLineage))
+      .drop(Result)
 
     /* ------------------------------------------------------------------ */
     /* Explode chunks while preserving *all* pass-through columns          */
     /* ------------------------------------------------------------------ */
 
     // Keep every column that isn't the temporary `chunks` array
-    val passthroughCols = withChunks.columns.filterNot(_ == "chunks").map(F.col)
+    val passthroughCols = withChunks.columns.filterNot(_ == Chunks).map(F.col)
 
-    val exploded = withChunks.withColumn("chunk", F.explode_outer(F.col("chunks")))
+    val exploded =
+      withChunks.withColumn(Chunks, F.explode_outer(F.col(Chunks)))
 
     // Build final dataframe: all passthrough columns + expanded chunk fields
     val chunkColumns: Seq[org.apache.spark.sql.Column] = Seq(
-      F.col("chunk._1").as("content"),
-      F.col("chunk._2").as("mime"),
-      F.col("chunk._3").cast("long").as("chunk_index"),
-      F.col("chunk._4").as("chunk_label"),
-      F.col("chunk._5").cast("long").as("chunk_total"),
+      F.col(s"$Chunk._1").as(Content),
+      F.col(s"$Chunk._2").as(Mime),
+      F.col(s"$Chunk._3").cast("long").as(CoreSchema.ChunkIndex),
+      F.col(s"$Chunk._4").as(CoreSchema.ChunkLabel),
+      F.col(s"$Chunk._5").cast("long").as(CoreSchema.ChunkTotal),
       // chunk_id = id::chunk:<index>
-      F.concat_ws("", F.col(CoreSchema.Id), F.lit("::chunk:"), F.col("chunk._3")).as("chunk_id")
+      F.concat_ws(
+        "",
+        F.col(CoreSchema.Id),
+        F.lit(s"::$Chunk:"),
+        F.col(s"$Chunk._3")
+      ).as(CoreSchema.ChunkId)
     )
 
-    val chunksDF = exploded.select((passthroughCols ++ chunkColumns): _*)
-
-    // Add a flag to show if the split produced chunks
-    // This helps identify documents that couldn't be split
-    val flaggedDF = chunksDF.withColumn(
-      "split_success",
-      F.when(F.col("chunk_index").isNotNull, F.lit(true))
-        .otherwise(F.lit(false))
-    )
-
-    flaggedDF
+    exploded.select(passthroughCols ++ chunkColumns: _*)
   }
 
 }
@@ -125,10 +119,12 @@ case class SplitStep(
 /* --------------------------------------------------------------------- */
 
 object SplitStep {
+
   /** Build a SplitStep directly from a full SplitConfig. */
   def fromConfig(
       config: SplitConfig,
-      rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+      rowTimeout: ScalaDuration =
+        scala.concurrent.duration.Duration(60, "seconds")
   ): SplitStep =
     SplitStep(
       strategy = Some(config.strategy),
@@ -141,10 +137,9 @@ object SplitStep {
   /** Build SplitStep from a SplitPolicy (recommended). */
   def withPolicy(
       policy: SplitPolicy,
-      rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+      rowTimeout: ScalaDuration =
+        scala.concurrent.duration.Duration(60, "seconds")
   ): SplitStep = SplitStep(rowTimeout = rowTimeout, policy = policy)
-
-
 }
 
 // Convenience singletons for common split strategies

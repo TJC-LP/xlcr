@@ -24,22 +24,31 @@ object CoreSchema {
   val Metadata = "metadata"
   val Lineage = "lineage"
   // chunk info
-  val ChunkId = "chunk_id"
-  val ChunkIndex = "chunk_index"
-  val ChunkLabel = "chunk_label"
-  val ChunkTotal = "chunk_total"
+  val ChunkId = "chunkId"
+  val ChunkIndex = "chunkIndex"
+  val ChunkLabel = "chunkLabel"
+  val ChunkTotal = "chunkTotal"
 
   // lineage element
   val LineageType: DataType = StructType(
     Seq(
       StructField("name", StringType, nullable = false),
-      StructField("start_ms", LongType, nullable = false),
-      StructField("end_ms", LongType, nullable = false),
+      StructField("startMs", LongType, nullable = false),
+      StructField("endMs", LongType, nullable = false),
+      StructField("duration", LongType, nullable = false),
       StructField("error", StringType, nullable = true)
     )
   )
+  val LineageArrayType: DataType = ArrayType(LineageType, containsNull = false)
 
-
+  // Temporary columns
+  val LineageEntry = "lineageEntry"
+  val LineageEntryError = "lineageEntry.error"
+  val Result = "result"
+  val ResultData = "result.data"
+  val ResultLineage = "result.lineage"
+  val Chunks = "chunks"
+  val Chunk = "chunk"
 
   /* --------------------------------------------------------------------- */
   /* Public API                                                            */
@@ -61,10 +70,9 @@ object CoreSchema {
     ),
     StructField(
       Lineage,
-      ArrayType(LineageType, containsNull = false),
+      LineageArrayType,
       nullable = false
     ),
-
     // chunk context – null when row is not a chunk
     StructField(ChunkId, StringType, nullable = true),
     StructField(ChunkIndex, LongType, nullable = true),
@@ -96,13 +104,12 @@ object CoreSchema {
       if (acc.columns.contains(field.name)) acc
       else {
         val col: Column = field.dataType match {
-          case BinaryType  => F.lit(null).cast(BinaryType)
-          case StringType  => F.lit(null).cast(StringType)
-          case MapType(_, _, _) =>
-            // Spark cannot cast NULL to MapType directly; provide empty map literal instead.
-            F.typedLit(Map.empty[String, Seq[String]]).cast(field.dataType)
+          case BinaryType       => F.lit(null).cast(BinaryType)
+          case StringType       => F.lit(null).cast(StringType)
+          case MapType(_, _, _) => F.lit(null).cast(field.dataType)
           case ArrayType(_, _) =>
-            F.array().cast(field.dataType) // empty array of correct element type
+            F.array()
+              .cast(field.dataType) // empty array of correct element type
           case StructType(_) => F.lit(null).cast(field.dataType)
           case _             => F.lit(null).cast(field.dataType)
         }
@@ -117,7 +124,7 @@ object CoreSchema {
         .map(F.col): _*
     )
   }
-  
+
   /* --------------------------------------------------------------------- */
   /* Internals                                                             */
   /* --------------------------------------------------------------------- */

@@ -1,10 +1,9 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers}
+import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers, CoreSchema}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
-
 import bridges.{Bridge, BridgeRegistry}
 import models.FileContent
 import types.MimeType
@@ -25,10 +24,11 @@ case class ConvertStep(
   import UdfHelpers._
 
   // Wrap conversion logic in a UDF that captures timing and errors
-  private val convertUdf = wrapUdf2(rowTimeout) {
+  private val convertUdf = wrapUdf2(name, rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
-      val inMime = MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)
-      
+      val inMime =
+        MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)
+
       // Skip conversion if input and output MIME types match
       if (inMime.matches(to)) {
         // No conversion needed, return original bytes
@@ -39,11 +39,14 @@ case class ConvertStep(
 
         BridgeRegistry
           .findBridge(inMime, to)
-          .collect {
-            case b: Bridge[_, inMime.type, to.type] => b.convert(fc).data
+          .collect { case b: Bridge[_, inMime.type, to.type] =>
+            b.convert(fc).data
           }
           .getOrElse {
-            throw new UnsupportedConversionException(inMime.mimeType, to.mimeType)
+            throw UnsupportedConversionException(
+              inMime.mimeType,
+              to.mimeType
+            )
           }
       }
   }
@@ -51,14 +54,17 @@ case class ConvertStep(
   override def doTransform(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
+    import CoreSchema._
     // Apply conversion and capture results in a StepResult
-    val withResult =
-      df.withColumn("result", convertUdf(F.col("content"), F.col("mime")))
-
-    // Unpack the result with our helper
-    UdfHelpers
-      .unpackResult(withResult, fallbackCol = Some("content"))
-      .withColumn("mime", F.lit(to.mimeType))
+    df.withColumn(Result, convertUdf(F.col(Content), F.col(Mime)))
+      .withColumn(LineageEntry, F.col(ResultLineage))
+      .withColumn(Content, F.col(ResultData))
+      .withColumn(
+        Mime,
+        F.when(F.col(LineageEntryError).isNull, F.lit(to.mimeType))
+          .otherwise(F.col(Mime))
+      )
+      .drop(Result)
   }
 }
 
