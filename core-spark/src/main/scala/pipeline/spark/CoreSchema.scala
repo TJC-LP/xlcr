@@ -23,8 +23,6 @@ object CoreSchema {
   val Mime = "mime"
   val Metadata = "metadata"
   val Lineage = "lineage"
-  // chunk info
-  val ChunkId = "chunkId"
   val ChunkIndex = "chunkIndex"
   val ChunkLabel = "chunkLabel"
   val ChunkTotal = "chunkTotal"
@@ -74,7 +72,6 @@ object CoreSchema {
       nullable = false
     ),
     // chunk context – null when row is not a chunk
-    StructField(ChunkId, StringType, nullable = true),
     StructField(ChunkIndex, LongType, nullable = true),
     StructField(ChunkLabel, StringType, nullable = true),
     StructField(ChunkTotal, LongType, nullable = true)

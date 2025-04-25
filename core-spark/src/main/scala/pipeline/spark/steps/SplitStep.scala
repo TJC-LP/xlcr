@@ -34,7 +34,7 @@ case class SplitStep(
   private val splitUdf = wrapUdf2(name, rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
       val mime =
-        MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
+        MimeType.fromStringNoParams(mimeStr).getOrElse(MimeType.ApplicationOctet)
       val content = FileContent(bytes, mime)
 
       val chunks = DocumentSplitter.split(content, config)
@@ -50,8 +50,8 @@ case class SplitStep(
   }
 
   override def doTransform(
-      df: DataFrame
-  )(implicit spark: SparkSession): DataFrame = {
+                            df: DataFrame
+                          )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
     // Apply splitting and capture results
     val withResult =
@@ -72,47 +72,23 @@ case class SplitStep(
     /* Explode chunks while preserving *all* pass-through columns          */
     /* ------------------------------------------------------------------ */
 
-    // Keep every column that isn't the temporary `chunks` array
-    val passthroughCols = withChunks.columns.filterNot(_ == Chunks).map(F.col)
+    // Explode the chunks array
+    val exploded = withChunks.withColumn(Chunk, F.explode_outer(F.col(Chunks)))
 
-    val exploded =
-      withChunks.withColumn(Chunk, F.explode_outer(F.col(Chunks)))
+    // Update columns with chunk data
+    val result = exploded
+      // Replace content and mime columns with the chunk's content and mime
+      .withColumn(Content, F.col(s"$Chunk._1"))
+      .withColumn(Mime, F.col(s"$Chunk._2"))
+      // Set chunk index from the chunk data
+      .withColumn(ChunkIndex, F.col(s"$Chunk._3").cast("long"))
+      // Set chunk label from the chunk data
+      .withColumn(ChunkLabel, F.col(s"$Chunk._4"))
+      // Set chunk total from the chunk data
+      .withColumn(ChunkTotal, F.col(s"$Chunk._5").cast("long"))
+      // Drop temporary columns
+      .drop(Chunks, Chunk)
 
-    // Build final dataframe: all passthrough columns + expanded chunk fields
-    val chunkColumns: Seq[org.apache.spark.sql.Column] = Seq(
-      // Always replace content and mime columns with the chunk's content and mime
-      F.col(s"$Chunk._1").as(Content),
-      F.col(s"$Chunk._2").as(Mime),
-      // Only set chunk columns if they're not already set or if we're exploding multiple chunks
-      // This prevents overwriting existing chunk information when nested splitting occurs
-      F.when(
-        F.col(CoreSchema.ChunkIndex).isNull || F.size(F.col(Chunks)) > 1,
-        F.col(s"$Chunk._3").cast("long")
-      ).otherwise(F.col(CoreSchema.ChunkIndex))
-        .as(CoreSchema.ChunkIndex),
-      F.when(
-        F.col(CoreSchema.ChunkLabel).isNull || F.size(F.col(Chunks)) > 1,
-        F.col(s"$Chunk._4")
-      ).otherwise(F.col(CoreSchema.ChunkLabel))
-        .as(CoreSchema.ChunkLabel),
-      F.when(
-        F.col(CoreSchema.ChunkTotal).isNull || F.size(F.col(Chunks)) > 1,
-        F.col(s"$Chunk._5").cast("long")
-      ).otherwise(F.col(CoreSchema.ChunkTotal))
-        .as(CoreSchema.ChunkTotal),
-      // Only create a new chunk ID if it doesn't exist already or if we're exploding multiple chunks
-      F.when(
-        F.col(CoreSchema.ChunkId).isNull || F.size(F.col(Chunks)) > 1,
-        F.concat_ws(
-          "",
-          F.col(CoreSchema.Id),
-          F.lit(s"::$Chunk:"),
-          F.col(s"$Chunk._3")
-        )
-      ).otherwise(F.col(CoreSchema.ChunkId))
-        .as(CoreSchema.ChunkId)
-    )
-
-    exploded.select(passthroughCols ++ chunkColumns: _*)
+    result
   }
 }
