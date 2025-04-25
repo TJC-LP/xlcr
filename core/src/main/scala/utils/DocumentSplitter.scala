@@ -62,6 +62,49 @@ case class SplitConfig(
     jpegQuality: Float = 0.85f                // JPEG quality factor (0.0-1.0)
 )
 
+object SplitConfig {
+
+  /** Create a SplitConfig with a strategy automatically chosen from the input
+    * MIME type. The other parameters default to the same values as the primary
+    * case-class constructor so callers only specify what they need.
+    */
+  def autoForMime(
+      mime: MimeType,
+      recursive: Boolean = false,
+      maxRecursionDepth: Int = 5
+  ): SplitConfig =
+    SplitConfig(
+      strategy = defaultStrategyForMime(mime),
+      recursive = recursive,
+      maxRecursionDepth = maxRecursionDepth
+    )
+
+  /** Extracted from SplitStep – central place so both core and Spark code can
+    * reuse it without duplication.
+    */
+  def defaultStrategyForMime(mime: MimeType): SplitStrategy = mime match {
+    case MimeType.ApplicationPdf => SplitStrategy.Page
+
+    // Excel
+    case MimeType.ApplicationVndMsExcel |
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet => SplitStrategy.Sheet
+
+    // PowerPoint
+    case MimeType.ApplicationVndMsPowerpoint |
+        MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation => SplitStrategy.Slide
+
+    // Archives / containers
+    case MimeType.ApplicationZip | MimeType.ApplicationGzip |
+        MimeType.ApplicationSevenz | MimeType.ApplicationTar |
+        MimeType.ApplicationBzip2 | MimeType.ApplicationXz => SplitStrategy.Embedded
+
+    // Emails
+    case MimeType.MessageRfc822 | MimeType.ApplicationVndMsOutlook => SplitStrategy.Attachment
+
+    case _ => SplitStrategy.Page
+  }
+}
+
 /** Generic trait for splitting a document. */
 trait DocumentSplitter[I <: MimeType] {
   def split(content: FileContent[I], cfg: SplitConfig): Seq[DocChunk[_ <: MimeType]]

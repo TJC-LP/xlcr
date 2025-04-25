@@ -20,7 +20,9 @@ case class SplitStep(
     recursive: Boolean = false,
     maxRecursionDepth: Int = 3,
     rowTimeout: ScalaDuration =
-      scala.concurrent.duration.Duration(60, "seconds")
+      scala.concurrent.duration.Duration(60, "seconds"),
+    // When provided, this full SplitConfig overrides the ad-hoc params above.
+    cfg: Option[SplitConfig] = None
 ) extends SparkStep {
 
   override val name: String =
@@ -47,10 +49,13 @@ case class SplitStep(
       val mime =
         MimeType.fromString(mimeStr).getOrElse(MimeType.ApplicationOctet)
       val content = FileContent(bytes, mime)
-      val config = SplitConfig(
-        strategy = strategy.getOrElse(defaultStrategyForMime(mime)),
-        recursive = recursive,
-        maxRecursionDepth = maxRecursionDepth
+
+      // Either use the explicit config provided by caller or build one from
+      // the lightweight parameters still accepted for backward compatibility.
+      val config = cfg.getOrElse(
+        strategy
+          .map(s => SplitConfig(s, recursive = recursive, maxRecursionDepth = maxRecursionDepth))
+          .getOrElse(SplitConfig.autoForMime(mime, recursive, maxRecursionDepth))
       )
 
       val chunks = DocumentSplitter.split(content, config)
@@ -110,33 +115,27 @@ case class SplitStep(
     flaggedDF
   }
 
-  /** Default split strategy if the user hasn't specified one. */
-  private def defaultStrategyForMime(mime: MimeType): SplitStrategy =
-    mime match {
-      case MimeType.ApplicationPdf => SplitStrategy.Page
+}
 
-      // Excel formats
-      case MimeType.ApplicationVndMsExcel |
-          MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet =>
-        SplitStrategy.Sheet
+/* --------------------------------------------------------------------- */
+/* Companion object                                                      */
+/* --------------------------------------------------------------------- */
 
-      // PowerPoint formats
-      case MimeType.ApplicationVndMsPowerpoint |
-          MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation =>
-        SplitStrategy.Slide
+object SplitStep {
+  /** Build a SplitStep directly from a full SplitConfig. */
+  def fromConfig(
+      config: SplitConfig,
+      rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+  ): SplitStep =
+    SplitStep(
+      strategy = Some(config.strategy),
+      recursive = config.recursive,
+      maxRecursionDepth = config.maxRecursionDepth,
+      rowTimeout = rowTimeout,
+      cfg = Some(config)
+    )
 
-      // Archive / containers default to embedded entries
-      case MimeType.ApplicationZip | MimeType.ApplicationGzip |
-          MimeType.ApplicationSevenz | MimeType.ApplicationTar |
-          MimeType.ApplicationBzip2 | MimeType.ApplicationXz =>
-        SplitStrategy.Embedded
 
-      // Emails default to attachments
-      case MimeType.MessageRfc822 | MimeType.ApplicationVndMsOutlook =>
-        SplitStrategy.Attachment
-
-      case _ => SplitStrategy.Page // generic fallback
-    }
 }
 
 // Convenience singletons for common split strategies
