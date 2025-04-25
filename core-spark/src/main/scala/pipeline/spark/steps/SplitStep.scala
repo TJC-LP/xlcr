@@ -17,7 +17,7 @@ case class SplitStep(
     rowTimeout: ScalaDuration =
       scala.concurrent.duration.Duration(60, "seconds"),
     // When provided this exact config wins.
-    config: SplitConfig = SplitConfig()
+    config: SplitConfig = SplitConfig(strategy = Some(SplitStrategy.Auto))
 ) extends SparkStep {
 
   override val name: String = "split"

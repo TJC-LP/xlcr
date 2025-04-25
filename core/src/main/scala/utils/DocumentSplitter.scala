@@ -28,6 +28,9 @@ object SplitStrategy {
   case object Paragraph extends SplitStrategy
   case object Sentence extends SplitStrategy
   case object Heading extends SplitStrategy
+  
+  /** Automatically selects the appropriate strategy based on the input MIME type */
+  case object Auto extends SplitStrategy
 
   def fromString(s: String): Option[SplitStrategy] = s.trim.toLowerCase match {
     case "page"       => Some(Page)
@@ -40,6 +43,7 @@ object SplitStrategy {
     case "paragraph"  => Some(Paragraph)
     case "sentence"   => Some(Sentence)
     case "heading"    => Some(Heading)
+    case "auto"       => Some(Auto)
     case _            => None
   }
 }
@@ -145,12 +149,20 @@ object DocumentSplitter {
   def split(
       content: FileContent[_ <: MimeType],
       cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] =
+  ): Seq[DocChunk[_ <: MimeType]] = {
+    // If strategy is Auto or None, automatically select an appropriate strategy based on the MIME type
+    val configToUse = if (cfg.strategy.isEmpty || cfg.strategy.contains(SplitStrategy.Auto)) {
+      cfg.copy(strategy = Some(SplitConfig.defaultStrategyForMime(content.mimeType)))
+    } else {
+      cfg
+    }
+    
     forMime(content.mimeType)
-      .map(_.asInstanceOf[DocumentSplitter[MimeType]].split(content, cfg))
+      .map(_.asInstanceOf[DocumentSplitter[MimeType]].split(content, configToUse))
       .getOrElse(
         Seq(DocChunk(content, label = "document", index = 0, total = 1))
       )
+  }
 
   /** Convenience method for code that only needs the bytes. */
   def splitBytesOnly(
