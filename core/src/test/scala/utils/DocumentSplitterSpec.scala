@@ -37,7 +37,7 @@ class DocumentSplitterSpec extends AnyFlatSpec with Matchers {
     all(chunks.map(_.content.mimeType)) shouldBe MimeType.ApplicationPdf
 
     chunks.foreach { chunk =>
-      val doc = org.apache.pdfbox.Loader.loadPDF(chunk.content.data)
+      val doc = PDDocument.load(chunk.content.data)
       try doc.getNumberOfPages shouldBe 1
       finally doc.close()
     }

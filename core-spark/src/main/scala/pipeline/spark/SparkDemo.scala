@@ -3,19 +3,20 @@ package pipeline.spark
 
 import pipeline.spark.steps._
 
-import org.apache.spark.sql.functions.input_file_name
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import org.apache.spark.sql.functions.{input_file_name, md5}
 
 import java.nio.file.{Files, Paths}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.concurrent.duration.Duration
 
-/** Demonstrates the use of SparkStep for building robust Spark pipelines.
+/** Simple demo that wires together a minimal pipeline and shows how the new
+  * CoreSchema initialisation works.
   */
 object SparkDemo {
 
-  /** Run the demo pipeline with default splitting behavior.
+  /** Run the demo pipeline with default splitting behaviour.
     */
   def runDemo(inputPath: String, outputPath: String): Unit = {
     implicit val spark: SparkSession = SparkSession
@@ -25,22 +26,38 @@ object SparkDemo {
       .getOrCreate()
 
     try {
-      // built‑in steps are registered on object initialisation now
+      // -------------------------------------------------------------------
+      // 1. Ingest
+      // -------------------------------------------------------------------
 
-      // Create a DataFrame from the input files using spark.read.binaryFiles
-      val inputDf = spark.read
+      val ingested = spark.read
         .format("binaryFile")
-        .load(inputPath)
-        .withColumn("id", input_file_name())
-        .withColumnRenamed("path", "file_path")
+        .load(inputPath) // path, content, length, modificationTime
 
-      // Build a simple pipeline with MIME detection and default splitting
+      // -------------------------------------------------------------------
+      // 2. Conform to core schema
+      // -------------------------------------------------------------------
+
+      val coreInit = CoreSchema.ensure(
+        ingested
+          // id = hash(content) so identical bytes collapse; keep original path
+          .withColumn(CoreSchema.Id, md5(F.col("content")))
+          .withColumn(CoreSchema.Mime, F.lit("application/octet-stream"))
+          .withColumn(CoreSchema.Lineage, F.array())
+      )
+
+      // -------------------------------------------------------------------
+      // 3. Build pipeline
+      // -------------------------------------------------------------------
+
       val pipeline = buildBasicPipeline()
 
-      // Execute the pipeline directly (it returns a DataFrame now, not a Task)
-      val result = pipeline(inputDf)
+      // -------------------------------------------------------------------
+      // 4. Run & write
+      // -------------------------------------------------------------------
 
-      // Write results
+      val result = pipeline(coreInit)
+
       writeResults(result, outputPath)
 
       println(s"Processing complete. Results written to $outputPath")
@@ -50,85 +67,47 @@ object SparkDemo {
     }
   }
 
-  /** Create a simple pipeline with MIME detection and default splitting.
-    */
+  /** Simple pipeline: detect mime then split. */
   private def buildBasicPipeline(): SparkPipelineStep = {
-    // Detect MIME type first
-    val detectStep = DetectMime
-
-    // Then split using default strategy (determined by mime type)
-    val splitStep = SplitStep().withTimeout(
-      Duration.apply(60, java.util.concurrent.TimeUnit.SECONDS)
-    )
-
-    // Complete pipeline
-    detectStep.andThen(splitStep)
+    val detect = DetectMime
+    val split  = SplitStep().withTimeout(Duration(60, "seconds"))
+    detect.andThen(split)
   }
 
-  /** Demonstrates backward compatibility with standard SparkPipelineStep.
-    * This pipeline mixes different steps from the registry and direct references.
-    */
-  private def buildMixedPipeline()(implicit spark: SparkSession): SparkStep = {
-    // Get a step from the registry
-    val standardStep = SparkPipelineRegistry.get("detectMime")
-
-    // Create a step directly
-    val pdfStep = ToPdf
-
-    // Combine the steps
-    standardStep.andThen(pdfStep)
-  }
-
-  /** Writes the results of the pipeline to the specified output path.
-    */
+  /** Writes the results of the pipeline to the specified output path. */
   private def writeResults(df: DataFrame, outputPath: String): Unit = {
-    // Create output directory if it doesn't exist
     val path = Paths.get(outputPath)
-    if (!Files.exists(path)) {
-      Files.createDirectories(path)
-    }
+    if (!Files.exists(path)) Files.createDirectories(path)
 
-    // Generate timestamp for the output
-    val timestamp = LocalDateTime
-      .now()
-      .format(
-        DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
-      )
+    val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
 
-    // Write results as parquet
+    // Persist full rows
     df.write
       .option("compression", "snappy")
       .mode("overwrite")
       .parquet(s"$outputPath/results_$timestamp")
 
-    // Also write metrics separately for analysis
+    // Persist outcome metrics for quick inspection
+    import CoreSchema._
     df.select(
-      "id",
-      "file_path",
-      "mime",
-      "start_time_ms",
-      "end_time_ms",
-      "duration_ms",
-      "error",
-      "metrics",
-      "step_name"
+      F.col(Id),
+      F.col("path"),
+      F.col(Mime),
+      F.col(Lineage),
+      F.col("error"),
+      F.col("duration_ms")
     ).write
       .option("compression", "snappy")
       .mode("overwrite")
       .parquet(s"$outputPath/metrics_$timestamp")
   }
 
-  /** Main entry point for running the demo from command line.
-    */
+  /** CLI entry-point. */
   def main(args: Array[String]): Unit = {
     if (args.length < 2) {
       println("Usage: SparkDemo <inputPath> <outputPath>")
       System.exit(1)
     }
-
-    val inputPath = args(0)
-    val outputPath = args(1)
-
-    runDemo(inputPath, outputPath)
+    runDemo(args(0), args(1))
   }
 }

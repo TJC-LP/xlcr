@@ -74,3 +74,7 @@ object ToPng extends ConvertStep(MimeType.ImagePng) {
 object ToText extends ConvertStep(MimeType.TextPlain) {
   SparkPipelineRegistry.register(this)
 }
+
+object ToXml extends ConvertStep(MimeType.ApplicationXml) {
+  SparkPipelineRegistry.register(this)
+}

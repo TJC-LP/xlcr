@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package utils
 
 import org.apache.pdfbox.pdmodel.{PDDocument, PDPage, PDPageContentStream}
-import org.apache.pdfbox.pdmodel.font.{PDType1Font, Standard14Fonts}
+import org.apache.pdfbox.pdmodel.font.PDType1Font
 
 import java.nio.file.{Files, Path}
 
@@ -15,7 +15,7 @@ object TestParserUtils {
 
     val contentStream = new PDPageContentStream(doc, page)
     contentStream.beginText()
-    contentStream.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12)
+    contentStream.setFont(PDType1Font.HELVETICA, 12)
     contentStream.newLineAtOffset(100, 700)
     contentStream.showText("Test PDF Content")
     contentStream.endText()

@@ -91,7 +91,8 @@ lazy val core = (project in file("core"))
       "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
       "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
       "dev.zio" %% "zio-test" % zioVersion % Test,
-      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
+      "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test
     ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, _)) =>
         Seq(
@@ -123,7 +124,7 @@ lazy val coreAspose = (project in file("core-aspose"))
       "Aspose Java Repository" at "https://releases.aspose.com/java/repo/"
     ),
     // WORKAROUND: Disable Scaladoc generation to avoid name conflicts in Aspose libraries
-    // There's a name clash in the Aspose slides library where both a package and an object 
+    // There's a name clash in the Aspose slides library where both a package and an object
     // with the same name "ms" exist under "com.aspose.slides", which causes Scaladoc to fail
     // with: "package com.aspose.slides contains object and package with same name: ms"
     Compile / doc / sources := Seq.empty,
@@ -152,7 +153,8 @@ lazy val coreAspose = (project in file("core-aspose"))
       "com.aspose" % "aspose-words" % "25.4" classifier "jdk17",
       "com.aspose" % "aspose-slides" % "25.4" classifier "jdk16",
       "com.aspose" % "aspose-email" % "25.3" classifier "jdk16",
-      "com.aspose" % "aspose-zip" % "25.3"
+      "com.aspose" % "aspose-zip" % "25.3",
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test
     )
   )
 
@@ -234,53 +236,72 @@ lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
 lazy val assemblySettings = Seq(
   // Set the assembly file name to include the module name
   assembly / assemblyJarName := s"${name.value}-assembly-${version.value}.jar",
-
   // Configure merge strategy
   assembly / assemblyMergeStrategy := {
     // Handle logback.xml - use the first one
     case "logback.xml" => MergeStrategy.first
 
     // Handle Main class conflicts (for modules that all have Main.class)
-    case PathList(ps @ _*) if ps.last == "Main.class" => MergeStrategy.first
+    case PathList(ps @ _*) if ps.last == "Main.class"  => MergeStrategy.first
     case PathList(ps @ _*) if ps.last == "Main$.class" => MergeStrategy.first
-    case PathList(ps @ _*) if ps.last == "Main.tasty" => MergeStrategy.first
+    case PathList(ps @ _*) if ps.last == "Main.tasty"  => MergeStrategy.first
 
     // Handle module-info.class conflicts
     case PathList("module-info.class") => MergeStrategy.discard
-    case PathList("META-INF", "versions", "9", "module-info.class") => MergeStrategy.discard
+    case PathList("META-INF", "versions", "9", "module-info.class") =>
+      MergeStrategy.discard
 
     // Handle META-INF conflicts
-    case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
-    case PathList("META-INF", "mailcap") => MergeStrategy.first
-    case PathList("META-INF", "mailcap.default") => MergeStrategy.first
+    case PathList("META-INF", "MANIFEST.MF")       => MergeStrategy.discard
+    case PathList("META-INF", "mailcap")           => MergeStrategy.first
+    case PathList("META-INF", "mailcap.default")   => MergeStrategy.first
     case PathList("META-INF", "mimetypes.default") => MergeStrategy.first
-    case PathList("META-INF", "kotlin-project-structure-metadata.json") => MergeStrategy.discard
-    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".DSA")) => MergeStrategy.discard
-    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".SF")) => MergeStrategy.discard
-    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".RSA")) => MergeStrategy.discard
+    case PathList("META-INF", "kotlin-project-structure-metadata.json") =>
+      MergeStrategy.discard
+    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".DSA")) =>
+      MergeStrategy.discard
+    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".SF")) =>
+      MergeStrategy.discard
+    case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".RSA")) =>
+      MergeStrategy.discard
 
     // Handle Log implementation conflicts
-    case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
+    case PathList("org", "apache", "commons", "logging", xs @ _*) =>
+      MergeStrategy.first
 
     // Handle Jakarta/Javax activation and mail conflicts
-    case PathList("META-INF", "services", "javax.activation.DataContentHandler") => MergeStrategy.filterDistinctLines
-    case PathList("META-INF", "services", "jakarta.activation.DataContentHandler") => MergeStrategy.filterDistinctLines
-    case PathList("javax", "activation", xs @ _*) => MergeStrategy.first
-    case PathList("jakarta", "activation", xs @ _*) => MergeStrategy.first
-    case PathList("jakarta", "mail", xs @ _*) => MergeStrategy.first
+    case PathList(
+          "META-INF",
+          "services",
+          "javax.activation.DataContentHandler"
+        ) =>
+      MergeStrategy.filterDistinctLines
+    case PathList(
+          "META-INF",
+          "services",
+          "jakarta.activation.DataContentHandler"
+        ) =>
+      MergeStrategy.filterDistinctLines
+    case PathList("javax", "activation", xs @ _*)      => MergeStrategy.first
+    case PathList("jakarta", "activation", xs @ _*)    => MergeStrategy.first
+    case PathList("jakarta", "mail", xs @ _*)          => MergeStrategy.first
     case PathList("com", "sun", "activation", xs @ _*) => MergeStrategy.first
-    case PathList("com", "sun", "mail", xs @ _*) => MergeStrategy.first
+    case PathList("com", "sun", "mail", xs @ _*)       => MergeStrategy.first
 
     // Handle overlaps between xml-apis-ext and xml-apis
     case PathList("license", "LICENSE.dom-software.txt") => MergeStrategy.first
 
     // Handle Kotlin-specific files
     case PathList(ps @ _*) if ps.last == "manifest" => MergeStrategy.discard
-    case PathList(ps @ _*) if ps.last == "module" && ps.exists(_ == "linkdata") => MergeStrategy.discard
+    case PathList(ps @ _*)
+        if ps.last == "module" && ps.exists(_ == "linkdata") =>
+      MergeStrategy.discard
 
     // Handle CommonMain/Native/Posix/etc linkdata
-    case PathList(ps @ _*) if ps.contains("Main") && ps.contains("linkdata") => MergeStrategy.discard
-    case PathList(ps @ _*) if ps.contains("Main") && ps.contains("default") => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.contains("Main") && ps.contains("linkdata") =>
+      MergeStrategy.discard
+    case PathList(ps @ _*) if ps.contains("Main") && ps.contains("default") =>
+      MergeStrategy.discard
 
     // Default strategy
     case x =>
@@ -292,7 +313,8 @@ lazy val assemblySettings = Seq(
 // Custom assembly tasks
 lazy val assembleCore = taskKey[File]("Assemble the core module")
 lazy val assembleAspose = taskKey[File]("Assemble the aspose module")
-lazy val assembleSpreadsheetLLM = taskKey[File]("Assemble the spreadsheetLLM module")
+lazy val assembleSpreadsheetLLM =
+  taskKey[File]("Assemble the spreadsheetLLM module")
 lazy val assembleSpark = taskKey[File]("Assemble the spark module")
 
 // Root project for aggregating
@@ -303,7 +325,6 @@ lazy val root = (project in file("."))
     // Don't publish the root project
     publish := {},
     publishLocal := {},
-    
     // Custom assembly tasks
     assembleCore := (core / assembly).value,
     assembleAspose := (coreAspose / assembly).value,

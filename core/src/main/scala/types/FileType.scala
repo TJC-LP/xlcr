@@ -52,6 +52,7 @@ object FileType {
   case object HTM extends FileType(Extension.HTM, MimeType.TextHtml)
 
   // Data File Types
+  // XML
   case object XML extends FileType(Extension.XML, MimeType.ApplicationXml)
   case object JSON extends FileType(Extension.JSON, MimeType.ApplicationJson)
   case object MD extends FileType(Extension.MD, MimeType.TextMarkdown)

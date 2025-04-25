@@ -5,6 +5,7 @@ import models.FileContent
 import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers}
 import types.MimeType
 import utils.{DocumentSplitter, SplitConfig, SplitStrategy}
+import pipeline.spark.CoreSchema
 
 import org.apache.spark.sql.types.{BinaryType, StringType, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession, functions => F}
@@ -76,30 +77,27 @@ case class SplitStep(
     val withChunks = UdfHelpers
       .unpackResult(withResult, dataCol = "chunks")
 
-    // Explode the chunks array into individual rows
-    val chunksDF = withChunks
-      .select(
-        F.col("path"),
-        F.explode_outer(F.col("chunks")).as("chunk"),
-        F.col("start_time_ms"),
-        F.col("end_time_ms"),
-        F.col("duration_ms"),
-        F.col("error"),
-        F.col("step_name")
-      )
-      .select(
-        F.col("path"),
-        F.col("chunk._1").as("content"),
-        F.col("chunk._2").as("mime"),
-        F.col("chunk._3").as("chunk_index"),
-        F.col("chunk._4").as("chunk_label"),
-        F.col("chunk._5").as("chunk_total"),
-        F.col("start_time_ms"),
-        F.col("end_time_ms"),
-        F.col("duration_ms"),
-        F.col("error"),
-        F.col("step_name")
-      )
+    /* ------------------------------------------------------------------ */
+    /* Explode chunks while preserving *all* pass-through columns          */
+    /* ------------------------------------------------------------------ */
+
+    // Keep every column that isn't the temporary `chunks` array
+    val passthroughCols = withChunks.columns.filterNot(_ == "chunks").map(F.col)
+
+    val exploded = withChunks.withColumn("chunk", F.explode_outer(F.col("chunks")))
+
+    // Build final dataframe: all passthrough columns + expanded chunk fields
+    val chunkColumns: Seq[org.apache.spark.sql.Column] = Seq(
+      F.col("chunk._1").as("content"),
+      F.col("chunk._2").as("mime"),
+      F.col("chunk._3").cast("long").as("chunk_index"),
+      F.col("chunk._4").as("chunk_label"),
+      F.col("chunk._5").cast("long").as("chunk_total"),
+      // chunk_id = id::chunk:<index>
+      F.concat_ws("", F.col(CoreSchema.Id), F.lit("::chunk:"), F.col("chunk._3")).as("chunk_id")
+    )
+
+    val chunksDF = exploded.select((passthroughCols ++ chunkColumns): _*)
 
     // Add a flag to show if the split produced chunks
     // This helps identify documents that couldn't be split

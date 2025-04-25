@@ -47,7 +47,12 @@ trait SparkStep extends Serializable { self =>
   }
 
   final def apply(df: DataFrame)(implicit spark: SparkSession): DataFrame =
-    appendLineage(transform(df))
+    {
+      val out = appendLineage(transform(df))
+      // Enforce core contract – throws if violated
+      CoreSchema.requireCore(out, stepName = name)
+      out
+    }
 
   /* --------------------------------------------------------------------- */
   /* Composition helpers                                                   */
