@@ -5,6 +5,7 @@ import models.FileContent
 import pipeline.spark.{SparkPipelineRegistry, SparkStep, UdfHelpers}
 import types.MimeType
 import utils.{DocumentSplitter, SplitConfig, SplitStrategy}
+import utils.SplitPolicy
 import pipeline.spark.CoreSchema
 
 import org.apache.spark.sql.types.{BinaryType, StringType, StructType}
@@ -21,8 +22,10 @@ case class SplitStep(
     maxRecursionDepth: Int = 3,
     rowTimeout: ScalaDuration =
       scala.concurrent.duration.Duration(60, "seconds"),
-    // When provided, this full SplitConfig overrides the ad-hoc params above.
-    cfg: Option[SplitConfig] = None
+    // When provided this exact config wins.
+    cfg: Option[SplitConfig] = None,
+    // Fallback policy used when neither cfg nor strategy is supplied.
+    policy: SplitPolicy = SplitPolicy.Default
 ) extends SparkStep {
 
   override val name: String =
@@ -55,7 +58,7 @@ case class SplitStep(
       val config = cfg.getOrElse(
         strategy
           .map(s => SplitConfig(s, recursive = recursive, maxRecursionDepth = maxRecursionDepth))
-          .getOrElse(SplitConfig.autoForMime(mime, recursive, maxRecursionDepth))
+          .getOrElse(policy(mime))
       )
 
       val chunks = DocumentSplitter.split(content, config)
@@ -134,6 +137,12 @@ object SplitStep {
       rowTimeout = rowTimeout,
       cfg = Some(config)
     )
+
+  /** Build SplitStep from a SplitPolicy (recommended). */
+  def withPolicy(
+      policy: SplitPolicy,
+      rowTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+  ): SplitStep = SplitStep(rowTimeout = rowTimeout, policy = policy)
 
 
 }

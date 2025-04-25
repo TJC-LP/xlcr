@@ -167,6 +167,10 @@ object DocumentSplitter {
     register(MimeType.ApplicationTar, archiveSplitter)
     register(MimeType.ApplicationBzip2, archiveSplitter)
     register(MimeType.ApplicationXz, archiveSplitter)
+
+    // Plain-text & CSV
+    register(MimeType.TextPlain, new TextSplitter)
+    register(MimeType.TextCsv, new CsvSplitter)
   }
 
   initBuiltIns()
