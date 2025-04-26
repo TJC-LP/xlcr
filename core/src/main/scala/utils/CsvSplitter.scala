@@ -36,18 +36,33 @@ class CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
 
     val header = lines.head
     val rows = lines.tail
-
+    
+    // Use a reasonable default for rows per chunk
     val rowsPerChunk = if (cfg.maxChars > 0) cfg.maxChars else 1000
-
-    val grouped = rows.grouped(rowsPerChunk).toVector
-
-    val total = grouped.size
-    grouped.zipWithIndex.map { case (chunkRows, idx) =>
+    
+    // Precompute the total number
+    val total = (rows.size + rowsPerChunk - 1) / rowsPerChunk
+    
+    // Process in chunks to avoid collecting all intermediate groups in memory
+    val builder = Vector.newBuilder[DocChunk[_ <: MimeType]]
+    
+    for (i <- 0 until total) {
+      val startIdx = i * rowsPerChunk
+      val endIdx = math.min(startIdx + rowsPerChunk, rows.size)
+      val chunkRows = rows.slice(startIdx, endIdx)
+      
+      // Generate chunk with header
       val chunkStr = (header +: chunkRows).mkString("\n")
       val bytes = chunkStr.getBytes(java.nio.charset.StandardCharsets.UTF_8)
       val fc = FileContent(bytes, MimeType.TextCsv)
-      DocChunk(fc, label = s"rows ${idx * rowsPerChunk}-${idx * rowsPerChunk + chunkRows.size - 1}", index = idx, total = total)
+      
+      // Create descriptive label
+      val label = s"rows ${startIdx+1}-${endIdx}"
+      
+      builder += DocChunk(fc, label = label, index = i, total = total)
     }
+    
+    builder.result()
   }
 
   /** Splits CSV by individual rows, creating a separate chunk for each row (with header) */
@@ -62,17 +77,31 @@ class CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
     val header = lines.head
     val rows = lines.tail
     
-    // Skip empty rows
-    val nonEmptyRows = rows.filter(_.trim.nonEmpty)
+    // Track original row numbers while filtering empty rows in a single pass
+    val nonEmptyRowsWithInfo = rows.zipWithIndex
+      .filter { case (row, _) => row.trim.nonEmpty }
+      
+    // Pre-allocate the header bytes since they're reused for every chunk
+    val headerBytes = header.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+    val newline = '\n'.toByte
     
-    val total = nonEmptyRows.size
-    nonEmptyRows.zipWithIndex.map { case (row, idx) =>
-      // Get original row number (add 2 because we're 0-indexed and need to skip header)
-      val originalRowNum = rows.indexOf(row) + 2
-      val chunkStr = s"$header\n$row"
-      val bytes = chunkStr.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-      val fc = FileContent(bytes, MimeType.TextCsv)
-      DocChunk(fc, label = s"row $originalRowNum", index = idx, total = total)
+    val total = nonEmptyRowsWithInfo.size
+    nonEmptyRowsWithInfo.zipWithIndex.map { 
+      case ((row, originalIdx), idx) =>
+        // Compute row number (add 2 for header and 0-index)
+        val originalRowNum = originalIdx + 2
+        
+        // Efficient byte array creation without string concatenation
+        val rowBytes = row.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        val bytes = new Array[Byte](headerBytes.length + 1 + rowBytes.length)
+        
+        // Copy header + newline + row bytes directly
+        System.arraycopy(headerBytes, 0, bytes, 0, headerBytes.length)
+        bytes(headerBytes.length) = newline
+        System.arraycopy(rowBytes, 0, bytes, headerBytes.length + 1, rowBytes.length)
+        
+        val fc = FileContent(bytes, MimeType.TextCsv)
+        DocChunk(fc, label = s"row $originalRowNum", index = idx, total = total)
     }
   }
 }
