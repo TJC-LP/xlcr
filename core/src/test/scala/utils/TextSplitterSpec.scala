@@ -29,9 +29,10 @@ class TextSplitterSpec extends AnyFlatSpec with Matchers {
     // We should have multiple chunks
     chunks.length should be > 1
     
-    // Verify labels show paragraph ranges
+    // Verify labels show paragraph ranges and character bounds
     chunks.foreach { chunk =>
       chunk.label should (startWith("paragraphs") or startWith("paragraph"))
+      chunk.label should include("chars")
       println(s"Chunk label: ${chunk.label}, size: ${chunk.content.data.length} bytes")
     }
     
@@ -66,8 +67,12 @@ class TextSplitterSpec extends AnyFlatSpec with Matchers {
     // We should have multiple chunks
     chunks.length should be > 1
     
-    // Verify labels contain proper formatting
+    // Verify labels contain character bounds and proper formatting
     chunks.foreach { chunk =>
+      chunk.label should include("chars")
+      // Labels should include paragraph number and character positions
+      chunk.label should (startWith("paragraph") or startWith("paragraphs"))
+      // Create debug output to verify the formatting 
       println(s"Chunk label: ${chunk.label}, size: ${chunk.content.data.length} bytes")
     }
   }

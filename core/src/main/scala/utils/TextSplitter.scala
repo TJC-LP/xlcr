@@ -4,11 +4,15 @@ package utils
 import models.FileContent
 import types.MimeType
 
-/** Very simple splitter for plain-text documents.  It chunks the UTF-8 text
-  * into fixed-sized character windows (\`SplitConfig.maxChars\`) with optional
-  * overlap (\`SplitConfig.overlap\`).
-  *
-  * Strategy enum is ignored – only the limits in SplitConfig are honoured.
+/** Splitter for plain-text documents that supports two modes:
+  * 
+  * 1. Paragraph-aware chunking (default): Intelligently splits text into chunks
+  *    respecting paragraph boundaries when possible, with descriptive labels
+  *    showing paragraph ranges. This is the default for text files.
+  * 
+  * 2. Character-based chunking with overlap: Splits text into fixed-size character
+  *    windows (\`SplitConfig.maxChars\`) with optional overlap (\`SplitConfig.overlap\`).
+  *    Only used when explicitly requested.
   */
 class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
 
@@ -16,18 +20,22 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
       content: FileContent[MimeType.TextPlain.type],
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
-    // Check if we should use the chunk strategy
-    if (cfg.hasStrategy(SplitStrategy.Chunk)) {
-      // Split into fixed-size chunks
-      splitIntoFixedChunks(content, cfg)
+    // Note: Chunk is the default strategy for text files (set in DocumentSplitter),
+    // but we check if another strategy was explicitly requested
+    if (cfg.strategy.exists(s => s != SplitStrategy.Chunk && s != SplitStrategy.Auto)) {
+      // Use character-based splitting with overlap for other strategies
+      splitByCharactersWithOverlap(content, cfg)
     } else {
-      // Default behavior - use paragraph-style splitting with overlaps
-      splitWithOverlap(content, cfg)
+      // Default behavior (Chunk strategy) - use paragraph-aware splitting
+      splitByParagraphs(content, cfg)
     }
   }
 
-  /** Splits text using fixed-size chunks with optional overlap */
-  private def splitWithOverlap(
+  /** 
+   * Splits text into fixed-size character windows with optional overlap.
+   * This approach is simpler but doesn't respect paragraph boundaries.
+   */
+  private def splitByCharactersWithOverlap(
       content: FileContent[MimeType.TextPlain.type],
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
@@ -45,7 +53,12 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
       val slice = txt.substring(start, end)
       val bytes = slice.getBytes(java.nio.charset.StandardCharsets.UTF_8)
       val fc = FileContent(bytes, MimeType.TextPlain)
-      builder += DocChunk(fc, label = s"chars ${start}-${end-1}", index = idx, total = 0)
+      builder += DocChunk(
+        fc,
+        label = s"chars ${start}-${end - 1}",
+        index = idx,
+        total = 0
+      )
       idx += 1
       start = end - overlap
     }
@@ -56,8 +69,11 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
     chunks.map(c => c.copy(total = total))
   }
 
-  /** Splits text using smart chunking around paragraph boundaries when possible */
-  private def splitIntoFixedChunks(
+  /**
+   * Splits text intelligently respecting paragraph boundaries when possible.
+   * This is the default approach for text files as it produces more coherent chunks.
+   */
+  private def splitByParagraphs(
       content: FileContent[MimeType.TextPlain.type],
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
@@ -69,26 +85,39 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
 
     val chunkSize = math.max(1, cfg.maxChars)
     val builder = Seq.newBuilder[DocChunk[_ <: MimeType]]
-    
+
     var currentChunk = new StringBuilder()
     var idx = 0
     var startPara = 0 // Track which paragraph we started the current chunk with
     var currentPara = 0 // Current paragraph index
-    
+
     for (paragraph <- paragraphs) {
       // If adding this paragraph would exceed the chunk size and we already have content,
       // finalize the current chunk and start a new one
-      if (currentChunk.nonEmpty && currentChunk.length + paragraph.length > chunkSize) {
+      if (
+        currentChunk.nonEmpty && currentChunk.length + paragraph.length > chunkSize
+      ) {
         val chunkText = currentChunk.toString()
         val bytes = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
         val fc = FileContent(bytes, MimeType.TextPlain)
         val endPara = currentPara - 1 // Last paragraph in current chunk
-        builder += DocChunk(fc, label = s"paragraphs ${startPara+1}-${endPara+1}", index = idx, total = 0)
+        
+        // Calculate character bounds for this chunk
+        val charStart = txt.indexOf(paragraphs(startPara))
+        val lastParaEnd = paragraphs(endPara)
+        val charEnd = txt.indexOf(lastParaEnd) + lastParaEnd.length - 1
+        
+        builder += DocChunk(
+          fc,
+          label = s"paragraphs ${startPara + 1}-${endPara + 1} (chars $charStart-$charEnd)",
+          index = idx,
+          total = 0
+        )
         idx += 1
         currentChunk = new StringBuilder()
         startPara = currentPara // Start tracking from current paragraph
       }
-      
+
       // If the paragraph itself is larger than chunk size, split it
       if (paragraph.length > chunkSize) {
         var start = 0
@@ -97,7 +126,18 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
           val slice = paragraph.substring(start, end)
           val bytes = slice.getBytes(java.nio.charset.StandardCharsets.UTF_8)
           val fc = FileContent(bytes, MimeType.TextPlain)
-          builder += DocChunk(fc, label = s"paragraph ${currentPara+1} chars ${start}-${end-1}", index = idx, total = 0)
+          
+          // Calculate the absolute character position in the original text
+          val paraStart = txt.indexOf(paragraph)
+          val absoluteStart = paraStart + start
+          val absoluteEnd = paraStart + end - 1
+          
+          builder += DocChunk(
+            fc,
+            label = s"paragraph ${currentPara + 1} section ${start}-${end - 1} (chars $absoluteStart-$absoluteEnd)",
+            index = idx,
+            total = 0
+          )
           idx += 1
           start += chunkSize
         }
@@ -108,19 +148,30 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
         }
         currentChunk.append(paragraph)
       }
-      
+
       currentPara += 1
     }
-    
+
     // Don't forget the last chunk if it's not empty
     if (currentChunk.nonEmpty) {
       val chunkText = currentChunk.toString()
       val bytes = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
       val fc = FileContent(bytes, MimeType.TextPlain)
       val endPara = currentPara - 1 // Last paragraph processed
-      builder += DocChunk(fc, label = s"paragraphs ${startPara+1}-${endPara+1}", index = idx, total = 0)
+      
+      // Calculate character bounds for this chunk
+      val charStart = txt.indexOf(paragraphs(startPara))
+      val lastParaEnd = paragraphs(endPara)
+      val charEnd = txt.indexOf(lastParaEnd) + lastParaEnd.length - 1
+      
+      builder += DocChunk(
+        fc,
+        label = s"paragraphs ${startPara + 1}-${endPara + 1} (chars $charStart-$charEnd)",
+        index = idx,
+        total = 0
+      )
     }
-    
+
     // fill total
     val chunks = builder.result()
     val total = chunks.length

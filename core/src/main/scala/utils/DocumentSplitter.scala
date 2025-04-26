@@ -18,6 +18,7 @@ case class DocChunk[T <: MimeType](
 /** Splitting strategies supported for different document types. */
 /** Splitting strategies supported for different document types. */
 sealed trait SplitStrategy {
+
   /** Returns a clean, serialization-friendly string representation */
   def displayName: String
 }
@@ -79,7 +80,6 @@ object SplitStrategy {
   }
 }
 
-
 /** Configuration for document splitting. */
 case class SplitConfig(
     strategy: Option[SplitStrategy] = None,
@@ -97,6 +97,7 @@ case class SplitConfig(
     imageDpi: Int = 300, // DPI for rendering
     jpegQuality: Float = 0.85f // JPEG quality factor (0.0-1.0)
 ) {
+
   /** Helper method to check if a strategy is set to a specific value */
   def hasStrategy(s: SplitStrategy): Boolean = strategy.contains(s)
 }
@@ -122,6 +123,10 @@ object SplitConfig {
     * reuse it without duplication.
     */
   def defaultStrategyForMime(mime: MimeType): SplitStrategy = mime match {
+    // Text files
+    case MimeType("text", _, _) =>
+      SplitStrategy.Chunk
+
     case MimeType.ApplicationPdf => SplitStrategy.Page
 
     // Excel
@@ -143,14 +148,6 @@ object SplitConfig {
     // Emails
     case MimeType.MessageRfc822 | MimeType.ApplicationVndMsOutlook =>
       SplitStrategy.Attachment
-      
-    // Text files
-    case MimeType.TextPlain =>
-      SplitStrategy.Chunk
-      
-    // CSV files
-    case MimeType.TextCsv =>
-      SplitStrategy.Row
 
     case _ => SplitStrategy.Page
   }
@@ -191,14 +188,19 @@ object DocumentSplitter {
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
     // If strategy is Auto or None, automatically select an appropriate strategy based on the MIME type
-    val configToUse = if (cfg.strategy.isEmpty || cfg.strategy.contains(SplitStrategy.Auto)) {
-      cfg.copy(strategy = Some(SplitConfig.defaultStrategyForMime(content.mimeType)))
-    } else {
-      cfg
-    }
-    
+    val configToUse =
+      if (cfg.strategy.isEmpty || cfg.strategy.contains(SplitStrategy.Auto)) {
+        cfg.copy(strategy =
+          Some(SplitConfig.defaultStrategyForMime(content.mimeType))
+        )
+      } else {
+        cfg
+      }
+
     forMime(content.mimeType)
-      .map(_.asInstanceOf[DocumentSplitter[MimeType]].split(content, configToUse))
+      .map(
+        _.asInstanceOf[DocumentSplitter[MimeType]].split(content, configToUse)
+      )
       .getOrElse(
         Seq(DocChunk(content, label = "document", index = 0, total = 1))
       )
