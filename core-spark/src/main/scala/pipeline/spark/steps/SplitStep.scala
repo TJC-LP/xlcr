@@ -28,8 +28,6 @@ case class SplitStep(
     "maxDepth" -> config.maxRecursionDepth.toString
   )
 
-  import UdfHelpers._
-
   // UDF that splits a document using the DocumentSplitter with license awareness
   private def createSplitUdf(implicit spark: SparkSession) = licenseAwareUdf2(name, rowTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>

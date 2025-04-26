@@ -24,11 +24,9 @@ lazy val commonSettings = Seq(
   idePackagePrefix := Some("com.tjclp.xlcr"),
   resolvers += "Aspose Java Repository" at "https://releases.aspose.com/java/repo/",
   libraryDependencies ++= Seq(
-    // Common logging
+    // Common logging - simplified to just SLF4J + Logback
     "org.slf4j" % "slf4j-api" % "2.0.16",
     "ch.qos.logback" % "logback-classic" % "1.5.15",
-    "org.apache.logging.log4j" % "log4j-api" % "2.24.3",
-    "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.24.3",
     // ZIO core (for all modules)
     "dev.zio" %% "zio" % zioVersion,
     "dev.zio" %% "zio-streams" % zioVersion
