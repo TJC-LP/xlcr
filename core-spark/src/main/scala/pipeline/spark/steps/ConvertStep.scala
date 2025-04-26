@@ -54,19 +54,9 @@ case class ConvertStep(
               "toMime" -> to.mimeType
             )
 
-            // Check if we're using an Aspose bridge implementation
-            val isAsposeBridge = bridgeImpl.toLowerCase.contains("aspose")
-
-            // Add Aspose license info if applicable
-            if (isAsposeBridge) {
-              // Check if Aspose is enabled and get license status
-              if (AsposeBroadcastManager.isEnabled) {
-                val licenseStatus = AsposeBroadcastManager.getLicenseStatus
-                licenseStatus.foreach { case (k, v) => paramsBuilder.put(k, v) }
-              } else {
-                paramsBuilder.put("asposeStatus", "disabled")
-              }
-            }
+            // Note: We don't need to manually add Aspose license info here.
+            // The licenseAwareUdf2 wrapper will automatically add the license status
+            // for any bridge implementation containing "aspose" in its name.
 
             (b.convert(fc).data, Some(bridgeImpl), Some(paramsBuilder.toMap))
           }
