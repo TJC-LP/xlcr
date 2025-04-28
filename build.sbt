@@ -258,6 +258,7 @@ lazy val assemblySettings = Seq(
     case PathList("META-INF", "mailcap")           => MergeStrategy.first
     case PathList("META-INF", "mailcap.default")   => MergeStrategy.first
     case PathList("META-INF", "mimetypes.default") => MergeStrategy.first
+    case PathList("META-INF", "versions", "9", "module-info.class") => MergeStrategy.discard
     case PathList("META-INF", "kotlin-project-structure-metadata.json") =>
       MergeStrategy.discard
     case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".DSA")) =>
@@ -269,6 +270,8 @@ lazy val assemblySettings = Seq(
 
     // Handle Log implementation conflicts
     case PathList("org", "apache", "commons", "logging", xs @ _*) =>
+      MergeStrategy.first
+    case PathList("org", "apache", "commons", "logging", "impl", xs @ _*) =>
       MergeStrategy.first
 
     // Handle Jakarta/Javax activation and mail conflicts
@@ -292,6 +295,9 @@ lazy val assemblySettings = Seq(
 
     // Handle overlaps between xml-apis-ext and xml-apis
     case PathList("license", "LICENSE.dom-software.txt") => MergeStrategy.first
+    
+    // Handle library.properties conflicts (including java-rdfa and scala-library)
+    case PathList("library.properties") => MergeStrategy.first
 
     // Handle Kotlin-specific files
     case PathList(ps @ _*) if ps.last == "manifest" => MergeStrategy.discard
