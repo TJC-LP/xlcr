@@ -201,12 +201,28 @@ object Pipeline {
       val chunkMime: MimeType = outputType.getOrElse(chunk.content.mimeType)
       val ext: String = findExtensionForMime(chunkMime).getOrElse("dat")
       
-      // Create filename with optional path prefix for nested archives
+      // Get original path from metadata if available
+      val origPath = chunk.attrs.get("path")
+      
+      // Create more intelligent filename that preserves structure
       val baseLabel = sanitizeLabel(chunk.label)
       val indexPadded = f"${chunk.index + 1}%03d"
-      val fileName = pathPrefix match {
-        case Some(prefix) => s"${prefix}_${indexPadded}_${baseLabel}.$ext"
-        case None => s"${indexPadded}_${baseLabel}.$ext"
+      
+      val fileName = (pathPrefix, origPath) match {
+        // If we have both a prefix and an original path, combine them intelligently
+        case (Some(prefix), Some(path)) => 
+          val sanitizedPath = sanitizeLabel(path.replace('/', '_'))
+          s"${prefix}_${indexPadded}_${sanitizedPath}.$ext"
+        // Just prefix + index + label  
+        case (Some(prefix), None) => 
+          s"${prefix}_${indexPadded}_${baseLabel}.$ext"
+        // No prefix but with original path
+        case (None, Some(path)) =>
+          val sanitizedPath = sanitizeLabel(path.replace('/', '_'))
+          s"${indexPadded}_${sanitizedPath}.$ext" 
+        // Basic format with just index + label
+        case (None, None) => 
+          s"${indexPadded}_${baseLabel}.$ext"
       }
       
       val outPath = outputDir.resolve(fileName)
@@ -235,14 +251,15 @@ object Pipeline {
               }
             }
             
-            // Use same recursion settings for nested content
+            // Use same recursion settings for nested content but make sure Embedded strategy is set
             val nestedCfg = utils.SplitConfig(
               strategy = Some(utils.SplitStrategy.Embedded), // Always use embedded for nested archives
-              recursive = cfg.recursive,
-              maxRecursionDepth = cfg.maxRecursionDepth
+              recursive = true, // Ensure recursive is explicitly true for nested archives
+              maxRecursionDepth = cfg.maxRecursionDepth,
+              maxTotalSize = cfg.maxTotalSize // Preserve zipbomb protection limits
             )
             
-            // Create new prefix for nested files
+            // Create new prefix for nested files that preserves path information
             val newPrefix = pathPrefix match {
               case Some(prefix) => s"${prefix}_${indexPadded}"
               case None => indexPadded
@@ -250,8 +267,19 @@ object Pipeline {
             
             // Process the nested archive
             logger.info(s"Processing nested archive at depth ${depth + 1}: $outPath")
+            
+            // Create a new FileContent with correct MIME type to ensure it's processed as an archive
+            // This is important because the chunk's MIME type might not be recognized as an archive
+            val archiveContent = if (isArchiveType(chunk.content.mimeType)) {
+              chunk.content.asInstanceOf[FileContent[MimeType]]
+            } else {
+              // Force archive MIME type if needed (e.g., if incorrectly detected as octet-stream)
+              logger.info(s"Forcing archive MIME type for nested extraction: ${chunk.content.mimeType} -> ${MimeType.ApplicationZip}")
+              FileContent(chunk.content.data, MimeType.ApplicationZip)
+            }
+            
             val nestedCount = splitRecursive(
-              chunk.content.asInstanceOf[FileContent[MimeType]],
+              archiveContent,
               subDir,
               nestedCfg,
               outputType,
@@ -293,7 +321,15 @@ object Pipeline {
   private def isArchiveType(mime: MimeType): Boolean = mime match {
     case MimeType.ApplicationZip | MimeType.ApplicationGzip | MimeType.ApplicationSevenz |
          MimeType.ApplicationTar | MimeType.ApplicationBzip2 | MimeType.ApplicationXz => true
-    case _ => false
+    case _ => 
+      // Return true for types that might be archives but weren't detected properly
+      // This helps with nested ZIP files that might be incorrectly detected as octet-stream
+      val mimeStr = mime.mimeType.toLowerCase
+      mimeStr.contains("zip") || mimeStr.contains("compress") || 
+      mimeStr.contains("archive") || mimeStr.contains("tar") ||
+      // Include Java JAR files, which are ZIPs with a different extension
+      mimeStr == "application/java-archive" || mimeStr == "application/x-java-archive" ||
+      mimeStr == "application/jar"
   }
 
   /** Default split strategy if the user hasn't specified one. */

@@ -47,7 +47,15 @@ class ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
           
           // Create a chunk for this entry
           val fileContent = FileContent(baos.toByteArray, mime)
-          chunks += DocChunk(fileContent, entryName, chunks.length, 0)
+          chunks += DocChunk(
+            fileContent, 
+            entryName, 
+            chunks.length, 
+            0,
+            Map(
+              "path" -> entryName // Store original path for nested structure preservation
+            )
+          )
         }
         
         // Close the current entry and move to the next
