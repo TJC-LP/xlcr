@@ -18,14 +18,38 @@ object UdfHelpers {
   // Model captured by all wrapped UDFs
   // -----------------------------------------------------------------------
 
+  /**
+    * Metadata about an individual chunk produced by a `SplitStep` (or another
+    * nested-document producing operation).  Placing this information directly
+    * on the lineage element allows us to keep track of **arbitrarily-nested**
+    * structures – e.g. *zip → email → attachment → page* – without having to
+    * promote those fields to top-level dataframe columns that would be
+    * overwritten on every subsequent split.
+    */
+  case class ChunkMeta(
+      sourceId: String,              // id of the parent file that was split
+      chunkIndex: Option[Long],      // 0-based position within the parent
+      chunkTotal: Option[Long],      // total number of chunks produced
+      chunkLabel: Option[String]
+  )
+
+  /** Captures timing / implementation / error information for a pipeline
+    * operation.  A new `Lineage` element is appended by every wrapped UDF.
+    *
+    * A **nullable** [[ChunkMeta]] field is included so that split-style steps
+    * can – optionally – embed their per-chunk context without polluting the
+    * root schema.  For non-splitting steps the field is simply left `None`.
+    */
   case class Lineage(
       startTimeMs: Long,
       endTimeMs: Long,
       durationMs: Long,
       error: Option[String] = None,
       name: String,
-      implementation: Option[String] = None,  // Added to track the specific implementation used
-      params: Option[Map[String, String]] = None  // Added to track additional parameters
+      implementation: Option[String] = None,  // specific implementation used, if any
+      params: Option[Map[String, String]] = None,  // additional parameters captured by the step
+      sourceId: Option[String] = None,             // id of the (current) source doc/row
+      chunk: Option[ChunkMeta] = None           // per-chunk context (nullable)
   )
 
   case class StepResult[T](
@@ -37,17 +61,25 @@ object UdfHelpers {
   // Helper to append lineage entry to lineage array
   // -----------------------------------------------------------------------
   
-  def appendLineageEntry(df: DataFrame, lineageEntry: Column): DataFrame = {
-    import org.apache.spark.sql.functions.{col, array, when, array_append}
-    
+  import org.apache.spark.sql.functions.{col, array, when, array_append}
+
+  def appendLineageEntry(df: DataFrame, rawLineageEntry: Column): DataFrame = {
+    // Enrich the incoming lineage struct with current row id as sourceId if
+    // not already populated.
+    val lineageEntry = rawLineageEntry.withField(
+      "sourceId",
+      when(rawLineageEntry.getField("sourceId").isNull, col(CoreSchema.Id))
+        .otherwise(rawLineageEntry.getField("sourceId"))
+    )
+
     // Ensure lineage column exists with proper type
-    val withLineageCol = 
+    val withLineageCol =
       if (df.columns.contains(CoreSchema.Lineage)) df
       else df.withColumn(CoreSchema.Lineage, array().cast(CoreSchema.LineageArrayType))
-    
+
     // Add the lineage entry to the lineage array
     withLineageCol.withColumn(
-      CoreSchema.Lineage, 
+      CoreSchema.Lineage,
       when(col(CoreSchema.Lineage).isNull, array(lineageEntry))
         .otherwise(array_append(col(CoreSchema.Lineage), lineageEntry))
     )
@@ -119,7 +151,9 @@ object UdfHelpers {
         Some(msg),
         name,
         defaultImplementation,
-        defaultParams
+        defaultParams,
+        None, // sourceId to be added later
+        None  // chunk
       )
     )
 
@@ -142,8 +176,8 @@ object UdfHelpers {
       val finalParams = params.orElse(defaultParams)
       
       StepResult(
-        Some(result), 
-        Lineage(start, end, end - start, None, name, finalImplName, finalParams)
+        Some(result),
+        Lineage(start, end, end - start, None, name, finalImplName, finalParams, None, None)
       )
     } catch {
       case t: Throwable => fail(t.getMessage)

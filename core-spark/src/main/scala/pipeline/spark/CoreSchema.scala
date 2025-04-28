@@ -27,7 +27,23 @@ object CoreSchema {
   val ChunkLabel = "chunkLabel"
   val ChunkTotal = "chunkTotal"
 
-  // lineage element
+  // -------------------------------------------------------------------
+  //  Nested types
+  // -------------------------------------------------------------------
+
+  // Chunk metadata nested within each lineage element (nullable)
+  private val ChunkMetaType: StructType = StructType(
+    Seq(
+      StructField("sourceId", StringType, nullable = true),
+      StructField("chunkIndex", LongType, nullable = true),
+      StructField("chunkTotal", LongType, nullable = true),
+      StructField("chunkLabel", StringType, nullable = true)
+    )
+  )
+
+  // lineage element – extended with nested chunk metadata so we can capture
+  // *arbitrarily-nested* document structures without promoting fields to the
+  // root schema.
   val LineageType: DataType = StructType(
     Seq(
       StructField("startTimeMs", LongType, nullable = true),
@@ -36,7 +52,9 @@ object CoreSchema {
       StructField("error", StringType, nullable = true),
       StructField("name", StringType, nullable = true),
       StructField("implementation", StringType, nullable = true),
-      StructField("params", MapType(StringType, StringType), nullable = true)
+      StructField("params", MapType(StringType, StringType), nullable = true),
+      StructField("sourceId", StringType, nullable = true),
+      StructField("chunk", ChunkMetaType, nullable = true)
     )
   )
   val LineageArrayType: DataType = ArrayType(LineageType, containsNull = true)
@@ -72,11 +90,7 @@ object CoreSchema {
       Lineage,
       LineageArrayType,
       nullable = true
-    ),
-    // chunk context – null when row is not a chunk
-    StructField(ChunkIndex, LongType, nullable = true),
-    StructField(ChunkLabel, StringType, nullable = true),
-    StructField(ChunkTotal, LongType, nullable = true)
+    )
   )
 
   /** Validate that the provided DataFrame contains the core columns with the
