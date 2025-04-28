@@ -1,14 +1,20 @@
 # XLCR Development Guide
 
 ## Build Commands
-- `sbt compile` - Compile the project
+- `sbt compile` - Compile the project with default Scala version (2.12)
+- `sbt compileScala2` - Compile all modules with Scala 2.12
+- `sbt compileScala3` - Compile Scala 3 compatible modules with Scala 3.3.4
 - `sbt assembly` - Create executable JAR files
 - `sbt run` - Run the application
 - `sbt "server/run"` - Run the server component
 - `sbt "coreSpreadsheetLLM/run -i input.xlsx -o output.json"` - Run the SpreadsheetLLM module
 
+Note: See SCALA.md for more details on Scala version compatibility
+
 ## Test Commands
-- `sbt test` - Run all tests
+- `sbt test` - Run all tests with default Scala version (2.12)
+- `sbt testScala2` - Run all tests with Scala 2.12
+- `sbt testScala3` - Run tests for Scala 3 compatible modules
 - `sbt "testOnly com.tjclp.xlcr.ConfigSpec"` - Run a single test class
 - `sbt "testOnly com.tjclp.xlcr.ConfigSpec -- -z 'parse valid command line arguments'"` - Run a specific test case
 - `sbt "coreSpreadsheetLLM/test"` - Run all SpreadsheetLLM module tests

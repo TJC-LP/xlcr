@@ -9,7 +9,6 @@ ThisBuild / scalaVersion := scala212
 ThisBuild / crossScalaVersions := Seq(scala212, scala3)
 
 // For IDE compatibility
-
 val circeVersion = "0.14.10"
 val ktorVersion = "3.0.3"
 val zioVersion = "2.1.0"
@@ -84,6 +83,8 @@ lazy val core = (project in file("core"))
       "org.apache.pdfbox" % "pdfbox" % "2.0.29",
       // XML
       "org.apache.xmlgraphics" % "batik-all" % "1.18",
+      // ODFDOM for OpenDocument files
+      "org.odftoolkit" % "odfdom-java" % "0.12.0",
       // ZIO specific dependencies
       "dev.zio" %% "zio-config" % zioConfigVersion,
       "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
@@ -157,7 +158,7 @@ lazy val coreAspose = (project in file("core-aspose"))
   )
 
 // ---------------------------------------------------------------------------
-// Spark composable pipeline module (Scala 2.12 / 2.13)
+// Spark composable pipeline module (Scala 2.12 / 2.13 only - not Scala 3 compatible)
 // ---------------------------------------------------------------------------
 
 lazy val coreSpark = (project in file("core-spark"))
@@ -167,6 +168,7 @@ lazy val coreSpark = (project in file("core-spark"))
   .settings(
     name := "xlcr-core-spark",
     scalaVersion := "2.12.18",
+    // Only support Scala 2.12 and 2.13 for Spark (not Scala 3)
     crossScalaVersions := Seq("2.12.18", "2.13.14"),
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
@@ -213,6 +215,8 @@ lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
       // Apache POI for Excel handling
       "org.apache.poi" % "poi" % "5.2.5",
       "org.apache.poi" % "poi-ooxml" % "5.2.5",
+      // ODFDOM for OpenDocument (ODS) format
+      "org.odftoolkit" % "odfdom-java" % "0.12.0",
       // JSON processing
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
@@ -327,6 +331,14 @@ lazy val root = (project in file("."))
     assembleCore := (core / assembly).value,
     assembleAspose := (coreAspose / assembly).value,
     assembleSpreadsheetLLM := (coreSpreadsheetLLM / assembly).value,
-    assembleSpark := (coreSpark / assembly).value
+    assembleSpark := (coreSpark / assembly).value,
+    // Define projects that should be included when cross-building for Scala 3
+    crossScalaVersions := Seq(scala212, scala3),
+    
+    // Custom tasks for different Scala versions
+    addCommandAlias("compileScala3", ";++3.3.4; core/compile; coreAspose/compile; coreSpreadsheetLLM/compile; server/compile"),
+    addCommandAlias("compileScala2", ";++2.12.18; compile"),
+    addCommandAlias("testScala3", ";++3.3.4; core/test; coreAspose/test; coreSpreadsheetLLM/test; server/test"),
+    addCommandAlias("testScala2", ";++2.12.18; test")
   )
   .settings(assemblySettings)
