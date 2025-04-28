@@ -76,7 +76,7 @@ object ZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationZip
     
     boundary {
       // If not requesting embedded split, return the original
-      if (cfg.hasStrategy(SplitStrategy.Embedded))
+      if (!cfg.hasStrategy(SplitStrategy.Embedded))
         break(Seq(DocChunk(content, "zip archive", 0, 1)))
         
       // Initialize zipbomb protection

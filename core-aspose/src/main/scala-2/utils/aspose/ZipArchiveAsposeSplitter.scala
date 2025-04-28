@@ -12,26 +12,29 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
-/**
- * ZIP archive splitter using Aspose.ZIP library.
- * Extracts all entries from a ZIP archive file.
- * Supports recursive extraction of nested archives with zipbomb protection.
- *
- * This is the Scala 2.12 version.
- */
-object ZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
+/** ZIP archive splitter using Aspose.ZIP library.
+  * Extracts all entries from a ZIP archive file.
+  * Supports recursive extraction of nested archives with zipbomb protection.
+  *
+  * This is the Scala 2.12 version.
+  */
+object ZipArchiveAsposeSplitter
+    extends DocumentSplitter[MimeType.ApplicationZip.type] {
 
   private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
   // Track total extracted size for zipbomb protection
-  private val extractedSizeMap = new java.util.concurrent.ConcurrentHashMap[java.util.UUID, java.util.concurrent.atomic.AtomicLong]()
+  private val extractedSizeMap = new java.util.concurrent.ConcurrentHashMap[
+    java.util.UUID,
+    java.util.concurrent.atomic.AtomicLong
+  ]()
 
   override def split(
-                      content: FileContent[MimeType.ApplicationZip.type],
-                      cfg: SplitConfig
-                    ): Seq[DocChunk[_ <: MimeType]] = {
+      content: FileContent[MimeType.ApplicationZip.type],
+      cfg: SplitConfig
+  ): Seq[DocChunk[_ <: MimeType]] = {
 
     // If not requesting embedded split, return the original
-    if (cfg.hasStrategy(SplitStrategy.Embedded))
+    if (!cfg.hasStrategy(SplitStrategy.Embedded))
       return Seq(DocChunk(content, "zip archive", 0, 1))
 
     // Initialize zipbomb protection
@@ -59,30 +62,30 @@ object ZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationZip
     }
   }
 
-  /**
-   * Initialize a tracking session for zipbomb protection
-   */
+  /** Initialize a tracking session for zipbomb protection
+    */
   private def initExtractSession(): java.util.UUID = {
     val sessionId = java.util.UUID.randomUUID()
-    extractedSizeMap.put(sessionId, new java.util.concurrent.atomic.AtomicLong(0))
+    extractedSizeMap.put(
+      sessionId,
+      new java.util.concurrent.atomic.AtomicLong(0)
+    )
     sessionId
   }
 
-  /**
-   * Clean up tracking session
-   */
+  /** Clean up tracking session
+    */
   private def cleanupExtractSession(sessionId: java.util.UUID): Unit = {
     extractedSizeMap.remove(sessionId)
   }
 
-  /**
-   * Extract ZIP archive entries
-   */
+  /** Extract ZIP archive entries
+    */
   private def extractEntries(
-                              content: FileContent[MimeType.ApplicationZip.type],
-                              cfg: SplitConfig,
-                              sessionId: java.util.UUID
-                            ): Seq[DocChunk[_ <: MimeType]] = {
+      content: FileContent[MimeType.ApplicationZip.type],
+      cfg: SplitConfig,
+      sessionId: java.util.UUID
+  ): Seq[DocChunk[_ <: MimeType]] = {
 
     val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
     val input = new ByteArrayInputStream(content.data)
@@ -98,8 +101,12 @@ object ZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationZip
 
       // If compression ratio > 100, log a warning (potential zipbomb)
       if (totalCompressed > 0 && totalUncompressed / totalCompressed > 100) {
-        logger.warn(s"Potential ZIP bomb detected: compression ratio ${totalUncompressed / totalCompressed}")
-        logger.warn(s"Archive contains ${entries.size} entries, compressed: $totalCompressed, uncompressed: $totalUncompressed")
+        logger.warn(
+          s"Potential ZIP bomb detected: compression ratio ${totalUncompressed / totalCompressed}"
+        )
+        logger.warn(
+          s"Archive contains ${entries.size} entries, compressed: $totalCompressed, uncompressed: $totalUncompressed"
+        )
       }
 
       // Process each entry in the ZIP file
@@ -107,7 +114,9 @@ object ZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationZip
         val entryName = entry.getName
 
         // Skip __MACOSX directories and files
-        if (entryName.startsWith("__MACOSX") || entryName.contains("/__MACOSX/")) {
+        if (
+          entryName.startsWith("__MACOSX") || entryName.contains("/__MACOSX/")
+        ) {
           logger.debug(s"Skipping macOS metadata: $entryName")
         }
         // Handle directories - just log them
@@ -115,8 +124,16 @@ object ZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationZip
           logger.debug(s"Directory entry: $entryName")
         } else {
           // Check zipbomb protection limit before extraction
-          if (!trackExtractedSize(sessionId, entry.getUncompressedSize, cfg.maxTotalSize)) {
-            logger.warn(s"Skipping extraction of '$entryName': size limit exceeded")
+          if (
+            !trackExtractedSize(
+              sessionId,
+              entry.getUncompressedSize,
+              cfg.maxTotalSize
+            )
+          ) {
+            logger.warn(
+              s"Skipping extraction of '$entryName': size limit exceeded"
+            )
             // Early return with partial results
             return chunks
           }
@@ -132,12 +149,17 @@ object ZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationZip
           val uncompressedSize = entry.getUncompressedSize
 
           if (compressedSize > 0 && uncompressedSize / compressedSize > 1000) {
-            logger.warn(s"Suspicious compression ratio for $entryName: ${uncompressedSize / compressedSize}")
+            logger.warn(
+              s"Suspicious compression ratio for $entryName: ${uncompressedSize / compressedSize}"
+            )
           }
 
           // Determine MIME type based on file extension
           val ext = entryName.split("\\.").lastOption.getOrElse("").toLowerCase
-          val mime = FileType.fromExtension(ext).map(_.getMimeType).getOrElse(MimeType.ApplicationOctet)
+          val mime = FileType
+            .fromExtension(ext)
+            .map(_.getMimeType)
+            .getOrElse(MimeType.ApplicationOctet)
 
           // Get clean entry name for display
           val cleanEntryName = cleanPathForDisplay(entryName)
@@ -169,28 +191,33 @@ object ZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationZip
     chunks
   }
 
-  /**
-   * Cleans a path for display by:
-   * 1. Removing macOS-specific hidden file prefix "._"
-   * 2. Taking only the last path component (filename)
-   * 3. Handling special characters
-   */
+  /** Cleans a path for display by:
+    * 1. Removing macOS-specific hidden file prefix "._"
+    * 2. Taking only the last path component (filename)
+    * 3. Handling special characters
+    */
   private def cleanPathForDisplay(path: String): String = {
     val lastComponent = path.split("/").last
-    if (lastComponent.startsWith("._")) lastComponent.substring(2) else lastComponent
+    if (lastComponent.startsWith("._")) lastComponent.substring(2)
+    else lastComponent
   }
 
-  /**
-   * Track the extracted size and check against limits
-   *
-   * @return true if extraction can continue, false if limit exceeded
-   */
-  private def trackExtractedSize(sessionId: java.util.UUID, byteCount: Long, maxSize: Long): Boolean = {
+  /** Track the extracted size and check against limits
+    *
+    * @return true if extraction can continue, false if limit exceeded
+    */
+  private def trackExtractedSize(
+      sessionId: java.util.UUID,
+      byteCount: Long,
+      maxSize: Long
+  ): Boolean = {
     val counter = extractedSizeMap.get(sessionId)
     val newTotal = counter.addAndGet(byteCount)
 
     if (newTotal > maxSize) {
-      logger.warn(s"ZIP extraction aborted: size limit exceeded ($newTotal > $maxSize bytes)")
+      logger.warn(
+        s"ZIP extraction aborted: size limit exceeded ($newTotal > $maxSize bytes)"
+      )
       false
     } else {
       true
