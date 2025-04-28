@@ -131,7 +131,8 @@ object SplitConfig {
 
     // Excel
     case MimeType.ApplicationVndMsExcel |
-        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet =>
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet |
+        MimeType.ApplicationVndOasisOpendocumentSpreadsheet =>
       SplitStrategy.Sheet
 
     // PowerPoint
@@ -226,6 +227,10 @@ object DocumentSplitter {
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       excelSplitter
     )
+    
+    // OpenDocument Spreadsheet (ODS)
+    val odsSplitter = new OdsSheetSplitter
+    register(MimeType.ApplicationVndOasisOpendocumentSpreadsheet, odsSplitter)
 
     // PowerPoint
     val pptSplitter = new PowerPointSlideSplitter

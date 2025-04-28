@@ -10,6 +10,7 @@ object Extension {
   case object XLS extends Extension("xls")
   case object XLSB extends Extension("xlsb")
   case object XLSM extends Extension("xlsm")
+  case object ODS extends Extension("ods")
   case object PPTX extends Extension("pptx")
   case object PPT extends Extension("ppt")
   case object PDF extends Extension("pdf")
@@ -43,6 +44,7 @@ object Extension {
     case "xls" => Some(XLS)
     case "xlsb" => Some(XLSB)
     case "xlsm" => Some(XLSM)
+    case "ods" => Some(ODS)
     case "pptx" => Some(PPTX)
     case "ppt" => Some(PPT)
     case "pdf" => Some(PDF)
@@ -72,7 +74,7 @@ object Extension {
 
   // Get all extensions
   val values: Seq[Extension] = Seq(
-    DOCX, DOC, XLSX, XLS, XLSB, XLSM, PPTX, PPT, PDF, EML, MSG, ZIP, GZIP, SEVENZ, TAR, BZIP2, TARXZ, XZ,
+    DOCX, DOC, XLSX, XLS, XLSB, XLSM, ODS, PPTX, PPT, PDF, EML, MSG, ZIP, GZIP, SEVENZ, TAR, BZIP2, TARXZ, XZ,
     TXT, JPG, JPEG, PNG, GIF, BMP, HTML, HTM, XML, JSON, MD, SVG
   )
 }

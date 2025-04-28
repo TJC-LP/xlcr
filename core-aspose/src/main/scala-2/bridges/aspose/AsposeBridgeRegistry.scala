@@ -4,7 +4,7 @@ package bridges.aspose
 import bridges.BridgeRegistry
 import bridges.aspose.email.EmailToPdfAsposeBridge
 import bridges.aspose.email.OutlookMsgToPdfAsposeBridge
-import bridges.aspose.excel.{ExcelToPdfAsposeBridge, ExcelXlsToPdfAsposeBridge, ExcelXlsmToPdfAsposeBridge, ExcelXlsbToPdfAsposeBridge}
+import bridges.aspose.excel.{ExcelToPdfAsposeBridge, ExcelXlsToPdfAsposeBridge, ExcelXlsmToPdfAsposeBridge, ExcelXlsbToPdfAsposeBridge, OdsToPdfAsposeBridge}
 import bridges.aspose.powerpoint.{PowerPointToPdfAsposeBridge, PowerPointPptxToPdfAsposeBridge}
 import bridges.aspose.word.{WordToPdfAsposeBridge, WordDocxToPdfAsposeBridge}
 import types.MimeType
@@ -31,6 +31,9 @@ object AsposeBridgeRegistry {
     BridgeRegistry.register(ApplicationVndMsExcel, ApplicationPdf, excel.ExcelXlsToPdfAsposeBridge)
     BridgeRegistry.register(ApplicationVndMsExcelSheetMacroEnabled, ApplicationPdf, excel.ExcelXlsmToPdfAsposeBridge)
     BridgeRegistry.register(ApplicationVndMsExcelSheetBinary, ApplicationPdf, excel.ExcelXlsbToPdfAsposeBridge)
+    
+    // OpenDocument Spreadsheet (ODS)
+    BridgeRegistry.register(ApplicationVndOasisOpendocumentSpreadsheet, ApplicationPdf, OdsToPdfAsposeBridge)
 
     // Email -> PDF
     BridgeRegistry.register(MessageRfc822, ApplicationPdf, EmailToPdfAsposeBridge)

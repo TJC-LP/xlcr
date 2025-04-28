@@ -50,6 +50,7 @@ object BridgeRegistry {
     register(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, TextMarkdown, excelToMarkdown)
     register(TextMarkdown, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, markdownToExcel)
     register(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ImageSvgXml, excelToSvg)
+    register(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ApplicationVndOasisOpendocumentSpreadsheet, ExcelToOdsBridge)
     register(ImageSvgXml, ImagePng, SvgToPngBridge)
     
     // PDF to image conversions

@@ -16,6 +16,7 @@ object FileType {
   case object ExcelXls extends FileType(Extension.XLS, MimeType.ApplicationVndMsExcel)
   case object ExcelXlsb extends FileType(Extension.XLSB, MimeType.ApplicationVndMsExcel)
   case object ExcelXlsm extends FileType(Extension.XLSM, MimeType.ApplicationVndMsExcel)
+  case object ExcelOds extends FileType(Extension.ODS, MimeType.ApplicationVndOasisOpendocumentSpreadsheet)
 
   // PowerPoint File Types
   case object PowerPointPptx extends FileType(Extension.PPTX, MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation)
@@ -61,7 +62,7 @@ object FileType {
   // Get all FileType values
   val values: Seq[FileType] = Seq(
     WordDocx, WordDoc,
-    ExcelXlsx, ExcelXls, ExcelXlsb, ExcelXlsm,
+    ExcelXlsx, ExcelXls, ExcelXlsb, ExcelXlsm, ExcelOds,
     PowerPointPptx, PowerPointPpt,
     PDF,
     EmailEml, EmailMsg,

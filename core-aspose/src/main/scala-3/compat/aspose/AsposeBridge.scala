@@ -15,11 +15,18 @@ object AsposeBridge {
     def createWorkbook(stream: java.io.InputStream): com.aspose.cells.Workbook = 
       new com.aspose.cells.Workbook(stream)
       
+    def createWorkbook(stream: java.io.InputStream, options: com.aspose.cells.LoadOptions): com.aspose.cells.Workbook =
+      new com.aspose.cells.Workbook(stream, options)
+      
+    def createLoadOptions(): com.aspose.cells.LoadOptions =
+      new com.aspose.cells.LoadOptions()
+      
     def createPdfSaveOptions(): com.aspose.cells.PdfSaveOptions =
       new com.aspose.cells.PdfSaveOptions()
       
     val LANDSCAPE_ORIENTATION: Int = com.aspose.cells.PageOrientationType.LANDSCAPE
     val PAPER_A4: Int = com.aspose.cells.PaperSizeType.PAPER_A_4
+    val LOAD_FORMAT_ODS: Int = com.aspose.cells.LoadFormat.ODS
   }
   
   // ===== SLIDES =====

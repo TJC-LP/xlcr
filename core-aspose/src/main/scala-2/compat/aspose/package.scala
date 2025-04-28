@@ -9,6 +9,7 @@ package object aspose {
   // Cells
   type AsposeWorkbook = com.aspose.cells.Workbook
   type AsposePdfSaveOptions = com.aspose.cells.PdfSaveOptions  
+  type AsposeCellsLoadOptions = com.aspose.cells.LoadOptions
   
   // For constants - use direct paths
   object AsposePageOrientationType {
@@ -17,6 +18,10 @@ package object aspose {
   
   object AsposePaperSizeType {
     val PAPER_A_4 = com.aspose.cells.PaperSizeType.PAPER_A_4
+  }
+  
+  object AsposeCellsLoadFormat {
+    val ODS = com.aspose.cells.LoadFormat.ODS
   }
   
   // Slides

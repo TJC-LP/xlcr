@@ -6,7 +6,7 @@ import models.FileContent
 import parsers.Parser
 import renderers.Renderer
 import types.MimeType
-import types.MimeType.{ApplicationPdf, ApplicationVndMsExcel, ApplicationVndMsExcelSheetMacroEnabled, ApplicationVndMsExcelSheetBinary}
+import types.MimeType.{ApplicationVndOasisOpendocumentSpreadsheet, ApplicationPdf, ApplicationVndMsExcel, ApplicationVndMsExcelSheetMacroEnabled, ApplicationVndMsExcelSheetBinary}
 
 import utils.aspose.AsposeLicense
 import compat.aspose._
@@ -79,3 +79,5 @@ object ExcelXlsToPdfAsposeBridge extends ExcelLegacyToPdfBridgeImpl[ApplicationV
 object ExcelXlsmToPdfAsposeBridge extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcelSheetMacroEnabled.type]
 
 object ExcelXlsbToPdfAsposeBridge extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcelSheetBinary.type]
+
+object OdsToPdfAsposeBridge extends  ExcelLegacyToPdfBridgeImpl[ApplicationVndOasisOpendocumentSpreadsheet.type]

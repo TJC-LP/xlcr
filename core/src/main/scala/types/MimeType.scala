@@ -253,6 +253,8 @@ object MimeType extends Serializable {
       "application",
       "vnd.openxmlformats-officedocument.presentationml.presentation"
     )
+  val ApplicationVndOasisOpendocumentSpreadsheet: MimeType =
+    MimeType("application", "vnd.oasis.opendocument.spreadsheet")
   val ApplicationJavascript: MimeType = MimeType("application", "javascript")
   val ApplicationXhtml: MimeType = MimeType("application", "xhtml+xml")
 
@@ -306,6 +308,7 @@ object MimeType extends Serializable {
     ApplicationVndMsExcelSheetMacroEnabled,
     ApplicationVndMsExcelSheetBinary,
     ApplicationVndOpenXmlFormatsPresentationmlPresentation,
+    ApplicationVndOasisOpendocumentSpreadsheet,
     ApplicationJavascript,
     ApplicationXhtml,
     ImageJpeg,
@@ -353,6 +356,7 @@ object MimeType extends Serializable {
       case "xlsb"            => ApplicationVndMsExcelSheetBinary
       case "ppt"             => ApplicationVndMsPowerpoint
       case "pptx"            => ApplicationVndOpenXmlFormatsPresentationmlPresentation
+      case "ods"             => ApplicationVndOasisOpendocumentSpreadsheet
       case "jpg" | "jpeg"    => ImageJpeg
       case "png"             => ImagePng
       case "gif"             => ImageGif

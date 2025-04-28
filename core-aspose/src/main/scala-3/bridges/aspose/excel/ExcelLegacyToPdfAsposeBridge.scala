@@ -68,3 +68,4 @@ trait ExcelLegacyToPdfBridgeImpl[I <: MimeType] extends SimpleBridge[I, Applicat
 object ExcelXlsToPdfAsposeBridge   extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcel.type]
 object ExcelXlsmToPdfAsposeBridge  extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcelSheetMacroEnabled.type]
 object ExcelXlsbToPdfAsposeBridge  extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcelSheetBinary.type]
+object OdsToPdfAsposeBridge        extends ExcelLegacyToPdfBridgeImpl[ApplicationVndOasisOpendocumentSpreadsheet.type]
