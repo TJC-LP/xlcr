@@ -151,51 +151,39 @@ case class SplitStep(
     // Explode the chunks array
     val exploded = withChunks.withColumn(Chunk, F.explode_outer(F.col(Chunks)))
 
-    // Replace content & mime columns with the chunk's data
+    // Replace content & mime columns with the chunk's data if split succeeded.
     val withChunkData = exploded
-      .withColumn(Content, F.col(s"$Chunk._1"))
-      .withColumn(Mime, F.col(s"$Chunk._2"))
+      .withColumn(
+        Content,
+        F.when(F.col(Chunk).isNull, F.col(Content))
+          .otherwise(F.col(s"$Chunk._1"))
+      )
+      .withColumn(
+        Mime,
+        F.when(F.col(Chunk).isNull, F.col(Mime))
+          .otherwise(F.col(s"$Chunk._2"))
+      )
 
     /* ------------------------------------------------------------------ */
     /* Build lineage entry with per-chunk metadata                         */
     /* ------------------------------------------------------------------ */
 
     import UdfHelpers._
-    import org.apache.spark.sql.Row
-
-    // Helper UDF to enrich the lineage element with chunk context
-    val enrichLineageUdf = org.apache.spark.sql.functions.udf(
-      (lineageRow: Row, sourceId: String, idx: Long, tot: Long, lbl: String) => {
-        if (lineageRow == null) {
-          null
-        } else {
-          // Reconstruct Lineage from Row – field order must match definition
-          val l = UdfHelpers.Lineage(
-            lineageRow.getAs[Long]("startTimeMs"),
-            lineageRow.getAs[Long]("endTimeMs"),
-            lineageRow.getAs[Long]("durationMs"),
-            Option(lineageRow.getAs[String]("error")),
-            lineageRow.getAs[String]("name"),
-            Option(lineageRow.getAs[String]("implementation")),
-            Option(lineageRow.getAs[Map[String, String]]("params")),
-            Some(sourceId),
-            Some(UdfHelpers.ChunkMeta(sourceId, Some(idx), Some(tot), Some(lbl)))
-          )
-          l
-        }
-      }
+    // Construct nested chunk struct using Spark primitives
+    val rawChunkStruct = F.struct(
+      F.col(s"$Chunk._3").cast("long").as("chunkIndex"),
+      F.col(s"$Chunk._5").cast("long").as("chunkTotal"),
+      F.col(s"$Chunk._4").as("chunkLabel")
     )
 
-    val withLineageEntry = withChunkData.withColumn(
-      LineageEntry,
-      enrichLineageUdf(
-        F.col(ResultLineage),
-        F.col(Id),
-        F.col(s"$Chunk._3").cast("long"),
-        F.col(s"$Chunk._5").cast("long"),
-        F.col(s"$Chunk._4")
-      )
-    )
+    val chunkNull = F.lit(null).cast("struct<chunkIndex:bigint,chunkTotal:bigint,chunkLabel:string>")
+    val chunkStruct = F.when(F.col(Chunk).isNull, chunkNull).otherwise(rawChunkStruct)
+
+    val lineageEntryCol = F.col(ResultLineage)
+      .withField("sourceId", F.col(Id))
+      .withField("chunk", chunkStruct)
+
+    val withLineageEntry = withChunkData.withColumn(LineageEntry, lineageEntryCol)
 
     // Append lineage entry
     val withLineage = UdfHelpers.appendLineageEntry(withLineageEntry, F.col(LineageEntry))

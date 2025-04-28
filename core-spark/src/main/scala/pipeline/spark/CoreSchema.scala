@@ -34,7 +34,6 @@ object CoreSchema {
   // Chunk metadata nested within each lineage element (nullable)
   private val ChunkMetaType: StructType = StructType(
     Seq(
-      StructField("sourceId", StringType, nullable = true),
       StructField("chunkIndex", LongType, nullable = true),
       StructField("chunkTotal", LongType, nullable = true),
       StructField("chunkLabel", StringType, nullable = true)

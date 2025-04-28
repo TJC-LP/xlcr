@@ -27,8 +27,7 @@ object UdfHelpers {
     * overwritten on every subsequent split.
     */
   case class ChunkMeta(
-      sourceId: String,              // id of the parent file that was split
-      chunkIndex: Option[Long],      // 0-based position within the parent
+      chunkIndex: Option[Long],      // 0-based position within parent
       chunkTotal: Option[Long],      // total number of chunks produced
       chunkLabel: Option[String]
   )
