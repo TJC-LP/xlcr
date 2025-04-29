@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package pipeline.spark.steps
 
 import models.FileContent
-import pipeline.spark.{CoreSchema, SparkPipelineRegistry, SparkStep, UdfHelpers, AsposeBroadcastManager}
+import pipeline.spark.{CoreSchema, SparkPipelineRegistry, SparkStep, UdfHelpers}
 import types.MimeType
 import utils.{DocumentSplitter, SplitConfig, SplitPolicy, SplitStrategy}
 
@@ -37,91 +37,53 @@ case class SplitStep(
 
   private def createSplitUdf(implicit spark: SparkSession) = {
     import spark.implicits._
-    import UdfHelpers._
 
-    // Ensure Aspose licenses are broadcast & available on the workers (if
-    // enabled) – mirrors behaviour of `licenseAwareUdf2`.
-    AsposeBroadcastManager.initBroadcast(spark)
+    // We only need the content bytes & mime string here – the `sourceId` is
+    // added to the lineage *after* exploding the chunks, so we can simply use
+    // the two-argument license-aware wrapper.
 
-    val udfF = (bytes: Array[Byte], mimeStr: String, sourceId: String) => {
-      // One-time per-executor license initialisation.
-      AsposeBroadcastManager.ensureInitialized()
-
+    licenseAwareUdf2(name, rowTimeout) { (bytes: Array[Byte], mimeStr: String) =>
       val mime =
         MimeType.fromStringNoParams(mimeStr).getOrElse(MimeType.ApplicationOctet)
       val content = FileContent(bytes, mime)
 
-      val start = java.time.Instant.now().toEpochMilli
+      // Perform the split – any exception will be captured by the wrapper and
+      // converted into a proper `StepResult` with the error field populated.
+      val chunks = DocumentSplitter.split(content, config)
 
-      try {
-        val chunks = DocumentSplitter.split(content, config)
+      // Determine splitter implementation & strategy used (for lineage meta)
+      val splitterImpl = DocumentSplitter
+        .forMime(mime)
+        .map(_.getClass.getSimpleName)
 
-        val end = java.time.Instant.now().toEpochMilli
-
-        // Determine splitter implementation & strategy used (for lineage meta)
-        val splitterImpl = DocumentSplitter
-          .forMime(mime)
-          .map(_.getClass.getSimpleName)
-
-        val effectiveStrategy = config.strategy match {
-          case Some(SplitStrategy.Auto) =>
-            Some(SplitConfig.defaultStrategyForMime(mime).displayName)
-          case Some(strategy) => Some(strategy.displayName)
-          case None => Some(SplitConfig.defaultStrategyForMime(mime).displayName)
-        }
-
-        val paramsMap = scala.collection.mutable.Map[String, String]()
-        effectiveStrategy.foreach(s => paramsMap.put("strategy", s))
-
-        val params = if (paramsMap.isEmpty) None else Some(paramsMap.toMap)
-
-        // Convert chunks into a serialisable representation expected further
-        // down-stream.  We include index / label / total so that the caller can
-        // explode them and attach the information to the lineage element of
-        // each resulting row.
-        val chunkTuples = chunks.map { chunk =>
-          (
-            chunk.content.data,
-            chunk.content.mimeType.mimeType,
-            chunk.index,
-            chunk.label,
-            chunk.total
-          )
-        }
-
-        val lineageNoChunk = UdfHelpers.Lineage(
-          start,
-          end,
-          end - start,
-          None,
-          name,
-          splitterImpl,
-          params,
-          None, // sourceId – added later
-          None // chunk meta populated later per-row after explode
-        )
-
-        StepResult(Some(chunkTuples), lineageNoChunk)
-      } catch {
-        case t: Throwable =>
-          val end = java.time.Instant.now().toEpochMilli
-          val lineageErr = UdfHelpers.Lineage(
-            start,
-            end,
-            end - start,
-            Some(t.getMessage),
-            name,
-            None,
-            None,
-            None, // sourceId
-            None
-          )
-          StepResult(Some(Seq.empty[(Array[Byte], String, Int, String, Int)]), lineageErr)
+      val effectiveStrategy = config.strategy match {
+        case Some(SplitStrategy.Auto) =>
+          Some(SplitConfig.defaultStrategyForMime(mime).displayName)
+        case Some(strategy) => Some(strategy.displayName)
+        case None => Some(SplitConfig.defaultStrategyForMime(mime).displayName)
       }
-    }
 
-    // 3-argument UDF: (content bytes, mime string, source id)
-    org.apache.spark.sql.functions.udf(udfF)
+      val paramsMap = scala.collection.mutable.Map[String, String]()
+      effectiveStrategy.foreach(s => paramsMap.put("strategy", s))
+
+      val params = if (paramsMap.isEmpty) None else Some(paramsMap.toMap)
+
+      // Convert chunks into a serialisable representation expected further
+      // downstream. We include index / label / total so that the caller can
+      // explode them and attach the information to the lineage element of
+      // each resulting row.
+      val chunkTuples = chunks.map { chunk =>
+        (
+          chunk.content.data,
+          chunk.content.mimeType.mimeType,
+          chunk.index,
+          chunk.label,
+          chunk.total
+        )
+      }
+
+      (chunkTuples, splitterImpl, params)
+    }
   }
 
   override def doTransform(
@@ -138,7 +100,7 @@ case class SplitStep(
     val splitUdf = createSplitUdf
 
     val withResult =
-      df.withColumn(Result, splitUdf(F.col(Content), F.col(Mime), F.col(Id)))
+      df.withColumn(Result, splitUdf(F.col(Content), F.col(Mime)))
 
     // Unpack result and extract the chunks array
     val withChunks = withResult
