@@ -59,5 +59,10 @@ object AsposeSplitterRegistry {
       MimeType.ApplicationZip,
       ZipArchiveAsposeSplitter
     )
+    
+    DocumentSplitter.register(
+      MimeType.ApplicationSevenz,
+      SevenZipArchiveAsposeSplitter
+    )
   }
 }
