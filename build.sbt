@@ -72,7 +72,7 @@ lazy val core = (project in file("core"))
       "org.apache.tika" % "tika-parsers" % tikaVersion,
       "org.apache.tika" % "tika-parsers-standard-package" % tikaVersion,
       // Apache Commons Compress for archive formats
-      "org.apache.commons" % "commons-compress" % "1.25.0",
+      "org.apache.commons" % "commons-compress" % "1.23.0",
       // Jakarta Mail for email parsing
       "org.eclipse.angus" % "jakarta.mail" % "2.0.2",
       "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
@@ -258,7 +258,8 @@ lazy val assemblySettings = Seq(
     case PathList("META-INF", "mailcap")           => MergeStrategy.first
     case PathList("META-INF", "mailcap.default")   => MergeStrategy.first
     case PathList("META-INF", "mimetypes.default") => MergeStrategy.first
-    case PathList("META-INF", "versions", "9", "module-info.class") => MergeStrategy.discard
+    case PathList("META-INF", "versions", "9", "module-info.class") =>
+      MergeStrategy.discard
     case PathList("META-INF", "kotlin-project-structure-metadata.json") =>
       MergeStrategy.discard
     case PathList("META-INF", xs @ _*) if xs.exists(_.endsWith(".DSA")) =>
@@ -295,7 +296,7 @@ lazy val assemblySettings = Seq(
 
     // Handle overlaps between xml-apis-ext and xml-apis
     case PathList("license", "LICENSE.dom-software.txt") => MergeStrategy.first
-    
+
     // Handle library.properties conflicts (including java-rdfa and scala-library)
     case PathList("library.properties") => MergeStrategy.first
 
@@ -340,11 +341,16 @@ lazy val root = (project in file("."))
     assembleSpark := (coreSpark / assembly).value,
     // Define projects that should be included when cross-building for Scala 3
     crossScalaVersions := Seq(scala212, scala3),
-    
     // Custom tasks for different Scala versions
-    addCommandAlias("compileScala3", ";++3.3.4; core/compile; coreAspose/compile; coreSpreadsheetLLM/compile; server/compile"),
+    addCommandAlias(
+      "compileScala3",
+      ";++3.3.4; core/compile; coreAspose/compile; coreSpreadsheetLLM/compile; server/compile"
+    ),
     addCommandAlias("compileScala2", ";++2.12.18; compile"),
-    addCommandAlias("testScala3", ";++3.3.4; core/test; coreAspose/test; coreSpreadsheetLLM/test; server/test"),
+    addCommandAlias(
+      "testScala3",
+      ";++3.3.4; core/test; coreAspose/test; coreSpreadsheetLLM/test; server/test"
+    ),
     addCommandAlias("testScala2", ";++2.12.18; test")
   )
   .settings(assemblySettings)

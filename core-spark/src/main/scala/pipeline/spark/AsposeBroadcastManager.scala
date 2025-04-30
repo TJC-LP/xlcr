@@ -10,6 +10,11 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.util.Try
 
+// Registries for converters & splitters
+import bridges.BridgeRegistry
+import bridges.aspose.AsposeBridgeRegistry
+import utils.aspose.AsposeSplitterRegistry
+
 /**
  * Manages broadcasting of Aspose license bytes to Spark workers
  * and ensures license initialization on each worker JVM.
@@ -32,6 +37,12 @@ object AsposeBroadcastManager extends Serializable {
   
   // License status cache for quick lineage access
   private var asposeLicenseStatus: Map[String, String] = Map.empty
+
+  // Ensure core converters are registered only once per JVM
+  private val coreRegistered = new AtomicBoolean(false)
+
+  // Ensure Aspose converters/splitters are registered only once per JVM
+  private val asposeRegistered = new AtomicBoolean(false)
   
   /**
    * Initializes license broadcasting on the driver
@@ -52,13 +63,18 @@ object AsposeBroadcastManager extends Serializable {
       if (licenseBytes.nonEmpty) {
         logger.info(s"Broadcasting ${licenseBytes.size} Aspose license files to workers")
         licenseBroadcast = Some(spark.sparkContext.broadcast(licenseBytes))
-        
-        // Get the license status for quick access in UDFs
-        updateLicenseStatus()
       } else {
         logger.info("No Aspose licenses found to broadcast")
-        asposeLicenseStatus = Map("status" -> "disabled")
       }
+
+      // Always compute license status (may still be disabled)
+      updateLicenseStatus()
+
+      // Ensure default (non-Aspose) converters are available on the driver
+      registerCoreConverters()
+
+      // Register Aspose converters & splitters if licenses are available
+      registerAsposeComponentsIfEnabled()
     }
   }
   
@@ -72,7 +88,7 @@ object AsposeBroadcastManager extends Serializable {
       licenseBroadcast.foreach { broadcast =>
         logger.debug("Initializing Aspose licenses on worker")
         val licenseMap = broadcast.value
-        
+
         Try {
           // Apply the licenses on this worker
           applyLicenses(licenseMap)
@@ -82,6 +98,12 @@ object AsposeBroadcastManager extends Serializable {
           asposeLicenseStatus = Map("status" -> "error", "error" -> ex.getMessage)
         }
       }
+
+      // Ensure core converters are available on the worker JVM
+      registerCoreConverters()
+
+      // Register Aspose converters & splitters if we have licenses
+      registerAsposeComponentsIfEnabled()
     }
   }
   
@@ -194,6 +216,33 @@ object AsposeBroadcastManager extends Serializable {
     // Overall status is licensed if any product is licensed
     val overallStatus = if (productStatusMap.values.exists(_ == "licensed")) "licensed" else "evaluation"
     asposeLicenseStatus = productStatusMap + ("status" -> overallStatus)
+  }
+
+  /* -------------------------------------------------------------- */
+  /* Registration helpers                                           */
+  /* -------------------------------------------------------------- */
+
+  /** Register the built-in converters and bridges once per JVM. */
+  private def registerCoreConverters(): Unit = {
+    if (coreRegistered.compareAndSet(false, true)) {
+      logger.debug("Registering core BridgeRegistry converters (once per JVM)")
+      Try(BridgeRegistry.init()).failed.foreach { ex =>
+        logger.warn("Failed to initialise BridgeRegistry", ex)
+      }
+    }
+  }
+
+  /** Register Aspose-powered bridges and splitters once per JVM when enabled. */
+  private def registerAsposeComponentsIfEnabled(): Unit = {
+    if (isEnabled && asposeRegistered.compareAndSet(false, true)) {
+      logger.info("Aspose detected – registering Aspose bridges & splitters")
+      Try(AsposeBridgeRegistry.registerAll()).failed.foreach { ex =>
+        logger.warn("Failed to register Aspose bridges", ex)
+      }
+      Try(AsposeSplitterRegistry.registerAll()).failed.foreach { ex =>
+        logger.warn("Failed to register Aspose splitters", ex)
+      }
+    }
   }
   
   /**
