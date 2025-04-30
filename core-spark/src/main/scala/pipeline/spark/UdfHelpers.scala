@@ -159,21 +159,34 @@ object UdfHelpers {
     try {
       val (result, implName, params): (R, Option[String], Option[Map[String, String]]) =
         if (timeout.isFinite()) {
-          val task = ZIO
-            .attempt(thunk)
-            .timeoutFail(new RuntimeException("timeout"))(
-              ZDuration.fromScala(timeout)
-            )
-          Unsafe.unsafe { implicit u =>
-            Runtime.default.unsafe.run(task).getOrThrowFiberFailure()
+          // -------------------------------------------------------------
+          // Hard timeout – run `thunk` on its own thread and cancel the
+          // Future if we exceed the limit. This sends Thread.interrupt to
+          // the running code which is honored by most libraries and avoids
+          // the soft-cancellation delay we observed with the ZIO fiber
+          // approach.
+          // -------------------------------------------------------------
+
+          import java.util.concurrent.{Executors, TimeUnit, TimeoutException => JTimeout}
+
+          val exec = Executors.newSingleThreadExecutor()
+          try {
+            val fut = exec.submit(() => thunk)
+            try fut.get(timeout.toMillis, TimeUnit.MILLISECONDS)
+            catch {
+              case _: JTimeout =>
+                fut.cancel(true) // interrupt running thread
+                throw new RuntimeException("timeout")
+            }
+          } finally {
+            exec.shutdownNow()
           }
         } else thunk
 
       val end = Instant.now().toEpochMilli
-      // Use provided implementation info or fall back to defaults
       val finalImplName = implName.orElse(defaultImplementation)
       val finalParams = params.orElse(defaultParams)
-      
+
       StepResult(
         Some(result),
         Lineage(start, end, end - start, None, name, finalImplName, finalParams, None, None)
