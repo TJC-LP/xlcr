@@ -6,13 +6,13 @@ import types.MimeType
 import utils.{DocChunk, DocumentSplitter, SplitConfig, SplitStrategy}
 
 import compat.aspose.AsposeWorkbook
+import org.apache.poi.openxml4j.util.ZipSecureFile
 
 import com.aspose.cells.FileFormatType
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
-/**
-  * Common helper used by the Aspose-based Excel sheet splitters.
+/** Common helper used by the Aspose-based Excel sheet splitters.
   *
   * Up until now we implemented splitting by **removing** all worksheets except
   * the target one and then saving the mutated workbook.  That approach breaks
@@ -26,8 +26,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
   */
 object ExcelSheetAsposeSplitter {
 
-  /**
-    * Perform the actual sheet-level split.
+  /** Perform the actual sheet-level split.
     *
     * @param content         original workbook bytes
     * @param cfg             split configuration supplied by the caller
@@ -40,6 +39,7 @@ object ExcelSheetAsposeSplitter {
       fileFormatType: Int,
       outputMimeType: M
   ): Seq[DocChunk[_ <: MimeType]] = {
+    ZipSecureFile.setMaxFileCount(cfg.maxFileCount)
 
     // Only run when sheet-level splitting has been requested
     if (!cfg.hasStrategy(SplitStrategy.Sheet))

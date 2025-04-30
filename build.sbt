@@ -85,6 +85,9 @@ lazy val core = (project in file("core"))
       "org.apache.xmlgraphics" % "batik-all" % "1.18",
       // ODFDOM for OpenDocument files
       "org.odftoolkit" % "odfdom-java" % "0.12.0",
+      // Apache POI for Excel handling
+      "org.apache.poi" % "poi" % "5.2.5",
+      "org.apache.poi" % "poi-ooxml" % "5.2.5",
       // ZIO specific dependencies
       "dev.zio" %% "zio-config" % zioConfigVersion,
       "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
@@ -212,9 +215,6 @@ lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
   .settings(
     name := "xlcr-core-spreadsheetllm",
     libraryDependencies ++= Seq(
-      // Apache POI for Excel handling
-      "org.apache.poi" % "poi" % "5.2.5",
-      "org.apache.poi" % "poi-ooxml" % "5.2.5",
       // ODFDOM for OpenDocument (ODS) format
       "org.odftoolkit" % "odfdom-java" % "0.12.0",
       // JSON processing

@@ -95,7 +95,10 @@ case class SplitConfig(
     maxImageHeight: Int = 2000, // Max height in pixels
     maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default limit
     imageDpi: Int = 300, // DPI for rendering
-    jpegQuality: Float = 0.85f // JPEG quality factor (0.0-1.0)
+    jpegQuality: Float = 0.85f, // JPEG quality factor (0.0-1.0)
+
+    // Excel and zip settings
+    maxFileCount: Long = 1000L
 ) {
 
   /** Helper method to check if a strategy is set to a specific value */
