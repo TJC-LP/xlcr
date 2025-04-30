@@ -154,4 +154,6 @@ case class SplitStep(
     withLineage
       .drop(Chunks, Chunk, LineageEntry, ResultLineage, Result)
   }
+
+  SparkPipelineRegistry.register(this)
 }
