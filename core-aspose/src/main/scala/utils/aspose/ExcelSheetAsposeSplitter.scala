@@ -4,27 +4,36 @@ package utils.aspose
 import models.FileContent
 import types.MimeType
 import utils.{DocChunk, DocumentSplitter, SplitConfig, SplitStrategy}
-import compat.aspose.{AsposeWorkbook}
+
+import compat.aspose.AsposeWorkbook
 
 import com.aspose.cells.FileFormatType
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 /**
- * Base implementation for Excel sheet splitters using Aspose.Cells.
- * Used by both XLS and XLSX splitters.
- */
+  * Common helper used by the Aspose-based Excel sheet splitters.
+  *
+  * Up until now we implemented splitting by **removing** all worksheets except
+  * the target one and then saving the mutated workbook.  That approach breaks
+  * on workbooks where the remaining sheet is *hidden* (Aspose throws
+  * “A workbook must contain at least a visible worksheet”).
+  *
+  * The new implementation creates a *fresh* `Workbook` for every slice and
+  * copies the target worksheet into it – guaranteeing that the resulting file
+  * always contains exactly one *visible* worksheet regardless of the source
+  * visibility state.
+  */
 object ExcelSheetAsposeSplitter {
 
   /**
-   * Split an Excel workbook into individual worksheet documents
-   *
-   * @param content The file content to split
-   * @param cfg The split configuration
-   * @param fileFormatType The FileFormatType to use (Xlsx or Xls)
-   * @param outputMimeType The output MIME type to use
-   * @return A sequence of document chunks
-   */
+    * Perform the actual sheet-level split.
+    *
+    * @param content         original workbook bytes
+    * @param cfg             split configuration supplied by the caller
+    * @param fileFormatType  Aspose `FileFormatType` constant to use when saving
+    * @param outputMimeType  MIME type of the generated chunks
+    */
   def splitWorkbook[M <: MimeType](
       content: FileContent[M],
       cfg: SplitConfig,
@@ -32,41 +41,42 @@ object ExcelSheetAsposeSplitter {
       outputMimeType: M
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    // Only run when the caller requested sheet-level splitting.
+    // Only run when sheet-level splitting has been requested
     if (!cfg.hasStrategy(SplitStrategy.Sheet))
       return Seq(DocChunk(content, "workbook", 0, 1))
 
-    // Load the source workbook to access sheet metadata
+    // Load the source workbook once – copying sheets is cheap, parsing XLSX
+    // multiple times is not.
     val srcWb = new AsposeWorkbook(new ByteArrayInputStream(content.data))
+    val sheets = srcWb.getWorksheets
+    val total = sheets.getCount
 
-    try {
-      val sheets = srcWb.getWorksheets
-      val total = sheets.getCount
+    (0 until total).map { idx =>
+      val srcSheet = sheets.get(idx)
 
-      (0 until total).map { idx =>
-        // Reload original bytes for each iteration to get a fresh copy
-        val wb = new AsposeWorkbook(new ByteArrayInputStream(content.data))
-        val wSheets = wb.getWorksheets
+      // Create a fresh workbook with *no* sheets, then copy the target one
+      val destWb = new AsposeWorkbook()
+      val destSheets = destWb.getWorksheets
+      // Remove the default empty sheet Aspose creates
+      destSheets.removeAt(0)
 
-        // Remove every sheet except the target one (iterate backwards)
-        for (i <- wSheets.getCount - 1 to 0 by -1) {
-          if (i != idx) wSheets.removeAt(i)
-        }
+      // Create a fresh empty sheet and copy the source contents into it
+      val newIdx = destSheets.add()
+      val destSheet = destSheets.get(newIdx)
 
-        val outBaos = new ByteArrayOutputStream()
-        wb.save(outBaos, fileFormatType)
+      destSheet.copy(srcSheet)
 
-        val sheetName = srcWb.getWorksheets.get(idx).getName
+      // Preserve name & ensure visibility
+      destSheet.setName(srcSheet.getName)
+      destSheet.setVisible(true)
 
-        val fc = FileContent(
-          outBaos.toByteArray,
-          outputMimeType
-        )
-        DocChunk(fc, sheetName, idx, total)
-      }
-    } finally {
-      // No explicit dispose() in AsposeWorkbook, but good to mark the intent
-      // srcWb should be garbage collected properly
+      // Persist to bytes
+      val baos = new ByteArrayOutputStream()
+      destWb.save(baos, fileFormatType)
+
+      val fc = FileContent(baos.toByteArray, outputMimeType)
+
+      DocChunk(fc, srcSheet.getName, idx, total)
     }
   }
 }
