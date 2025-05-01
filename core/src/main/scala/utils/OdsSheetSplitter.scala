@@ -5,14 +5,14 @@ import models.FileContent
 import types.MimeType
 
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
-import org.odftoolkit.odfdom.pkg.OdfPackage
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.logging.Level
 
-import scala.jdk.CollectionConverters._
-
-class OdsSheetSplitter extends DocumentSplitter[MimeType] {
+class OdsSheetSplitter
+    extends DocumentSplitter[
+      MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
+    ] {
 
   private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
 
@@ -27,17 +27,25 @@ class OdsSheetSplitter extends DocumentSplitter[MimeType] {
   )
 
   override def split(
-      content: FileContent[MimeType],
+      content: FileContent[
+        MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
+      ],
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (!cfg.hasStrategy(SplitStrategy.Sheet) || !supported.exists(_ == content.mimeType))
+    if (
+      !cfg.hasStrategy(SplitStrategy.Sheet) || !supported.contains(
+        content.mimeType
+      )
+    )
       return Seq(DocChunk(content, "workbook", 0, 1))
 
     try {
       // Load the ODS document
-      val tempDoc = OdfSpreadsheetDocument.loadDocument(new ByteArrayInputStream(content.data))
-      val sheets = tempDoc.getTableList
+      val tempDoc = OdfSpreadsheetDocument.loadDocument(
+        new ByteArrayInputStream(content.data)
+      )
+      val sheets = tempDoc.getTableList(false)
       val total = sheets.size()
       val sheetNames = (0 until total).map(idx => sheets.get(idx).getTableName)
 
@@ -47,9 +55,11 @@ class OdsSheetSplitter extends DocumentSplitter[MimeType] {
       sheetNames.zipWithIndex.map { case (name, idx) =>
         try {
           // Create a new document with only this sheet
-          val doc = OdfSpreadsheetDocument.loadDocument(new ByteArrayInputStream(content.data))
-          val allSheets = doc.getTableList
-          
+          val doc = OdfSpreadsheetDocument.loadDocument(
+            new ByteArrayInputStream(content.data)
+          )
+          val allSheets = doc.getTableList(false)
+
           // Keep only the target sheet
           val sheetsToRemove = (0 until allSheets.size()).filter(_ != idx)
           sheetsToRemove.sorted.reverse.foreach { i =>
@@ -67,7 +77,10 @@ class OdsSheetSplitter extends DocumentSplitter[MimeType] {
           DocChunk(fc, name, idx, total)
         } catch {
           case e: Exception =>
-            logger.error(s"Error processing ODS sheet $name: ${e.getMessage}", e)
+            logger.error(
+              s"Error processing ODS sheet $name: ${e.getMessage}",
+              e
+            )
             // Return the original content if we can't process this sheet
             DocChunk(content, s"sheet-$idx", idx, total)
         }

@@ -2,9 +2,10 @@ package com.tjclp.xlcr
 package utils
 
 import models.FileContent
-import types.MimeType
+import types.{MimeType, Priority}
 
 import scala.collection.concurrent.TrieMap
+import org.slf4j.LoggerFactory
 
 /** Metadata‑enriched chunk produced by a DocumentSplitter. */
 case class DocChunk[T <: MimeType](
@@ -15,7 +16,6 @@ case class DocChunk[T <: MimeType](
     attrs: Map[String, String] = Map.empty
 ) extends Serializable
 
-/** Splitting strategies supported for different document types. */
 /** Splitting strategies supported for different document types. */
 sealed trait SplitStrategy {
 
@@ -158,33 +158,57 @@ object SplitConfig {
 }
 
 /** Generic trait for splitting a document. */
-trait DocumentSplitter[I <: MimeType] {
+trait DocumentSplitter[I <: MimeType] extends Prioritized {
   def split(
       content: FileContent[I],
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]]
+  
+  /**
+   * Default priority for this DocumentSplitter implementation.
+   * Override this in implementations to set a different priority.
+   */
+  override def priority: Priority = Priority.DEFAULT
 }
 
 /** Registry + façade */
 object DocumentSplitter {
+  private val logger = LoggerFactory.getLogger(getClass)
 
-  /** Thread‑safe registry */
-  private val registry: TrieMap[MimeType, DocumentSplitter[_ <: MimeType]] =
-    TrieMap.empty
+  /** Thread‑safe registry based on PriorityRegistry */
+  private lazy val registry: PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]] =
+    new PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]]()
 
   /* API ------------------------------------------------------------------ */
 
+  /**
+   * Register a splitter for a MIME type.
+   * If multiple splitters are registered for the same MIME type,
+   * the one with the highest priority will be used when looking up by MIME type.
+   */
   def register[I <: MimeType](
       mime: MimeType,
       splitter: DocumentSplitter[I]
-  ): Unit =
-    registry.update(
+  ): Unit = {
+    registry.register(
       mime,
       splitter.asInstanceOf[DocumentSplitter[_ <: MimeType]]
     )
+  }
 
+  /**
+   * Find a splitter for a MIME type.
+   * If multiple splitters are registered for the MIME type,
+   * the one with the highest priority will be returned.
+   */
   def forMime(mime: MimeType): Option[DocumentSplitter[_ <: MimeType]] =
     registry.get(mime)
+  
+  /**
+   * Find all splitters registered for a MIME type, sorted by priority (highest first).
+   */
+  def allForMime(mime: MimeType): List[DocumentSplitter[_ <: MimeType]] =
+    registry.getAll(mime)
 
   /** Primary entry‑point returning enriched chunks. */
   def split(
@@ -201,7 +225,10 @@ object DocumentSplitter {
         cfg
       }
 
-    forMime(content.mimeType)
+    val splitterOpt = forMime(content.mimeType)
+    logger.debug(s"Using splitter ${splitterOpt.map(_.getClass.getSimpleName).getOrElse("None")} for MIME type ${content.mimeType}")
+    
+    splitterOpt
       .map(
         _.asInstanceOf[DocumentSplitter[MimeType]].split(content, configToUse)
       )
@@ -271,5 +298,6 @@ object DocumentSplitter {
     register(MimeType.TextCsv, new CsvSplitter)
   }
 
+  // Initialize built-in splitters during object instantiation
   initBuiltIns()
 }

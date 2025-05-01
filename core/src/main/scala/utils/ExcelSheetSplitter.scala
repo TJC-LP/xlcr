@@ -8,8 +8,6 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
-import scala.jdk.CollectionConverters._
-
 class ExcelSheetSplitter extends DocumentSplitter[MimeType] {
 
   private val supported = Set(
@@ -22,11 +20,15 @@ class ExcelSheetSplitter extends DocumentSplitter[MimeType] {
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (!cfg.hasStrategy(SplitStrategy.Sheet) || !supported.exists(_ == content.mimeType))
+    if (
+      !cfg.hasStrategy(SplitStrategy.Sheet) || !supported.contains(
+        content.mimeType
+      )
+    )
       return Seq(DocChunk(content, "workbook", 0, 1))
 
     val tempWb = WorkbookFactory.create(new ByteArrayInputStream(content.data))
-    val total  = tempWb.getNumberOfSheets
+    val total = tempWb.getNumberOfSheets
     val sheetNames = (0 until total).map(tempWb.getSheetName)
     tempWb.close()
 

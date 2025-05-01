@@ -47,7 +47,9 @@ class OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
   }
 
   "OdsSheetSplitter" should "handle empty or null input" in {
+    // Create typed FileContent
     val emptyContent = FileContent(Array.emptyByteArray, MimeType.ApplicationVndOasisOpendocumentSpreadsheet)
+      .asInstanceOf[FileContent[MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type]]
     val splitter = new OdsSheetSplitter()
     
     // This should not crash, but return the original content
@@ -60,6 +62,7 @@ class OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
     try {
       val odsBytes = createTestOdsFile(3)
       val content = FileContent(odsBytes, MimeType.ApplicationVndOasisOpendocumentSpreadsheet)
+        .asInstanceOf[FileContent[MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type]]
       val splitter = new OdsSheetSplitter()
       
       // Split the ODS file
@@ -102,6 +105,7 @@ class OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
     // Create test ODS
     val odsBytes = createTestOdsFile(2)
     val content = FileContent(odsBytes, MimeType.ApplicationVndOasisOpendocumentSpreadsheet)
+      .asInstanceOf[FileContent[MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type]]
     val splitter = new OdsSheetSplitter()
     
     // Use a different strategy
@@ -111,21 +115,27 @@ class OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
     result.size should be(1)
     result.head.label should be("workbook")
     result.head.index should be(0)
-    result.head.content should be(content)
+    result.head.content.data should be(content.data)
   }
   
   it should "return the original content for unsupported MIME types" in {
-    // Create some other content
-    val textContent = FileContent("test data".getBytes, MimeType.TextPlain)
-    val splitter = new OdsSheetSplitter()
+    // Since OdsSheetSplitter now has a specific type bound, we have to test
+    // this using the broader DocumentSplitter.split method
     
-    // Even with Sheet strategy, should return original for unsupported MIME
-    val result = splitter.split(textContent, SplitConfig(Some(SplitStrategy.Sheet)))
+    // Define a test using the DocumentSplitter entry point
+    def testTextContentViaSplitter(): Unit = {
+      // Create a text content that should not be processed
+      val textBytes = "test data".getBytes
+      val textContent = FileContent(textBytes, MimeType.TextPlain)
+      
+      // Split using the facade
+      val result = DocumentSplitter.split(textContent, SplitConfig(Some(SplitStrategy.Sheet)))
+      
+      // Should just return a single chunk with the original content
+      result.size should be(1)
+      result.head.content.data should be(textBytes)
+    }
     
-    // Should just return the original
-    result.size should be(1)
-    result.head.label should be("workbook")
-    result.head.index should be(0)
-    result.head.content should be(textContent)
+    testTextContentViaSplitter()
   }
 }

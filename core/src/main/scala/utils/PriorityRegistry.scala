@@ -1,0 +1,149 @@
+package com.tjclp.xlcr
+package utils
+
+import types.Priority
+import scala.collection.concurrent.TrieMap
+import java.util.concurrent.atomic.AtomicReference
+import org.slf4j.LoggerFactory
+
+/**
+ * Trait for objects that have a priority.
+ * Implementations can declare their priority level to indicate preference
+ * when multiple implementations for the same functionality exist.
+ */
+trait Prioritized {
+  /** 
+   * The priority of this implementation.
+   * Higher values indicate higher priority.
+   */
+  def priority: Priority
+}
+
+/**
+ * A thread-safe registry that stores values with priorities.
+ * For each key, the registry maintains a sorted list of values by descending priority.
+ *
+ * @tparam K The type of keys in the registry
+ * @tparam V The type of values in the registry
+ */
+class PriorityRegistry[K, V <: Prioritized] {
+  private val logger = LoggerFactory.getLogger(getClass)
+  
+  /** The internal storage for registry entries */
+  private val registry: TrieMap[K, List[V]] = TrieMap.empty
+  
+  /**
+   * Registers a value for a key with the given priority.
+   * If a value with the same identity is already registered for the key,
+   * it will be replaced with the new priority.
+   *
+   * @param key The key to register the value for
+   * @param value The value to register
+   */
+  def register(key: K, value: V): Unit = {
+    // Atomic update using putIfAbsent and replace
+    val newList = registry.get(key) match {
+      case Some(currentList) =>
+        // Remove existing entry with same class to avoid duplicates
+        val filteredList = currentList.filterNot(_.getClass == value.getClass)
+        // Add new entry and sort by priority descending
+        (value :: filteredList).sortBy(v => -v.priority.value)
+        
+      case None =>
+        List(value)
+    }
+    
+    // Update the registry
+    registry.put(key, newList)
+    
+    // Log the registration with priority
+    logger.info(s"Registered ${value.getClass.getSimpleName} for key $key with priority ${value.priority} " +
+                s"(currently ${newList.size} implementation(s) for this key)")
+    
+    // If there are multiple implementations, log them in order
+    if (newList.size > 1) {
+      logger.info(s"Available implementations for $key (in priority order): " +
+                  newList.map(v => s"${v.getClass.getSimpleName}:${v.priority}").mkString(", "))
+    }
+  }
+  
+  /**
+   * Gets the highest priority value for a key.
+   *
+   * @param key The key to get the value for
+   * @return Some(value) if a value is registered for the key, None otherwise
+   */
+  def get(key: K): Option[V] = {
+    val result = registry.get(key).flatMap(_.headOption)
+    
+    // Log which implementation was selected
+    result.foreach(v => logger.debug(s"Selected ${v.getClass.getSimpleName} for key $key with priority ${v.priority}"))
+    
+    result
+  }
+  
+  /**
+   * Gets all values registered for a key, sorted by priority (highest first).
+   *
+   * @param key The key to get values for
+   * @return List of registered values, sorted by priority
+   */
+  def getAll(key: K): List[V] = {
+    registry.getOrElse(key, List.empty)
+  }
+  
+  /**
+   * Checks if there is at least one value registered for a key.
+   *
+   * @param key The key to check
+   * @return true if at least one value is registered for the key, false otherwise
+   */
+  def contains(key: K): Boolean = {
+    registry.contains(key) && registry(key).nonEmpty
+  }
+  
+  /**
+   * Gets all registered keys.
+   *
+   * @return Set of all registered keys
+   */
+  def keys: Set[K] = {
+    registry.keySet.toSet
+  }
+  
+  /**
+   * Gets all registered values across all keys.
+   *
+   * @return Set of all registered values
+   */
+  def values: Set[V] = {
+    registry.values.flatMap(_.toSet).toSet
+  }
+  
+  /**
+   * Gets all entries in the registry as key-value pairs.
+   * For each key, the highest priority value is returned.
+   *
+   * @return Map of keys to their highest priority values
+   */
+  def entries: Map[K, V] = {
+    registry.flatMap { case (key, values) => 
+      values.headOption.map(value => key -> value) 
+    }.toMap
+  }
+  
+  /**
+   * Clears the registry.
+   */
+  def clear(): Unit = {
+    registry.clear()
+    logger.info("Registry cleared")
+  }
+  
+  /**
+   * Gets the number of keys in the registry.
+   *
+   * @return The number of keys
+   */
+  def size: Int = registry.size
+}

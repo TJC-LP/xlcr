@@ -1,8 +1,9 @@
 package com.tjclp.xlcr
 package utils.aspose
 
-import types.MimeType
-import utils.DocumentSplitter
+import models.FileContent
+import types.{MimeType, Priority}
+import utils.{DocChunk, DocumentSplitter, SplitConfig}
 
 /** Registers Aspose‑powered [[DocumentSplitter]] implementations with the global
   * [[DocumentSplitter]] registry.
@@ -11,58 +12,93 @@ object AsposeSplitterRegistry {
 
   /** Perform the registration once at application start‑up. */
   def registerAll(): Unit = {
-    // Register PowerPoint splitters
+    // Mark all Aspose splitters with the ASPOSE priority
+    // to ensure they're selected over core implementations
+    
+    // Create priority adapters for each splitter
+    // PowerPoint splitters
+    val pptSplitter = new PrioritizedSplitter(PowerPointSlideAsposeSplitter, Priority.ASPOSE)
+    val pptxSplitter = new PrioritizedSplitter(PowerPointXSlideAsposeSplitter, Priority.ASPOSE)
+    
+    // Excel splitters
+    val xlsSplitter = new PrioritizedSplitter(ExcelSheetXlsAsposeSplitter, Priority.ASPOSE)
+    val xlsxSplitter = new PrioritizedSplitter(ExcelXSheetAsposeSplitter, Priority.ASPOSE)
+    val xlsmSplitter = new PrioritizedSplitter(ExcelXlsmSheetAsposeSplitter, Priority.ASPOSE)
+    val xlsbSplitter = new PrioritizedSplitter(ExcelXlsbSheetAsposeSplitter, Priority.ASPOSE)
+    
+    // Email splitters
+    val emailSplitter = new PrioritizedSplitter(EmailAttachmentAsposeSplitter, Priority.ASPOSE)
+    val msgSplitter = new PrioritizedSplitter(OutlookMsgAsposeSplitter, Priority.ASPOSE)
+    
+    // Archive splitters
+    val zipSplitter = new PrioritizedSplitter(ZipArchiveAsposeSplitter, Priority.ASPOSE)
+    val sevenZipSplitter = new PrioritizedSplitter(SevenZipArchiveAsposeSplitter, Priority.ASPOSE)
+    
+    // Register the prioritized splitters
     DocumentSplitter.register(
       MimeType.ApplicationVndMsPowerpoint,
-      PowerPointSlideAsposeSplitter
+      pptSplitter
     )
     
     DocumentSplitter.register(
       MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
-      PowerPointXSlideAsposeSplitter
+      pptxSplitter
     )
     
-    // Register Excel splitters
     DocumentSplitter.register(
       MimeType.ApplicationVndMsExcel,
-      ExcelSheetXlsAsposeSplitter
+      xlsSplitter
     )
     
     DocumentSplitter.register(
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      ExcelXSheetAsposeSplitter
+      xlsxSplitter
     )
     
     DocumentSplitter.register(
       MimeType.ApplicationVndMsExcelSheetMacroEnabled,
-      ExcelXlsmSheetAsposeSplitter
+      xlsmSplitter
     )
     
     DocumentSplitter.register(
       MimeType.ApplicationVndMsExcelSheetBinary,
-      ExcelXlsbSheetAsposeSplitter
+      xlsbSplitter
     )
     
-    // Register Email splitters
     DocumentSplitter.register(
       MimeType.MessageRfc822,
-      EmailAttachmentAsposeSplitter
+      emailSplitter
     )
     
     DocumentSplitter.register(
       MimeType.ApplicationVndMsOutlook,
-      OutlookMsgAsposeSplitter
+      msgSplitter
     )
     
-    // Register Archive splitters using Aspose.ZIP
     DocumentSplitter.register(
       MimeType.ApplicationZip,
-      ZipArchiveAsposeSplitter
+      zipSplitter
     )
     
     DocumentSplitter.register(
       MimeType.ApplicationSevenz,
-      SevenZipArchiveAsposeSplitter
+      sevenZipSplitter
     )
+  }
+  
+  /**
+   * Adapter class that wraps an existing splitter with a specific priority.
+   * This allows us to set priority for existing splitter objects.
+   */
+  private class PrioritizedSplitter[I <: MimeType](
+      val delegate: DocumentSplitter[I], 
+      override val priority: Priority
+  ) extends DocumentSplitter[I] {
+    override def split(
+      content: FileContent[I],
+      cfg: SplitConfig
+    ): Seq[DocChunk[_ <: MimeType]] = {
+      delegate.split(content, cfg)
+    }
   }
 }

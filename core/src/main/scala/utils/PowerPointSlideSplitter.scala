@@ -2,14 +2,13 @@ package com.tjclp.xlcr
 package utils
 
 import models.FileContent
-import types.{FileType, MimeType}
+import types.MimeType
 
 import org.apache.poi.xslf.usermodel.XMLSlideShow
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream}
-
+import java.io.{File, FileInputStream, FileOutputStream}
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 class PowerPointSlideSplitter extends DocumentSplitter[MimeType] {
 
@@ -18,8 +17,10 @@ class PowerPointSlideSplitter extends DocumentSplitter[MimeType] {
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (!cfg.hasStrategy(SplitStrategy.Slide) ||
-        content.mimeType != MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation)
+    if (
+      !cfg.hasStrategy(SplitStrategy.Slide) ||
+      content.mimeType != MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation
+    )
       return Seq(DocChunk(content, "presentation", 0, 1))
 
     // To avoid ZipEntry issues, write the content to a temporary file first
@@ -31,41 +32,44 @@ class PowerPointSlideSplitter extends DocumentSplitter[MimeType] {
       val fos = new FileOutputStream(tempFile)
       fos.write(content.data)
       fos.close()
-      
+
       // Open the presentation from the file instead of from a stream
       // This avoids the "Cannot retrieve data from Zip Entry" issue
       val src = new XMLSlideShow(new FileInputStream(tempFile))
-      
+
       try {
         val slides = src.getSlides.asScala.toList
         val total = slides.size
-        
+
         // Process each slide - we'll use a separate temporary file for each destination
-        val chunks = slides.zipWithIndex.map { case (originalSlide, idx) =>
+        val chunks = slides.zipWithIndex.flatMap { case (originalSlide, idx) =>
           try {
             // Get slide title before attempting content import
-            val title = Option(originalSlide.getTitle).filter(_.nonEmpty).getOrElse(s"Slide ${idx + 1}")
-            
+            val title = Option(originalSlide.getTitle)
+              .filter(_.nonEmpty)
+              .getOrElse(s"Slide ${idx + 1}")
+
             // Create temp file for destination slideshow
-            val destFile = File.createTempFile(s"slide_${idx+1}", ".pptx")
+            val destFile = File.createTempFile(s"slide_${idx + 1}", ".pptx")
             destFile.deleteOnExit()
-            
+
             try {
               // Create a new presentation for this slide
               val dest = new XMLSlideShow()
-              
+
               try {
                 // Import the content from the original slide
                 dest.createSlide().importContent(originalSlide)
-                
+
                 // Write to the temp file
                 val destFos = new FileOutputStream(destFile)
                 dest.write(destFos)
                 destFos.close()
-                
+
                 // Read the file back into a byte array
-                val destBytes = java.nio.file.Files.readAllBytes(destFile.toPath)
-                
+                val destBytes =
+                  java.nio.file.Files.readAllBytes(destFile.toPath)
+
                 // Create file content and chunk
                 val fc = FileContent(destBytes, content.mimeType)
                 Some(DocChunk(fc, title, idx, total))
@@ -83,8 +87,8 @@ class PowerPointSlideSplitter extends DocumentSplitter[MimeType] {
               ex.printStackTrace() // Added for debugging
               None
           }
-        }.flatten
-        
+        }
+
         if (chunks.isEmpty) {
           // If all slide imports failed, return the original content
           println("All slide imports failed - returning original content")
