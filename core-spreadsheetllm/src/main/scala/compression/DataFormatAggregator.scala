@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package compression
 
 import com.tjclp.xlcr.compression.models.{CellInfo, SheetGrid}
-import com.tjclp.xlcr.compat.StringOps
+import scala.collection.compat._
 import org.slf4j.LoggerFactory
 
 import scala.util.matching.Regex
