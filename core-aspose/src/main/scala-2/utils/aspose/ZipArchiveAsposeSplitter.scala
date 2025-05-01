@@ -54,7 +54,7 @@ object ZipArchiveAsposeSplitter
       val total = chunks.size
 
       // Reindex chunks to have sequential indices without gaps from skipped metadata files
-      chunks.zipWithIndex.map { case (chunk, newIndex) =>
+      chunks.toSeq.zipWithIndex.map { case (chunk, newIndex) =>
         chunk.copy(index = newIndex, total = total)
       }
     } finally {
@@ -87,7 +87,7 @@ object ZipArchiveAsposeSplitter
       sessionId: java.util.UUID
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
+    val chunks = new ListBuffer[DocChunk[_ <: MimeType]]
     val input = new ByteArrayInputStream(content.data)
 
     try {
@@ -135,7 +135,7 @@ object ZipArchiveAsposeSplitter
               s"Skipping extraction of '$entryName': size limit exceeded"
             )
             // Early return with partial results
-            return chunks
+            return chunks.toSeq
           }
 
           // Extract the entry data
@@ -188,7 +188,7 @@ object ZipArchiveAsposeSplitter
       Try(input.close())
     }
 
-    chunks
+    chunks.toSeq
   }
 
   /** Cleans a path for display by:

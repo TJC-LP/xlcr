@@ -2,13 +2,13 @@
 
 This project supports both Scala 2.12 and Scala 3, with the following compatibility matrix:
 
-| Module             | Scala 2.12 | Scala 2.13 | Scala 3    |
-|--------------------|------------|------------|------------|
-| core               | ✅         | ❌         | ✅         |
-| core-aspose        | ✅         | ❌         | ✅         |
-| core-spreadsheetllm| ✅         | ❌         | ✅         |
-| core-spark         | ✅         | ✅         | ❌         |
-| server             | ✅         | ❌         | ✅         |
+| Module              | Scala 2.12 | Scala 2.13  | Scala 3 |
+|---------------------|------------|-------------|---------|
+| core                | ✅         | ✅           | ✅       |
+| core-aspose         | ✅         | ✅           | ✅       |
+| core-spreadsheetllm | ✅         | ✅           | ✅       |
+| core-spark          | ✅         | ✅           | ❌       |
+| server              | ✅         | ✅           | ✅       |
 
 ## Why Different Scala Versions?
 
@@ -23,6 +23,9 @@ The project provides custom SBT commands to compile for specific Scala versions:
 ```bash
 # Compile all modules with Scala 2.12 (default)
 sbt compileScala2
+
+# Compile all modules with Scala 2.13
+sbt compileScala213
 
 # Compile only Scala 3 compatible modules with Scala 3.3.4
 sbt compileScala3

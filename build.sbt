@@ -2,11 +2,12 @@ import kotlin.Keys.{kotlinLib, kotlinVersion, kotlincJvmTarget}
 
 // Define Scala versions
 val scala212 = "2.12.18"
+val scala213 = "2.13.14"
 val scala3 = "3.3.4"
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / scalaVersion := scala212
-ThisBuild / crossScalaVersions := Seq(scala212, scala3)
+ThisBuild / crossScalaVersions := Seq(scala212, scala213, scala3)
 
 // For IDE compatibility
 val circeVersion = "0.14.10"
@@ -105,9 +106,14 @@ lazy val core = (project in file("core"))
       case _ => Seq() // No special options for Scala 3
     }),
     scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, _)) =>
+      case Some((2, 12)) =>
         Seq(
           "-Ypartial-unification",
+          "-language:higherKinds",
+          "-language:implicitConversions"
+        )
+      case Some((2, 13)) =>
+        Seq(
           "-language:higherKinds",
           "-language:implicitConversions"
         )
@@ -135,9 +141,16 @@ lazy val coreAspose = (project in file("core-aspose"))
     Compile / packageDoc / publishArtifact := false,
     // Add scala language features
     scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, _)) =>
+      case Some((2, 12)) =>
         Seq(
           "-Ypartial-unification",
+          "-language:higherKinds",
+          "-language:implicitConversions",
+          // Add the following to help with name conflicts
+          "-Yresolve-term-conflict:package"
+        )
+      case Some((2, 13)) =>
+        Seq(
           "-language:higherKinds",
           "-language:implicitConversions",
           // Add the following to help with name conflicts
@@ -173,7 +186,7 @@ lazy val coreSpark = (project in file("core-spark"))
     name := "xlcr-core-spark",
     scalaVersion := "2.12.18",
     // Only support Scala 2.12 and 2.13 for Spark (not Scala 3)
-    crossScalaVersions := Seq("2.12.18", "2.13.14"),
+    crossScalaVersions := Seq(scala212, scala213),
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
       "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion % "provided",
@@ -340,18 +353,20 @@ lazy val root = (project in file("."))
     assembleAspose := (coreAspose / assembly).value,
     assembleSpreadsheetLLM := (coreSpreadsheetLLM / assembly).value,
     assembleSpark := (coreSpark / assembly).value,
-    // Define projects that should be included when cross-building for Scala 3
-    crossScalaVersions := Seq(scala212, scala3),
+    // Define projects that should be included when cross-building
+    crossScalaVersions := Seq(scala212, scala213, scala3),
     // Custom tasks for different Scala versions
     addCommandAlias(
       "compileScala3",
       ";++3.3.4; core/compile; coreAspose/compile; coreSpreadsheetLLM/compile"
     ),
     addCommandAlias("compileScala2", ";++2.12.18; compile"),
+    addCommandAlias("compileScala213", ";++2.13.14; compile"),
     addCommandAlias(
       "testScala3",
       ";++3.3.4; core/test; coreAspose/test; coreSpreadsheetLLM/test"
     ),
-    addCommandAlias("testScala2", ";++2.12.18; test")
+    addCommandAlias("testScala2", ";++2.12.18; test"),
+    addCommandAlias("testScala213", ";++2.13.14; test")
   )
   .settings(assemblySettings)
