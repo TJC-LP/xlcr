@@ -6,9 +6,7 @@ import models.Model
 import types.{MimeType, Priority}
 import utils.Prioritized
 
-import scala.reflect.ClassTag
-
-/** Trait for Aspose bridges to directly set priority to ASPOSE.
+/** Trait for Aspose bridges to directly set priority to HIGH.
   * This replaces the need for a PrioritizedBridge wrapper in BridgeRegistry.
   *
   * @tparam M The internal model type

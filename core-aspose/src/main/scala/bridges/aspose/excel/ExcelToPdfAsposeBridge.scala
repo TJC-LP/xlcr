@@ -7,8 +7,9 @@ import types.MimeType.{
   ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
 }
 
-/** Scala 2.12 implementation of ExcelToPdfAsposeBridge.
-  * Extends the specific XLSX implementation and provides required ClassTags.
+/** Bridge that converts XLSX (Excel Open XML) spreadsheets to PDF using Aspose.Cells.
+  *
+  * This specific implementation handles the modern Excel format (XLSX).
   */
 object ExcelToPdfAsposeBridge
     extends SimpleBridge[

@@ -2,21 +2,16 @@ package com.tjclp.xlcr
 package bridges.aspose
 
 import bridges.BridgeRegistry
-import bridges.aspose.email.EmailToPdfAsposeBridge
-import bridges.aspose.email.OutlookMsgToPdfAsposeBridge
-import bridges.aspose.excel.{
-  ExcelToPdfAsposeBridge,
-  ExcelXlsToPdfAsposeBridge,
-  ExcelXlsmToPdfAsposeBridge,
-  ExcelXlsbToPdfAsposeBridge,
-  OdsToPdfAsposeBridge
+import bridges.aspose.email.{
+  EmailToPdfAsposeBridge,
+  OutlookMsgToPdfAsposeBridge
 }
+import bridges.aspose.excel._
 import bridges.aspose.powerpoint.{
-  PowerPointToPdfAsposeBridge,
-  PowerPointPptxToPdfAsposeBridge
+  PowerPointPptxToPdfAsposeBridge,
+  PowerPointToPdfAsposeBridge
 }
-import bridges.aspose.word.{WordToPdfAsposeBridge, WordDocxToPdfAsposeBridge}
-import types.{MimeType, Priority}
+import bridges.aspose.word.{WordDocxToPdfAsposeBridge, WordToPdfAsposeBridge}
 import types.MimeType._
 
 /** AsposeBridgeRegistry offers a method to register all Aspose-based bridging

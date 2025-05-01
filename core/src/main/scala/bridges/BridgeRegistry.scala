@@ -49,55 +49,47 @@ object BridgeRegistry {
     register(
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       ApplicationJson,
-      Priority.CORE,
       excelToJson
     )
     register(
       ApplicationJson,
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      Priority.CORE,
       jsonToExcel
     )
     register(
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       TextMarkdown,
-      Priority.CORE,
       excelToMarkdown
     )
     register(
       TextMarkdown,
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      Priority.CORE,
       markdownToExcel
     )
     register(
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       ImageSvgXml,
-      Priority.CORE,
       excelToSvg
     )
     register(
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       ApplicationVndOasisOpendocumentSpreadsheet,
-      Priority.CORE,
       ExcelToOdsBridge
     )
-    register(ImageSvgXml, ImagePng, Priority.CORE, SvgToPngBridge)
+    register(ImageSvgXml, ImagePng, SvgToPngBridge)
 
     // PDF to image conversions
-    register(ApplicationPdf, ImagePng, Priority.CORE, PdfToPngBridge)
-    register(ApplicationPdf, ImageJpeg, Priority.CORE, PdfToJpegBridge)
+    register(ApplicationPdf, ImagePng, PdfToPngBridge)
+    register(ApplicationPdf, ImageJpeg, PdfToJpegBridge)
 
     register(
       ApplicationVndMsPowerpoint,
       ApplicationJson,
-      Priority.CORE,
       pptToJson
     )
     register(
       ApplicationJson,
       ApplicationVndMsPowerpoint,
-      Priority.CORE,
       jsonToPpt
     )
 

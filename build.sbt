@@ -28,7 +28,8 @@ lazy val commonSettings = Seq(
     "ch.qos.logback" % "logback-classic" % "1.5.15",
     // ZIO core (for all modules)
     "dev.zio" %% "zio" % zioVersion,
-    "dev.zio" %% "zio-streams" % zioVersion
+    "dev.zio" %% "zio-streams" % zioVersion,
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0"
   ),
   // Source directory configuration for cross-compilation
   Compile / unmanagedSourceDirectories ++= {

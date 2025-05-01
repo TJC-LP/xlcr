@@ -1,43 +1,41 @@
 package com.tjclp.xlcr
 package bridges.aspose.word
 
-import bridges.{BaseBridge, BaseSimpleBridge}
+import bridges.BaseSimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
-import types.MimeType
-import types.MimeType.{ApplicationMsWord, ApplicationPdf}
-import utils.aspose.AsposeLicense
+import types.MimeType.ApplicationPdf
+import types.{MimeType, Priority}
 import utils.Prioritized
-import types.Priority
+import utils.aspose.AsposeLicense
 
+import com.aspose.words.{Document, SaveFormat}
 import org.slf4j.LoggerFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import com.aspose.words.{Document, SaveFormat}
 
-/**
- * Common implementation for WordToPdfAsposeBridge that works with both Scala 2 and Scala 3.
- * This trait contains all the business logic for the bridge.
- */
-trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type, ApplicationPdf.type] with Prioritized {
+/** Common implementation for WordToPdfAsposeBridge that works with both Scala 2 and Scala 3.
+  * This trait contains all the business logic for the bridge.
+  */
+trait WordToPdfAsposeBridgeImpl[I <: MimeType]
+    extends BaseSimpleBridge[I, ApplicationPdf.type]
+    with Prioritized {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /**
-   * Set priority to HIGH for all Aspose bridges
-   */
+  /** Set priority to HIGH for all Aspose bridges
+    */
   override def priority: Priority = Priority.HIGH
 
-  private[bridges] def inputParser: Parser[ApplicationMsWord.type, M] =
+  private[bridges] def inputParser: Parser[I, M] =
     WordToPdfAsposeParser
 
   private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     WordToPdfAsposeRenderer
 
-  /**
-   * Parser that simply wraps the input bytes in a WordDocModel.
-   */
-  private object WordToPdfAsposeParser extends Parser[ApplicationMsWord.type, M] {
+  /** Parser that simply wraps the input bytes in a WordDocModel.
+    */
+  private object WordToPdfAsposeParser extends Parser[I, M] {
     override def parse(input: M): M = {
       // Initialize Aspose license if needed
       AsposeLicense.initializeIfNeeded()
@@ -46,10 +44,10 @@ trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type,
     }
   }
 
-  /**
-   * Renderer that uses Aspose.Words to convert WordDocModel -> PDF.
-   */
-  private object WordToPdfAsposeRenderer extends Renderer[M, ApplicationPdf.type] {
+  /** Renderer that uses Aspose.Words to convert WordDocModel -> PDF.
+    */
+  private object WordToPdfAsposeRenderer
+      extends Renderer[M, ApplicationPdf.type] {
     override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()
@@ -64,21 +62,30 @@ trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type,
         val pdfBytes = pdfOutput.toByteArray
         pdfOutput.close()
 
-        logger.info(s"Successfully converted Word to PDF, output size = ${pdfBytes.length} bytes.")
+        logger.info(
+          s"Successfully converted Word to PDF, output size = ${pdfBytes.length} bytes."
+        )
         FileContent[ApplicationPdf.type](pdfBytes, ApplicationPdf)
       } catch {
         case ex: Exception =>
-          logger.error("Error during Word -> PDF conversion with Aspose.Words.", ex)
-          throw RendererError(s"Word to PDF conversion failed: ${ex.getMessage}", Some(ex))
+          logger.error(
+            "Error during Word -> PDF conversion with Aspose.Words.",
+            ex
+          )
+          throw RendererError(
+            s"Word to PDF conversion failed: ${ex.getMessage}",
+            Some(ex)
+          )
       }
     }
   }
 
-  /**
-   * Convert a Word document to PDF.
-   * Common implementation that works for both Scala 2 and Scala 3.
-   */
-  protected def convertDocToPdf(inputStream: ByteArrayInputStream): ByteArrayOutputStream = {
+  /** Convert a Word document to PDF.
+    * Common implementation that works for both Scala 2 and Scala 3.
+    */
+  protected def convertDocToPdf(
+      inputStream: ByteArrayInputStream
+  ): ByteArrayOutputStream = {
     val asposeDoc = new Document(inputStream)
     val pdfOutput = new ByteArrayOutputStream()
     asposeDoc.save(pdfOutput, SaveFormat.PDF)
