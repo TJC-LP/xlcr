@@ -3,9 +3,6 @@ package bridges
 
 import models.Model
 import types.{MimeType, Priority}
-import utils.Prioritized
-
-import scala.reflect.ClassTag
 
 /**
  * Trait for core bridges to directly set priority to CORE.
@@ -15,11 +12,11 @@ import scala.reflect.ClassTag
  * @tparam I The input MimeType
  * @tparam O The output MimeType
  */
-trait CorePriorityBridge[M <: Model, I <: MimeType, O <: MimeType](using mTag: ClassTag[M], iTag: ClassTag[I], oTag: ClassTag[O]) 
+trait CorePriorityBridge[M <: Model, I <: MimeType, O <: MimeType] 
   extends Bridge[M, I, O] {
   
   /**
-   * Set priority to DEFAULT for all implementing bridges
+   * Set priority to CORE for all implementing bridges
    */
-  override def priority: Priority = Priority.DEFAULT
+  override def priority: Priority = Priority.CORE
 }

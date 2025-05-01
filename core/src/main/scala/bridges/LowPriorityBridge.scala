@@ -3,9 +3,6 @@ package bridges
 
 import models.Model
 import types.{MimeType, Priority}
-import utils.Prioritized
-
-import scala.reflect.ClassTag
 
 /**
  * Trait for bridges with LOW priority, typically used for fallback implementations.
