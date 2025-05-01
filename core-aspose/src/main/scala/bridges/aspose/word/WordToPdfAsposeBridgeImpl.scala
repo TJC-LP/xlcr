@@ -14,6 +14,7 @@ import types.Priority
 import org.slf4j.LoggerFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import com.aspose.words.{Document, SaveFormat}
 
 /**
  * Common implementation for WordToPdfAsposeBridge that works with both Scala 2 and Scala 3.
@@ -57,8 +58,7 @@ trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type,
         // Load the Word document from bytes
         val inputStream = new ByteArrayInputStream(model.data)
         
-        // Use different import style based on Scala version
-        // This will be handled by the implementation in each Scala version
+        // Use common implementation for PDF conversion
         val pdfOutput = convertDocToPdf(inputStream)
         
         val pdfBytes = pdfOutput.toByteArray
@@ -76,7 +76,12 @@ trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type,
   
   /**
    * Convert a Word document to PDF.
-   * This method is implemented differently in Scala 2 and Scala 3 due to import differences.
+   * Common implementation that works for both Scala 2 and Scala 3.
    */
-  protected def convertDocToPdf(inputStream: ByteArrayInputStream): ByteArrayOutputStream
+  protected def convertDocToPdf(inputStream: ByteArrayInputStream): ByteArrayOutputStream = {
+    val asposeDoc = new Document(inputStream)
+    val pdfOutput = new ByteArrayOutputStream()
+    asposeDoc.save(pdfOutput, SaveFormat.PDF)
+    pdfOutput
+  }
 }

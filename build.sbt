@@ -328,7 +328,7 @@ lazy val assembleSpark = taskKey[File]("Assemble the spark module")
 
 // Root project for aggregating
 lazy val root = (project in file("."))
-  .aggregate(core, coreAspose, coreSpreadsheetLLM, coreSpark, server)
+  .aggregate(core, coreAspose, coreSpreadsheetLLM, coreSpark)
   .settings(
     name := "xlcr",
     // Don't publish the root project
