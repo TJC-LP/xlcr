@@ -29,11 +29,11 @@ import scala.util.{Try, Success, Failure}
 object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
   // Required ClassTag implicits for Scala 2.12
   implicit val iTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
-  implicit val mTag: ClassTag[FileContent[ApplicationPdf.type]] = implicitly[ClassTag[FileContent[ApplicationPdf.type]]]
+  override implicit val mTag: ClassTag[FileContent[ApplicationPdf.type]] = implicitly[ClassTag[FileContent[ApplicationPdf.type]]]
   implicit val oTag: ClassTag[ImagePng.type] = implicitly[ClassTag[ImagePng.type]]
   
-  override protected def inputParser: Parser[ApplicationPdf.type, M] = PdfParser
-  override protected def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
+  override private[bridges] def inputParser: Parser[ApplicationPdf.type, M] = PdfParser
+  override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
 
   /**
    * Simple parser that wraps the PDF bytes for processing.
@@ -83,11 +83,11 @@ object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
 object PdfToJpegBridge extends SimpleBridge[ApplicationPdf.type, ImageJpeg.type] {
   // Required ClassTag implicits for Scala 2.12
   implicit val iTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
-  implicit val mTag: ClassTag[FileContent[ApplicationPdf.type]] = implicitly[ClassTag[FileContent[ApplicationPdf.type]]]
+  override implicit val mTag: ClassTag[FileContent[ApplicationPdf.type]] = implicitly[ClassTag[FileContent[ApplicationPdf.type]]]
   implicit val oTag: ClassTag[ImageJpeg.type] = implicitly[ClassTag[ImageJpeg.type]]
   
-  override protected def inputParser: Parser[ApplicationPdf.type, M] = PdfParser
-  override protected def outputRenderer: Renderer[M, ImageJpeg.type] = JpegRenderer
+  override private[bridges] def inputParser: Parser[ApplicationPdf.type, M] = PdfParser
+  override private[bridges] def outputRenderer: Renderer[M, ImageJpeg.type] = JpegRenderer
 
   /**
    * Simple parser that wraps the PDF bytes for processing.

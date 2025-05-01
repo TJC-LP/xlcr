@@ -24,8 +24,8 @@ object OutlookMsgToPdfAsposeBridge
   given ClassTag[ApplicationVndMsOutlook.type]         = summon[ClassTag[ApplicationVndMsOutlook.type]]
   given ClassTag[ApplicationPdf.type]                  = summon[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[ApplicationVndMsOutlook.type, M] = MsgParser
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] = MsgRenderer
+  override private[bridges] def inputParser: Parser[ApplicationVndMsOutlook.type, M] = MsgParser
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] = MsgRenderer
 
   private object MsgParser extends Parser[ApplicationVndMsOutlook.type, M] {
     override def parse(input: M): M =

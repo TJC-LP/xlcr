@@ -25,15 +25,15 @@ object WordDocxToPdfAsposeBridge
   private val logger = LoggerFactory.getLogger(getClass)
 
   // ClassTags for SimpleBridge (Scala 2.12)
-  implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
+  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
   implicit val iTag: ClassTag[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type] =
     implicitly[ClassTag[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type]]
   implicit val oTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] =
+  override private[bridges] def inputParser: Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] =
     DocxParser
 
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] = DocxRenderer
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] = DocxRenderer
 
   private object DocxParser
       extends Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] {

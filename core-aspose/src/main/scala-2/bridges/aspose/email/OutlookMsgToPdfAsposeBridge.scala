@@ -25,12 +25,12 @@ object OutlookMsgToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationV
   private val logger = LoggerFactory.getLogger(getClass)
 
   // ClassTags required by Bridge
-  implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
+  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
   implicit val iTag: ClassTag[ApplicationVndMsOutlook.type] = implicitly[ClassTag[ApplicationVndMsOutlook.type]]
   implicit val oTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[ApplicationVndMsOutlook.type, M] = MsgParser
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] = MsgRenderer
+  override private[bridges] def inputParser: Parser[ApplicationVndMsOutlook.type, M] = MsgParser
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] = MsgRenderer
 
   private object MsgParser extends Parser[ApplicationVndMsOutlook.type, M] {
     override def parse(input: M): M = {

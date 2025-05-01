@@ -16,7 +16,7 @@ import scala.reflect.ClassTag
  * @tparam T The same mime type for input and output
  */
 trait SymmetricBridge[M <: Model, T <: MimeType] extends Bridge[M, T, T] {
-  implicit val mTag: ClassTag[M]
+  override implicit val mTag: ClassTag[M]
   implicit val tTag: ClassTag[T]
   
   /**
@@ -30,11 +30,11 @@ trait SymmetricBridge[M <: Model, T <: MimeType] extends Bridge[M, T, T] {
   protected def renderer: Renderer[M, T]
 
   // Satisfy the Bridge's abstract methods:
-  override protected def inputParser: Parser[T, M] = parser
+  override def inputParser: Parser[T, M] = parser
 
-  override protected def outputParser: Option[Parser[T, M]] = Some(parser)
+  override def outputParser: Option[Parser[T, M]] = Some(parser)
 
-  override protected def inputRenderer: Option[Renderer[M, T]] = Some(renderer)
+  override def inputRenderer: Option[Renderer[M, T]] = Some(renderer)
 
-  override protected def outputRenderer: Renderer[M, T] = renderer
+  override def outputRenderer: Renderer[M, T] = renderer
 }

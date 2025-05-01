@@ -25,17 +25,17 @@ object ExcelToOdsBridge
   // Required ClassTag implicits for Scala 2
   implicit val iTag: ClassTag[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] = 
     ClassTag(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.getClass)
-  implicit val mTag: ClassTag[FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]] = 
+  override implicit val mTag: ClassTag[FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]] = 
     ClassTag(classOf[FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]])
   implicit val oTag: ClassTag[ApplicationVndOasisOpendocumentSpreadsheet.type] = 
     ClassTag(ApplicationVndOasisOpendocumentSpreadsheet.getClass)
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override protected def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
+  override private[bridges] def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
     ExcelToOdsParser
 
-  override protected def outputRenderer: Renderer[M, ApplicationVndOasisOpendocumentSpreadsheet.type] =
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationVndOasisOpendocumentSpreadsheet.type] =
     ExcelToOdsRenderer
 
   /**

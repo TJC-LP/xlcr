@@ -25,7 +25,7 @@ object ExcelToPdfAsposeBridge
   private val logger = LoggerFactory.getLogger(getClass)
 
   // For Scala 2.12 compatibility, provide required ClassTags
-  implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
+  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
   implicit val tTag: ClassTag[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] = 
     implicitly[ClassTag[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]]
   implicit val iTag: ClassTag[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] = 
@@ -33,10 +33,10 @@ object ExcelToPdfAsposeBridge
   implicit val oTag: ClassTag[ApplicationPdf.type] = 
     implicitly[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
+  override private[bridges] def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
     ExcelToPdfAsposeParser
 
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] =
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     ExcelToPdfAsposeRenderer
 
   /**

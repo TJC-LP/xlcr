@@ -22,7 +22,7 @@ trait TikaBridge[O <: MimeType]
   protected def renderer: TikaRenderer[O]
 
   // Bridge overrides
-  override protected def inputParser: TikaParser[MimeType, O] = parser
+  override def inputParser: TikaParser[MimeType, O] = parser
 
-  override protected def outputRenderer: TikaRenderer[O] = renderer
+  override def outputRenderer: TikaRenderer[O] = renderer
 }

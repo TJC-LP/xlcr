@@ -19,7 +19,7 @@ trait CorePriorityBridge[M <: Model, I <: MimeType, O <: MimeType](using mTag: C
   extends Bridge[M, I, O] {
   
   /**
-   * Set priority to CORE for all implementing bridges
+   * Set priority to DEFAULT for all implementing bridges
    */
-  override def priority: Priority = Priority.CORE
+  override def priority: Priority = Priority.DEFAULT
 }

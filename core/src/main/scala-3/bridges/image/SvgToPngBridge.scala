@@ -20,9 +20,9 @@ import scala.util.{Failure, Success, Try}
  */
 object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
 
-  override protected def inputParser: Parser[ImageSvgXml.type, M] = SvgParser
+  override private[bridges] def inputParser: Parser[ImageSvgXml.type, M] = SvgParser
 
-  override protected def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
+  override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
 
   /**
    * Simple parser that wraps the input SVG bytes in an SvgModel.

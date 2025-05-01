@@ -21,9 +21,9 @@ object ExcelToLLMJsonBridge:
   def forXlsx(config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()): Bridge[CompressedWorkbook, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, MimeType.ApplicationJson.type] =
     // Create a custom bridge implementation
     new Bridge[CompressedWorkbook, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, MimeType.ApplicationJson.type]:
-      override protected def inputParser = ExcelToLLMParser.forXlsx(config)
+      override private[bridges] def inputParser = ExcelToLLMParser.forXlsx(config)
 
-      override protected def outputRenderer = LLMJsonRenderer()
+      override private[bridges] def outputRenderer = LLMJsonRenderer()
 
   /**
    * Creates a bridge for converting XLS files to LLM-friendly JSON.
@@ -34,6 +34,6 @@ object ExcelToLLMJsonBridge:
   def forXls(config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()): Bridge[CompressedWorkbook, MimeType.ApplicationVndMsExcel.type, MimeType.ApplicationJson.type] =
     // Create a custom bridge implementation
     new Bridge[CompressedWorkbook, MimeType.ApplicationVndMsExcel.type, MimeType.ApplicationJson.type]:
-      override protected def inputParser = ExcelToLLMParser.forXls(config)
+      override private[bridges] def inputParser = ExcelToLLMParser.forXls(config)
 
-      override protected def outputRenderer = LLMJsonRenderer()
+      override private[bridges] def outputRenderer = LLMJsonRenderer()

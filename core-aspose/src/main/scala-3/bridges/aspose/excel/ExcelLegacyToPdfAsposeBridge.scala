@@ -25,8 +25,8 @@ trait ExcelLegacyToPdfBridgeImpl[I <: MimeType] extends HighPrioritySimpleBridge
   given ClassTag[I]                                   = summon[ClassTag[I]]
   given ClassTag[ApplicationPdf.type]                 = summon[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[I, M]          = ExcelLegacyParser.asInstanceOf[Parser[I, M]]
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] = ExcelLegacyRenderer
+  override def inputParser: Parser[I, M]          = ExcelLegacyParser.asInstanceOf[Parser[I, M]]
+  override def outputRenderer: Renderer[M, ApplicationPdf.type] = ExcelLegacyRenderer
 
   private object ExcelLegacyParser extends Parser[MimeType, M] {
     override def parse(input: FileContent[MimeType]): M =

@@ -23,8 +23,8 @@ import scala.util.{Try, Success, Failure}
  * It uses Apache PDFBox to render PDF pages as images.
  */
 object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
-  override protected def inputParser: Parser[ApplicationPdf.type, M] = PdfParser
-  override protected def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
+  override private[bridges] def inputParser: Parser[ApplicationPdf.type, M] = PdfParser
+  override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
 
   /**
    * Simple parser that wraps the PDF bytes for processing.
@@ -72,8 +72,8 @@ object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
  * PDF to JPEG conversion bridge with quality control.
  */
 object PdfToJpegBridge extends SimpleBridge[ApplicationPdf.type, ImageJpeg.type] {
-  override protected def inputParser: Parser[ApplicationPdf.type, M] = PdfParser
-  override protected def outputRenderer: Renderer[M, ImageJpeg.type] = JpegRenderer
+  override private[bridges] def inputParser: Parser[ApplicationPdf.type, M] = PdfParser
+  override private[bridges] def outputRenderer: Renderer[M, ImageJpeg.type] = JpegRenderer
 
   /**
    * Simple parser that wraps the PDF bytes for processing.

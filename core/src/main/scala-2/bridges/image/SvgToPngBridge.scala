@@ -22,13 +22,13 @@ import scala.reflect.ClassTag
 object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
   override type M = FileContent[ImageSvgXml.type]
   
-  implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
+  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
   implicit val iTag: ClassTag[ImageSvgXml.type] = implicitly[ClassTag[ImageSvgXml.type]]
   implicit val oTag: ClassTag[ImagePng.type] = implicitly[ClassTag[ImagePng.type]]
 
-  override protected def inputParser: Parser[ImageSvgXml.type, M] = SvgParser
+  override private[bridges] def inputParser: Parser[ImageSvgXml.type, M] = SvgParser
 
-  override protected def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
+  override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
 
   /**
    * Simple parser that wraps the input SVG bytes in an SvgModel.

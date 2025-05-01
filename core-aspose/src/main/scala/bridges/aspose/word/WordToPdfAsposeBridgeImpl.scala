@@ -1,0 +1,82 @@
+package com.tjclp.xlcr
+package bridges.aspose.word
+
+import bridges.{BaseBridge, BaseSimpleBridge}
+import models.FileContent
+import parsers.Parser
+import renderers.Renderer
+import types.MimeType
+import types.MimeType.{ApplicationMsWord, ApplicationPdf}
+import utils.aspose.AsposeLicense
+import utils.Prioritized
+import types.Priority
+
+import org.slf4j.LoggerFactory
+
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+
+/**
+ * Common implementation for WordToPdfAsposeBridge that works with both Scala 2 and Scala 3.
+ * This trait contains all the business logic for the bridge.
+ */
+trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type, ApplicationPdf.type] with Prioritized {
+  private val logger = LoggerFactory.getLogger(getClass)
+  
+  /**
+   * Set priority to HIGH for all Aspose bridges
+   */
+  override def priority: Priority = Priority.HIGH
+  
+  private[bridges] def inputParser: Parser[ApplicationMsWord.type, M] =
+    WordToPdfAsposeParser
+    
+  private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
+    WordToPdfAsposeRenderer
+    
+  /**
+   * Parser that simply wraps the input bytes in a WordDocModel.
+   */
+  private object WordToPdfAsposeParser extends Parser[ApplicationMsWord.type, M] {
+    override def parse(input: M): M = {
+      // Initialize Aspose license if needed
+      AsposeLicense.initializeIfNeeded()
+      logger.info("Parsing Word file content to WordDocModel.")
+      input
+    }
+  }
+  
+  /**
+   * Renderer that uses Aspose.Words to convert WordDocModel -> PDF.
+   */
+  private object WordToPdfAsposeRenderer extends Renderer[M, ApplicationPdf.type] {
+    override def render(model: M): FileContent[ApplicationPdf.type] = {
+      try {
+        AsposeLicense.initializeIfNeeded()
+        logger.info("Rendering WordDocModel to PDF using Aspose.Words.")
+        
+        // Load the Word document from bytes
+        val inputStream = new ByteArrayInputStream(model.data)
+        
+        // Use different import style based on Scala version
+        // This will be handled by the implementation in each Scala version
+        val pdfOutput = convertDocToPdf(inputStream)
+        
+        val pdfBytes = pdfOutput.toByteArray
+        pdfOutput.close()
+        
+        logger.info(s"Successfully converted Word to PDF, output size = ${pdfBytes.length} bytes.")
+        FileContent[ApplicationPdf.type](pdfBytes, ApplicationPdf)
+      } catch {
+        case ex: Exception =>
+          logger.error("Error during Word -> PDF conversion with Aspose.Words.", ex)
+          throw RendererError(s"Word to PDF conversion failed: ${ex.getMessage}", Some(ex))
+      }
+    }
+  }
+  
+  /**
+   * Convert a Word document to PDF.
+   * This method is implemented differently in Scala 2 and Scala 3 due to import differences.
+   */
+  protected def convertDocToPdf(inputStream: ByteArrayInputStream): ByteArrayOutputStream
+}

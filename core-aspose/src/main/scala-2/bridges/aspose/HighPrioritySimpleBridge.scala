@@ -16,7 +16,7 @@ import utils.Prioritized
 trait HighPrioritySimpleBridge[I <: MimeType, O <: MimeType] extends SimpleBridge[I, O] with Prioritized {
   
   /**
-   * Set priority to ASPOSE for all implementing bridges
+   * Set priority to HIGH for all implementing bridges
    */
-  override def priority: Priority = Priority.ASPOSE
+  override def priority: Priority = Priority.HIGH
 }

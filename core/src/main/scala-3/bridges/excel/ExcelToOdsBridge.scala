@@ -22,10 +22,10 @@ object ExcelToOdsBridge
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override protected def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
+  override private[bridges] def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
     ExcelToOdsParser
 
-  override protected def outputRenderer: Renderer[M, ApplicationVndOasisOpendocumentSpreadsheet.type] =
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationVndOasisOpendocumentSpreadsheet.type] =
     ExcelToOdsRenderer
 
   /**

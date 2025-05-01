@@ -16,47 +16,43 @@ sealed trait Priority extends Ordered[Priority] {
  */
 object Priority {
   /**
-   * Highest priority reserved for special cases
+   * High priority implementations (commercial solutions like Aspose)
    */
-  case object HIGHEST extends Priority { val value = 1000 }
+  case object HIGH extends Priority { val value = 100 }
 
   /**
-   * Commercial implementations like Aspose
-   */
-  case object ASPOSE extends Priority { val value = 100 }
-
-  /**
-   * High-quality implementations
-   */
-  case object HIGH extends Priority { val value = 75 }
-
-  /**
-   * Core implementations provided by the base library
-   */
-  case object CORE extends Priority { val value = 50 }
-
-  /**
-   * Default implementations
+   * Default priority for most implementations
    */
   case object DEFAULT extends Priority { val value = 0 }
 
   /**
    * Low priority implementations (fallbacks)
    */
-  case object LOW extends Priority { val value = -50 }
+  case object LOW extends Priority { val value = -100 }
 
   /**
-   * Lowest priority implementations (last resort)
-   */
-  case object LOWEST extends Priority { val value = -100 }
-
-  /**
-   * Custom priority with a specific value
+   * Custom priority with a specific value - for backward compatibility
    */
   case class Custom(value: Int) extends Priority
 
   /**
-   * Implicit conversion from Int to Priority.Custom
+   * Implicit conversion from Int to Priority.Custom - for backward compatibility
    */
   implicit def intToPriority(value: Int): Priority = Custom(value)
+  
+  /**
+   * Mapping from legacy priority values to new simplified system
+   * Used for backward compatibility in existing code
+   */
+  @deprecated("Use Priority.HIGH instead", "2.0.0")
+  val HIGHEST: Priority = HIGH
+  
+  @deprecated("Use Priority.HIGH instead", "2.0.0")
+  val ASPOSE: Priority = HIGH
+  
+  @deprecated("Use Priority.DEFAULT instead", "2.0.0")
+  val CORE: Priority = DEFAULT
+  
+  @deprecated("Use Priority.LOW instead", "2.0.0")
+  val LOWEST: Priority = LOW
 }

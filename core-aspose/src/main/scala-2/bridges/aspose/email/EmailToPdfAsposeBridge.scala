@@ -26,7 +26,7 @@ object EmailToPdfAsposeBridge extends HighPrioritySimpleBridge[MessageRfc822.typ
   private val logger = LoggerFactory.getLogger(getClass)
 
   // For Scala 2.12 compatibility, provide required ClassTags
-  implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
+  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
   implicit val tTag: ClassTag[MessageRfc822.type] = 
     implicitly[ClassTag[MessageRfc822.type]]
   implicit val iTag: ClassTag[MessageRfc822.type] = 
@@ -34,10 +34,10 @@ object EmailToPdfAsposeBridge extends HighPrioritySimpleBridge[MessageRfc822.typ
   implicit val oTag: ClassTag[ApplicationPdf.type] = 
     implicitly[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[MessageRfc822.type, M] =
+  override private[bridges] def inputParser: Parser[MessageRfc822.type, M] =
     EmailToPdfAsposeParser
 
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] =
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     EmailToPdfAsposeRenderer
 
   /**

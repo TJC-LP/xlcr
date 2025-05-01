@@ -26,9 +26,9 @@ object WordDocxToPdfAsposeBridge
     summon[ClassTag[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type]]
   given ClassTag[ApplicationPdf.type]                 = summon[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] =
+  override private[bridges] def inputParser: Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] =
     DocxParser
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] = DocxRenderer
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] = DocxRenderer
 
   private object DocxParser
       extends Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] {

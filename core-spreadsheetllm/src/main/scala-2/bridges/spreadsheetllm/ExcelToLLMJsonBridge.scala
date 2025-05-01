@@ -31,9 +31,9 @@ object ExcelToLLMJsonBridge {
       implicit val oTag: ClassTag[MimeType.ApplicationJson.type] = 
         implicitly[ClassTag[MimeType.ApplicationJson.type]]
         
-      override protected def inputParser = ExcelToLLMParser.forXlsx(config)
+      override private[bridges] def inputParser = ExcelToLLMParser.forXlsx(config)
 
-      override protected def outputRenderer = LLMJsonRenderer()
+      override private[bridges] def outputRenderer = LLMJsonRenderer()
     }
   }
 
@@ -52,9 +52,9 @@ object ExcelToLLMJsonBridge {
       implicit val oTag: ClassTag[MimeType.ApplicationJson.type] = 
         implicitly[ClassTag[MimeType.ApplicationJson.type]]
         
-      override protected def inputParser = ExcelToLLMParser.forXls(config)
+      override private[bridges] def inputParser = ExcelToLLMParser.forXls(config)
 
-      override protected def outputRenderer = LLMJsonRenderer()
+      override private[bridges] def outputRenderer = LLMJsonRenderer()
     }
   }
 }

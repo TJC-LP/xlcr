@@ -25,9 +25,9 @@ object PowerPointPptxToPdfAsposeBridge
     summon[ClassTag[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type]]
   given ClassTag[ApplicationPdf.type] = summon[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, M] =
+  override def inputParser: Parser[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, M] =
     PptxParser
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] = PptxRenderer
+  override def outputRenderer: Renderer[M, ApplicationPdf.type] = PptxRenderer
 
   private object PptxParser
       extends Parser[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, M] {

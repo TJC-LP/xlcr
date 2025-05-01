@@ -24,10 +24,10 @@ object ExcelToPdfAsposeBridge
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override protected def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
+  override def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
     ExcelToPdfAsposeParser
 
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] =
+  override def outputRenderer: Renderer[M, ApplicationPdf.type] =
     ExcelToPdfAsposeRenderer
 
   /**

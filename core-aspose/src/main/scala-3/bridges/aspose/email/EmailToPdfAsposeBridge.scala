@@ -25,10 +25,10 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 object EmailToPdfAsposeBridge extends HighPrioritySimpleBridge[MessageRfc822.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override protected def inputParser: Parser[MessageRfc822.type, M] =
+  override private[bridges] def inputParser: Parser[MessageRfc822.type, M] =
     EmailToPdfAsposeParser
 
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] =
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     EmailToPdfAsposeRenderer
 
   /**

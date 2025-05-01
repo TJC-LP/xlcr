@@ -22,12 +22,12 @@ trait ExcelLegacyToPdfBridgeImpl[I <: MimeType] extends HighPrioritySimpleBridge
   private val logger = LoggerFactory.getLogger(getClass)
 
   /* Required ClassTags for Scala 2.12 */
-  implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
+  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
   implicit val iTag: ClassTag[I] = implicitly[ClassTag[I]]
   implicit val oTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
 
-  override protected def inputParser: Parser[I, M] = ExcelLegacyParser.asInstanceOf[Parser[I, M]]
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] = ExcelLegacyRenderer
+  override private[bridges] def inputParser: Parser[I, M] = ExcelLegacyParser.asInstanceOf[Parser[I, M]]
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] = ExcelLegacyRenderer
 
   /* Thin parser – just forward bytes */
   private object ExcelLegacyParser extends Parser[MimeType, M] {

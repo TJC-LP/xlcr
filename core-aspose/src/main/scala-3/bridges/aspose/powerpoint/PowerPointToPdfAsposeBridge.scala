@@ -22,10 +22,10 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 object PowerPointToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationVndMsPowerpoint.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override protected def inputParser: Parser[ApplicationVndMsPowerpoint.type, M] =
+  override def inputParser: Parser[ApplicationVndMsPowerpoint.type, M] =
     PowerPointToPdfAsposeParser
 
-  override protected def outputRenderer: Renderer[M, ApplicationPdf.type] =
+  override def outputRenderer: Renderer[M, ApplicationPdf.type] =
     PowerPointToPdfAsposeRenderer
 
   /**
