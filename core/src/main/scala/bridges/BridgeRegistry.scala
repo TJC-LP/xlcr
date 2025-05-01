@@ -106,27 +106,6 @@ object BridgeRegistry {
     ) // TikaBridge already has LOW priority
   }
 
-  /** Register a single Bridge for (inMime, outMime) with a specific priority.
-    * Note: This method should be avoided in favor of using bridges with their own priority.
-    */
-  def register(
-      inMime: MimeType,
-      outMime: MimeType,
-      priority: Priority,
-      bridge: Bridge[_, _, _]
-  ): Unit = {
-    logger.info(
-      s"Registering ${bridge.getClass.getSimpleName} for $inMime -> $outMime with priority $priority"
-    )
-    logger.warn(
-      s"Bridge ${bridge.getClass.getSimpleName} has native priority ${bridge.priority} but is being registered with $priority"
-    )
-    logger.warn(
-      "Consider updating the bridge to use the correct priority directly instead of overriding it here"
-    )
-    registry.register((inMime, outMime), bridge)
-  }
-
   /** Register a single Bridge for (inMime, outMime) using the bridge's native priority.
     */
   def register(
@@ -146,7 +125,6 @@ object BridgeRegistry {
     */
   def registerCatchAllTo(
       outputMime: MimeType,
-      priority: Priority,
       bridge: Bridge[_, _, _]
   ): Unit = {
     // We can either do a big enumerations, or store a special pattern,
@@ -154,18 +132,9 @@ object BridgeRegistry {
     for (mt <- MimeType.values) {
       // Skip if outMime is the same as inMime or some conflict
       if (mt != outputMime) {
-        register(mt, outputMime, priority, bridge)
+        register(mt, outputMime, bridge)
       }
     }
-  }
-
-  /** Register a catch-all bridge with default priority.
-    */
-  def registerCatchAllTo(
-      outputMime: MimeType,
-      bridge: Bridge[_, _, _]
-  ): Unit = {
-    registerCatchAllTo(outputMime, Priority.DEFAULT, bridge)
   }
 
   /** Find the appropriate bridge for converting between mime types.
