@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{SparkPipelineRegistry, SparkStep, CoreSchema, UdfHelpers}
+import pipeline.spark.{CoreSchema, SparkPipelineRegistry, SparkStep, UdfHelpers}
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 import org.apache.tika.io.TikaInputStream
@@ -9,6 +9,7 @@ import org.apache.tika.metadata.{Metadata => TikaMetadata}
 import org.apache.tika.parser.AutoDetectParser
 import org.apache.tika.sax.BodyContentHandler
 import org.apache.tika.parser.ParseContext
+
 import java.io.IOException
 import org.apache.tika.exception.TikaException
 import org.xml.sax.SAXException
@@ -39,14 +40,15 @@ object DetectMime extends SparkStep {
       // Log the exception if needed
       // logger.warn(s"Error during MIME detection: ${e.getMessage}")
     }
-    
+
     // Always return the metadata, even if an exception occurred
     val metadataMap = md.names().map(n => n -> md.get(n)).toMap
-    
+
     // Get detected MIME type for parameters
-    val detectedMime = Option(md.get("Content-Type")).getOrElse("application/octet-stream")
+    val detectedMime =
+      Option(md.get("Content-Type")).getOrElse("application/octet-stream")
     val params = Map("detectedMime" -> detectedMime)
-    
+
     (metadataMap, Some("TikaAutoDetectParser"), Some(params))
   }
 
@@ -56,13 +58,13 @@ object DetectMime extends SparkStep {
     // Apply the UDF and capture result in a StepResult
     import CoreSchema._
     val withResult = df.withColumn(Result, detectUdf(F.col(Content)))
-    
+
     // Append the lineage entry to the lineage column
     val withLineage = UdfHelpers.appendLineageEntry(
-      withResult, 
+      withResult,
       F.col(ResultLineage)
     )
-    
+
     // Extract metadata and update the dataframe
     val withMetadata = withLineage
       .withColumn(Metadata, F.col(ResultData))
@@ -78,6 +80,5 @@ object DetectMime extends SparkStep {
     )
   }
 
-  // We no longer need to register steps with SparkPipelineRegistry
-  // Auto-initialization happens in the SparkStep.transform() method
+  SparkPipelineRegistry.register(this)
 }

@@ -10,7 +10,7 @@ import com.aspose.slides.SaveFormat
 /** Splits a binary *.ppt presentation into individual one‑slide documents.
   */
 object PowerPointSlideAsposeSplitter
-    extends DocumentSplitter[MimeType.ApplicationVndMsPowerpoint.type] {
+    extends HighPrioritySplitter[MimeType.ApplicationVndMsPowerpoint.type] {
 
   override def split(
       content: FileContent[MimeType.ApplicationVndMsPowerpoint.type],

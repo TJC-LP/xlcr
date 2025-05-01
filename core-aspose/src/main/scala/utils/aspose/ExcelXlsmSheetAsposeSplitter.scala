@@ -11,7 +11,7 @@ import com.aspose.cells.FileFormatType
  * Splits an XLSM (macro-enabled Excel) workbook into individual worksheet documents.
  */
 object ExcelXlsmSheetAsposeSplitter
-    extends DocumentSplitter[MimeType.ApplicationVndMsExcelSheetMacroEnabled.type] {
+    extends HighPrioritySplitter[MimeType.ApplicationVndMsExcelSheetMacroEnabled.type] {
 
   override def split(
       content: FileContent[MimeType.ApplicationVndMsExcelSheetMacroEnabled.type],

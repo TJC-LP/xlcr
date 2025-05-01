@@ -10,7 +10,7 @@ import com.aspose.slides.SaveFormat
 /** Splits a PPTX (*.pptx) presentation into individual one‑slide documents.
   */
 object PowerPointXSlideAsposeSplitter
-    extends DocumentSplitter[MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation.type] {
+    extends HighPrioritySplitter[MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation.type] {
 
   override def split(
       content: FileContent[MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation.type],

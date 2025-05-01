@@ -2,7 +2,12 @@ package com.tjclp.xlcr
 package pipeline.spark.steps
 
 import models.FileContent
-import pipeline.spark.{CoreSchema, SparkPipelineRegistry, SparkStep, UdfHelpers}
+import pipeline.spark.{
+  AsposeBroadcastManager,
+  CoreSchema,
+  SparkStep,
+  UdfHelpers
+}
 import types.MimeType
 import utils.{DocumentSplitter, SplitConfig, SplitPolicy, SplitStrategy}
 
@@ -20,7 +25,8 @@ case class SplitStep(
     config: SplitConfig = SplitConfig(strategy = Some(SplitStrategy.Auto))
 ) extends SparkStep {
 
-  override val name: String = s"split${config.strategy.getOrElse(SplitStrategy.Auto).displayName.capitalize}"
+  override val name: String =
+    s"split${config.strategy.getOrElse(SplitStrategy.Auto).displayName.capitalize}"
 
   override val meta: Map[String, String] = super.meta ++ Map(
     "strategy" -> config.strategy.map(_.displayName).getOrElse("auto"),
@@ -42,55 +48,59 @@ case class SplitStep(
     // added to the lineage *after* exploding the chunks, so we can simply use
     // the two-argument license-aware wrapper.
 
-    licenseAwareUdf2(name, rowTimeout) { (bytes: Array[Byte], mimeStr: String) =>
-      val mime =
-        MimeType.fromStringNoParams(mimeStr).getOrElse(MimeType.ApplicationOctet)
-      val content = FileContent(bytes, mime)
+    licenseAwareUdf2(name, rowTimeout) {
+      (bytes: Array[Byte], mimeStr: String) =>
+        val mime =
+          MimeType
+            .fromStringNoParams(mimeStr)
+            .getOrElse(MimeType.ApplicationOctet)
+        val content = FileContent(bytes, mime)
 
-      // Perform the split – any exception will be captured by the wrapper and
-      // converted into a proper `StepResult` with the error field populated.
-      val chunks = DocumentSplitter.split(content, config)
+        // Perform the split – any exception will be captured by the wrapper and
+        // converted into a proper `StepResult` with the error field populated.
+        val chunks = DocumentSplitter.split(content, config)
 
-      // Determine splitter implementation & strategy used (for lineage meta)
-      val splitterImpl = DocumentSplitter
-        .forMime(mime)
-        .map(_.getClass.getSimpleName)
+        // Determine splitter implementation & strategy used (for lineage meta)
+        val splitterImpl = DocumentSplitter
+          .forMime(mime)
+          .map(_.getClass.getSimpleName)
 
-      val effectiveStrategy = config.strategy match {
-        case Some(SplitStrategy.Auto) =>
-          Some(SplitConfig.defaultStrategyForMime(mime).displayName)
-        case Some(strategy) => Some(strategy.displayName)
-        case None => Some(SplitConfig.defaultStrategyForMime(mime).displayName)
-      }
+        val effectiveStrategy = config.strategy match {
+          case Some(SplitStrategy.Auto) =>
+            Some(SplitConfig.defaultStrategyForMime(mime).displayName)
+          case Some(strategy) => Some(strategy.displayName)
+          case None =>
+            Some(SplitConfig.defaultStrategyForMime(mime).displayName)
+        }
 
-      val paramsMap = scala.collection.mutable.Map[String, String]()
-      effectiveStrategy.foreach(s => paramsMap.put("strategy", s))
+        val paramsMap = scala.collection.mutable.Map[String, String]()
+        effectiveStrategy.foreach(s => paramsMap.put("strategy", s))
 
-      val params = if (paramsMap.isEmpty) None else Some(paramsMap.toMap)
+        val params = if (paramsMap.isEmpty) None else Some(paramsMap.toMap)
 
-      // Convert chunks into a serialisable representation expected further
-      // downstream. We include index / label / total so that the caller can
-      // explode them and attach the information to the lineage element of
-      // each resulting row.
-      val chunkTuples = chunks.map { chunk =>
-        (
-          chunk.content.data,
-          chunk.content.mimeType.mimeType,
-          chunk.index,
-          chunk.label,
-          chunk.total
-        )
-      }
+        // Convert chunks into a serialisable representation expected further
+        // downstream. We include index / label / total so that the caller can
+        // explode them and attach the information to the lineage element of
+        // each resulting row.
+        val chunkTuples = chunks.map { chunk =>
+          (
+            chunk.content.data,
+            chunk.content.mimeType.mimeType,
+            chunk.index,
+            chunk.label,
+            chunk.total
+          )
+        }
 
-      (chunkTuples, splitterImpl, params)
+        (chunkTuples, splitterImpl, params)
     }
   }
 
   override def doTransform(
-                            df: DataFrame
-                          )(implicit spark: SparkSession): DataFrame = {
+      df: DataFrame
+  )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
-    
+
     // ------------------------------------------------------------------
     // 1. Run the splitter – The UDF returns a StepResult containing the list
     //    of chunks.  We *don't* append the lineage here because we first need
@@ -138,23 +148,26 @@ case class SplitStep(
       F.col(s"$Chunk._4").as("chunkLabel")
     )
 
-    val chunkNull = F.lit(null).cast("struct<chunkIndex:bigint,chunkTotal:bigint,chunkLabel:string>")
-    val chunkStruct = F.when(F.col(Chunk).isNull, chunkNull).otherwise(rawChunkStruct)
+    val chunkNull = F
+      .lit(null)
+      .cast("struct<chunkIndex:bigint,chunkTotal:bigint,chunkLabel:string>")
+    val chunkStruct =
+      F.when(F.col(Chunk).isNull, chunkNull).otherwise(rawChunkStruct)
 
-    val lineageEntryCol = F.col(ResultLineage)
+    val lineageEntryCol = F
+      .col(ResultLineage)
       .withField("sourceId", F.col(Id))
       .withField("chunk", chunkStruct)
 
-    val withLineageEntry = withChunkData.withColumn(LineageEntry, lineageEntryCol)
+    val withLineageEntry =
+      withChunkData.withColumn(LineageEntry, lineageEntryCol)
 
     // Append lineage entry
-    val withLineage = UdfHelpers.appendLineageEntry(withLineageEntry, F.col(LineageEntry))
+    val withLineage =
+      UdfHelpers.appendLineageEntry(withLineageEntry, F.col(LineageEntry))
 
     // Final cleanup – drop temporary columns (+ legacy chunk columns)
     withLineage
       .drop(Chunks, Chunk, LineageEntry, ResultLineage, Result)
   }
-
-  // We no longer need to register steps with SparkPipelineRegistry
-  // Auto-initialization happens in the SparkStep.transform() method
 }

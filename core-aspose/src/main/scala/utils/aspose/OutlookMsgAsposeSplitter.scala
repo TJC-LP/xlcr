@@ -15,7 +15,7 @@ import scala.jdk.CollectionConverters._
  * Splits a Microsoft Outlook .msg file into body + attachments using Aspose.Email.
  */
 object OutlookMsgAsposeSplitter
-    extends DocumentSplitter[MimeType.ApplicationVndMsOutlook.type] {
+    extends HighPrioritySplitter[MimeType.ApplicationVndMsOutlook.type] {
 
   override def split(
       content: FileContent[MimeType.ApplicationVndMsOutlook.type],

@@ -16,7 +16,7 @@ import scala.jdk.CollectionConverters._
  * using Aspose.Email.
  */
 object EmailAttachmentAsposeSplitter
-    extends DocumentSplitter[MimeType.MessageRfc822.type] {
+    extends HighPrioritySplitter[MimeType.MessageRfc822.type] {
 
   override def split(
       content: FileContent[MimeType.MessageRfc822.type],

@@ -11,7 +11,7 @@ import com.aspose.cells.FileFormatType
  * Splits an XLSB (binary Excel) workbook into individual worksheet documents.
  */
 object ExcelXlsbSheetAsposeSplitter
-    extends DocumentSplitter[MimeType.ApplicationVndMsExcelSheetBinary.type] {
+    extends HighPrioritySplitter[MimeType.ApplicationVndMsExcelSheetBinary.type] {
 
   override def split(
       content: FileContent[MimeType.ApplicationVndMsExcelSheetBinary.type],

@@ -17,7 +17,7 @@ import scala.util.{Failure, Success, Try}
  * Extracts all entries from a 7z archive file.
  * Supports recursive extraction of nested archives with zipbomb protection.
  */
-object SevenZipArchiveAsposeSplitter extends DocumentSplitter[MimeType.ApplicationSevenz.type] {
+object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.ApplicationSevenz.type] {
   
   private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
   
