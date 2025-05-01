@@ -8,15 +8,15 @@ import utils.{DocChunk, DocumentSplitter, SplitConfig, SplitStrategy}
 import com.aspose.zip.Archive
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
+
+// Import the correct collection converters based on Scala version
+import scala.jdk.CollectionConverters._
 
 /** ZIP archive splitter using Aspose.ZIP library.
   * Extracts all entries from a ZIP archive file.
   * Supports recursive extraction of nested archives with zipbomb protection.
-  *
-  * This is the Scala 2.12 version.
   */
 object ZipArchiveAsposeSplitter
     extends DocumentSplitter[MimeType.ApplicationZip.type] {
@@ -32,7 +32,8 @@ object ZipArchiveAsposeSplitter
       content: FileContent[MimeType.ApplicationZip.type],
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
-
+    // Version-independent implementation with early returns handled for both Scala 2 and 3
+    
     // If not requesting embedded split, return the original
     if (!cfg.hasStrategy(SplitStrategy.Embedded))
       return Seq(DocChunk(content, "zip archive", 0, 1))
@@ -54,7 +55,7 @@ object ZipArchiveAsposeSplitter
       val total = chunks.size
 
       // Reindex chunks to have sequential indices without gaps from skipped metadata files
-      chunks.toSeq.zipWithIndex.map { case (chunk, newIndex) =>
+      chunks.zipWithIndex.map { case (chunk, newIndex) =>
         chunk.copy(index = newIndex, total = total)
       }
     } finally {
@@ -87,7 +88,7 @@ object ZipArchiveAsposeSplitter
       sessionId: java.util.UUID
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    val chunks = new ListBuffer[DocChunk[_ <: MimeType]]
+    val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
     val input = new ByteArrayInputStream(content.data)
 
     try {
