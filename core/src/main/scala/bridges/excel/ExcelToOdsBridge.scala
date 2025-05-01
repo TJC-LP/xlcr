@@ -5,19 +5,16 @@ import bridges.SimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
-import types.MimeType
 import types.MimeType.{
-  ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-  ApplicationVndOasisOpendocumentSpreadsheet
+  ApplicationVndOasisOpendocumentSpreadsheet,
+  ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
 }
 
-import scala.reflect.ClassTag
-
-import org.slf4j.LoggerFactory
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
+import org.slf4j.LoggerFactory
+
+import java.io.ByteArrayOutputStream
 
 /** A bridge to convert Excel XLSX files to OpenDocument Spreadsheet (ODS) format
   */
@@ -26,13 +23,6 @@ object ExcelToOdsBridge
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
       ApplicationVndOasisOpendocumentSpreadsheet.type
     ] {
-  override implicit val mTag: ClassTag[
-    FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]
-  ] =
-    ClassTag(
-      classOf[FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]]
-    )
-
   private val logger = LoggerFactory.getLogger(getClass)
 
   override private[bridges] def inputParser

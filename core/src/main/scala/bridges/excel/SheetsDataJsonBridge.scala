@@ -1,14 +1,11 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.{Bridge, MergeableSymmetricBridge}
+import bridges.MergeableSymmetricBridge
 import models.excel.SheetsData
 import parsers.excel.SheetsDataJsonParser
 import renderers.excel.SheetsDataJsonRenderer
-import types.MimeType
 import types.MimeType.ApplicationJson
-
-import scala.reflect.ClassTag
 
 /** JsonExcelInputBridge parses JSON -> SheetsData and also renders SheetsData -> JSON.
   * This replaces JsonToExcelParser logic on input side,
@@ -16,8 +13,6 @@ import scala.reflect.ClassTag
   */
 object SheetsDataJsonBridge
     extends MergeableSymmetricBridge[SheetsData, ApplicationJson.type] {
-  implicit val tTag: ClassTag[ApplicationJson.type] =
-    implicitly[ClassTag[ApplicationJson.type]]
   override protected def parser = new SheetsDataJsonParser()
 
   override protected def renderer = new SheetsDataJsonRenderer()

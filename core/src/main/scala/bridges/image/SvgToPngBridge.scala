@@ -5,7 +5,6 @@ import bridges.SimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
-import types.MimeType
 import types.MimeType.{ImagePng, ImageSvgXml}
 
 import org.apache.batik.transcoder.image.PNGTranscoder
@@ -17,15 +16,12 @@ import org.apache.batik.transcoder.{
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.util.{Failure, Success, Try}
-import scala.reflect.ClassTag
 
 /** SvgToPngBridge parses an SVG (image/svg+xml) into SvgModel,
   * then renders that model to PNG (image/png) using Apache Batik.
   */
 object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
   override type M = FileContent[ImageSvgXml.type]
-
-  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
 
   override private[bridges] def inputParser: Parser[ImageSvgXml.type, M] =
     SvgParser

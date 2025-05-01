@@ -7,8 +7,6 @@ import parsers.excel.SheetsDataParser
 import renderers.excel.SheetsDataSvgRenderer
 import types.MimeType.ImageSvgXml
 
-import scala.reflect.ClassTag
-
 /** ExcelSvgOutputBridge produces an SVG representation of SheetsData.
   * This replaces ExcelSvgParser logic.
   */
@@ -17,9 +15,6 @@ object SheetsDataSvgBridge
       SheetsData,
       ImageSvgXml.type
     ] {
-  implicit val tTag: ClassTag[ImageSvgXml.type] =
-    implicitly[ClassTag[ImageSvgXml.type]]
-
   override protected def renderer = new SheetsDataSvgRenderer()
 
   override protected def parser: SheetsDataParser[ImageSvgXml.type] =

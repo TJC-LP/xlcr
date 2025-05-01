@@ -7,8 +7,6 @@ import parsers.excel.SheetsDataExcelParser
 import renderers.excel.SheetsDataExcelRenderer
 import types.MimeType
 
-import scala.reflect.ClassTag
-
 /** ExcelBridge can parse XLSX bytes into a List[SheetData] and render them back to XLSX.
   */
 object SheetsDataExcelBridge
@@ -16,12 +14,6 @@ object SheetsDataExcelBridge
       SheetsData,
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
     ] {
-  implicit val tTag
-      : ClassTag[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] =
-    implicitly[ClassTag[
-      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
-    ]]
-
   override protected def parser = new SheetsDataExcelParser()
 
   override protected def renderer = new SheetsDataExcelRenderer()

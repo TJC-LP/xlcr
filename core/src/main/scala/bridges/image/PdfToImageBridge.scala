@@ -5,20 +5,16 @@ import bridges.SimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
-import types.MimeType
-import types.MimeType.{ApplicationPdf, ImagePng, ImageJpeg}
+import types.MimeType.{ApplicationPdf, ImageJpeg, ImagePng}
 
-import scala.reflect.ClassTag
-
-import org.apache.pdfbox.rendering.{PDFRenderer, ImageType}
 import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.rendering.{ImageType, PDFRenderer}
 
 import java.awt.image.BufferedImage
-import java.io.{ByteArrayOutputStream, ByteArrayInputStream}
-import javax.imageio.{ImageIO, IIOImage, ImageWriteParam}
+import java.io.ByteArrayOutputStream
 import javax.imageio.stream.MemoryCacheImageOutputStream
-
-import scala.util.{Try, Success, Failure}
+import javax.imageio.{IIOImage, ImageIO, ImageWriteParam}
+import scala.util.{Failure, Success, Try}
 
 /** PdfToImageBridge converts a PDF document to an image format (PNG or JPEG).
   * It uses Apache PDFBox to render PDF pages as images.
@@ -26,10 +22,6 @@ import scala.util.{Try, Success, Failure}
   * This is the Scala 2.12 version.
   */
 object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
-  // Required ClassTag implicits for Scala 2.12
-  override implicit val mTag: ClassTag[FileContent[ApplicationPdf.type]] =
-    implicitly[ClassTag[FileContent[ApplicationPdf.type]]]
-
   override private[bridges] def inputParser: Parser[ApplicationPdf.type, M] =
     PdfParser
   override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] =
@@ -87,8 +79,6 @@ object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
   */
 object PdfToJpegBridge
     extends SimpleBridge[ApplicationPdf.type, ImageJpeg.type] {
-  override implicit val mTag: ClassTag[FileContent[ApplicationPdf.type]] =
-    implicitly[ClassTag[FileContent[ApplicationPdf.type]]]
 
   override private[bridges] def inputParser: Parser[ApplicationPdf.type, M] =
     PdfParser

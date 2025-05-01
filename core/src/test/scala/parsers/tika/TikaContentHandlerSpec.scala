@@ -1,7 +1,6 @@
 package com.tjclp.xlcr
 package parsers.tika
 
-import com.tjclp.xlcr.parsers.tika.TikaContentHandler
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.xml.sax.ContentHandler
