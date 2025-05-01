@@ -7,8 +7,6 @@ import parsers.spreadsheetllm.ExcelToLLMParser
 import renderers.spreadsheetllm.LLMJsonRenderer
 import types.MimeType
 
-import scala.reflect.ClassTag
-
 /** Bridge that converts Excel files to LLM-friendly JSON using the SpreadsheetLLM
   * compression techniques.
   * Compatible with Scala 2.12.
