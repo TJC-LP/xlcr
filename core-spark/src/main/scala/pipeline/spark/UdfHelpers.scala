@@ -158,7 +158,7 @@ object UdfHelpers {
 
     try {
       val (result, implName, params): (R, Option[String], Option[Map[String, String]]) =
-        if (timeout.isFinite()) {
+        if (timeout != ScalaDuration.Inf) {
           // -------------------------------------------------------------
           // Hard timeout – run `thunk` on its own thread and cancel the
           // Future if we exceed the limit. This sends Thread.interrupt to

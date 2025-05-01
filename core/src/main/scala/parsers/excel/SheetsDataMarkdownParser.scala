@@ -77,8 +77,8 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
 
     for ((line, i) <- contentLines.zipWithIndex) {
       val cells = parseMarkdownRow(line)
-      // Import StringOps from compat package for Scala 2.12
-      import com.tjclp.xlcr.compat._
+      // Import scala.collection.compat for String extensions
+      import scala.collection.compat._
       
       if (cells.nonEmpty) {
         val rowNumberString = cells.head.trim

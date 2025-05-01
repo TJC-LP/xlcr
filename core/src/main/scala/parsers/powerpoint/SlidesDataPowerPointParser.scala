@@ -13,9 +13,9 @@ import org.apache.poi.xslf.usermodel._
 
 import java.awt.{Color, Rectangle}
 import java.io.ByteArrayInputStream
-// Import the right collection converters based on Scala version
-import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
-// Import Using from our compat package
+// Import standard collection converters
+import scala.jdk.CollectionConverters._
+// Import Using from our compat package (still needed)
 import com.tjclp.xlcr.compat.Using
 import scala.util.Try
 
