@@ -6,7 +6,14 @@ import models.FileContent
 import parsers.Parser
 import renderers.Renderer
 import types.MimeType
-import types.MimeType.{ApplicationPdf, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet}
+import types.MimeType.{
+  ApplicationPdf, 
+  ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, 
+  ApplicationVndMsExcel,
+  ApplicationVndMsExcelSheetMacroEnabled,
+  ApplicationVndMsExcelSheetBinary,
+  ApplicationVndOasisOpendocumentSpreadsheet
+}
 import utils.aspose.AsposeLicense
 
 import org.slf4j.LoggerFactory
@@ -15,41 +22,44 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import com.aspose.cells.{Workbook, PdfSaveOptions, PageOrientationType, PaperSizeType}
 
 /**
- * Common implementation for ExcelToPdfAsposeBridge that works with both Scala 2 and Scala 3.
- * This trait contains all the business logic for the bridge.
+ * Generic Excel to PDF bridge implementation that works with both Scala 2 and Scala 3.
+ * This trait contains the business logic for converting Excel files to PDF.
+ * 
+ * This implementation handles all Excel formats using the same core conversion logic,
+ * parameterized by the specific input MIME type.
+ * 
+ * @tparam I The specific Excel input MimeType
  */
-trait ExcelToPdfAsposeBridgeImpl 
-  extends HighPrioritySimpleBridge[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, ApplicationPdf.type] {
+trait ExcelToPdfAsposeBridgeImpl[I <: MimeType] extends HighPrioritySimpleBridge[I, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override private[bridges] def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
+  override private[bridges] def inputParser: Parser[I, M] =
     ExcelToPdfAsposeParser
 
   override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     ExcelToPdfAsposeRenderer
 
   /**
-   * Simple parser that just wraps XLSX bytes in a FileContent for direct usage.
+   * Simple parser that just wraps Excel bytes in a FileContent for direct usage.
    */
-  private object ExcelToPdfAsposeParser
-    extends Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] {
-    override def parse(input: FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]): M = {
+  private object ExcelToPdfAsposeParser extends Parser[I, M] {
+    override def parse(input: FileContent[I]): M = {
       AsposeLicense.initializeIfNeeded()
-      logger.info("Parsing Excel XLSX bytes into a direct file model for Aspose.Cells conversion.")
+      logger.info(s"Parsing ${input.mimeType.getClass.getSimpleName} bytes into a direct file model for Aspose.Cells conversion.")
       input
     }
   }
 
   /**
-   * Renderer that performs the XLSX -> PDF conversion via Aspose.Cells.
+   * Renderer that performs any Excel format -> PDF conversion via Aspose.Cells.
+   * This handles all Excel formats: XLSX, XLS, XLSM, XLSB, ODS, etc.
    */
-  private object ExcelToPdfAsposeRenderer
-    extends Renderer[M, ApplicationPdf.type] {
+  private object ExcelToPdfAsposeRenderer extends Renderer[M, ApplicationPdf.type] {
     override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()
-        logger.info("Rendering XLSX to PDF using Aspose.Cells.")
+        logger.info(s"Rendering ${model.mimeType.getClass.getSimpleName} to PDF using Aspose.Cells.")
 
         // Load workbook from bytes
         val bais = new ByteArrayInputStream(model.data)
@@ -87,3 +97,36 @@ trait ExcelToPdfAsposeBridgeImpl
     }
   }
 }
+
+// Format-specific implementations for each Excel format type
+// These traits can be extended by the Scala 2 and Scala 3 concrete implementations
+
+/**
+ * Implementation specifically for XLSX files (Office Open XML)
+ */
+trait ExcelXlsxToPdfAsposeBridgeImpl extends 
+  ExcelToPdfAsposeBridgeImpl[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]
+
+/**
+ * Implementation specifically for XLS files (Legacy Excel)
+ */
+trait ExcelXlsToPdfAsposeBridgeImpl extends 
+  ExcelToPdfAsposeBridgeImpl[ApplicationVndMsExcel.type]
+
+/**
+ * Implementation specifically for XLSM files (Macro-enabled Excel)
+ */
+trait ExcelXlsmToPdfAsposeBridgeImpl extends 
+  ExcelToPdfAsposeBridgeImpl[ApplicationVndMsExcelSheetMacroEnabled.type]
+
+/**
+ * Implementation specifically for XLSB files (Binary Excel)
+ */
+trait ExcelXlsbToPdfAsposeBridgeImpl extends 
+  ExcelToPdfAsposeBridgeImpl[ApplicationVndMsExcelSheetBinary.type]
+
+/**
+ * Implementation specifically for ODS files (OpenDocument Spreadsheet)
+ */
+trait OdsToPdfAsposeBridgeImpl extends 
+  ExcelToPdfAsposeBridgeImpl[ApplicationVndOasisOpendocumentSpreadsheet.type]

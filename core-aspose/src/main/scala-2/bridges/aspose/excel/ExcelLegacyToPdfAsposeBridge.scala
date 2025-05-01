@@ -6,7 +6,13 @@ import models.FileContent
 import parsers.Parser
 import renderers.Renderer
 import types.MimeType
-import types.MimeType.{ApplicationVndOasisOpendocumentSpreadsheet, ApplicationPdf, ApplicationVndMsExcel, ApplicationVndMsExcelSheetMacroEnabled, ApplicationVndMsExcelSheetBinary}
+import types.MimeType.{
+  ApplicationVndOasisOpendocumentSpreadsheet,
+  ApplicationPdf,
+  ApplicationVndMsExcel,
+  ApplicationVndMsExcelSheetMacroEnabled,
+  ApplicationVndMsExcelSheetBinary
+}
 
 import utils.aspose.AsposeLicense
 import compat.aspose._
@@ -17,17 +23,15 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.reflect.ClassTag
 
 // Reusable implementation shared by the three legacy Excel mime‑types.
-trait ExcelLegacyToPdfBridgeImpl[I <: MimeType] extends HighPrioritySimpleBridge[I, ApplicationPdf.type] {
+trait ExcelLegacyToPdfBridgeImpl[I <: MimeType]
+    extends HighPrioritySimpleBridge[I, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /* Required ClassTags for Scala 2.12 */
-  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
-  implicit val iTag: ClassTag[I] = implicitly[ClassTag[I]]
-  implicit val oTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
-
-  override private[bridges] def inputParser: Parser[I, M] = ExcelLegacyParser.asInstanceOf[Parser[I, M]]
-  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] = ExcelLegacyRenderer
+  override private[bridges] def inputParser: Parser[I, M] =
+    ExcelLegacyParser.asInstanceOf[Parser[I, M]]
+  override private[bridges] def outputRenderer
+      : Renderer[M, ApplicationPdf.type] = ExcelLegacyRenderer
 
   /* Thin parser – just forward bytes */
   private object ExcelLegacyParser extends Parser[MimeType, M] {
@@ -55,18 +59,23 @@ trait ExcelLegacyToPdfBridgeImpl[I <: MimeType] extends HighPrioritySimpleBridge
         }
 
         val pdfOpts = new AsposePdfSaveOptions()
-        val baos    = new ByteArrayOutputStream()
+        val baos = new ByteArrayOutputStream()
         workbook.save(baos, pdfOpts)
 
         val pdf = baos.toByteArray
         baos.close()
 
-        logger.info(s"Legacy Excel → PDF successful, size = ${pdf.length} bytes")
+        logger.info(
+          s"Legacy Excel → PDF successful, size = ${pdf.length} bytes"
+        )
         FileContent[ApplicationPdf.type](pdf, ApplicationPdf)
       } catch {
         case ex: Exception =>
           logger.error("Error during legacy Excel → PDF conversion", ex)
-          throw RendererError("Legacy Excel to PDF conversion failed: " + ex.getMessage, Some(ex))
+          throw RendererError(
+            "Legacy Excel to PDF conversion failed: " + ex.getMessage,
+            Some(ex)
+          )
       }
     }
   }
@@ -74,10 +83,15 @@ trait ExcelLegacyToPdfBridgeImpl[I <: MimeType] extends HighPrioritySimpleBridge
 
 // Concrete bridge singletons --------------------------------------------------
 
-object ExcelXlsToPdfAsposeBridge extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcel.type]
+object ExcelXlsmToPdfAsposeBridge
+    extends ExcelLegacyToPdfBridgeImpl[
+      ApplicationVndMsExcelSheetMacroEnabled.type
+    ]
 
-object ExcelXlsmToPdfAsposeBridge extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcelSheetMacroEnabled.type]
+object ExcelXlsbToPdfAsposeBridge
+    extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcelSheetBinary.type]
 
-object ExcelXlsbToPdfAsposeBridge extends ExcelLegacyToPdfBridgeImpl[ApplicationVndMsExcelSheetBinary.type]
-
-object OdsToPdfAsposeBridge extends  ExcelLegacyToPdfBridgeImpl[ApplicationVndOasisOpendocumentSpreadsheet.type]
+object OdsToPdfAsposeBridge
+    extends ExcelLegacyToPdfBridgeImpl[
+      ApplicationVndOasisOpendocumentSpreadsheet.type
+    ]

@@ -16,21 +16,21 @@ import org.slf4j.LoggerFactory
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.reflect.ClassTag
 
-/**
- * OutlookMsgToPdfAsposeBridge converts Outlook .msg files (application/vnd.ms-outlook) to PDF.
- * It reuses the same Aspose.Email ➔ Aspose.Words pipeline as the EML variant.
- */
-object OutlookMsgToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationVndMsOutlook.type, ApplicationPdf.type] {
+/** OutlookMsgToPdfAsposeBridge converts Outlook .msg files (application/vnd.ms-outlook) to PDF.
+  * It reuses the same Aspose.Email ➔ Aspose.Words pipeline as the EML variant.
+  */
+object OutlookMsgToPdfAsposeBridge
+    extends HighPrioritySimpleBridge[
+      ApplicationVndMsOutlook.type,
+      ApplicationPdf.type
+    ] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  // ClassTags required by Bridge
-  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
-  implicit val iTag: ClassTag[ApplicationVndMsOutlook.type] = implicitly[ClassTag[ApplicationVndMsOutlook.type]]
-  implicit val oTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
-
-  override private[bridges] def inputParser: Parser[ApplicationVndMsOutlook.type, M] = MsgParser
-  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] = MsgRenderer
+  override private[bridges] def inputParser
+      : Parser[ApplicationVndMsOutlook.type, M] = MsgParser
+  override private[bridges] def outputRenderer
+      : Renderer[M, ApplicationPdf.type] = MsgRenderer
 
   private object MsgParser extends Parser[ApplicationVndMsOutlook.type, M] {
     override def parse(input: M): M = {
@@ -44,17 +44,23 @@ object OutlookMsgToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationV
     override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()
-        logger.info("Rendering Outlook MSG to PDF via Aspose.Email + Aspose.Words …")
+        logger.info(
+          "Rendering Outlook MSG to PDF via Aspose.Email + Aspose.Words …"
+        )
 
         // Load MSG via Aspose.Email
-        val mailMessage = AsposeMailMessage.load(new ByteArrayInputStream(model.data))
+        val mailMessage =
+          AsposeMailMessage.load(new ByteArrayInputStream(model.data))
 
         // Save to MHT
         val mhtOut = new ByteArrayOutputStream()
         mailMessage.save(mhtOut, new AsposeMhtSaveOptions())
 
         // Load MHT via Aspose.Words and save to PDF
-        val doc = new AsposeDocument(new ByteArrayInputStream(mhtOut.toByteArray()), new AsposeLoadOptions())
+        val doc = new AsposeDocument(
+          new ByteArrayInputStream(mhtOut.toByteArray()),
+          new AsposeLoadOptions()
+        )
         val pdfOut = new ByteArrayOutputStream()
         doc.save(pdfOut, AsposeWordsFormat.PDF)
 
@@ -66,7 +72,10 @@ object OutlookMsgToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationV
       } catch {
         case ex: Exception =>
           logger.error("MSG → PDF conversion failed", ex)
-          throw RendererError("MSG to PDF conversion failed: " + ex.getMessage, Some(ex))
+          throw RendererError(
+            "MSG to PDF conversion failed: " + ex.getMessage,
+            Some(ex)
+          )
       }
     }
   }

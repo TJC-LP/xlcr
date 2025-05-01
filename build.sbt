@@ -344,12 +344,12 @@ lazy val root = (project in file("."))
     // Custom tasks for different Scala versions
     addCommandAlias(
       "compileScala3",
-      ";++3.3.4; core/compile; coreAspose/compile; coreSpreadsheetLLM/compile; server/compile"
+      ";++3.3.4; core/compile; coreAspose/compile; coreSpreadsheetLLM/compile"
     ),
     addCommandAlias("compileScala2", ";++2.12.18; compile"),
     addCommandAlias(
       "testScala3",
-      ";++3.3.4; core/test; coreAspose/test; coreSpreadsheetLLM/test; server/test"
+      ";++3.3.4; core/test; coreAspose/test; coreSpreadsheetLLM/test"
     ),
     addCommandAlias("testScala2", ";++2.12.18; test")
   )

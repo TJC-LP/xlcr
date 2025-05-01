@@ -10,20 +10,18 @@ import types.MimeType.TextMarkdown
 
 import scala.reflect.ClassTag
 
-/**
- * SheetsDataMarkdownBridge is a symmetric bridge that converts
- * SheetsData to/from Markdown. This merges the logic from the
- * older MarkdownExcelInputBridge and ExcelMarkdownOutputBridge.
- */
-object SheetsDataMarkdownBridge extends MergeableSymmetricBridge[
-  SheetsData,
-  TextMarkdown.type
-] {
-  implicit val mTag: ClassTag[SheetsData] = implicitly[ClassTag[SheetsData]]
-  implicit val tTag: ClassTag[TextMarkdown.type] = implicitly[ClassTag[TextMarkdown.type]]
-  implicit val iTag: ClassTag[TextMarkdown.type] = implicitly[ClassTag[TextMarkdown.type]]
-  implicit val oTag: ClassTag[TextMarkdown.type] = implicitly[ClassTag[TextMarkdown.type]]
-  
+/** SheetsDataMarkdownBridge is a symmetric bridge that converts
+  * SheetsData to/from Markdown. This merges the logic from the
+  * older MarkdownExcelInputBridge and ExcelMarkdownOutputBridge.
+  */
+object SheetsDataMarkdownBridge
+    extends MergeableSymmetricBridge[
+      SheetsData,
+      TextMarkdown.type
+    ] {
+  implicit val tTag: ClassTag[TextMarkdown.type] =
+    implicitly[ClassTag[TextMarkdown.type]]
+
   override protected def parser = new SheetsDataMarkdownParser()
 
   override protected def renderer = new SheetsDataMarkdownRenderer()

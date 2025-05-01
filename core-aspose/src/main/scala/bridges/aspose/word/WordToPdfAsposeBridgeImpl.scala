@@ -22,18 +22,18 @@ import com.aspose.words.{Document, SaveFormat}
  */
 trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type, ApplicationPdf.type] with Prioritized {
   private val logger = LoggerFactory.getLogger(getClass)
-  
+
   /**
    * Set priority to HIGH for all Aspose bridges
    */
   override def priority: Priority = Priority.HIGH
-  
+
   private[bridges] def inputParser: Parser[ApplicationMsWord.type, M] =
     WordToPdfAsposeParser
-    
+
   private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     WordToPdfAsposeRenderer
-    
+
   /**
    * Parser that simply wraps the input bytes in a WordDocModel.
    */
@@ -45,7 +45,7 @@ trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type,
       input
     }
   }
-  
+
   /**
    * Renderer that uses Aspose.Words to convert WordDocModel -> PDF.
    */
@@ -54,16 +54,16 @@ trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type,
       try {
         AsposeLicense.initializeIfNeeded()
         logger.info("Rendering WordDocModel to PDF using Aspose.Words.")
-        
+
         // Load the Word document from bytes
         val inputStream = new ByteArrayInputStream(model.data)
-        
+
         // Use common implementation for PDF conversion
         val pdfOutput = convertDocToPdf(inputStream)
-        
+
         val pdfBytes = pdfOutput.toByteArray
         pdfOutput.close()
-        
+
         logger.info(s"Successfully converted Word to PDF, output size = ${pdfBytes.length} bytes.")
         FileContent[ApplicationPdf.type](pdfBytes, ApplicationPdf)
       } catch {
@@ -73,7 +73,7 @@ trait WordToPdfAsposeBridgeImpl extends BaseSimpleBridge[ApplicationMsWord.type,
       }
     }
   }
-  
+
   /**
    * Convert a Word document to PDF.
    * Common implementation that works for both Scala 2 and Scala 3.

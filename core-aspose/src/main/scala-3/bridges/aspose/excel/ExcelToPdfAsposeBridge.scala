@@ -1,13 +1,13 @@
 package com.tjclp.xlcr
 package bridges.aspose.excel
 
-import bridges.aspose.HighPrioritySimpleBridge
+import bridges.SimpleBridge
 import types.MimeType.{ApplicationPdf, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet}
 
 /**
  * Scala 3 implementation of ExcelToPdfAsposeBridge.
- * Simply extends the common implementation.
+ * Simply extends the specific XLSX implementation.
  */
 object ExcelToPdfAsposeBridge
-  extends HighPrioritySimpleBridge[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, ApplicationPdf.type]
-  with ExcelToPdfAsposeBridgeImpl
+  extends SimpleBridge[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, ApplicationPdf.type]
+  with ExcelXlsxToPdfAsposeBridgeImpl

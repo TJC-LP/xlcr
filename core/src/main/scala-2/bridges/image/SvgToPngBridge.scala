@@ -9,38 +9,39 @@ import types.MimeType
 import types.MimeType.{ImagePng, ImageSvgXml}
 
 import org.apache.batik.transcoder.image.PNGTranscoder
-import org.apache.batik.transcoder.{TranscoderException, TranscoderInput, TranscoderOutput}
+import org.apache.batik.transcoder.{
+  TranscoderException,
+  TranscoderInput,
+  TranscoderOutput
+}
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.util.{Failure, Success, Try}
 import scala.reflect.ClassTag
 
-/**
- * SvgToPngBridge parses an SVG (image/svg+xml) into SvgModel,
- * then renders that model to PNG (image/png) using Apache Batik.
- */
+/** SvgToPngBridge parses an SVG (image/svg+xml) into SvgModel,
+  * then renders that model to PNG (image/png) using Apache Batik.
+  */
 object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
   override type M = FileContent[ImageSvgXml.type]
-  
+
   override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
-  implicit val iTag: ClassTag[ImageSvgXml.type] = implicitly[ClassTag[ImageSvgXml.type]]
-  implicit val oTag: ClassTag[ImagePng.type] = implicitly[ClassTag[ImagePng.type]]
 
-  override private[bridges] def inputParser: Parser[ImageSvgXml.type, M] = SvgParser
+  override private[bridges] def inputParser: Parser[ImageSvgXml.type, M] =
+    SvgParser
 
-  override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] = PngRenderer
+  override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] =
+    PngRenderer
 
-  /**
-   * Simple parser that wraps the input SVG bytes in an SvgModel.
-   */
+  /** Simple parser that wraps the input SVG bytes in an SvgModel.
+    */
   private object SvgParser extends Parser[ImageSvgXml.type, M] {
     override def parse(input: FileContent[ImageSvgXml.type]): M =
       FileContent[ImageSvgXml.type](input.data, ImageSvgXml)
   }
 
-  /**
-   * Renderer that uses Apache Batik to convert the raw SVG bytes to PNG.
-   */
+  /** Renderer that uses Apache Batik to convert the raw SVG bytes to PNG.
+    */
   private object PngRenderer extends Renderer[M, ImagePng.type] {
     override def render(model: M): FileContent[ImagePng.type] =
       Try {
@@ -65,9 +66,15 @@ object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
         FileContent[ImagePng.type](pngBytes, ImagePng)
       } match {
         case Failure(ex: TranscoderException) =>
-          throw RendererError(s"Failed to transcode SVG to PNG: ${ex.getMessage}", Some(ex))
+          throw RendererError(
+            s"Failed to transcode SVG to PNG: ${ex.getMessage}",
+            Some(ex)
+          )
         case Failure(other) =>
-          throw RendererError(s"Rendering SVG to PNG failed: ${other.getMessage}", Some(other))
+          throw RendererError(
+            s"Rendering SVG to PNG failed: ${other.getMessage}",
+            Some(other)
+          )
         case Success(fc) => fc
       }
   }

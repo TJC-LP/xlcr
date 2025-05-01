@@ -6,7 +6,10 @@ import models.FileContent
 import parsers.Parser
 import renderers.Renderer
 import types.MimeType
-import types.MimeType.{ApplicationPdf, ApplicationVndOpenXmlFormatsWordprocessingmlDocument}
+import types.MimeType.{
+  ApplicationPdf,
+  ApplicationVndOpenXmlFormatsWordprocessingmlDocument
+}
 
 import utils.aspose.AsposeLicense
 
@@ -16,27 +19,28 @@ import org.slf4j.LoggerFactory
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.reflect.ClassTag
 
-/**
- * Converts DOCX (application/vnd.openxmlformats-officedocument.wordprocessingml.document) to PDF via Aspose.Words.
- */
+/** Converts DOCX (application/vnd.openxmlformats-officedocument.wordprocessingml.document) to PDF via Aspose.Words.
+  */
 object WordDocxToPdfAsposeBridge
-    extends HighPrioritySimpleBridge[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, ApplicationPdf.type] {
+    extends HighPrioritySimpleBridge[
+      ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type,
+      ApplicationPdf.type
+    ] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  // ClassTags for SimpleBridge (Scala 2.12)
-  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
-  implicit val iTag: ClassTag[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type] =
-    implicitly[ClassTag[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type]]
-  implicit val oTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
-
-  override private[bridges] def inputParser: Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] =
+  override private[bridges] def inputParser
+      : Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] =
     DocxParser
 
-  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] = DocxRenderer
+  override private[bridges] def outputRenderer
+      : Renderer[M, ApplicationPdf.type] = DocxRenderer
 
   private object DocxParser
-      extends Parser[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, M] {
+      extends Parser[
+        ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type,
+        M
+      ] {
     override def parse(input: M): M = {
       AsposeLicense.initializeIfNeeded()
       logger.info("Parsing DOCX bytes for Aspose.Words conversion …")
@@ -61,7 +65,10 @@ object WordDocxToPdfAsposeBridge
       } catch {
         case ex: Exception =>
           logger.error("DOCX → PDF conversion failed", ex)
-          throw RendererError("DOCX to PDF conversion failed: " + ex.getMessage, Some(ex))
+          throw RendererError(
+            "DOCX to PDF conversion failed: " + ex.getMessage,
+            Some(ex)
+          )
       }
     }
   }

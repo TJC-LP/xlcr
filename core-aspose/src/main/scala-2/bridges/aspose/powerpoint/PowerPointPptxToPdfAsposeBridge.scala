@@ -24,11 +24,6 @@ object PowerPointPptxToPdfAsposeBridge
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override implicit val mTag: ClassTag[M] = implicitly[ClassTag[M]]
-  implicit val iTag: ClassTag[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type] =
-    implicitly[ClassTag[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type]]
-  implicit val oTag: ClassTag[ApplicationPdf.type] = implicitly[ClassTag[ApplicationPdf.type]]
-
   override private[bridges] def inputParser: Parser[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, M] =
     PptxParser
 
