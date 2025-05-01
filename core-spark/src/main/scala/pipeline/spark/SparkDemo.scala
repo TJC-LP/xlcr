@@ -2,6 +2,7 @@ package com.tjclp.xlcr
 package pipeline.spark
 
 import pipeline.spark.steps._
+import pipeline.spark.steps.SparkStepUtils
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 import org.apache.spark.sql.functions.{input_file_name, md5}
@@ -24,6 +25,9 @@ object SparkDemo {
       .appName("XLCR SparkStep Demo")
       .master("local[*]")
       .getOrCreate()
+
+    // Initialize Spark XLCR components
+    SparkAutoInit.initializeIfNeeded(spark)
 
     try {
       // -------------------------------------------------------------------
@@ -56,7 +60,8 @@ object SparkDemo {
       // 4. Run & write
       // -------------------------------------------------------------------
 
-      val result = pipeline(coreInit)
+      // Run the pipeline with auto-initialization
+      val result = SparkStepUtils.runPipeline(coreInit, pipeline)
 
       writeResults(result, outputPath)
 
@@ -68,10 +73,10 @@ object SparkDemo {
   }
 
   /** Simple pipeline: detect mime then split. */
-  private def buildBasicPipeline(): SparkPipelineStep = {
+  private def buildBasicPipeline(): SparkStep = {
     val detect = DetectMime
     val split  = SplitStep().withTimeout(Duration(60, "seconds"))
-    detect.andThen(split)
+    SparkStepUtils.buildPipeline(detect, split)
   }
 
   /** Writes the results of the pipeline to the specified output path. */

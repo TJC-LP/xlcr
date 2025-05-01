@@ -91,9 +91,11 @@ case class ExtractStep(
 // convenience singletons ---------------------------------------------------
 
 object ExtractText extends ExtractStep(MimeType.TextPlain, "text") {
-  SparkPipelineRegistry.register(this)
+  // We no longer need to register steps with SparkPipelineRegistry
+  // Auto-initialization happens in the SparkStep.transform() method
 }
 
 object ExtractXml extends ExtractStep(MimeType.ApplicationXml, "xml") {
-  SparkPipelineRegistry.register(this)
+  // We no longer need to register steps with SparkPipelineRegistry
+  // Auto-initialization happens in the SparkStep.transform() method
 }

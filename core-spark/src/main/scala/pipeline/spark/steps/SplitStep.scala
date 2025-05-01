@@ -155,5 +155,6 @@ case class SplitStep(
       .drop(Chunks, Chunk, LineageEntry, ResultLineage, Result)
   }
 
-  SparkPipelineRegistry.register(this)
+  // We no longer need to register steps with SparkPipelineRegistry
+  // Auto-initialization happens in the SparkStep.transform() method
 }

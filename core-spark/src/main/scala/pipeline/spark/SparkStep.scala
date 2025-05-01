@@ -45,8 +45,8 @@ trait SparkStep extends Serializable with LicenseAwareUdfWrapper { self =>
   final def transform(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
-    // Initialize Aspose licenses broadcasting
-    AsposeBroadcastManager.initBroadcast(spark)
+    // Initialize all XLCR components
+    SparkAutoInit.initializeIfNeeded(spark)
     
     // Ensure that input DataFrame has the required core schema
     val ensuredDf = CoreSchema.ensure(df)

@@ -78,6 +78,6 @@ object DetectMime extends SparkStep {
     )
   }
 
-  // Register with the pipeline registry
-  SparkPipelineRegistry.register(this)
+  // We no longer need to register steps with SparkPipelineRegistry
+  // Auto-initialization happens in the SparkStep.transform() method
 }

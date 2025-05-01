@@ -85,6 +85,9 @@ object AsposeBroadcastManager extends Serializable {
   def ensureInitialized(): Unit = {
     // Thread-safe, once-per-worker initialization
     if (workerInitialized.compareAndSet(false, true)) {
+      // Initialize core components
+      CoreAutoInit.initializeIfNeeded()
+      
       licenseBroadcast.foreach { broadcast =>
         logger.debug("Initializing Aspose licenses on worker")
         val licenseMap = broadcast.value
@@ -99,11 +102,26 @@ object AsposeBroadcastManager extends Serializable {
         }
       }
 
-      // Ensure core converters are available on the worker JVM
-      registerCoreConverters()
-
-      // Register Aspose converters & splitters if we have licenses
-      registerAsposeComponentsIfEnabled()
+      // Use AsposeAutoInit if present on classpath (since we're in the core-aspose module)
+      try {
+        // Use reflection to avoid direct dependency
+        val asposeAutoInitClass = Class.forName("com.tjclp.xlcr.AsposeAutoInit$")
+        val asposeAutoInitInstance = asposeAutoInitClass.getField("MODULE$").get(null)
+        val initMethod = asposeAutoInitClass.getMethod("initializeIfNeeded")
+        initMethod.invoke(asposeAutoInitInstance)
+        logger.debug("AsposeAutoInit triggered via reflection")
+      } catch {
+        case _: ClassNotFoundException =>
+          logger.debug("AsposeAutoInit not found on classpath - using manual registration")
+          // Fallback to our local registration helpers
+          registerCoreConverters()
+          registerAsposeComponentsIfEnabled()
+        case ex: Throwable =>
+          logger.warn(s"Failed to initialize Aspose components via AsposeAutoInit: ${ex.getMessage}")
+          // Fallback to our local registration helpers
+          registerCoreConverters()
+          registerAsposeComponentsIfEnabled()
+      }
     }
   }
   

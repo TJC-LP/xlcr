@@ -106,17 +106,21 @@ case class ConvertStep(
 
 // Convenience singletons for common conversions
 object ToPdf extends ConvertStep(MimeType.ApplicationPdf) {
-  SparkPipelineRegistry.register(this)
+  // We no longer need to register steps with SparkPipelineRegistry
+  // Auto-initialization happens in the SparkStep.transform() method
 }
 
 object ToPng extends ConvertStep(MimeType.ImagePng) {
-  SparkPipelineRegistry.register(this)
+  // We no longer need to register steps with SparkPipelineRegistry
+  // Auto-initialization happens in the SparkStep.transform() method
 }
 
 object ToText extends ConvertStep(MimeType.TextPlain) {
-  SparkPipelineRegistry.register(this)
+  // We no longer need to register steps with SparkPipelineRegistry
+  // Auto-initialization happens in the SparkStep.transform() method
 }
 
 object ToXml extends ConvertStep(MimeType.ApplicationXml) {
-  SparkPipelineRegistry.register(this)
+  // We no longer need to register steps with SparkPipelineRegistry
+  // Auto-initialization happens in the SparkStep.transform() method
 }
