@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package bridges.aspose.powerpoint
 
-import bridges.{Bridge, SimpleBridge}
+import bridges.Bridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -19,7 +20,7 @@ import scala.reflect.ClassTag
  * PowerPointToPdfAsposeBridge converts PowerPoint files (PPT/PPTX)
  * to PDF using Aspose.Slides.
  */
-object PowerPointToPdfAsposeBridge extends SimpleBridge[ApplicationVndMsPowerpoint.type, ApplicationPdf.type] {
+object PowerPointToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationVndMsPowerpoint.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   // For Scala 2.12 compatibility, provide required ClassTags

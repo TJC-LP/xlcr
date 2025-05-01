@@ -1,11 +1,11 @@
 package com.tjclp.xlcr
 package bridges.tika
 
-import bridges.Bridge
+import bridges.{Bridge, LowPriorityBridge}
 import models.tika.TikaModel
 import parsers.tika.TikaParser
 import renderers.tika.TikaRenderer
-import types.MimeType
+import types.{MimeType, Priority}
 
 import scala.reflect.ClassTag
 
@@ -17,7 +17,7 @@ import scala.reflect.ClassTag
  * O = output mime type
  */
 trait TikaBridge[O <: MimeType]
-  extends Bridge[TikaModel[O], MimeType, O] {
+  extends LowPriorityBridge[TikaModel[O], MimeType, O] {
   
   implicit val mTag: ClassTag[TikaModel[O]] = implicitly[ClassTag[TikaModel[O]]]
   implicit val iTag: ClassTag[MimeType] = implicitly[ClassTag[MimeType]]

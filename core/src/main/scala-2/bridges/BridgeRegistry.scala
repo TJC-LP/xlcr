@@ -2,16 +2,13 @@ package com.tjclp.xlcr
 package bridges
 
 import bridges.excel._
+import bridges.image.{PdfToJpegBridge, PdfToPngBridge, SvgToPngBridge}
+import bridges.powerpoint.{SlidesDataJsonBridge, SlidesDataPowerPointBridge}
 import bridges.tika.{TikaPlainTextBridge, TikaXmlBridge}
-import bridges.powerpoint.{SlidesDataPowerPointBridge, SlidesDataJsonBridge}
-import bridges.image.{SvgToPngBridge, PdfToPngBridge, PdfToJpegBridge}
-import models.excel.SheetsData
-import models.powerpoint.SlidesData
-import types.{MimeType, Priority}
 import types.MimeType._
-import utils.{Prioritized, PriorityRegistry}
+import types.{MimeType, Priority}
+import utils.PriorityRegistry
 
-import scala.collection.concurrent.TrieMap
 import org.slf4j.LoggerFactory
 
 /** BridgeRegistry manages a set of registered Bridges between mime types.
@@ -22,14 +19,9 @@ object BridgeRegistry {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /** Thread‑safe registry from (inMime, outMime) -> Priority-ordered list of Bridges */
-  private lazy val registry: PriorityRegistry[(MimeType, MimeType), PrioritizedBridge] =
-    new PriorityRegistry[(MimeType, MimeType), PrioritizedBridge]()
-
-  /**
-   * Wrapper class that adds priority to bridges.
-   * This is needed because Bridge doesn't directly implement Prioritized.
-   */
-  private class PrioritizedBridge(val bridge: Bridge[_, _, _], override val priority: Priority) extends Prioritized
+  private lazy val registry
+      : PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]] =
+    new PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]]()
 
   /** Initialize the default bridging from the "core" module.
     * This includes standard Excel, PPT, Tika, etc.
@@ -96,17 +88,34 @@ object BridgeRegistry {
     register(ApplicationPdf, ImagePng, Priority.CORE, PdfToPngBridge)
     register(ApplicationPdf, ImageJpeg, Priority.CORE, PdfToJpegBridge)
 
-    register(ApplicationVndMsPowerpoint, ApplicationJson, Priority.CORE, pptToJson)
-    register(ApplicationJson, ApplicationVndMsPowerpoint, Priority.CORE, jsonToPpt)
+    register(
+      ApplicationVndMsPowerpoint,
+      ApplicationJson,
+      Priority.CORE,
+      pptToJson
+    )
+    register(
+      ApplicationJson,
+      ApplicationVndMsPowerpoint,
+      Priority.CORE,
+      jsonToPpt
+    )
 
     // Generic Tika bridging for "anything" to text/xml:
     // The bridging code uses only outMime, so we can register them for any input:
     // We might do that by registering a fallback approach, but for simplicity, do direct here:
-    registerCatchAllTo(ApplicationXml, Priority.LOW, tikaToXml)  // Lower priority since it's a fallback
-    registerCatchAllTo(TextPlain, Priority.LOW, tikaToText)      // Lower priority since it's a fallback
+    registerCatchAllTo(
+      ApplicationXml,
+      tikaToXml
+    ) // TikaBridge already has LOW priority
+    registerCatchAllTo(
+      TextPlain,
+      tikaToText
+    ) // TikaBridge already has LOW priority
   }
 
   /** Register a single Bridge for (inMime, outMime) with a specific priority.
+    * Note: This method should be avoided in favor of using bridges with their own priority.
     */
   def register(
       inMime: MimeType,
@@ -114,17 +123,29 @@ object BridgeRegistry {
       priority: Priority,
       bridge: Bridge[_, _, _]
   ): Unit = {
-    registry.register((inMime, outMime), new PrioritizedBridge(bridge, priority))
+    logger.info(
+      s"Registering ${bridge.getClass.getSimpleName} for $inMime -> $outMime with priority $priority"
+    )
+    logger.warn(
+      s"Bridge ${bridge.getClass.getSimpleName} has native priority ${bridge.priority} but is being registered with $priority"
+    )
+    logger.warn(
+      "Consider updating the bridge to use the correct priority directly instead of overriding it here"
+    )
+    registry.register((inMime, outMime), bridge)
   }
 
-  /** Register a single Bridge for (inMime, outMime) with default priority.
+  /** Register a single Bridge for (inMime, outMime) using the bridge's native priority.
     */
   def register(
       inMime: MimeType,
       outMime: MimeType,
       bridge: Bridge[_, _, _]
   ): Unit = {
-    register(inMime, outMime, Priority.DEFAULT, bridge)
+    logger.info(
+      s"Registering ${bridge.getClass.getSimpleName} for $inMime -> $outMime with native priority ${bridge.priority}"
+    )
+    registry.register((inMime, outMime), bridge)
   }
 
   /** Some bridging logic (like Tika) can handle "any" input -> certain output,
@@ -163,7 +184,7 @@ object BridgeRegistry {
       inMime: MimeType,
       outMime: MimeType
   ): Option[Bridge[_, _, _]] = {
-    registry.get((inMime, outMime)).map(_.bridge)
+    registry.get((inMime, outMime))
   }
 
   /** Find all bridges registered for the given mime types, in priority order.
@@ -172,7 +193,7 @@ object BridgeRegistry {
       inMime: MimeType,
       outMime: MimeType
   ): List[Bridge[_, _, _]] = {
-    registry.getAll((inMime, outMime)).map(_.bridge)
+    registry.getAll((inMime, outMime))
   }
 
   /** Check if we can merge between these mime types
@@ -192,13 +213,16 @@ object BridgeRegistry {
       case _                                 => None
     }
   }
-  
+
   /** Diagnostic method to list all registered bridges with their priorities.
     * Useful for debugging and logging.
     */
   def listRegisteredBridges(): Seq[(MimeType, MimeType, String, Priority)] = {
-    registry.entries.map { case ((inMime, outMime), prioritizedBridge) =>
-      (inMime, outMime, prioritizedBridge.bridge.getClass.getSimpleName, prioritizedBridge.priority)
-    }.toSeq.sortBy(t => (t._1.toString, t._2.toString))
+    registry.entries
+      .map { case ((inMime, outMime), bridge) =>
+        (inMime, outMime, bridge.getClass.getSimpleName, bridge.priority)
+      }
+      .toSeq
+      .sortBy(t => (t._1.toString, t._2.toString))
   }
 }

@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package bridges.aspose.email
 
-import bridges.{Bridge, SimpleBridge}
+import bridges.Bridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -21,7 +22,7 @@ import scala.reflect.ClassTag
  * Using Aspose.Email to load the mail, then Aspose.Words to convert the MHT
  * output to PDF.
  */
-object EmailToPdfAsposeBridge extends SimpleBridge[MessageRfc822.type, ApplicationPdf.type] {
+object EmailToPdfAsposeBridge extends HighPrioritySimpleBridge[MessageRfc822.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   // For Scala 2.12 compatibility, provide required ClassTags

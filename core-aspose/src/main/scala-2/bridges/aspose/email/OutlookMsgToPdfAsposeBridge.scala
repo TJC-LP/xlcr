@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.aspose.email
 
-import bridges.SimpleBridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -20,7 +20,7 @@ import scala.reflect.ClassTag
  * OutlookMsgToPdfAsposeBridge converts Outlook .msg files (application/vnd.ms-outlook) to PDF.
  * It reuses the same Aspose.Email ➔ Aspose.Words pipeline as the EML variant.
  */
-object OutlookMsgToPdfAsposeBridge extends SimpleBridge[ApplicationVndMsOutlook.type, ApplicationPdf.type] {
+object OutlookMsgToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationVndMsOutlook.type, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 

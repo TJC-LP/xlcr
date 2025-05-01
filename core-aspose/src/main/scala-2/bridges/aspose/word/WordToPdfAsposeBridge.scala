@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package bridges.aspose.word
 
-import bridges.{Bridge, SimpleBridge}
+import bridges.Bridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -18,7 +19,7 @@ import scala.reflect.ClassTag
 /**
  * WordToPdfAsposeBridge is a Bridge from application/msword to application/pdf using Aspose.Words.
  */
-object WordToPdfAsposeBridge extends SimpleBridge[ApplicationMsWord.type, ApplicationPdf.type] {
+object WordToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationMsWord.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   // For Scala 2.12 compatibility, provide required ClassTags

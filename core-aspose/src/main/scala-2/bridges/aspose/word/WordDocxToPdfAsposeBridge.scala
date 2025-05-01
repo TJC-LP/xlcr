@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.aspose.word
 
-import bridges.SimpleBridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -20,7 +20,7 @@ import scala.reflect.ClassTag
  * Converts DOCX (application/vnd.openxmlformats-officedocument.wordprocessingml.document) to PDF via Aspose.Words.
  */
 object WordDocxToPdfAsposeBridge
-    extends SimpleBridge[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, ApplicationPdf.type] {
+    extends HighPrioritySimpleBridge[ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 

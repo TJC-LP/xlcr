@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.aspose.excel
 
-import bridges.SimpleBridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -17,7 +17,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.reflect.ClassTag
 
 // Common conversion logic using a private trait
-trait ExcelLegacyToPdfBridgeImpl[I <: MimeType] extends SimpleBridge[I, ApplicationPdf.type] {
+trait ExcelLegacyToPdfBridgeImpl[I <: MimeType] extends HighPrioritySimpleBridge[I, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 

@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.aspose.powerpoint
 
-import bridges.SimpleBridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -16,7 +16,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.reflect.ClassTag
 
 object PowerPointPptxToPdfAsposeBridge
-    extends SimpleBridge[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, ApplicationPdf.type] {
+    extends HighPrioritySimpleBridge[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 

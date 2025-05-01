@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.aspose.excel
 
-import bridges.SimpleBridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -20,7 +20,7 @@ import scala.reflect.ClassTag
  * to PDF (application/pdf) using Aspose.Cells.
  */
 object ExcelToPdfAsposeBridge
-  extends SimpleBridge[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, ApplicationPdf.type] {
+  extends HighPrioritySimpleBridge[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 

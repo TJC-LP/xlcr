@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package bridges.aspose.word
 
-import bridges.{Bridge, SimpleBridge}
+import bridges.SimpleBridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -17,7 +18,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 /**
  * WordToPdfAsposeBridge is a Bridge from application/msword to application/pdf using Aspose.Words.
  */
-object WordToPdfAsposeBridge extends SimpleBridge[ApplicationMsWord.type, ApplicationPdf.type] {
+object WordToPdfAsposeBridge extends HighPrioritySimpleBridge[ApplicationMsWord.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   override protected def inputParser: Parser[ApplicationMsWord.type, M] =

@@ -3,7 +3,8 @@ package com.tjclp.xlcr.bridges
 import com.tjclp.xlcr.models.{FileContent, Model}
 import com.tjclp.xlcr.parsers.Parser
 import com.tjclp.xlcr.renderers.Renderer
-import com.tjclp.xlcr.types.MimeType
+import com.tjclp.xlcr.types.{MimeType, Priority}
+import com.tjclp.xlcr.utils.Prioritized
 import com.tjclp.xlcr.{BridgeError, ParserError, RendererError, UnsupportedConversionError}
 
 import scala.reflect.ClassTag
@@ -18,7 +19,13 @@ import scala.reflect.ClassTag
  */
 trait Bridge[M <: Model, I <: MimeType, O <: MimeType](
                                                         using mTag: ClassTag[M], iTag: ClassTag[I], oTag: ClassTag[O]
-                                                      ):
+                                                      ) extends Prioritized:
+  
+  /**
+   * Default priority for bridges.
+   * Specialized bridges (like Aspose bridges) should override this.
+   */
+  override def priority: Priority = Priority.DEFAULT
   /**
    * Convert input: FileContent[I] -> M -> FileContent[O]
    */

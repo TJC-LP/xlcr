@@ -27,14 +27,10 @@ object AsposeBridgeRegistry {
   /** Register all Aspose-based bridging with the core BridgeRegistry.
     */
   def registerAll(): Unit = {
-    // All Aspose bridges are registered with ASPOSE priority
-    // to ensure they're selected over core implementations
-
     // Word -> PDF
     BridgeRegistry.register(
       ApplicationMsWord,
       ApplicationPdf,
-      Priority.ASPOSE,
       WordToPdfAsposeBridge
     )
 
@@ -43,7 +39,6 @@ object AsposeBridgeRegistry {
     BridgeRegistry.register(
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       ApplicationPdf,
-      Priority.ASPOSE,
       ExcelToPdfAsposeBridge
     )
 
@@ -51,19 +46,16 @@ object AsposeBridgeRegistry {
     BridgeRegistry.register(
       ApplicationVndMsExcel,
       ApplicationPdf,
-      Priority.ASPOSE,
       ExcelXlsToPdfAsposeBridge
     )
     BridgeRegistry.register(
       ApplicationVndMsExcelSheetMacroEnabled,
       ApplicationPdf,
-      Priority.ASPOSE,
       ExcelXlsmToPdfAsposeBridge
     )
     BridgeRegistry.register(
       ApplicationVndMsExcelSheetBinary,
       ApplicationPdf,
-      Priority.ASPOSE,
       ExcelXlsbToPdfAsposeBridge
     )
 
@@ -71,7 +63,6 @@ object AsposeBridgeRegistry {
     BridgeRegistry.register(
       ApplicationVndOasisOpendocumentSpreadsheet,
       ApplicationPdf,
-      Priority.ASPOSE,
       OdsToPdfAsposeBridge
     )
 
@@ -79,13 +70,11 @@ object AsposeBridgeRegistry {
     BridgeRegistry.register(
       MessageRfc822,
       ApplicationPdf,
-      Priority.ASPOSE,
       EmailToPdfAsposeBridge
     )
     BridgeRegistry.register(
       ApplicationVndMsOutlook,
       ApplicationPdf,
-      Priority.ASPOSE,
       OutlookMsgToPdfAsposeBridge
     )
 
@@ -93,13 +82,11 @@ object AsposeBridgeRegistry {
     BridgeRegistry.register(
       ApplicationVndMsPowerpoint,
       ApplicationPdf,
-      Priority.ASPOSE,
       PowerPointToPdfAsposeBridge
     )
     BridgeRegistry.register(
       ApplicationVndOpenXmlFormatsPresentationmlPresentation,
       ApplicationPdf,
-      Priority.ASPOSE,
       PowerPointPptxToPdfAsposeBridge
     )
 
@@ -107,7 +94,6 @@ object AsposeBridgeRegistry {
     BridgeRegistry.register(
       ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
       ApplicationPdf,
-      Priority.ASPOSE,
       WordDocxToPdfAsposeBridge
     )
   }

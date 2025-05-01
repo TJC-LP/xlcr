@@ -19,26 +19,23 @@ object AsposeBridgeRegistry {
    * Register all Aspose-based bridging with the core BridgeRegistry.
    */
   def registerAll(): Unit = {
-    // All Aspose bridges are registered with ASPOSE priority
-    // to ensure they're selected over core implementations
-
     // Word -> PDF (DOC & DOCX)
-    BridgeRegistry.register(ApplicationMsWord, ApplicationPdf, Priority.ASPOSE, WordToPdfAsposeBridge)
-    BridgeRegistry.register(ApplicationVndOpenXmlFormatsWordprocessingmlDocument, ApplicationPdf, Priority.ASPOSE, WordDocxToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationMsWord, ApplicationPdf, WordToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndOpenXmlFormatsWordprocessingmlDocument, ApplicationPdf, WordDocxToPdfAsposeBridge)
 
     // Excel -> PDF (modern and legacy)
-    BridgeRegistry.register(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ApplicationPdf, Priority.ASPOSE, ExcelToPdfAsposeBridge)
-    BridgeRegistry.register(ApplicationVndMsExcel, ApplicationPdf, Priority.ASPOSE, excel.ExcelXlsToPdfAsposeBridge)
-    BridgeRegistry.register(ApplicationVndMsExcelSheetMacroEnabled, ApplicationPdf, Priority.ASPOSE, excel.ExcelXlsmToPdfAsposeBridge)
-    BridgeRegistry.register(ApplicationVndMsExcelSheetBinary, ApplicationPdf, Priority.ASPOSE, excel.ExcelXlsbToPdfAsposeBridge)
-    BridgeRegistry.register(ApplicationVndOasisOpendocumentSpreadsheet, ApplicationPdf, Priority.ASPOSE, OdsToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ApplicationPdf, ExcelToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndMsExcel, ApplicationPdf, excel.ExcelXlsToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndMsExcelSheetMacroEnabled, ApplicationPdf, excel.ExcelXlsmToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndMsExcelSheetBinary, ApplicationPdf, excel.ExcelXlsbToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndOasisOpendocumentSpreadsheet, ApplicationPdf, OdsToPdfAsposeBridge)
 
     // Email / Outlook -> PDF
-    BridgeRegistry.register(MessageRfc822, ApplicationPdf, Priority.ASPOSE, EmailToPdfAsposeBridge)
-    BridgeRegistry.register(ApplicationVndMsOutlook, ApplicationPdf, Priority.ASPOSE, OutlookMsgToPdfAsposeBridge)
+    BridgeRegistry.register(MessageRfc822, ApplicationPdf, EmailToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndMsOutlook, ApplicationPdf, OutlookMsgToPdfAsposeBridge)
 
     // PowerPoint -> PDF (PPT & PPTX)
-    BridgeRegistry.register(ApplicationVndMsPowerpoint, ApplicationPdf, Priority.ASPOSE, PowerPointToPdfAsposeBridge)
-    BridgeRegistry.register(ApplicationVndOpenXmlFormatsPresentationmlPresentation, ApplicationPdf, Priority.ASPOSE, PowerPointPptxToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndMsPowerpoint, ApplicationPdf, PowerPointToPdfAsposeBridge)
+    BridgeRegistry.register(ApplicationVndOpenXmlFormatsPresentationmlPresentation, ApplicationPdf, PowerPointPptxToPdfAsposeBridge)
   }
 }

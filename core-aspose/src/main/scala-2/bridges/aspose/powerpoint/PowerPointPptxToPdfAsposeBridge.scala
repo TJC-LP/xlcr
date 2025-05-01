@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package bridges.aspose.powerpoint
 
-import bridges.SimpleBridge
+import bridges.aspose.HighPrioritySimpleBridge
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
@@ -20,7 +20,7 @@ import scala.reflect.ClassTag
  * Converts PPTX (application/vnd.openxmlformats-officedocument.presentationml.presentation) → PDF via Aspose.Slides.
  */
 object PowerPointPptxToPdfAsposeBridge
-    extends SimpleBridge[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, ApplicationPdf.type] {
+    extends HighPrioritySimpleBridge[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
