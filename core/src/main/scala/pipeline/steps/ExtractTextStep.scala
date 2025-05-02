@@ -15,9 +15,8 @@ object ExtractTextStep extends PipelineStep[FileContent[MimeType], FileContent[M
   private val targetMime: MimeType = MimeType.TextPlain
 
   override def run(input: FileContent[MimeType]): FileContent[MimeType] =
-    BridgeRegistry.findBridge(input.mimeType, targetMime) match {
-      case Some(bridge: Bridge[_, i, o]) =>
-        bridge.convert(input.asInstanceOf[FileContent[i]]).asInstanceOf[FileContent[MimeType]]
-      case None => throw UnsupportedConversionException(input.mimeType.mimeType, targetMime.mimeType)
-    }
+    BridgeRegistry.findBridgeForMatching(input.mimeType, targetMime)(
+      bridge => bridge.convert(input).asInstanceOf[FileContent[MimeType]],
+      throw UnsupportedConversionException(input.mimeType.mimeType, targetMime.mimeType)
+    )
 }

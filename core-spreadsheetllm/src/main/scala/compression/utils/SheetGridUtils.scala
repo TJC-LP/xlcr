@@ -2,7 +2,8 @@ package com.tjclp.xlcr
 package compression.utils
 
 import com.tjclp.xlcr.compression.models.{CellInfo, SheetGrid, TableRegion}
-import com.tjclp.xlcr.compression.utils.CellInfoUtils
+// CellInfoUtils is already available in the same package
+// import com.tjclp.xlcr.compression.utils.CellInfoUtils
 import com.tjclp.xlcr.models.excel.SheetData
 import org.slf4j.LoggerFactory
 

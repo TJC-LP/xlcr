@@ -1,17 +1,12 @@
 package com.tjclp.xlcr
-package pipeline.spark.steps
+package pipeline.spark
+package steps
 
-import pipeline.spark.{
-  CoreSchema,
-  SparkPipelineRegistry,
-  SparkStep,
-  UdfHelpers
-}
-
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 import bridges.{Bridge, BridgeRegistry}
 import models.FileContent
 import types.MimeType
+
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
 /** Binary‑to‑string extraction (e.g. text, XML) using BridgeRegistry. */
 import scala.concurrent.duration.{Duration => ScalaDuration}
@@ -38,13 +33,17 @@ case class ExtractStep(
 
       BridgeRegistry
         .findBridge(inMime, to)
-        .collect { case b: Bridge[_, inMime.type, to.type] =>
-          val out = b.convert(fc)
+        .map { b =>
+          // We know the bridge works with our mime types even though we can't enforce it at compile time
+          // due to type erasure, so we can safely cast here
+          val bridge = b.asInstanceOf[Bridge[_, inMime.type, to.type]]
+          
+          val out = bridge.convert(fc)
           val extractedText =
             new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
 
           // Get the bridge implementation info
-          val bridgeImpl = b.getClass.getSimpleName
+          val bridgeImpl = bridge.getClass.getSimpleName
 
           // Create parameters map with extraction info
           val paramsBuilder = scala.collection.mutable.Map[String, String](
@@ -59,15 +58,9 @@ case class ExtractStep(
           (extractedText, Some(bridgeImpl), Some(paramsBuilder.toMap))
         }
         .getOrElse {
-          // If no bridge found, return empty string with error info
-          (
-            "",
-            Some("NoBridgeFound"),
-            Some(
-              Map(
-                "error" -> s"No bridge from ${inMime.mimeType} to ${to.mimeType}"
-              )
-            )
+          throw UnsupportedConversionException(
+            inMime.mimeType,
+            to.mimeType
           )
         }
   }

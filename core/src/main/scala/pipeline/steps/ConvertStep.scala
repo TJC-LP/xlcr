@@ -14,13 +14,13 @@ import com.tjclp.xlcr.{UnsupportedConversionException}
 final case class ConvertStep(toMime: MimeType) extends PipelineStep[FileContent[MimeType], FileContent[MimeType]] {
 
   override def run(input: FileContent[MimeType]): FileContent[MimeType] = {
-    BridgeRegistry.findBridge(input.mimeType, toMime) match {
-      case Some(bridge: Bridge[_, i, o]) =>
+    BridgeRegistry.findBridgeForMatching(input.mimeType, toMime)(
+      bridge => {
         bridge
-          .convert(input.asInstanceOf[FileContent[i]])
+          .convert(input)
           .asInstanceOf[FileContent[MimeType]]
-
-      case None => throw UnsupportedConversionException(input.mimeType.mimeType, toMime.mimeType)
-    }
+      },
+      throw UnsupportedConversionException(input.mimeType.mimeType, toMime.mimeType)
+    )
   }
 }

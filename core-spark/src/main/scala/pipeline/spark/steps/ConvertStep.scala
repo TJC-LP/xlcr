@@ -1,17 +1,12 @@
 package com.tjclp.xlcr
-package pipeline.spark.steps
+package pipeline.spark
+package steps
 
-import pipeline.spark.{
-  CoreSchema,
-  SparkPipelineRegistry,
-  SparkStep,
-  UdfHelpers
-}
-
-import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 import bridges.{Bridge, BridgeRegistry}
 import models.FileContent
 import types.MimeType
+
+import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 /** Conversion step that transforms content from one MIME type to another.
   * Uses the BridgeRegistry to find appropriate converters with error handling and metrics.
@@ -28,7 +23,7 @@ case class ConvertStep(
     super.meta ++ Map("out" -> to.mimeType)
 
   // Wrap conversion logic in a UDF that captures timing and errors
-  private def createConvertUdf = 
+  private def createConvertUdf =
     UdfHelpers.wrapUdf2(name, rowTimeout) {
       (bytes: Array[Byte], mimeStr: String) =>
         val inMime =
@@ -44,9 +39,13 @@ case class ConvertStep(
 
           BridgeRegistry
             .findBridge(inMime, to)
-            .collect { case b: Bridge[_, inMime.type, to.type] =>
+            .map { b =>
+              // We know the bridge works with our mime types even though we can't enforce it at compile time
+              // due to type erasure, so we can safely cast here
+              val bridge = b.asInstanceOf[Bridge[_, inMime.type, to.type]]
+              
               // Return both the converted data and the bridge implementation name
-              val bridgeImpl = b.getClass.getSimpleName
+              val bridgeImpl = bridge.getClass.getSimpleName
 
               // Create parameters map with conversion info
               val paramsBuilder = scala.collection.mutable.Map[String, String](
@@ -54,7 +53,7 @@ case class ConvertStep(
                 "toMime" -> to.mimeType
               )
 
-              (b.convert(fc).data, Some(bridgeImpl), Some(paramsBuilder.toMap))
+              (bridge.convert(fc).data, Some(bridgeImpl), Some(paramsBuilder.toMap))
             }
             .getOrElse {
               throw UnsupportedConversionException(

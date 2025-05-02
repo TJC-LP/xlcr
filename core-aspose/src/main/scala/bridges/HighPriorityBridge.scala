@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package bridges
 
-import bridges.Bridge
+// No need to import Bridge since we're in the same package
+// (avoids warning about hidden imports)
 import models.Model
 import types.{MimeType, Priority}
 import utils.Prioritized

@@ -1,7 +1,8 @@
 package com.tjclp.xlcr
 package bridges
 
-import bridges.SimpleBridge
+// No need to import SimpleBridge since we're in the same package
+// (avoids warning about hidden imports)
 import types.{MimeType, Priority}
 import utils.Prioritized
 import utils.aspose.AsposeLicense

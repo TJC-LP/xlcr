@@ -76,6 +76,20 @@ object BridgeRegistry {
       registry.get((MimeType.Wildcard, outMime))
     }
   }
+  
+  /**
+   * A convenience method for pattern matching that guarantees it's exhaustive for Scala 2
+   * This addresses the warnings about non-exhaustive pattern matching in Scala 2
+   */
+  def findBridgeForMatching[I <: MimeType, O <: MimeType, A](
+      inMime: I,
+      outMime: O
+  )(matched: Bridge[_, I, O] => A, unmatched: => A): A = {
+    findBridge(inMime, outMime) match {
+      case Some(bridge) => matched(bridge.asInstanceOf[Bridge[_, I, O]])
+      case None => unmatched
+    }
+  }
 
   /** Find all bridges registered for the given mime types, in priority order.
     * Includes both exact matches and wildcard matches.
@@ -112,6 +126,20 @@ object BridgeRegistry {
     findBridge(input, output) match {
       case Some(b: MergeableBridge[_, _, _]) => Some(b)
       case _                                 => None
+    }
+  }
+  
+  /**
+   * A convenience method for pattern matching that guarantees it's exhaustive for Scala 2
+   * This addresses the warnings about non-exhaustive pattern matching in Scala 2
+   */
+  def findMergeableBridgeForMatching[I <: MimeType, O <: MimeType, A](
+      input: I,
+      output: O
+  )(matched: MergeableBridge[_, I, O] => A, unmatched: => A): A = {
+    findMergeableBridge(input, output) match {
+      case Some(bridge) => matched(bridge.asInstanceOf[MergeableBridge[_, I, O]])
+      case None => unmatched
     }
   }
 
