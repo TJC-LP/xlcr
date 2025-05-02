@@ -64,21 +64,36 @@ object BridgeRegistry {
   /** Find the appropriate bridge for converting between mime types.
     * Returns Some(bridge) if found, otherwise None.
     * If multiple bridges are registered, the one with the highest priority is returned.
+    * If no exact match is found, tries to find a bridge with a wildcard input mime type.
     */
   def findBridge(
       inMime: MimeType,
       outMime: MimeType
   ): Option[Bridge[_, _, _]] = {
-    registry.get((inMime, outMime))
+    registry.get((inMime, outMime)).orElse {
+      // Try with wildcard input mime type if no exact match is found
+      logger.debug(s"No exact bridge found for $inMime -> $outMime, trying wildcard match")
+      registry.get((MimeType.Wildcard, outMime))
+    }
   }
 
   /** Find all bridges registered for the given mime types, in priority order.
+    * Includes both exact matches and wildcard matches.
     */
   def findAllBridges(
       inMime: MimeType,
       outMime: MimeType
   ): List[Bridge[_, _, _]] = {
-    registry.getAll((inMime, outMime))
+    // Get exact matches
+    val exactMatches = registry.getAll((inMime, outMime))
+    
+    // Get wildcard matches if any exist
+    val wildcardMatches = 
+      if (inMime != MimeType.Wildcard) registry.getAll((MimeType.Wildcard, outMime))
+      else List.empty
+    
+    // Combine and sort by priority
+    (exactMatches ++ wildcardMatches).sortBy(b => -b.priority.value)
   }
 
   /** Check if we can merge between these mime types
@@ -88,6 +103,7 @@ object BridgeRegistry {
   }
 
   /** Find a bridge that supports merging between these mime types
+    * Checks both exact matches and wildcard matches.
     */
   def findMergeableBridge(
       input: MimeType,

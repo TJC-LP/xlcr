@@ -67,8 +67,7 @@ class CoreRegistrations extends BridgeProvider with SplitterProvider {
       SlidesDataJsonBridge.chain(SlidesDataPowerPointBridge)
     ),
     // Tika bridging (catch-all, low priority)
-    // Register Tika bridges for common types explicitly, ServiceLoader handles the rest if needed
-    // Note: TikaBridge itself has LOW priority
+    // Register Tika bridges for common types explicitly
     BridgeInfo(
       MimeType.ApplicationMsWord,
       MimeType.TextPlain,
@@ -96,7 +95,12 @@ class CoreRegistrations extends BridgeProvider with SplitterProvider {
       TikaXmlBridge
     ),
     BridgeInfo(MimeType.ApplicationPdf, MimeType.ApplicationXml, TikaXmlBridge),
-    BridgeInfo(MimeType.TextHtml, MimeType.ApplicationXml, TikaXmlBridge)
+    BridgeInfo(MimeType.TextHtml, MimeType.ApplicationXml, TikaXmlBridge),
+    
+    // Register Tika bridges as wildcard bridges to handle any mime type
+    // These will be used when no specific bridge is found for an input->output pair
+    BridgeInfo(MimeType.Wildcard, MimeType.TextPlain, TikaPlainTextBridge),
+    BridgeInfo(MimeType.Wildcard, MimeType.ApplicationXml, TikaXmlBridge)
   )
 
   override def getSplitters: Iterable[SplitterInfo] = Seq(

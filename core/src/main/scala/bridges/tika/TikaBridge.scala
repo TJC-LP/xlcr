@@ -9,8 +9,13 @@ import types.MimeType
 
 /** TikaBridge ties together a TikaParser and a TikaRenderer
   * for the same input and output T (MimeType).
+  * 
+  * TikaBridge is designed to act as a catch-all bridge that can handle
+  * any input mime type and convert it to a specific output format.
+  * When registered with MimeType.Wildcard, it serves as a fallback
+  * when no specific bridge is found for an input->output pair.
   *
-  * I = input mime type
+  * I = input mime type (can be any mime type)
   * O = output mime type
   */
 trait TikaBridge[O <: MimeType]

@@ -104,6 +104,11 @@ object MimeType extends Serializable {
   // Regular expression for parsing MIME type strings
   private val MimeTypeRegex: Regex = """([^/]+)/([^;]+)(?:;\s*(.+))?""".r
   private val ParamRegex: Regex = """([^=]+)=([^;]+)(?:;\s*)?""".r
+  
+  /** Special MimeType that represents a wildcard, matching any input
+   * Used for catch-all bridge implementations
+   */
+  val Wildcard: MimeType = MimeType("*", "*")
 
   // Factory method to create a MimeType
   def apply(
