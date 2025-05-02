@@ -67,36 +67,6 @@ class CoreRegistrations extends BridgeProvider with SplitterProvider {
       SlidesDataJsonBridge.chain(SlidesDataPowerPointBridge)
     ),
     // Tika bridging (catch-all, low priority)
-    // Register Tika bridges for common types explicitly
-    BridgeInfo(
-      MimeType.ApplicationMsWord,
-      MimeType.TextPlain,
-      TikaPlainTextBridge
-    ),
-    BridgeInfo(
-      MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
-      MimeType.TextPlain,
-      TikaPlainTextBridge
-    ),
-    BridgeInfo(
-      MimeType.ApplicationPdf,
-      MimeType.TextPlain,
-      TikaPlainTextBridge
-    ),
-    BridgeInfo(MimeType.TextHtml, MimeType.TextPlain, TikaPlainTextBridge),
-    BridgeInfo(
-      MimeType.ApplicationMsWord,
-      MimeType.ApplicationXml,
-      TikaXmlBridge
-    ),
-    BridgeInfo(
-      MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
-      MimeType.ApplicationXml,
-      TikaXmlBridge
-    ),
-    BridgeInfo(MimeType.ApplicationPdf, MimeType.ApplicationXml, TikaXmlBridge),
-    BridgeInfo(MimeType.TextHtml, MimeType.ApplicationXml, TikaXmlBridge),
-    
     // Register Tika bridges as wildcard bridges to handle any mime type
     // These will be used when no specific bridge is found for an input->output pair
     BridgeInfo(MimeType.Wildcard, MimeType.TextPlain, TikaPlainTextBridge),
