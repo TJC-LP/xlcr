@@ -2,10 +2,14 @@ package com.tjclp.xlcr
 package splitters
 package pdf
 
-import compat.aspose.{AsposePdfDocument, AsposePdfResolution, AsposePdfJpegDevice, AsposePdfPngDevice}
+import compat.aspose.{
+  AsposePdfDocument,
+  AsposePdfJpegDevice,
+  AsposePdfPngDevice,
+  AsposePdfResolution
+}
 import models.FileContent
 import types.MimeType
-import utils.aspose.AsposeLicense
 
 import org.slf4j.LoggerFactory
 
@@ -20,9 +24,6 @@ class PdfPageAsposeSplitter
     extends HighPrioritySplitter[MimeType.ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  // Initialize Aspose license
-  AsposeLicense.initializeIfNeeded()
-
   override def split(
       content: FileContent[MimeType.ApplicationPdf.type],
       cfg: SplitConfig
@@ -36,7 +37,9 @@ class PdfPageAsposeSplitter
 
     try {
       // Load PDF document
-      val pdfDocument = new AsposePdfDocument(new ByteArrayInputStream(content.data))
+      val pdfDocument = new AsposePdfDocument(
+        new ByteArrayInputStream(content.data)
+      )
       val pageCount = pdfDocument.getPages.size
 
       (1 to pageCount).map { pageIndex =>
