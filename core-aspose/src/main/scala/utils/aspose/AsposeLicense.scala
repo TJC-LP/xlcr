@@ -42,11 +42,14 @@ object AsposeLicense {
     case object Slides extends Product("Slides", "Aspose.Java.Slides.lic", "ASPOSE_SLIDES_LICENSE_B64") {
       def apply(b: Array[Byte]): Unit = new com.aspose.slides.License().setLicense(new java.io.ByteArrayInputStream(b))
     }
+    case object Pdf    extends Product("Pdf"   , "Aspose.Java.Pdf.lic"   , "ASPOSE_PDF_LICENSE_B64"   ) {
+      def apply(b: Array[Byte]): Unit = new com.aspose.pdf.License().setLicense(new java.io.ByteArrayInputStream(b))
+    }
     case object Zip    extends Product("Zip"   , "Aspose.Java.Zip.lic"   , "ASPOSE_ZIP_LICENSE_B64"   ) {
       def apply(b: Array[Byte]): Unit = new com.aspose.zip.License().setLicense(new java.io.ByteArrayInputStream(b))
     }
 
-    val values: Seq[Product] = Seq(Words, Cells, Email, Slides, Zip)
+    val values: Seq[Product] = Seq(Words, Cells, Email, Slides, Pdf, Zip)
   }
 
   /* ------------------------------ Public API ---------------------------------- */

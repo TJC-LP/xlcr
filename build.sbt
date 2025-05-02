@@ -170,6 +170,7 @@ lazy val coreAspose = (project in file("core-aspose"))
       "com.aspose" % "aspose-slides" % "25.4" classifier "jdk16",
       "com.aspose" % "aspose-email" % "25.3" classifier "jdk16",
       "com.aspose" % "aspose-zip" % "25.3",
+      "com.aspose" % "aspose-pdf" % "25.4" classifier "jdk17",
       "org.scalatest" %% "scalatest" % "3.2.19" % Test
     )
   )

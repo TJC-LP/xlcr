@@ -52,6 +52,24 @@ object AsposeBridge {
     val PDF_FORMAT: Int = com.aspose.words.SaveFormat.PDF
   }
   
+  // ===== PDF =====
+  object Pdf {
+    def createDocument(stream: java.io.InputStream): com.aspose.pdf.Document =
+      new com.aspose.pdf.Document(stream)
+      
+    def createResolution(dpi: Int): com.aspose.pdf.devices.Resolution =
+      new com.aspose.pdf.devices.Resolution(dpi)
+      
+    def createJpegDevice(resolution: com.aspose.pdf.devices.Resolution): com.aspose.pdf.devices.JpegDevice =
+      new com.aspose.pdf.devices.JpegDevice(resolution)
+      
+    def createJpegDevice(resolution: com.aspose.pdf.devices.Resolution, quality: Int): com.aspose.pdf.devices.JpegDevice =
+      new com.aspose.pdf.devices.JpegDevice(resolution, quality)
+      
+    def createPngDevice(resolution: com.aspose.pdf.devices.Resolution): com.aspose.pdf.devices.PngDevice =
+      new com.aspose.pdf.devices.PngDevice(resolution)
+  }
+  
   // ===== EMAIL =====
   object Email {
     def loadMailMessage(stream: java.io.InputStream): com.aspose.email.MailMessage =

@@ -12,6 +12,7 @@ import spi.{BridgeInfo, BridgeProvider, SplitterInfo, SplitterProvider}
 import splitters.archive._
 import splitters.email._
 import splitters.excel._
+import splitters.pdf.PdfPageAsposeSplitter
 import splitters.powerpoint._
 import types.MimeType
 
@@ -97,6 +98,10 @@ class AsposeRegistrations extends BridgeProvider with SplitterProvider {
       MimeType.ApplicationVndMsExcelSheetBinary,
       ExcelXlsbSheetAsposeSplitter
     ),
+    SplitterInfo(
+      MimeType.ApplicationVndOasisOpendocumentSpreadsheet,
+      OdsSheetAsposeSplitter
+    ),
     // PowerPoint Splitters
     SplitterInfo(
       MimeType.ApplicationVndMsPowerpoint,
@@ -111,6 +116,8 @@ class AsposeRegistrations extends BridgeProvider with SplitterProvider {
     SplitterInfo(MimeType.ApplicationVndMsOutlook, OutlookMsgAsposeSplitter),
     // Archive Splitters
     SplitterInfo(MimeType.ApplicationZip, ZipArchiveAsposeSplitter),
-    SplitterInfo(MimeType.ApplicationSevenz, SevenZipArchiveAsposeSplitter)
+    SplitterInfo(MimeType.ApplicationSevenz, SevenZipArchiveAsposeSplitter),
+    // PDF Splitters
+    SplitterInfo(MimeType.ApplicationPdf, new PdfPageAsposeSplitter)
   )
 }

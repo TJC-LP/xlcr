@@ -32,6 +32,17 @@ package object aspose {
     val Ppt = com.aspose.slides.SaveFormat.Ppt
   }
   
+  // PDF
+  type AsposePdfDocument = com.aspose.pdf.Document
+  type AsposePdfResolution = com.aspose.pdf.devices.Resolution
+  type AsposePdfJpegDevice = com.aspose.pdf.devices.JpegDevice
+  type AsposePdfPngDevice = com.aspose.pdf.devices.PngDevice
+  
+  object AsposePdfJpegDevice {
+    def apply(resolution: AsposePdfResolution, quality: Int): AsposePdfJpegDevice = 
+      new com.aspose.pdf.devices.JpegDevice(resolution, quality)
+  }
+  
   // Words
   type AsposeDocument = com.aspose.words.Document
   type AsposeLoadOptions = com.aspose.words.LoadOptions

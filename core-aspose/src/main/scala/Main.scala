@@ -1,8 +1,9 @@
 package com.tjclp.xlcr
 
-import utils.aspose.AsposeLicense
-import utils.aspose.AsposeLicense.Product
 import splitters.SplitStrategy
+import utils.aspose.AsposeLicense.Product
+import utils.aspose.{AsposeConfig, AsposeLicense}
+
 import org.slf4j.LoggerFactory
 import scopt.OParser
 
