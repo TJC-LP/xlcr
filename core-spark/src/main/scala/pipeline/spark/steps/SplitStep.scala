@@ -17,7 +17,11 @@ case class SplitStep(
     rowTimeout: ScalaDuration =
       scala.concurrent.duration.Duration(60, "seconds"),
     // When provided this exact config wins.
-    config: SplitConfig = SplitConfig(strategy = Some(SplitStrategy.Auto))
+    config: SplitConfig = SplitConfig(strategy = Some(SplitStrategy.Auto)),
+    // 1.8 GiB gives ~15 % head-room for struct/array metadata
+    maxBytesPerRow: Long = 1800L * 1024 * 1024,
+    // Optional: cap number of chunks so we don’t hit JVM array limits
+    maxChunksPerRow: Int  = 100000
 ) extends SparkStep {
 
   override val name: String =
@@ -52,6 +56,17 @@ case class SplitStep(
         // Perform the split – any exception will be captured by the wrapper and
         // converted into a proper `StepResult` with the error field populated.
         val chunks = DocumentSplitter.split(content, config)
+
+        /* ---------- NEW GUARD ------------------------------------------- */
+        val totalBytes = chunks.iterator.map(_.content.data.length.toLong).sum
+        if (totalBytes > maxBytesPerRow || chunks.size > maxChunksPerRow)
+          throw new IllegalArgumentException(
+            s"Split output too large for one Spark row " +
+              s"(bytes=$totalBytes, chunks=${chunks.size}). " +
+              s"Max allowed: ${maxBytesPerRow} bytes / " +
+              s"${maxChunksPerRow} chunks."
+          )
+        /* ---------------------------------------------------------------- */
 
         // Determine splitter implementation & strategy used (for lineage meta)
         val splitterImpl = DocumentSplitter
