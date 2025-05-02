@@ -2,6 +2,7 @@ package com.tjclp.xlcr
 
 import utils.aspose.AsposeLicense
 import utils.aspose.AsposeLicense.Product
+import splitters.SplitStrategy
 import org.slf4j.LoggerFactory
 import scopt.OParser
 
@@ -177,7 +178,7 @@ object Main {
 
           // Parse strategy and output type
           val splitStrategyOpt =
-            cfg.splitStrategy.flatMap(utils.SplitStrategy.fromString)
+            cfg.splitStrategy.flatMap(SplitStrategy.fromString)
           val outputMimeOpt = cfg.outputType.flatMap(parseMimeOrExtension)
 
           // Run the split operation

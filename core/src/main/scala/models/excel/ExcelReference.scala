@@ -7,9 +7,10 @@ import scala.util.matching.Regex
 
 sealed trait ExcelReference {
   def toA1: String = this match {
-    case ExcelReference.Cell(sheet, row, col) => s"$sheet!${ExcelUtils.columnToString(col)}$row"
+    case ExcelReference.Cell(sheet, row, col) =>
+      s"$sheet!${ExcelUtils.columnToString(col)}$row"
     case ExcelReference.Range(start, end) => s"${start.toA1}:${end.toA1}"
-    case ExcelReference.Named(name) => name
+    case ExcelReference.Named(name)       => name
   }
 }
 
@@ -24,7 +25,8 @@ object ExcelReference {
   private val MaxCols = 16384 // 2^14, column "XFD"
 
   private val CellPattern: Regex = """(?:([^!]+)!)?([A-Z]+)(\d+)""".r
-  private val RangePattern: Regex = """(?:([^!]+)!)?([A-Z]+)(\d+):([A-Z]+)(\d+)""".r
+  private val RangePattern: Regex =
+    """(?:([^!]+)!)?([A-Z]+)(\d+):([A-Z]+)(\d+)""".r
 
   def parseA1(reference: String): Option[ExcelReference] = {
     reference.trim match {
@@ -34,14 +36,23 @@ object ExcelReference {
           row <- Row.fromString(rowStr)
         } yield Cell(Option(sheet).getOrElse(""), row, col)
 
-      case RangePattern(sheet, startColStr, startRowStr, endColStr, endRowStr) =>
+      case RangePattern(
+            sheet,
+            startColStr,
+            startRowStr,
+            endColStr,
+            endRowStr
+          ) =>
         for {
           startCol <- Col.fromString(startColStr)
           startRow <- Row.fromString(startRowStr)
           endCol <- Col.fromString(endColStr)
           endRow <- Row.fromString(endRowStr)
           sheetName = Option(sheet).getOrElse("")
-        } yield Range(Cell(sheetName, startRow, startCol), Cell(sheetName, endRow, endCol))
+        } yield Range(
+          Cell(sheetName, startRow, startCol),
+          Cell(sheetName, endRow, endCol)
+        )
 
       case name if name.matches("""[A-Za-z_]\w*""") =>
         Some(Named(name))
@@ -53,13 +64,19 @@ object ExcelReference {
   // Validation helpers
   private def validateRow(value: Int): Int = {
     require(value >= 0, s"Row index must be non-negative, got $value")
-    require(value < MaxRows, s"Row index must be less than $MaxRows, got $value")
+    require(
+      value < MaxRows,
+      s"Row index must be less than $MaxRows, got $value"
+    )
     value
   }
 
   private def validateCol(value: Int): Int = {
     require(value >= 0, s"Column index must be non-negative, got $value")
-    require(value < MaxCols, s"Column index must be less than $MaxCols, got $value")
+    require(
+      value < MaxCols,
+      s"Column index must be less than $MaxCols, got $value"
+    )
     value
   }
 
@@ -96,8 +113,8 @@ object ExcelReference {
 
     def contains(cell: Cell): Boolean = {
       cell.sheet == range.sheet &&
-        cell.row >= range.start.row && cell.row <= range.end.row &&
-        cell.col >= range.start.col && cell.col <= range.end.col
+      cell.row >= range.start.row && cell.row <= range.end.row &&
+      cell.col >= range.start.col && cell.col <= range.end.col
     }
 
     def cells: Iterator[Cell] = for {
@@ -112,7 +129,7 @@ object ExcelReference {
 
   object Row {
     def fromString(s: String): Option[Row] = {
-        // Use scala.collection.compat for toIntOption
+      // Use scala.collection.compat for toIntOption
       import scala.collection.compat._
       s.toIntOption.filter(_ >= 0).map(Row(_))
     }

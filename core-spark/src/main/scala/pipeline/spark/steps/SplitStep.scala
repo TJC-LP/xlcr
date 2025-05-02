@@ -2,13 +2,9 @@ package com.tjclp.xlcr
 package pipeline.spark.steps
 
 import models.FileContent
-import pipeline.spark.{
-  CoreSchema,
-  SparkStep,
-  UdfHelpers
-}
+import pipeline.spark.{CoreSchema, SparkStep, UdfHelpers}
 import types.MimeType
-import utils.{DocumentSplitter, SplitConfig, SplitPolicy, SplitStrategy}
+import splitters._
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 

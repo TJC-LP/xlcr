@@ -5,6 +5,13 @@ import com.tjclp.xlcr.bridges.excel._
 import com.tjclp.xlcr.bridges.image._
 import com.tjclp.xlcr.bridges.powerpoint._
 import com.tjclp.xlcr.bridges.tika._
+import com.tjclp.xlcr.splitters.archive.ArchiveEntrySplitter
+import com.tjclp.xlcr.splitters.email.{EmailAttachmentSplitter, OutlookMsgSplitter}
+import com.tjclp.xlcr.splitters.excel.{ExcelSheetSplitter, OdsSheetSplitter}
+import com.tjclp.xlcr.splitters.pdf.PdfPageSplitter
+import com.tjclp.xlcr.splitters.powerpoint.PowerPointSlideSplitter
+import com.tjclp.xlcr.splitters.text.{CsvSplitter, TextSplitter}
+import com.tjclp.xlcr.splitters.word.WordHeadingSplitter
 import com.tjclp.xlcr.types.MimeType
 import com.tjclp.xlcr.utils._
 

@@ -1,9 +1,9 @@
 package com.tjclp.xlcr
 package spi
 
-import com.tjclp.xlcr.bridges.Bridge
-import com.tjclp.xlcr.types.MimeType
-import com.tjclp.xlcr.utils.DocumentSplitter
+import bridges.Bridge
+import splitters.DocumentSplitter
+import types.MimeType
 
 /** Information needed to register a Bridge.
   */
