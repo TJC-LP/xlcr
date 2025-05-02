@@ -3,7 +3,9 @@ package splitters
 package archive
 
 import models.FileContent
-import types.{FileType, MimeType}
+import types.Priority.LOW
+import types.{FileType, MimeType, Priority}
+import utils.PathFilter
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory
 import org.slf4j.LoggerFactory
@@ -23,18 +25,14 @@ import scala.collection.mutable.ListBuffer
   * Includes zipbomb protection to prevent excessive resource usage.
   */
 class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
+  override def priority: Priority = LOW // TODO: Make recursion work properly
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /** Cleans a path for display by:
-    * 1. Removing macOS-specific hidden file prefix "._"
-    * 2. Taking only the last path component (filename)
-    * 3. Handling special characters
+  /** Cleans a path for display by delegating to PathFilter utility
     */
   private def cleanPathForDisplay(path: String): String = {
-    val lastComponent = path.split("/").last
-    if (lastComponent.startsWith("._")) lastComponent.substring(2)
-    else lastComponent
+    PathFilter.cleanPathForDisplay(path)
   }
 
   // The list of MIME types this splitter can handle
@@ -170,10 +168,8 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
         breakable {
           val entryName = entry.getName
 
-          // Skip __MACOSX directories and files (macOS metadata)
-          if (
-            entryName.startsWith("__MACOSX") || entryName.contains("/__MACOSX/")
-          ) {
+          // Skip macOS metadata files and directories
+          if (PathFilter.isMacOsMetadata(entryName)) {
             logger.debug(s"Skipping macOS metadata: $entryName")
             zipInput.closeEntry()
             entry = zipInput.getNextEntry()
