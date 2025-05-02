@@ -1,18 +1,16 @@
 package com.tjclp.xlcr
-package pipeline.spark.steps
-
-import pipeline.spark.{CoreSchema, SparkPipelineRegistry, SparkStep, UdfHelpers}
+package pipeline.spark
+package steps
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import org.apache.tika.exception.TikaException
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{Metadata => TikaMetadata}
-import org.apache.tika.parser.AutoDetectParser
+import org.apache.tika.parser.{AutoDetectParser, ParseContext}
 import org.apache.tika.sax.BodyContentHandler
-import org.apache.tika.parser.ParseContext
+import org.xml.sax.SAXException
 
 import java.io.IOException
-import org.apache.tika.exception.TikaException
-import org.xml.sax.SAXException
 
 /** MIME type detection using Apache Tika with comprehensive error handling and metrics.
   * Detects MIME type and metadata from binary content.

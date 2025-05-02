@@ -1,10 +1,10 @@
 package com.tjclp.xlcr
-package pipeline.spark.steps
+package pipeline.spark
+package steps
 
 import models.FileContent
-import pipeline.spark.{CoreSchema, SparkStep, UdfHelpers}
-import types.MimeType
 import splitters._
+import types.MimeType
 
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
@@ -21,7 +21,7 @@ case class SplitStep(
     // 1.8 GiB gives ~15 % head-room for struct/array metadata
     maxBytesPerRow: Long = 1800L * 1024 * 1024,
     // Optional: cap number of chunks so we don’t hit JVM array limits
-    maxChunksPerRow: Int  = 100000
+    maxChunksPerRow: Int = 100000
 ) extends SparkStep {
 
   override val name: String =
@@ -147,8 +147,6 @@ case class SplitStep(
     /* ------------------------------------------------------------------ */
     /* Build lineage entry with per-chunk metadata                         */
     /* ------------------------------------------------------------------ */
-
-    import UdfHelpers._
     // Construct nested chunk struct using Spark primitives
     val rawChunkStruct = F.struct(
       F.col(s"$Chunk._3").cast("long").as("chunkIndex"),
