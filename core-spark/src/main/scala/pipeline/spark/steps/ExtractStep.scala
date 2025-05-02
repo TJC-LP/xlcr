@@ -2,7 +2,6 @@ package com.tjclp.xlcr
 package pipeline.spark.steps
 
 import pipeline.spark.{
-  AsposeBroadcastManager,
   CoreSchema,
   SparkPipelineRegistry,
   SparkStep,
@@ -54,19 +53,8 @@ case class ExtractStep(
             "outputColumn" -> outCol
           )
 
-          // Check if we're using an Aspose bridge implementation
-          val isAsposeBridge = bridgeImpl.toLowerCase.contains("aspose")
-
-          // Add Aspose license info if applicable
-          if (isAsposeBridge) {
-            // Check if Aspose is enabled and get license status
-            if (AsposeBroadcastManager.isEnabled) {
-              val licenseStatus = AsposeBroadcastManager.getLicenseStatus
-              licenseStatus.foreach { case (k, v) => paramsBuilder.put(k, v) }
-            } else {
-              paramsBuilder.put("asposeStatus", "disabled")
-            }
-          }
+          // Aspose licensing is handled automatically via the component initialization
+          // No need to check or add license status metadata
 
           (extractedText, Some(bridgeImpl), Some(paramsBuilder.toMap))
         }

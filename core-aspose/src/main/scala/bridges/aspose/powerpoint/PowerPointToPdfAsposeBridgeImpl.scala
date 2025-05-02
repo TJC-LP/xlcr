@@ -88,15 +88,3 @@ trait PowerPointToPdfAsposeBridgeImpl[I <: MimeType]
     }
   }
 }
-
-/** Implementation specifically for PPT files (Legacy PowerPoint)
-  */
-trait PowerPointPptToPdfAsposeBridgeImpl
-    extends PowerPointToPdfAsposeBridgeImpl[ApplicationVndMsPowerpoint.type]
-
-/** Implementation specifically for PPTX files (PowerPoint Open XML)
-  */
-trait PowerPointPptxToPdfAsposeBridgeImpl
-    extends PowerPointToPdfAsposeBridgeImpl[
-      ApplicationVndOpenXmlFormatsPresentationmlPresentation.type
-    ]

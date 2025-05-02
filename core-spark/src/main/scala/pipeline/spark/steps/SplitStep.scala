@@ -3,7 +3,6 @@ package pipeline.spark.steps
 
 import models.FileContent
 import pipeline.spark.{
-  AsposeBroadcastManager,
   CoreSchema,
   SparkStep,
   UdfHelpers
@@ -41,14 +40,12 @@ case class SplitStep(
   // only becomes available **after** the split operation.
   // ------------------------------------------------------------------
 
-  private def createSplitUdf(implicit spark: SparkSession) = {
-    import spark.implicits._
-
+  private def createSplitUdf = {
     // We only need the content bytes & mime string here – the `sourceId` is
     // added to the lineage *after* exploding the chunks, so we can simply use
-    // the two-argument license-aware wrapper.
+    // the two-argument wrapper.
 
-    licenseAwareUdf2(name, rowTimeout) {
+    UdfHelpers.wrapUdf2(name, rowTimeout) {
       (bytes: Array[Byte], mimeStr: String) =>
         val mime =
           MimeType

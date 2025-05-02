@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
 package pipeline.spark.steps
 
-import pipeline.spark.{SparkStep, SparkAutoInit}
+import pipeline.spark.SparkStep
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
@@ -33,9 +33,6 @@ object SparkStepUtils {
    * @return The transformed DataFrame
    */
   def runPipeline(df: DataFrame, step: SparkStep)(implicit spark: SparkSession): DataFrame = {
-    // Initialize components
-    SparkAutoInit.initializeIfNeeded(spark)
-    
     // Run the pipeline
     step.apply(df)
   }

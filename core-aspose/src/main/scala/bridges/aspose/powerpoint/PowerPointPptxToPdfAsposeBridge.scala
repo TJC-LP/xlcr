@@ -1,17 +1,11 @@
 package com.tjclp.xlcr
 package bridges.aspose.powerpoint
 
-import bridges.SimpleBridge
-import types.MimeType.{
-  ApplicationPdf,
-  ApplicationVndOpenXmlFormatsPresentationmlPresentation
-}
+import types.MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation
 
 /** Bridge that converts PPTX (PowerPoint Open XML) files to PDF using Aspose.Slides.
   */
 object PowerPointPptxToPdfAsposeBridge
-    extends SimpleBridge[
-      ApplicationVndOpenXmlFormatsPresentationmlPresentation.type,
-      ApplicationPdf.type
+    extends PowerPointToPdfAsposeBridgeImpl[
+      ApplicationVndOpenXmlFormatsPresentationmlPresentation.type
     ]
-    with PowerPointPptxToPdfAsposeBridgeImpl

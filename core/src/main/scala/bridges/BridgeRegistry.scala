@@ -1,140 +1,64 @@
 package com.tjclp.xlcr
 package bridges
 
-import bridges.excel._
-import bridges.image.{PdfToJpegBridge, PdfToPngBridge, SvgToPngBridge}
-import bridges.powerpoint.{SlidesDataJsonBridge, SlidesDataPowerPointBridge}
-import bridges.tika.{TikaPlainTextBridge, TikaXmlBridge}
-import types.MimeType._
+import com.tjclp.xlcr.spi.{BridgeInfo, BridgeProvider}
 import types.{MimeType, Priority}
 import utils.PriorityRegistry
 
 import org.slf4j.LoggerFactory
+import java.util.ServiceLoader
+import scala.jdk.CollectionConverters._
 
 /** BridgeRegistry manages a set of registered Bridges between mime types.
-  * We store them in a priority-based registry, so bridges with higher priority
-  * will be preferred when multiple bridges are available for the same conversion path.
+  * It uses ServiceLoader to discover BridgeProvider implementations at runtime.
   */
 object BridgeRegistry {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /** Thread‑safe registry from (inMime, outMime) -> Priority-ordered list of Bridges */
-  private lazy val registry
-      : PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]] =
-    new PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]]()
+  private lazy val registry: PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]] = {
+    logger.info("Initializing BridgeRegistry using ServiceLoader...")
+    val reg = new PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]]()
+    val loader = ServiceLoader.load(classOf[BridgeProvider])
 
-  /** Initialize the default bridging from the "core" module.
-    * This includes standard Excel, PPT, Tika, etc.
-    * Call this once at application start if you want the default bridging.
-    */
-  def init(): Unit = {
-    // If we've already inited, do nothing. Otherwise, register default core bridges.
-
-    // SheetsData bridging:
-    val excelToJson = SheetsDataExcelBridge.chain(SheetsDataJsonBridge)
-    val jsonToExcel = SheetsDataJsonBridge.chain(SheetsDataExcelBridge)
-    val excelToMarkdown = SheetsDataExcelBridge.chain(SheetsDataMarkdownBridge)
-    val markdownToExcel = SheetsDataMarkdownBridge.chain(SheetsDataExcelBridge)
-    val excelToSvg = SheetsDataExcelBridge.chain(SheetsDataSvgBridge)
-
-    // Tika bridging:
-    val tikaToXml = TikaXmlBridge
-    val tikaToText = TikaPlainTextBridge
-
-    // SlidesData bridging:
-    val pptToJson = SlidesDataPowerPointBridge.chain(SlidesDataJsonBridge)
-    val jsonToPpt = SlidesDataJsonBridge.chain(SlidesDataPowerPointBridge)
-
-    // Register them with CORE priority:
-    register(
-      ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      ApplicationJson,
-      excelToJson
-    )
-    register(
-      ApplicationJson,
-      ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      jsonToExcel
-    )
-    register(
-      ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      TextMarkdown,
-      excelToMarkdown
-    )
-    register(
-      TextMarkdown,
-      ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      markdownToExcel
-    )
-    register(
-      ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      ImageSvgXml,
-      excelToSvg
-    )
-    register(
-      ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      ApplicationVndOasisOpendocumentSpreadsheet,
-      ExcelToOdsBridge
-    )
-    register(ImageSvgXml, ImagePng, SvgToPngBridge)
-
-    // PDF to image conversions
-    register(ApplicationPdf, ImagePng, PdfToPngBridge)
-    register(ApplicationPdf, ImageJpeg, PdfToJpegBridge)
-
-    register(
-      ApplicationVndMsPowerpoint,
-      ApplicationJson,
-      pptToJson
-    )
-    register(
-      ApplicationJson,
-      ApplicationVndMsPowerpoint,
-      jsonToPpt
-    )
-
-    // Generic Tika bridging for "anything" to text/xml:
-    // The bridging code uses only outMime, so we can register them for any input:
-    // We might do that by registering a fallback approach, but for simplicity, do direct here:
-    registerCatchAllTo(
-      ApplicationXml,
-      tikaToXml
-    ) // TikaBridge already has LOW priority
-    registerCatchAllTo(
-      TextPlain,
-      tikaToText
-    ) // TikaBridge already has LOW priority
-  }
-
-  /** Register a single Bridge for (inMime, outMime) using the bridge's native priority.
-    */
-  def register(
-      inMime: MimeType,
-      outMime: MimeType,
-      bridge: Bridge[_, _, _]
-  ): Unit = {
-    logger.info(
-      s"Registering ${bridge.getClass.getSimpleName} for $inMime -> $outMime with native priority ${bridge.priority}"
-    )
-    registry.register((inMime, outMime), bridge)
-  }
-
-  /** Some bridging logic (like Tika) can handle "any" input -> certain output,
-    * so we provide a helper to register for all known input types with a specific priority.
-    * Typically used for Tika bridging, which is a catch-all approach.
-    */
-  def registerCatchAllTo(
-      outputMime: MimeType,
-      bridge: Bridge[_, _, _]
-  ): Unit = {
-    // We can either do a big enumerations, or store a special pattern,
-    // but for simplicity, we iterate all known mime types from MimeType.values
-    for (mt <- MimeType.values) {
-      // Skip if outMime is the same as inMime or some conflict
-      if (mt != outputMime) {
-        register(mt, outputMime, bridge)
+    loader.iterator().asScala.foreach { provider =>
+      logger.info(s"Loading bridges from provider: ${provider.getClass.getName}")
+      try {
+        provider.getBridges.foreach { info =>
+          registerBridgeInfo(reg, info)
+        }
+      } catch {
+        case e: Throwable =>
+          logger.error(s"Failed to load bridges from provider ${provider.getClass.getName}: ${e.getMessage}", e)
       }
     }
+    logger.info("BridgeRegistry initialization complete.")
+    reg
+  }
+
+  // Helper to register a single BridgeInfo
+  private def registerBridgeInfo(reg: PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]], info: BridgeInfo): Unit = {
+    logger.debug(
+      s"Registering ${info.bridge.getClass.getSimpleName} for ${info.inMime} -> ${info.outMime} with priority ${info.bridge.priority}"
+    )
+    reg.register((info.inMime, info.outMime), info.bridge)
+  }
+
+  /**
+   * Explicitly register a bridge dynamically.
+   * Useful for bridges that depend on runtime configuration.
+   */
+  def register(inMime: MimeType, outMime: MimeType, bridge: Bridge[_, _, _]): Unit = {
+    registerBridgeInfo(registry, BridgeInfo(inMime, outMime, bridge))
+  }
+
+  /**
+   * Explicitly trigger the lazy initialization. Useful in contexts where
+   * automatic class loading might not occur early enough (like some test setups).
+   */
+  def init(): Unit = {
+    // Accessing the lazy val triggers initialization
+    registry.size
   }
 
   /** Find the appropriate bridge for converting between mime types.

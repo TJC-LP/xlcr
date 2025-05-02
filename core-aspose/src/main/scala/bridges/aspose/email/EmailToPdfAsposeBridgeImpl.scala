@@ -132,13 +132,3 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
     }
   }
 }
-
-/** Implementation specifically for RFC822 Email files
-  */
-trait EmailRfc822ToPdfAsposeBridgeImpl
-    extends EmailToPdfAsposeBridgeImpl[MessageRfc822.type]
-
-/** Implementation specifically for Outlook MSG files
-  */
-trait OutlookMsgToPdfAsposeBridgeImpl
-    extends EmailToPdfAsposeBridgeImpl[MimeType.ApplicationVndMsOutlook.type]

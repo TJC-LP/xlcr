@@ -1,14 +1,11 @@
 package com.tjclp.xlcr
 package bridges.aspose.excel
 
-import bridges.SimpleBridge
-import types.MimeType.{ApplicationPdf, ApplicationVndMsExcelSheetMacroEnabled}
+import types.MimeType.ApplicationVndMsExcelSheetMacroEnabled
 
 /** Bridge that converts XLSM (Macro-enabled Excel) spreadsheets to PDF using Aspose.Cells.
   */
 object ExcelXlsmToPdfAsposeBridge
-    extends SimpleBridge[
-      ApplicationVndMsExcelSheetMacroEnabled.type,
-      ApplicationPdf.type
+    extends ExcelToPdfAsposeBridgeImpl[
+      ApplicationVndMsExcelSheetMacroEnabled.type
     ]
-    with ExcelXlsmToPdfAsposeBridgeImpl

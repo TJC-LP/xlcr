@@ -26,9 +26,6 @@ object SparkDemo {
       .master("local[*]")
       .getOrCreate()
 
-    // Initialize Spark XLCR components
-    SparkAutoInit.initializeIfNeeded(spark)
-
     try {
       // -------------------------------------------------------------------
       // 1. Ingest

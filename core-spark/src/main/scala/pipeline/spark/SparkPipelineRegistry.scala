@@ -1,16 +1,11 @@
 package com.tjclp.xlcr
 package pipeline.spark
 
-import scala.collection.concurrent.TrieMap
-
-import com.tjclp.xlcr.bridges.BridgeRegistry
-import com.tjclp.xlcr.bridges.aspose.AsposeBridgeRegistry
-import com.tjclp.xlcr.utils.aspose.AsposeSplitterRegistry
+import bridges.BridgeRegistry
 
 import org.slf4j.LoggerFactory
 
-import scala.util.Try
-import java.util.concurrent.atomic.AtomicBoolean
+import scala.collection.concurrent.TrieMap
 
 /** Central registry for Spark‑based [[SparkPipelineStep]]s.
   *

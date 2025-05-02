@@ -27,8 +27,9 @@ object Main {
                                mappings: Seq[String] = Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
                              )
 
-    val registry = BridgeRegistry
-    registry.init()
+    // The registries (BridgeRegistry, DocumentSplitter) will now initialize lazily
+    // when first accessed within Pipeline.run or Pipeline.split.
+    // No explicit init() call is needed here.
     val builder = OParser.builder[ExtendedConfig]
     val parser = {
       import builder._

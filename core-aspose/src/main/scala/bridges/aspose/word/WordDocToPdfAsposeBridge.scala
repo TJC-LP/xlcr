@@ -9,6 +9,6 @@ import types.MimeType.{ApplicationMsWord, ApplicationPdf}
   * This object extends the common implementation trait that contains all the business logic,
   * making it compatible with both Scala 2 and Scala 3.
   */
-object WordToPdfAsposeBridge
+object WordDocToPdfAsposeBridge
     extends SimpleBridge[ApplicationMsWord.type, ApplicationPdf.type]
     with WordToPdfAsposeBridgeImpl[ApplicationMsWord.type]

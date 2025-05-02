@@ -19,7 +19,7 @@ import scala.jdk.CollectionConverters._
   * Supports recursive extraction of nested archives with zipbomb protection.
   */
 object ZipArchiveAsposeSplitter
-    extends DocumentSplitter[MimeType.ApplicationZip.type] {
+    extends HighPrioritySplitter[MimeType.ApplicationZip.type] {
 
   private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
   // Track total extracted size for zipbomb protection
@@ -33,7 +33,7 @@ object ZipArchiveAsposeSplitter
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
     // Version-independent implementation with early returns handled for both Scala 2 and 3
-    
+
     // If not requesting embedded split, return the original
     if (!cfg.hasStrategy(SplitStrategy.Embedded))
       return Seq(DocChunk(content, "zip archive", 0, 1))

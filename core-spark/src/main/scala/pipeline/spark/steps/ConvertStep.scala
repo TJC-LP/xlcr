@@ -2,7 +2,6 @@ package com.tjclp.xlcr
 package pipeline.spark.steps
 
 import pipeline.spark.{
-  AsposeBroadcastManager,
   CoreSchema,
   SparkPipelineRegistry,
   SparkStep,
@@ -29,8 +28,8 @@ case class ConvertStep(
     super.meta ++ Map("out" -> to.mimeType)
 
   // Wrap conversion logic in a UDF that captures timing and errors
-  private def createConvertUdf(implicit spark: SparkSession) =
-    licenseAwareUdf2(name, rowTimeout) {
+  private def createConvertUdf = 
+    UdfHelpers.wrapUdf2(name, rowTimeout) {
       (bytes: Array[Byte], mimeStr: String) =>
         val inMime =
           MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)
@@ -55,10 +54,6 @@ case class ConvertStep(
                 "toMime" -> to.mimeType
               )
 
-              // Note: We don't need to manually add Aspose license info here.
-              // The licenseAwareUdf2 wrapper will automatically add the license status
-              // for any bridge implementation containing "aspose" in its name.
-
               (b.convert(fc).data, Some(bridgeImpl), Some(paramsBuilder.toMap))
             }
             .getOrElse {
@@ -74,7 +69,7 @@ case class ConvertStep(
       df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
-    // Create the UDF with the current SparkSession
+    // Create the UDF
     val convertUdf = createConvertUdf
 
     // Apply conversion and capture results in a StepResult
