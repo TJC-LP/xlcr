@@ -20,7 +20,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
   * This splitter creates a separate PDF file for each page in the original document,
   * or converts pages to images (PNG or JPEG) if requested, using the Aspose.Pdf library.
   */
-class PdfPageAsposeSplitter
+object PdfPageAsposeSplitter
     extends HighPrioritySplitter[MimeType.ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 

@@ -118,6 +118,6 @@ class AsposeRegistrations extends BridgeProvider with SplitterProvider {
     SplitterInfo(MimeType.ApplicationZip, ZipArchiveAsposeSplitter),
     SplitterInfo(MimeType.ApplicationSevenz, SevenZipArchiveAsposeSplitter),
     // PDF Splitters
-    SplitterInfo(MimeType.ApplicationPdf, new PdfPageAsposeSplitter)
+    SplitterInfo(MimeType.ApplicationPdf, PdfPageAsposeSplitter)
   )
 }
