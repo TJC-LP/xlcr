@@ -21,62 +21,62 @@ import types.MimeType
   */
 class AsposeRegistrations extends BridgeProvider with SplitterProvider {
 
-  override def getBridges: Iterable[BridgeInfo] = Seq(
+  override def getBridges: Iterable[BridgeInfo[_ <: MimeType, _ <: MimeType]] = Seq(
     // Word -> PDF
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationMsWord.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationMsWord,
       MimeType.ApplicationPdf,
       WordDocToPdfAsposeBridge
     ),
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
       MimeType.ApplicationPdf,
       WordDocxToPdfAsposeBridge
     ),
     // Excel -> PDF
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
       MimeType.ApplicationPdf,
       ExcelXlsxToPdfAsposeBridge
     ),
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndMsExcel.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndMsExcel,
       MimeType.ApplicationPdf,
       ExcelXlsToPdfAsposeBridge
     ),
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndMsExcelSheetMacroEnabled.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndMsExcelSheetMacroEnabled,
       MimeType.ApplicationPdf,
       ExcelXlsmToPdfAsposeBridge
     ),
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndMsExcelSheetBinary.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndMsExcelSheetBinary,
       MimeType.ApplicationPdf,
       ExcelXlsbToPdfAsposeBridge
     ),
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndOasisOpendocumentSpreadsheet,
       MimeType.ApplicationPdf,
       OdsToPdfAsposeBridge
     ),
     // Email -> PDF
-    BridgeInfo(
+    BridgeInfo[MimeType.MessageRfc822.type, MimeType.ApplicationPdf.type](
       MimeType.MessageRfc822,
       MimeType.ApplicationPdf,
       EmailEmlToPdfAsposeBridge
     ),
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndMsOutlook.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndMsOutlook,
       MimeType.ApplicationPdf,
       OutlookMsgToPdfAsposeBridge
     ),
     // PowerPoint -> PDF
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndMsPowerpoint.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndMsPowerpoint,
       MimeType.ApplicationPdf,
       PowerPointPptToPdfAsposeBridge
     ),
-    BridgeInfo(
+    BridgeInfo[MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation.type, MimeType.ApplicationPdf.type](
       MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
       MimeType.ApplicationPdf,
       PowerPointPptxToPdfAsposeBridge

@@ -1,11 +1,13 @@
 package com.tjclp.xlcr
 package bridges
 
-import com.tjclp.xlcr.spi.{BridgeInfo, BridgeProvider}
+import models.Model
+import spi.{BridgeInfo, BridgeProvider}
 import types.{MimeType, Priority}
 import utils.PriorityRegistry
 
 import org.slf4j.LoggerFactory
+
 import java.util.ServiceLoader
 import scala.jdk.CollectionConverters._
 
@@ -16,20 +18,31 @@ object BridgeRegistry {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /** Thread‑safe registry from (inMime, outMime) -> Priority-ordered list of Bridges */
-  private lazy val registry: PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]] = {
+  private lazy val registry: PriorityRegistry[(MimeType, MimeType), Bridge[
+    _ <: Model,
+    _ <: MimeType,
+    _ <: MimeType
+  ]] = {
     logger.info("Initializing BridgeRegistry using ServiceLoader...")
-    val reg = new PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]]()
+    val reg = new PriorityRegistry[
+      (MimeType, MimeType),
+      Bridge[_ <: Model, _ <: MimeType, _ <: MimeType]
+    ]()
     val loader = ServiceLoader.load(classOf[BridgeProvider])
 
     loader.iterator().asScala.foreach { provider =>
-      logger.info(s"Loading bridges from provider: ${provider.getClass.getName}")
+      logger
+        .info(s"Loading bridges from provider: ${provider.getClass.getName}")
       try {
         provider.getBridges.foreach { info =>
           registerBridgeInfo(reg, info)
         }
       } catch {
         case e: Throwable =>
-          logger.error(s"Failed to load bridges from provider ${provider.getClass.getName}: ${e.getMessage}", e)
+          logger.error(
+            s"Failed to load bridges from provider ${provider.getClass.getName}: ${e.getMessage}",
+            e
+          )
       }
     }
     logger.info("BridgeRegistry initialization complete.")
@@ -37,25 +50,33 @@ object BridgeRegistry {
   }
 
   // Helper to register a single BridgeInfo
-  private def registerBridgeInfo(reg: PriorityRegistry[(MimeType, MimeType), Bridge[_, _, _]], info: BridgeInfo): Unit = {
+  private def registerBridgeInfo[I <: MimeType, O <: MimeType](
+      reg: PriorityRegistry[
+        (MimeType, MimeType),
+        Bridge[_ <: Model, _ <: MimeType, _ <: MimeType]
+      ],
+      info: BridgeInfo[I, O]
+  ): Unit = {
     logger.debug(
       s"Registering ${info.bridge.getClass.getSimpleName} for ${info.inMime} -> ${info.outMime} with priority ${info.bridge.priority}"
     )
     reg.register((info.inMime, info.outMime), info.bridge)
   }
 
-  /**
-   * Explicitly register a bridge dynamically.
-   * Useful for bridges that depend on runtime configuration.
-   */
-  def register(inMime: MimeType, outMime: MimeType, bridge: Bridge[_, _, _]): Unit = {
-    registerBridgeInfo(registry, BridgeInfo(inMime, outMime, bridge))
+  /** Explicitly register a bridge dynamically.
+    * Useful for bridges that depend on runtime configuration.
+    */
+  def register[I <: MimeType, O <: MimeType](
+      inMime: I,
+      outMime: O,
+      bridge: Bridge[_ <: Model, I, O]
+  ): Unit = {
+    registerBridgeInfo(registry, BridgeInfo[I, O](inMime, outMime, bridge))
   }
 
-  /**
-   * Explicitly trigger the lazy initialization. Useful in contexts where
-   * automatic class loading might not occur early enough (like some test setups).
-   */
+  /** Explicitly trigger the lazy initialization. Useful in contexts where
+    * automatic class loading might not occur early enough (like some test setups).
+    */
   def init(): Unit = {
     // Accessing the lazy val triggers initialization
     registry.size
@@ -72,22 +93,23 @@ object BridgeRegistry {
   ): Option[Bridge[_, _, _]] = {
     registry.get((inMime, outMime)).orElse {
       // Try with wildcard input mime type if no exact match is found
-      logger.debug(s"No exact bridge found for $inMime -> $outMime, trying wildcard match")
+      logger.debug(
+        s"No exact bridge found for $inMime -> $outMime, trying wildcard match"
+      )
       registry.get((MimeType.Wildcard, outMime))
     }
   }
-  
-  /**
-   * A convenience method for pattern matching that guarantees it's exhaustive for Scala 2
-   * This addresses the warnings about non-exhaustive pattern matching in Scala 2
-   */
+
+  /** A convenience method for pattern matching that guarantees it's exhaustive for Scala 2
+    * This addresses the warnings about non-exhaustive pattern matching in Scala 2
+    */
   def findBridgeForMatching[I <: MimeType, O <: MimeType, A](
       inMime: I,
       outMime: O
   )(matched: Bridge[_, I, O] => A, unmatched: => A): A = {
     findBridge(inMime, outMime) match {
       case Some(bridge) => matched(bridge.asInstanceOf[Bridge[_, I, O]])
-      case None => unmatched
+      case None         => unmatched
     }
   }
 
@@ -100,12 +122,13 @@ object BridgeRegistry {
   ): List[Bridge[_, _, _]] = {
     // Get exact matches
     val exactMatches = registry.getAll((inMime, outMime))
-    
+
     // Get wildcard matches if any exist
-    val wildcardMatches = 
-      if (inMime != MimeType.Wildcard) registry.getAll((MimeType.Wildcard, outMime))
+    val wildcardMatches =
+      if (inMime != MimeType.Wildcard)
+        registry.getAll((MimeType.Wildcard, outMime))
       else List.empty
-    
+
     // Combine and sort by priority
     (exactMatches ++ wildcardMatches).sortBy(b => -b.priority.value)
   }
@@ -128,17 +151,17 @@ object BridgeRegistry {
       case _                                 => None
     }
   }
-  
-  /**
-   * A convenience method for pattern matching that guarantees it's exhaustive for Scala 2
-   * This addresses the warnings about non-exhaustive pattern matching in Scala 2
-   */
+
+  /** A convenience method for pattern matching that guarantees it's exhaustive for Scala 2
+    * This addresses the warnings about non-exhaustive pattern matching in Scala 2
+    */
   def findMergeableBridgeForMatching[I <: MimeType, O <: MimeType, A](
       input: I,
       output: O
   )(matched: MergeableBridge[_, I, O] => A, unmatched: => A): A = {
     findMergeableBridge(input, output) match {
-      case Some(bridge) => matched(bridge.asInstanceOf[MergeableBridge[_, I, O]])
+      case Some(bridge) =>
+        matched(bridge.asInstanceOf[MergeableBridge[_, I, O]])
       case None => unmatched
     }
   }

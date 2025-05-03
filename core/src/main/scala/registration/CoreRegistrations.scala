@@ -19,59 +19,104 @@ import types.MimeType
   */
 class CoreRegistrations extends BridgeProvider with SplitterProvider {
 
-  override def getBridges: Iterable[BridgeInfo] = Seq(
-    // SheetsData bridging
-    BridgeInfo(
-      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      MimeType.ApplicationJson,
-      SheetsDataExcelBridge.chain(SheetsDataJsonBridge)
-    ),
-    BridgeInfo(
-      MimeType.ApplicationJson,
-      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      SheetsDataJsonBridge.chain(SheetsDataExcelBridge)
-    ),
-    BridgeInfo(
-      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      MimeType.TextMarkdown,
-      SheetsDataExcelBridge.chain(SheetsDataMarkdownBridge)
-    ),
-    BridgeInfo(
-      MimeType.TextMarkdown,
-      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      SheetsDataMarkdownBridge.chain(SheetsDataExcelBridge)
-    ),
-    BridgeInfo(
-      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      MimeType.ImageSvgXml,
-      SheetsDataExcelBridge.chain(SheetsDataSvgBridge)
-    ),
-    BridgeInfo(
-      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      MimeType.ApplicationVndOasisOpendocumentSpreadsheet,
-      ExcelToOdsBridge
-    ),
-    // Image bridging
-    BridgeInfo(MimeType.ImageSvgXml, MimeType.ImagePng, SvgToPngBridge),
-    BridgeInfo(MimeType.ApplicationPdf, MimeType.ImagePng, PdfToPngBridge),
-    BridgeInfo(MimeType.ApplicationPdf, MimeType.ImageJpeg, PdfToJpegBridge),
-    // SlidesData bridging
-    BridgeInfo(
-      MimeType.ApplicationVndMsPowerpoint,
-      MimeType.ApplicationJson,
-      SlidesDataPowerPointBridge.chain(SlidesDataJsonBridge)
-    ),
-    BridgeInfo(
-      MimeType.ApplicationJson,
-      MimeType.ApplicationVndMsPowerpoint,
-      SlidesDataJsonBridge.chain(SlidesDataPowerPointBridge)
-    ),
-    // Tika bridging (catch-all, low priority)
-    // Register Tika bridges as wildcard bridges to handle any mime type
-    // These will be used when no specific bridge is found for an input->output pair
-    BridgeInfo(MimeType.Wildcard, MimeType.TextPlain, TikaPlainTextBridge),
-    BridgeInfo(MimeType.Wildcard, MimeType.ApplicationXml, TikaXmlBridge)
-  )
+  override def getBridges: Iterable[BridgeInfo[_ <: MimeType, _ <: MimeType]] =
+    Seq(
+      // SheetsData bridging
+      BridgeInfo[
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
+        MimeType.ApplicationJson.type
+      ](
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
+        MimeType.ApplicationJson,
+        SheetsDataExcelBridge.chain(SheetsDataJsonBridge)
+      ),
+      BridgeInfo[
+        MimeType.ApplicationJson.type,
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
+      ](
+        MimeType.ApplicationJson,
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
+        SheetsDataJsonBridge.chain(SheetsDataExcelBridge)
+      ),
+      BridgeInfo[
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
+        MimeType.TextMarkdown.type
+      ](
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
+        MimeType.TextMarkdown,
+        SheetsDataExcelBridge.chain(SheetsDataMarkdownBridge)
+      ),
+      BridgeInfo[
+        MimeType.TextMarkdown.type,
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
+      ](
+        MimeType.TextMarkdown,
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
+        SheetsDataMarkdownBridge.chain(SheetsDataExcelBridge)
+      ),
+      BridgeInfo[
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
+        MimeType.ImageSvgXml.type
+      ](
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
+        MimeType.ImageSvgXml,
+        SheetsDataExcelBridge.chain(SheetsDataSvgBridge)
+      ),
+      BridgeInfo[
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
+        MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
+      ](
+        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
+        MimeType.ApplicationVndOasisOpendocumentSpreadsheet,
+        ExcelToOdsBridge
+      ),
+      // Image bridging
+      BridgeInfo[MimeType.ImageSvgXml.type, MimeType.ImagePng.type](
+        MimeType.ImageSvgXml,
+        MimeType.ImagePng,
+        SvgToPngBridge
+      ),
+      BridgeInfo[MimeType.ApplicationPdf.type, MimeType.ImagePng.type](
+        MimeType.ApplicationPdf,
+        MimeType.ImagePng,
+        PdfToPngBridge
+      ),
+      BridgeInfo[MimeType.ApplicationPdf.type, MimeType.ImageJpeg.type](
+        MimeType.ApplicationPdf,
+        MimeType.ImageJpeg,
+        PdfToJpegBridge
+      ),
+      // SlidesData bridging
+      BridgeInfo[
+        MimeType.ApplicationVndMsPowerpoint.type,
+        MimeType.ApplicationJson.type
+      ](
+        MimeType.ApplicationVndMsPowerpoint,
+        MimeType.ApplicationJson,
+        SlidesDataPowerPointBridge.chain(SlidesDataJsonBridge)
+      ),
+      BridgeInfo[
+        MimeType.ApplicationJson.type,
+        MimeType.ApplicationVndMsPowerpoint.type
+      ](
+        MimeType.ApplicationJson,
+        MimeType.ApplicationVndMsPowerpoint,
+        SlidesDataJsonBridge.chain(SlidesDataPowerPointBridge)
+      ),
+      // Tika bridging (catch-all, low priority)
+      // Register Tika bridges as wildcard bridges to handle any mime type
+      // These will be used when no specific bridge is found for an input->output pair
+      BridgeInfo[MimeType, MimeType.TextPlain.type](
+        MimeType.Wildcard,
+        MimeType.TextPlain,
+        TikaPlainTextBridge
+      ),
+      BridgeInfo[MimeType, MimeType.ApplicationXml.type](
+        MimeType.Wildcard,
+        MimeType.ApplicationXml,
+        TikaXmlBridge
+      )
+    )
 
   override def getSplitters: Iterable[SplitterInfo] = Seq(
     // PDF

@@ -28,7 +28,7 @@ object SpreadsheetLLMBridgeRegistry {
 
       // Register Excel -> LLM JSON bridges using the public register method
       val xlsxBridge = ExcelToLLMJsonBridge.forXlsx(config)
-      BridgeRegistry.register(
+      BridgeRegistry.register[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, MimeType.ApplicationJson.type](
         MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
         MimeType.ApplicationJson,
         xlsxBridge
@@ -36,7 +36,7 @@ object SpreadsheetLLMBridgeRegistry {
 
       // Register other Excel format bridges as needed
       val xlsBridge = ExcelToLLMJsonBridge.forXls(config)
-      BridgeRegistry.register(
+      BridgeRegistry.register[MimeType.ApplicationVndMsExcel.type, MimeType.ApplicationJson.type](
         MimeType.ApplicationVndMsExcel,
         MimeType.ApplicationJson,
         xlsBridge
