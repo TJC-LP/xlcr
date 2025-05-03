@@ -1,4 +1,5 @@
-package com.tjclp.xlcr.bridges
+package com.tjclp.xlcr
+package bridges
 
 /** Marker trait for bridge-specific configurations. */
 trait BridgeConfig extends Serializable
@@ -15,4 +16,3 @@ case class PdfToImageConfig(
 
 // Add other specific config case classes here as needed
 // e.g., case class ExcelToOdsConfig(...) extends BridgeConfig
-EOF < /dev/null

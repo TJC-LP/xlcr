@@ -2,14 +2,10 @@ package com.tjclp.xlcr
 package splitters
 
 import models.FileContent
-import spi.{SplitterInfo, SplitterProvider}
 import types.{MimeType, Priority}
-import utils.{Prioritized, PriorityRegistry}
+import utils.Prioritized
 
 import org.slf4j.LoggerFactory
-
-import java.util.ServiceLoader
-import scala.jdk.CollectionConverters._
 
 /** Generic trait for splitting a document. */
 trait DocumentSplitter[I <: MimeType] extends Prioritized {
@@ -30,61 +26,10 @@ trait DocumentSplitter[I <: MimeType] extends Prioritized {
 object DocumentSplitter {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /** Function to check if a mime type is a subtype of another */
-  private val mimeTypeSubtypeFn: (MimeType, MimeType) => Boolean = {
-    case (requestedMime, registeredMime) =>
-      // Consider a match if base types and subtypes match
-      requestedMime.baseType == registeredMime.baseType &&
-        requestedMime.subType == registeredMime.subType
-  }
-
-  /** Thread‑safe registry based on PriorityRegistry */
-  private lazy val registry
-      : PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]] = {
-    logger.info("Initializing DocumentSplitter registry using ServiceLoader...")
-    val reg = new PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]](
-      Some(mimeTypeSubtypeFn)
-    )
-    val loader = ServiceLoader.load(classOf[SplitterProvider])
-
-    loader.iterator().asScala.foreach { provider =>
-      logger
-        .info(s"Loading splitters from provider: ${provider.getClass.getName}")
-      try {
-        provider.getSplitters.foreach { info =>
-          registerSplitterInfo(reg, info)
-        }
-      } catch {
-        case e: Throwable =>
-          logger.error(
-            s"Failed to load splitters from provider ${provider.getClass.getName}: ${e.getMessage}",
-            e
-          )
-      }
-    }
-    logger.info("DocumentSplitter registry initialization complete.")
-    reg
-  }
-
-  // Helper to register a single SplitterInfo
-  private def registerSplitterInfo(
-      reg: PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]],
-      info: SplitterInfo[_ <: MimeType]
-  ): Unit = {
-    logger.debug(
-      s"Registering ${info.splitter.getClass.getSimpleName} for ${info.mime} with priority ${info.splitter.priority}"
-    )
-    // Ensure the splitter type matches the expected type for the registry
-    reg.register(
-      info.mime,
-      info.splitter
-    )
-  }
-
-  /** Explicitly trigger the lazy initialization.
+  /** Explicitly trigger the lazy initialization of the registry.
     */
   def init(): Unit = {
-    registry.size // Access the lazy val
+    SplitterRegistry.init() // Delegate to the registry
   }
 
   /* API ------------------------------------------------------------------ */
@@ -95,26 +40,42 @@ object DocumentSplitter {
       mime: I,
       splitter: DocumentSplitter[I]
   ): Unit = {
-    registerSplitterInfo(registry, SplitterInfo(mime, splitter))
+    SplitterRegistry.register(mime, splitter) // Delegate to the registry
   }
 
-  /** Find a splitter for a MIME type.
+  /** Find a splitter for a MIME type with strong typing.
     * If multiple splitters are registered for the MIME type,
     * the one with the highest priority will be returned.
-    * This method also considers subtypes using mimeTypeSubtypeFn.
+    * This method also considers subtypes.
+    * 
+    * @tparam T The mime type to find a splitter for
+    * @param mime The mime type instance
+    * @return An optional splitter that can handle the given mime type
     */
-  def forMime(mime: MimeType): Option[DocumentSplitter[_ <: MimeType]] =
-    registry.getWithSubtypes(mime)
+  def forMime[T <: MimeType](mime: T): Option[DocumentSplitter[T]] = {
+    SplitterRegistry.findSplitter[T](mime) // Delegate to the registry's type-safe method
+  }
 
   /** Find all splitters registered for a MIME type, sorted by priority (highest first).
-    * This method also considers subtypes using mimeTypeSubtypeFn.
+    * This method also considers subtypes.
+    * 
+    * @tparam T The mime type to find splitters for
+    * @param mime The mime type instance
+    * @return A list of splitters that can handle the given mime type
     */
-  def allForMime(mime: MimeType): List[DocumentSplitter[_ <: MimeType]] =
-    registry.getAllWithSubtypes(mime)
+  def allForMime[T <: MimeType](mime: T): List[DocumentSplitter[T]] = {
+    SplitterRegistry.findAllSplitters[T](mime) // Delegate to the registry's type-safe method
+  }
 
-  /** Primary entry‑point returning enriched chunks. */
-  def split(
-      content: FileContent[_ <: MimeType],
+  /** Primary entry‑point returning enriched chunks with type safety.
+    * 
+    * @tparam T The mime type of the content to split
+    * @param content The file content to split
+    * @param cfg The split configuration
+    * @return A sequence of document chunks
+    */
+  def split[T <: MimeType](
+      content: FileContent[T],
       cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
     // If strategy is Auto or None, automatically select an appropriate strategy based on the MIME type
@@ -127,25 +88,16 @@ object DocumentSplitter {
         cfg
       }
 
-    val splitterOpt = forMime(content.mimeType)
+    // Use type-safe method
+    val splitterOpt = SplitterRegistry.findSplitter[T](content.mimeType.asInstanceOf[T])
     logger.debug(
       s"Using splitter ${splitterOpt.map(_.getClass.getSimpleName).getOrElse("None")} for MIME type ${content.mimeType} with strategy ${configToUse.strategy}"
     )
 
     splitterOpt
       .map(
-        // We need to cast the content to the type the specific splitter expects.
-        // This is inherently unsafe if the registry contains a splitter registered
-        // for a supertype (e.g., application/*) but expects a subtype.
-        // However, the registry logic should prioritize exact matches.
-        // The cast to DocumentSplitter[MimeType] is a simplification; ideally,
-        // we'd want to match I in DocumentSplitter[I] with content.mimeType.
-        // But given the type erasure and registry structure, this is complex.
-        // The current approach assumes the registered splitter can handle the provided content.
-        splitter =>
-          splitter
-            .asInstanceOf[DocumentSplitter[MimeType]]
-            .split(content.asInstanceOf[FileContent[MimeType]], configToUse)
+        // No cast needed since findSplitter[T] already returns DocumentSplitter[T]
+        splitter => splitter.split(content, configToUse)
       )
       .getOrElse {
         logger.warn(
@@ -158,8 +110,8 @@ object DocumentSplitter {
   }
 
   /** Convenience method for code that only needs the bytes. */
-  def splitBytesOnly(
-      content: FileContent[_ <: MimeType],
+  def splitBytesOnly[T <: MimeType](
+      content: FileContent[T],
       cfg: SplitConfig
   ): Seq[FileContent[_ <: MimeType]] =
     split(content, cfg).map(_.content)

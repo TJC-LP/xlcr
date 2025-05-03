@@ -109,7 +109,7 @@ object Pipeline {
       inputMime: MimeType,
       outputMime: MimeType
   ): Boolean = {
-    BridgeRegistry.supportsMerging(inputMime, outputMime)
+    BridgeRegistry.supportsMergingLegacy(inputMime, outputMime)
   }
 
   /* =====================================================================

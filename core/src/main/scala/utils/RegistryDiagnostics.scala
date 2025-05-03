@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package utils
 
 import bridges.BridgeRegistry
-import splitters.DocumentSplitter
+import splitters.{DocumentSplitter, SplitterRegistry}
 import types.{MimeType, Priority}
 import org.slf4j.LoggerFactory
 
@@ -12,12 +12,11 @@ import org.slf4j.LoggerFactory
 object RegistryDiagnostics {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /** Log all registered bridges with their priorities
-    */
+  /** Log all registered bridges with their priorities */
   def logAllBridges(): Unit = {
     val bridges = BridgeRegistry.listRegisteredBridges()
 
-    logger.info(s"Total registered bridges: ${bridges.size}")
+    logger.info(s"--- Bridge Registry (${bridges.size} entries) ---")
     logger.info("Registered bridges by priority:")
 
     bridges.groupBy(_._4).toSeq.sortBy(-_._1.value).foreach {
@@ -29,10 +28,25 @@ object RegistryDiagnostics {
     }
   }
 
-  /** Log all splitters registered for a specific MIME type
-    */
+  /** Log all registered splitters with their priorities */
+  def logAllSplitters(): Unit = {
+    val splitters = SplitterRegistry.listRegisteredSplitters()
+    
+    logger.info(s"--- Splitter Registry (${splitters.size} entries) ---")
+    logger.info("Registered splitters by priority:")
+    
+    splitters.groupBy(_._3).toSeq.sortBy(-_._1.value).foreach {
+      case (priority, items) =>
+        logger.info(s"  ${priority.toString}: ${items.size} splitters")
+        items.foreach { case (mime, implName, _) =>
+          logger.info(f"    $mime: $implName")
+        }
+    }
+  }
+
+  /** Log all splitters registered for a specific MIME type */
   def logSplittersForMime(mime: MimeType): Unit = {
-    val splitters = DocumentSplitter.allForMime(mime)
+    val splitters = SplitterRegistry.findAllSplittersLegacy(mime)
 
     logger.info(s"Splitters for $mime (${splitters.size} total):")
     splitters.foreach { splitter =>
@@ -40,7 +54,7 @@ object RegistryDiagnostics {
     }
 
     // Log which one would be selected
-    DocumentSplitter.forMime(mime) match {
+    SplitterRegistry.findSplitterLegacy(mime) match {
       case Some(selected) =>
         logger.info(
           s"Selected splitter: ${selected.getClass.getSimpleName} (${selected.priority})"
@@ -50,44 +64,55 @@ object RegistryDiagnostics {
     }
   }
 
-  /** Log all bridges registered for a specific MIME type conversion
-    */
+  /** Log all bridges registered for a specific MIME type conversion */
   def logBridgesForConversion(inMime: MimeType, outMime: MimeType): Unit = {
-    val bridges = BridgeRegistry.findAllBridges(inMime, outMime)
+    val bridges = BridgeRegistry.findAllBridgesLegacy(inMime, outMime)
 
     logger.info(s"Bridges for $inMime -> $outMime (${bridges.size} total):")
     bridges.zipWithIndex.foreach { case (bridge, index) =>
-      // Since Bridge doesn't directly expose priority, we can only show the order
-      logger.info(f"  ${index + 1}. ${bridge.getClass.getSimpleName}")
+      logger.info(f"  ${index + 1}. ${bridge.getClass.getSimpleName} (${bridge.priority})")
     }
 
     // Log which one would be selected
-    BridgeRegistry.findBridge(inMime, outMime) match {
+    BridgeRegistry.findBridgeLegacy(inMime, outMime) match {
       case Some(selected) =>
-        logger.info(s"Selected bridge: ${selected.getClass.getSimpleName}")
+        logger.info(s"Selected bridge: ${selected.getClass.getSimpleName} (${selected.priority})")
       case None =>
         logger.info(s"No bridge would be selected for $inMime -> $outMime")
     }
   }
 
-  /** Log the registration status for a specific implementation class
-    */
+  /** Log the registration status for a specific implementation class */
   def logImplementationStatus(implName: String): Unit = {
-    logger.info(s"Searching for implementations matching '$implName'")
-
+    logger.info(s"--- Implementation Status for '$implName' ---")
+    
     // Check bridge registry
-    val bridges = BridgeRegistry.listRegisteredBridges()
-    val matchingBridges = bridges.filter(_._3.contains(implName))
-
+    val matchingBridges = BridgeRegistry.listRegisteredBridges().filter(_._3.contains(implName))
     if (matchingBridges.nonEmpty) {
-      logger.info(
-        s"Found ${matchingBridges.size} bridges matching '$implName':"
-      )
+      logger.info(s"Found ${matchingBridges.size} bridges matching '$implName':")
       matchingBridges.foreach { case (inMime, outMime, name, priority) =>
         logger.info(f"  $name: $inMime -> $outMime (priority: $priority)")
       }
     } else {
       logger.info(s"No bridges found matching '$implName'")
     }
+
+    // Check splitter registry
+    val matchingSplitters = SplitterRegistry.listRegisteredSplitters().filter(_._2.contains(implName))
+    if (matchingSplitters.nonEmpty) {
+      logger.info(s"Found ${matchingSplitters.size} splitters matching '$implName':")
+      matchingSplitters.foreach { case (mime, name, priority) =>
+        logger.info(f"  $name: $mime (priority: $priority)")
+      }
+    } else {
+      logger.info(s"No splitters found matching '$implName'")
+    }
+  }
+  
+  /** Initialize both registries to ensure they're loaded */
+  def initAllRegistries(): Unit = {
+    logger.info("Initializing all registries...")
+    BridgeRegistry.init()
+    SplitterRegistry.init()
   }
 }
