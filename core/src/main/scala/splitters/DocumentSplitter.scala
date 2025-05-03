@@ -181,10 +181,18 @@ trait DocumentSplitter[I <: MimeType] extends Prioritized {
 object DocumentSplitter {
   private val logger = LoggerFactory.getLogger(getClass)
 
+  /** Function to check if a mime type is a subtype of another */
+  private val mimeTypeSubtypeFn: (MimeType, MimeType) => Boolean = {
+    case (requestedMime, registeredMime) =>
+      // Consider a match if base types and subtypes match
+      requestedMime.baseType == registeredMime.baseType && 
+      requestedMime.subType == registeredMime.subType
+  }
+
   /** Thread‑safe registry based on PriorityRegistry */
   private lazy val registry: PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]] = {
     logger.info("Initializing DocumentSplitter registry using ServiceLoader...")
-    val reg = new PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]]()
+    val reg = new PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]](Some(mimeTypeSubtypeFn))
     val loader = ServiceLoader.load(classOf[SplitterProvider])
 
     loader.iterator().asScala.foreach { provider =>
@@ -234,15 +242,17 @@ object DocumentSplitter {
    * Find a splitter for a MIME type.
    * If multiple splitters are registered for the MIME type,
    * the one with the highest priority will be returned.
+   * This method also considers subtypes using mimeTypeSubtypeFn.
    */
   def forMime(mime: MimeType): Option[DocumentSplitter[_ <: MimeType]] =
-    registry.get(mime)
+    registry.getWithSubtypes(mime)
 
   /**
    * Find all splitters registered for a MIME type, sorted by priority (highest first).
+   * This method also considers subtypes using mimeTypeSubtypeFn.
    */
   def allForMime(mime: MimeType): List[DocumentSplitter[_ <: MimeType]] =
-    registry.getAll(mime)
+    registry.getAllWithSubtypes(mime)
 
   /** Primary entry‑point returning enriched chunks. */
   def split(

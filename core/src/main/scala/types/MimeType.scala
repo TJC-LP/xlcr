@@ -3,17 +3,12 @@ package types
 
 import scala.util.matching.Regex
 
-/** Enhanced MimeType class that supports parameters like charset and delimiter.
-  *
-  * @param baseType The primary type (e.g., "text", "application")
-  * @param subType The subtype (e.g., "plain", "pdf")
-  * @param parameters Additional parameters like charset, delimiter, etc.
+/** Enhanced MimeType representation using sealed trait for better type safety and pattern matching.
   */
-case class MimeType(
-    baseType: String,
-    subType: String,
-    parameters: Map[String, String] = Map.empty
-) extends Serializable {
+sealed trait MimeType extends Serializable {
+  def baseType: String
+  def subType: String
+  def parameters: Map[String, String]
 
   /** The basic MIME type without parameters (e.g., "text/plain")
     */
@@ -35,7 +30,7 @@ case class MimeType(
   /** Create a new MimeType with an additional parameter
     */
   def withParameter(name: String, value: String): MimeType =
-    new MimeType(baseType, subType, parameters + (name.toLowerCase -> value))
+    MimeType.Custom(baseType, subType, parameters + (name.toLowerCase -> value))
 
   /** Create a new MimeType with a specific charset
     */
@@ -54,23 +49,6 @@ case class MimeType(
       val params = parameters.map { case (k, v) => s"$k=$v" }.mkString("; ")
       s"$mimeType; $params"
     }
-  }
-
-  override def equals(obj: Any): Boolean = obj match {
-    case other: MimeType =>
-      baseType == other.baseType &&
-        subType == other.subType &&
-        parameters == other.parameters
-    case _ => false
-  }
-
-  override def hashCode(): Int = {
-    val prime = 31
-    var result = 1
-    result = prime * result + baseType.hashCode
-    result = prime * result + subType.hashCode
-    result = prime * result + parameters.hashCode
-    result
   }
 
   /** Checks if this MIME type matches another, ignoring parameters
@@ -101,33 +79,59 @@ case class MimeType(
 }
 
 object MimeType extends Serializable {
+
   // Regular expression for parsing MIME type strings
   private val MimeTypeRegex: Regex = """([^/]+)/([^;]+)(?:;\s*(.+))?""".r
   private val ParamRegex: Regex = """([^=]+)=([^;]+)(?:;\s*)?""".r
-  
+
+  // Case class for custom MIME types (user-defined)
+  final case class Custom(
+      baseType: String,
+      subType: String,
+      parameters: Map[String, String] = Map.empty
+  ) extends MimeType {
+    override def withParameter(name: String, value: String): MimeType =
+      copy(parameters = parameters + (name.toLowerCase -> value))
+  }
+
   /** Special MimeType that represents a wildcard, matching any input
-   * Used for catch-all bridge implementations
-   */
-  val Wildcard: MimeType = MimeType("*", "*")
+    * Used for catch-all bridge implementations
+    */
+  case object Wildcard extends MimeType {
+    val baseType: String = "*"
+    val subType: String = "*"
+    val parameters: Map[String, String] = Map.empty
+  }
 
   // Factory method to create a MimeType
   def apply(
       baseType: String,
       subType: String,
       parameters: Map[String, String] = Map.empty
-  ): MimeType =
-    new MimeType(
-      baseType.toLowerCase,
-      subType.toLowerCase,
-      parameters.map { case (k, v) => k.toLowerCase -> v }
-    )
+  ): MimeType = {
+    val normalizedBase = baseType.toLowerCase
+    val normalizedSub = subType.toLowerCase
+    val normalizedParams = parameters.map { case (k, v) => k.toLowerCase -> v }
+
+    // Try to match with a predefined type first
+    values.find(m =>
+      m.baseType == normalizedBase && m.subType == normalizedSub
+    ) match {
+      case Some(predefined) if normalizedParams.isEmpty =>
+        predefined
+      case Some(predefined) =>
+        Custom(normalizedBase, normalizedSub, normalizedParams)
+      case None =>
+        Custom(normalizedBase, normalizedSub, normalizedParams)
+    }
+  }
 
   // Parse a MIME type string
   def parse(mimeTypeStr: String): MimeType = {
     mimeTypeStr match {
       case MimeTypeRegex(baseType, subType, null) =>
         // Simple MIME type without parameters
-        MimeType(baseType, subType)
+        apply(baseType, subType)
 
       case MimeTypeRegex(baseType, subType, paramStr) =>
         // MIME type with parameters
@@ -137,7 +141,7 @@ object MimeType extends Serializable {
             m.group(1).trim.toLowerCase -> m.group(2).trim
           }
           .toMap
-        MimeType(baseType, subType, params)
+        apply(baseType, subType, params)
 
       case _ =>
         // Invalid MIME type string, default to octet-stream
@@ -155,10 +159,11 @@ object MimeType extends Serializable {
     // Try to find a matching predefined type
     val baseMatch = values.find(_.matches(parsed))
 
-    // If found, create a new instance with the same parameters
-    baseMatch.map { base =>
-      if (parsed.parameters.isEmpty) base
-      else new MimeType(base.baseType, base.subType, parsed.parameters)
+    // If found, return the predefined type or a custom one with parameters
+    baseMatch.map {
+      case predefined if parsed.parameters.isEmpty => predefined
+      case predefined =>
+        Custom(predefined.baseType, predefined.subType, parsed.parameters)
     }
   }
 
@@ -199,91 +204,277 @@ object MimeType extends Serializable {
     * Will return the parsed MimeType even if it doesn't match a predefined type
     */
   def fromStringDirect(mimeTypeStr: String): MimeType = {
-    val parsed = parse(mimeTypeStr)
-
-    // Try to find a matching predefined type
-    val baseMatch = values.find(_.matches(parsed))
-
-    // If found, create a new instance with the same parameters
-    baseMatch
-      .map { base =>
-        if (parsed.parameters.isEmpty) base
-        else new MimeType(base.baseType, base.subType, parsed.parameters)
-      }
-      .getOrElse(parsed)
+    parse(mimeTypeStr)
   }
 
   // Text MIME types
-  val TextPlain: MimeType = MimeType("text", "plain")
-  val TextHtml: MimeType = MimeType("text", "html")
-  val TextMarkdown: MimeType = MimeType("text", "markdown")
-  val TextCsv: MimeType = MimeType("text", "csv")
-  val TextXml: MimeType = MimeType("text", "xml")
-  val TextCss: MimeType = MimeType("text", "css")
-  val TextJavascript: MimeType = MimeType("text", "javascript")
+  case object TextPlain extends MimeType {
+    val baseType: String = "text"
+    val subType: String = "plain"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object TextHtml extends MimeType {
+    val baseType: String = "text"
+    val subType: String = "html"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object TextMarkdown extends MimeType {
+    val baseType: String = "text"
+    val subType: String = "markdown"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object TextCsv extends MimeType {
+    val baseType: String = "text"
+    val subType: String = "csv"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object TextXml extends MimeType {
+    val baseType: String = "text"
+    val subType: String = "xml"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object TextCss extends MimeType {
+    val baseType: String = "text"
+    val subType: String = "css"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object TextJavascript extends MimeType {
+    val baseType: String = "text"
+    val subType: String = "javascript"
+    val parameters: Map[String, String] = Map.empty
+  }
 
   // Application MIME types
-  val ApplicationJson: MimeType = MimeType("application", "json")
-  val ApplicationXml: MimeType = MimeType("application", "xml")
-  val ApplicationPdf: MimeType = MimeType("application", "pdf")
-  val ApplicationZip: MimeType = MimeType("application", "zip")
-  val ApplicationGzip: MimeType = MimeType("application", "gzip")
-  val ApplicationSevenz: MimeType = MimeType("application", "x-7z-compressed")
-  val ApplicationTar: MimeType = MimeType("application", "x-tar")
-  val ApplicationBzip2: MimeType = MimeType("application", "x-bzip2")
-  val ApplicationXz: MimeType = MimeType("application", "x-xz")
-  val ApplicationVndMsOutlook: MimeType =
-    MimeType("application", "vnd.ms-outlook")
-  val ApplicationOctet: MimeType = MimeType("application", "octet-stream")
-  val ApplicationMsWord: MimeType = MimeType("application", "msword")
-  val ApplicationVndMsExcel: MimeType = MimeType("application", "vnd.ms-excel")
-  val ApplicationVndMsPowerpoint: MimeType =
-    MimeType("application", "vnd.ms-powerpoint")
-  val ApplicationVndOpenXmlFormatsWordprocessingmlDocument: MimeType =
-    MimeType(
-      "application",
+  case object ApplicationJson extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "json"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationXml extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "xml"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationPdf extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "pdf"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationZip extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "zip"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationGzip extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "gzip"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationSevenz extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "x-7z-compressed"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationTar extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "x-tar"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationBzip2 extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "x-bzip2"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationXz extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "x-xz"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndMsOutlook extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "vnd.ms-outlook"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationOctet extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "octet-stream"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationMsWord extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "msword"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndMsExcel extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "vnd.ms-excel"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndMsPowerpoint extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "vnd.ms-powerpoint"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndOpenXmlFormatsWordprocessingmlDocument
+      extends MimeType {
+    val baseType: String = "application"
+    val subType: String =
       "vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-  val ApplicationVndOpenXmlFormatsSpreadsheetmlSheet: MimeType =
-    MimeType(
-      "application",
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndOpenXmlFormatsSpreadsheetmlSheet extends MimeType {
+    val baseType: String = "application"
+    val subType: String =
       "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-  val ApplicationVndMsExcelSheetMacroEnabled: MimeType =
-    MimeType("application", "vnd.ms-excel.sheet.macroEnabled.12")
-  val ApplicationVndMsExcelSheetBinary: MimeType =
-    MimeType("application", "vnd.ms-excel.sheet.binary.macroEnabled.12")
-  val ApplicationVndOpenXmlFormatsPresentationmlPresentation: MimeType =
-    MimeType(
-      "application",
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndMsExcelSheetMacroEnabled extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "vnd.ms-excel.sheet.macroEnabled.12"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndMsExcelSheetBinary extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "vnd.ms-excel.sheet.binary.macroEnabled.12"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndOpenXmlFormatsPresentationmlPresentation
+      extends MimeType {
+    val baseType: String = "application"
+    val subType: String =
       "vnd.openxmlformats-officedocument.presentationml.presentation"
-    )
-  val ApplicationVndOasisOpendocumentSpreadsheet: MimeType =
-    MimeType("application", "vnd.oasis.opendocument.spreadsheet")
-  val ApplicationJavascript: MimeType = MimeType("application", "javascript")
-  val ApplicationXhtml: MimeType = MimeType("application", "xhtml+xml")
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationVndOasisOpendocumentSpreadsheet extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "vnd.oasis.opendocument.spreadsheet"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationJavascript extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "javascript"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ApplicationXhtml extends MimeType {
+    val baseType: String = "application"
+    val subType: String = "xhtml+xml"
+    val parameters: Map[String, String] = Map.empty
+  }
 
   // Image MIME types
-  val ImageJpeg: MimeType = MimeType("image", "jpeg")
-  val ImagePng: MimeType = MimeType("image", "png")
-  val ImageGif: MimeType = MimeType("image", "gif")
-  val ImageBmp: MimeType = MimeType("image", "bmp")
-  val ImageSvgXml: MimeType = MimeType("image", "svg+xml")
-  val ImageTiff: MimeType = MimeType("image", "tiff")
-  val ImageWebp: MimeType = MimeType("image", "webp")
+  case object ImageJpeg extends MimeType {
+    val baseType: String = "image"
+    val subType: String = "jpeg"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ImagePng extends MimeType {
+    val baseType: String = "image"
+    val subType: String = "png"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ImageGif extends MimeType {
+    val baseType: String = "image"
+    val subType: String = "gif"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ImageBmp extends MimeType {
+    val baseType: String = "image"
+    val subType: String = "bmp"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ImageSvgXml extends MimeType {
+    val baseType: String = "image"
+    val subType: String = "svg+xml"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ImageTiff extends MimeType {
+    val baseType: String = "image"
+    val subType: String = "tiff"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object ImageWebp extends MimeType {
+    val baseType: String = "image"
+    val subType: String = "webp"
+    val parameters: Map[String, String] = Map.empty
+  }
 
   // Message MIME types
-  val MessageRfc822: MimeType = MimeType("message", "rfc822")
+  case object MessageRfc822 extends MimeType {
+    val baseType: String = "message"
+    val subType: String = "rfc822"
+    val parameters: Map[String, String] = Map.empty
+  }
 
   // Audio MIME types
-  val AudioMpeg: MimeType = MimeType("audio", "mpeg")
-  val AudioOgg: MimeType = MimeType("audio", "ogg")
-  val AudioWav: MimeType = MimeType("audio", "wav")
+  case object AudioMpeg extends MimeType {
+    val baseType: String = "audio"
+    val subType: String = "mpeg"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object AudioOgg extends MimeType {
+    val baseType: String = "audio"
+    val subType: String = "ogg"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object AudioWav extends MimeType {
+    val baseType: String = "audio"
+    val subType: String = "wav"
+    val parameters: Map[String, String] = Map.empty
+  }
 
   // Video MIME types
-  val VideoMp4: MimeType = MimeType("video", "mp4")
-  val VideoWebm: MimeType = MimeType("video", "webm")
-  val VideoOgg: MimeType = MimeType("video", "ogg")
+  case object VideoMp4 extends MimeType {
+    val baseType: String = "video"
+    val subType: String = "mp4"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object VideoWebm extends MimeType {
+    val baseType: String = "video"
+    val subType: String = "webm"
+    val parameters: Map[String, String] = Map.empty
+  }
+
+  case object VideoOgg extends MimeType {
+    val baseType: String = "video"
+    val subType: String = "ogg"
+    val parameters: Map[String, String] = Map.empty
+  }
 
   // Get all MimeType values
   val values: Seq[MimeType] = Seq(
@@ -402,5 +593,13 @@ object MimeType extends Serializable {
     */
   def fromString(mimeTypeStr: String, fallback: MimeType): MimeType = {
     fromString(mimeTypeStr).getOrElse(fallback)
+  }
+
+  /** For backward compatibility with old case class approach */
+  @deprecated("Use case objects or Custom directly instead")
+  def unapply(
+      mimeType: MimeType
+  ): Option[(String, String, Map[String, String])] = {
+    Some((mimeType.baseType, mimeType.subType, mimeType.parameters))
   }
 }

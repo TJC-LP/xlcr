@@ -25,8 +25,9 @@ trait Prioritized {
  *
  * @tparam K The type of keys in the registry
  * @tparam V The type of values in the registry
+ * @param isSubtype An optional function to check if one key is a subtype of another
  */
-class PriorityRegistry[K, V <: Prioritized] {
+class PriorityRegistry[K, V <: Prioritized](isSubtype: Option[(K, K) => Boolean] = None) {
   private val logger = LoggerFactory.getLogger(getClass)
   
   /** The internal storage for registry entries */
@@ -83,6 +84,33 @@ class PriorityRegistry[K, V <: Prioritized] {
   }
   
   /**
+   * Gets the highest priority value for a key, also considering subtypes.
+   *
+   * @param key The key to get the value for
+   * @return Some(value) if a value is registered for the key or any of its supertypes, None otherwise
+   */
+  def getWithSubtypes(key: K): Option[V] = {
+    get(key).orElse {
+      isSubtype match {
+        case Some(subtypeFn) =>
+          // Look for any key that could be a supertype of the requested key
+          registry.keys
+            .filter(k => subtypeFn(key, k))
+            .toSeq
+            .sortBy { k => 
+              // If we have multiple matches, prioritize by the values in each
+              val highestPriority = registry.get(k).flatMap(_.headOption).map(_.priority.value).getOrElse(0)
+              -highestPriority  // Negative for descending sort
+            }
+            .flatMap(k => registry.get(k).flatMap(_.headOption))
+            .headOption
+            
+        case None => None
+      }
+    }
+  }
+  
+  /**
    * Gets all values registered for a key, sorted by priority (highest first).
    *
    * @param key The key to get values for
@@ -90,6 +118,29 @@ class PriorityRegistry[K, V <: Prioritized] {
    */
   def getAll(key: K): List[V] = {
     registry.getOrElse(key, List.empty)
+  }
+  
+  /**
+   * Gets all values registered for a key and its supertypes, sorted by priority (highest first).
+   *
+   * @param key The key to get values for
+   * @return List of registered values, sorted by priority
+   */
+  def getAllWithSubtypes(key: K): List[V] = {
+    val direct = getAll(key)
+    
+    val fromSubtypes = isSubtype match {
+      case Some(subtypeFn) =>
+        registry.keys
+          .filter(k => subtypeFn(key, k))
+          .flatMap(k => registry.getOrElse(k, List.empty))
+          .toList
+          
+      case None => List.empty
+    }
+    
+    // Combine and sort by priority
+    (direct ++ fromSubtypes).distinct.sortBy(v => -v.priority.value)
   }
   
   /**

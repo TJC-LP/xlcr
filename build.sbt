@@ -59,6 +59,8 @@ lazy val core = (project in file("core"))
   .settings(commonSettings)
   .settings(assemblySettings)
   .settings(
+    // All Scala versions for core
+    crossScalaVersions := Seq(scala212, scala213, scala3),
     name := "xlcr-core",
     libraryDependencies ++= Seq(
       // Scala-specific dependencies
@@ -127,6 +129,8 @@ lazy val coreAspose = (project in file("core-aspose"))
   .settings(commonSettings)
   .settings(assemblySettings)
   .settings(
+    // All Scala versions for core-aspose
+    crossScalaVersions := Seq(scala212, scala213, scala3),
     name := "xlcr-core-aspose",
     // Added resolver settings specifically for Aspose
     resolvers ++= Seq(
@@ -205,6 +209,8 @@ lazy val server = (project in file("server"))
   .settings(assemblySettings)
   .settings(
     name := "xlcr-server",
+    // Support all Scala versions for server since it depends on core
+    crossScalaVersions := Seq(scala212, scala213, scala3),
     kotlinVersion := "1.9.10",
     kotlincJvmTarget := "1.8",
     kotlinLib("stdlib"),
@@ -229,6 +235,8 @@ lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
   .settings(assemblySettings)
   .settings(
     name := "xlcr-core-spreadsheetllm",
+    // All Scala versions for core-spreadsheetllm
+    crossScalaVersions := Seq(scala212, scala213, scala3),
     libraryDependencies ++= Seq(
       // ODFDOM for OpenDocument (ODS) format
       "org.odftoolkit" % "odfdom-java" % "0.12.0",
@@ -355,7 +363,10 @@ lazy val root = (project in file("."))
     assembleSpreadsheetLLM := (coreSpreadsheetLLM / assembly).value,
     assembleSpark := (coreSpark / assembly).value,
     // Define projects that should be included when cross-building
-    crossScalaVersions := Seq(scala212, scala213, scala3),
+    crossScalaVersions := Seq(
+      scala212,
+      scala213
+    ), // Root project only uses 2.12 and 2.13 for all modules
     // Custom tasks for different Scala versions
     addCommandAlias(
       "compileScala3",

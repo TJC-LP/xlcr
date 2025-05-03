@@ -9,23 +9,22 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
-class ExcelSheetSplitter extends DocumentSplitter[MimeType] {
+/**
+ * Trait providing common Excel sheet splitting functionality.
+ * Can be mixed into specific splitter objects for different Excel MIME types.
+ */
+trait ExcelSheetSplitterTrait {
+  
+  /**
+   * Split an Excel workbook into individual sheets
+   */
+  def splitWorkbook[M <: MimeType](
+      content: FileContent[M],
+      cfg: SplitConfig,
+      mimeType: M
+  ): Seq[DocChunk[M]] = {
 
-  private val supported = Set(
-    MimeType.ApplicationVndMsExcel,
-    MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
-  )
-
-  override def split(
-      content: FileContent[MimeType],
-      cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] = {
-
-    if (
-      !cfg.hasStrategy(SplitStrategy.Sheet) || !supported.contains(
-        content.mimeType
-      )
-    )
+    if (!cfg.hasStrategy(SplitStrategy.Sheet))
       return Seq(DocChunk(content, "workbook", 0, 1))
 
     val tempWb = WorkbookFactory.create(new ByteArrayInputStream(content.data))
@@ -42,7 +41,7 @@ class ExcelSheetSplitter extends DocumentSplitter[MimeType] {
       wb.write(baos)
       wb.close()
 
-      val fc = FileContent(baos.toByteArray, content.mimeType)
+      val fc = FileContent(baos.toByteArray, mimeType)
       DocChunk(fc, name, idx, total)
     }
   }

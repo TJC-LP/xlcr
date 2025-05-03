@@ -17,6 +17,22 @@ import scala.jdk.CollectionConverters._
 object BridgeRegistry {
   private val logger = LoggerFactory.getLogger(getClass)
 
+  /** 
+   * Function to check if a mime type pair is a subtype of another
+   * This is used to allow bridges registered for more general mime types
+   * to be selected for more specific mime types
+   */
+  private val mimeTypeSubtypeFn: ((MimeType, MimeType), (MimeType, MimeType)) => Boolean = {
+    case ((requestInMime, requestOutMime), (registeredInMime, registeredOutMime)) =>
+      // Check if the registered input mime is a wildcard or matches the requested input
+      (registeredInMime == MimeType.Wildcard || 
+       (requestInMime.baseType == registeredInMime.baseType && 
+        requestInMime.subType == registeredInMime.subType)) &&
+      // And check if the output mime types match exactly
+      requestOutMime.baseType == registeredOutMime.baseType && 
+      requestOutMime.subType == registeredOutMime.subType
+  }
+
   /** Thread‑safe registry from (inMime, outMime) -> Priority-ordered list of Bridges */
   private lazy val registry: PriorityRegistry[(MimeType, MimeType), Bridge[
     _ <: Model,
@@ -27,7 +43,7 @@ object BridgeRegistry {
     val reg = new PriorityRegistry[
       (MimeType, MimeType),
       Bridge[_ <: Model, _ <: MimeType, _ <: MimeType]
-    ]()
+    ](Some(mimeTypeSubtypeFn))
     val loader = ServiceLoader.load(classOf[BridgeProvider])
 
     loader.iterator().asScala.foreach { provider =>
@@ -85,16 +101,21 @@ object BridgeRegistry {
   /** Find the appropriate bridge for converting between mime types.
     * Returns Some(bridge) if found, otherwise None.
     * If multiple bridges are registered, the one with the highest priority is returned.
-    * If no exact match is found, tries to find a bridge with a wildcard input mime type.
+    * This method will check for:
+    * 1. Exact matches for (inMime, outMime)
+    * 2. Subtype matches using the mimeTypeSubtypeFn
+    * 3. Wildcard matches for (Wildcard, outMime)
     */
   def findBridge(
       inMime: MimeType,
       outMime: MimeType
   ): Option[Bridge[_, _, _]] = {
-    registry.get((inMime, outMime)).orElse {
-      // Try with wildcard input mime type if no exact match is found
+    // Use the getWithSubtypes method to find matches including subtypes
+    registry.getWithSubtypes((inMime, outMime)).orElse {
+      // If still not found, explicitly try with wildcard input mime type
+      // This is a fallback in case our subtype logic misses something
       logger.debug(
-        s"No exact bridge found for $inMime -> $outMime, trying wildcard match"
+        s"No bridge found for $inMime -> $outMime, trying explicit wildcard match"
       )
       registry.get((MimeType.Wildcard, outMime))
     }
@@ -114,23 +135,24 @@ object BridgeRegistry {
   }
 
   /** Find all bridges registered for the given mime types, in priority order.
-    * Includes both exact matches and wildcard matches.
+    * Includes exact matches, subtype matches, and wildcard matches.
     */
   def findAllBridges(
       inMime: MimeType,
       outMime: MimeType
   ): List[Bridge[_, _, _]] = {
-    // Get exact matches
-    val exactMatches = registry.getAll((inMime, outMime))
+    // Get all matches including subtypes
+    val allMatches = registry.getAllWithSubtypes((inMime, outMime))
 
-    // Get wildcard matches if any exist
+    // Get explicit wildcard matches if they weren't already included
     val wildcardMatches =
-      if (inMime != MimeType.Wildcard)
+      if (inMime != MimeType.Wildcard && 
+          !allMatches.exists(b => registry.keys.contains((MimeType.Wildcard, outMime))))
         registry.getAll((MimeType.Wildcard, outMime))
       else List.empty
 
     // Combine and sort by priority
-    (exactMatches ++ wildcardMatches).sortBy(b => -b.priority.value)
+    (allMatches ++ wildcardMatches).distinct.sortBy(b => -b.priority.value)
   }
 
   /** Check if we can merge between these mime types
@@ -140,7 +162,7 @@ object BridgeRegistry {
   }
 
   /** Find a bridge that supports merging between these mime types
-    * Checks both exact matches and wildcard matches.
+    * Checks exact matches, subtype matches, and wildcard matches.
     */
   def findMergeableBridge(
       input: MimeType,
