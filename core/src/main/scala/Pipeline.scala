@@ -19,11 +19,13 @@ object Pipeline {
     * @param inputPath  Input file path
     * @param outputPath Output file path
     * @param diffMode   Whether to perform diff operations
+    * @param config     Optional bridge-specific configuration
     */
   def run(
       inputPath: String,
       outputPath: String,
-      diffMode: Boolean = false
+      diffMode: Boolean = false,
+      config: Option[bridges.BridgeConfig] = None
   ): Unit = {
     logger.info(
       s"Starting extraction process. Input: $inputPath, Output: $outputPath, DiffMode: $diffMode"
@@ -66,9 +68,9 @@ object Pipeline {
       // Perform the conversion
       val resultTry =
         if (diffMode && canMergeInPlace(inputMimeType, outputMimeType)) {
-          doDiffConversion(fileContent, output, outputMimeType)
+          doDiffConversion(fileContent, output, outputMimeType, config)
         } else {
-          doRegularConversion(fileContent, outputMimeType)
+          doRegularConversion(fileContent, outputMimeType, config)
         }
 
       resultTry match {
@@ -440,16 +442,22 @@ object Pipeline {
   }
 
   /** Perform a normal single-step conversion via convertDynamic.
+    *
+    * @param input    The input file content to convert
+    * @param outMime  The target MIME type
+    * @param config   Optional bridge-specific configuration
+    * @return A Try containing the converted file content or an error
     */
   private def doRegularConversion(
       input: FileContent[MimeType],
-      outMime: MimeType
+      outMime: MimeType,
+      config: Option[bridges.BridgeConfig] = None
   ): Try[FileContent[MimeType]] = {
     Try {
       BridgeRegistry.findBridgeForMatching(input.mimeType, outMime)(
         bridge => {
           bridge
-            .convert(input)
+            .convert(input, config)
             .asInstanceOf[FileContent[MimeType]]
         },
         throw new UnsupportedConversionException(
@@ -462,11 +470,18 @@ object Pipeline {
 
   /** Perform a diff-based conversion by merging source into existing output.
     * We assume the model is Mergeable, such as SheetsData in JSON -> Excel scenario.
+    *
+    * @param incoming     The incoming file content to merge
+    * @param existingPath Path to the existing file to merge into
+    * @param outputMime   The target MIME type
+    * @param config       Optional bridge-specific configuration
+    * @return A Try containing the merged file content or an error
     */
   private def doDiffConversion(
       incoming: FileContent[MimeType],
       existingPath: java.nio.file.Path,
-      outputMime: MimeType
+      outputMime: MimeType,
+      config: Option[bridges.BridgeConfig] = None
   ): Try[FileContent[MimeType]] = Try {
     if (!Files.exists(existingPath)) {
       throw new InputFileNotFoundException(existingPath.toString)
@@ -479,7 +494,8 @@ object Pipeline {
         bridge
           .convertWithDiff(
             incoming,
-            existingContent
+            existingContent,
+            config
           )
           .asInstanceOf[FileContent[MimeType]]
       },

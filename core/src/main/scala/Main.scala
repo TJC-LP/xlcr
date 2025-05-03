@@ -194,7 +194,32 @@ object Main {
             }
           } else {
             // Single file conversion
-            Pipeline.run(config.input, config.output, config.diffMode)
+            // Determine if we need to create a bridge configuration
+            val bridgeConfig = {
+              val inputMime = utils.FileUtils.detectMimeType(Paths.get(config.input))
+              val outputMime = utils.FileUtils.detectMimeTypeFromExtension(Paths.get(config.output), strict = true)
+              
+              (inputMime, outputMime) match {
+                // Check if this is a PDF -> Image conversion
+                case (MimeType.ApplicationPdf, MimeType.ImagePng | MimeType.ImageJpeg) =>
+                  Some(bridges.PdfToImageConfig(
+                    maxWidthPixels = config.maxImageWidth,
+                    maxHeightPixels = config.maxImageHeight,
+                    maxSizeBytes = config.maxImageSizeBytes,
+                    dpi = config.imageDpi,
+                    jpegQuality = config.jpegQuality
+                  ))
+                // Add other bridge configurations here as needed
+                case _ => None
+              }
+            }
+            
+            Pipeline.run(
+              inputPath = config.input, 
+              outputPath = config.output, 
+              diffMode = config.diffMode,
+              config = bridgeConfig
+            )
           }
         }
 

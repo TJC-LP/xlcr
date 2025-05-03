@@ -26,6 +26,34 @@ object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
     PdfParser
   override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] =
     PngRenderer
+    
+  /**
+   * Override to handle the BridgeConfig for PDF-to-image conversions.
+   */
+  override def convert(
+      input: FileContent[ApplicationPdf.type], 
+      config: Option[bridges.BridgeConfig] = None
+  ): FileContent[ImagePng.type] = {
+    val model = parseInput(input)
+    
+    // Extract config or use defaults
+    val renderConfig = config match {
+      case Some(cfg: bridges.PdfToImageConfig) =>
+        PdfImageRenderer.RenderConfig(
+          maxWidthPixels = cfg.maxWidthPixels,
+          maxHeightPixels = cfg.maxHeightPixels,
+          maxSizeBytes = cfg.maxSizeBytes,
+          dpi = cfg.dpi,
+          jpegQuality = cfg.jpegQuality // Not used for PNG but keep for consistency
+        )
+      case _ => 
+        // Use default RenderConfig if no config or wrong type provided
+        PdfImageRenderer.RenderConfig()
+    }
+    
+    // Use our renderer with configuration
+    PngRenderer.renderWithConfig(model, renderConfig)
+  }
 
   /** Simple parser that wraps the PDF bytes for processing.
     */
@@ -39,8 +67,14 @@ object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
     */
   private object PngRenderer extends Renderer[M, ImagePng.type] {
     override def render(model: M): FileContent[ImagePng.type] = {
+      // Use default configuration
+      renderWithConfig(model, PdfImageRenderer.RenderConfig())
+    }
+
+    // New method that accepts configuration
+    def renderWithConfig(model: M, config: PdfImageRenderer.RenderConfig): FileContent[ImagePng.type] = {
       Try {
-        renderPdfPage(model.data, 0, "png", 300)
+        PdfImageRenderer.renderPageAsPng(model.data, 0, config)
       } match {
         case Success(bytes) => FileContent[ImagePng.type](bytes, ImagePng)
         case Failure(e) =>
@@ -48,28 +82,6 @@ object PdfToPngBridge extends SimpleBridge[ApplicationPdf.type, ImagePng.type] {
             s"Failed to render PDF as PNG: ${e.getMessage}",
             Some(e)
           )
-      }
-    }
-
-    // Default to 300 DPI for good quality without excessive size
-    private def renderPdfPage(
-        pdfBytes: Array[Byte],
-        pageIndex: Int,
-        format: String,
-        dpi: Int
-    ): Array[Byte] = {
-      val document = PDDocument.load(pdfBytes)
-      try {
-        val renderer = new PDFRenderer(document)
-        // Render the specified page at the given DPI
-        val image = renderer.renderImageWithDPI(pageIndex, dpi, ImageType.RGB)
-
-        // Convert the rendered image to bytes
-        val baos = new ByteArrayOutputStream()
-        ImageIO.write(image, format, baos)
-        baos.toByteArray
-      } finally {
-        document.close()
       }
     }
   }
@@ -84,6 +96,34 @@ object PdfToJpegBridge
     PdfParser
   override private[bridges] def outputRenderer: Renderer[M, ImageJpeg.type] =
     JpegRenderer
+    
+  /**
+   * Override to handle the BridgeConfig for PDF-to-image conversions.
+   */
+  override def convert(
+      input: FileContent[ApplicationPdf.type], 
+      config: Option[bridges.BridgeConfig] = None
+  ): FileContent[ImageJpeg.type] = {
+    val model = parseInput(input)
+    
+    // Extract config or use defaults
+    val renderConfig = config match {
+      case Some(cfg: bridges.PdfToImageConfig) =>
+        PdfImageRenderer.RenderConfig(
+          maxWidthPixels = cfg.maxWidthPixels,
+          maxHeightPixels = cfg.maxHeightPixels,
+          maxSizeBytes = cfg.maxSizeBytes,
+          dpi = cfg.dpi,
+          jpegQuality = cfg.jpegQuality // Used for JPEG quality control
+        )
+      case _ => 
+        // Use default RenderConfig if no config or wrong type provided
+        PdfImageRenderer.RenderConfig()
+    }
+    
+    // Use our renderer with configuration
+    JpegRenderer.renderWithConfig(model, renderConfig)
+  }
 
   /** Simple parser that wraps the PDF bytes for processing.
     */
@@ -96,8 +136,14 @@ object PdfToJpegBridge
     */
   private object JpegRenderer extends Renderer[M, ImageJpeg.type] {
     override def render(model: M): FileContent[ImageJpeg.type] = {
+      // Use default configuration
+      renderWithConfig(model, PdfImageRenderer.RenderConfig())
+    }
+
+    // New method that accepts configuration
+    def renderWithConfig(model: M, config: PdfImageRenderer.RenderConfig): FileContent[ImageJpeg.type] = {
       Try {
-        renderPdfPage(model.data, 0, 300, 0.85f)
+        PdfImageRenderer.renderPageAsJpeg(model.data, 0, config)
       } match {
         case Success(bytes) => FileContent[ImageJpeg.type](bytes, ImageJpeg)
         case Failure(e) =>
@@ -105,42 +151,6 @@ object PdfToJpegBridge
             s"Failed to render PDF as JPEG: ${e.getMessage}",
             Some(e)
           )
-      }
-    }
-
-    // Default to 300 DPI and 85% quality for JPEG
-    private def renderPdfPage(
-        pdfBytes: Array[Byte],
-        pageIndex: Int,
-        dpi: Int,
-        quality: Float
-    ): Array[Byte] = {
-      val document = PDDocument.load(pdfBytes)
-      try {
-        val renderer = new PDFRenderer(document)
-        // Render the specified page at the given DPI
-        val image = renderer.renderImageWithDPI(pageIndex, dpi, ImageType.RGB)
-
-        // Convert the rendered image to JPEG with quality control
-        val baos = new ByteArrayOutputStream()
-        val outputStream = new MemoryCacheImageOutputStream(baos)
-
-        val jpegWriter = ImageIO.getImageWritersByFormatName("jpeg").next()
-        jpegWriter.setOutput(outputStream)
-
-        val params = jpegWriter.getDefaultWriteParam()
-        params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
-        params.setCompressionQuality(
-          quality
-        ) // Between 0 and 1, where 1 is highest quality
-
-        jpegWriter.write(null, new IIOImage(image, null, null), params)
-        jpegWriter.dispose()
-        outputStream.close()
-
-        baos.toByteArray
-      } finally {
-        document.close()
       }
     }
   }
