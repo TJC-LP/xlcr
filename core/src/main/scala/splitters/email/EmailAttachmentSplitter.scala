@@ -14,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 
 /** Splits an .eml (RFC‑822) email into a body chunk + one chunk per attachment.
   */
-class EmailAttachmentSplitter
+object EmailAttachmentSplitter
     extends DocumentSplitter[MimeType.MessageRfc822.type] {
 
   override def split(

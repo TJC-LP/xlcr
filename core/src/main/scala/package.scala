@@ -1,5 +1,7 @@
 package com.tjclp
 
+import com.tjclp.xlcr.splitters.{DocumentSplitter, SplitStrategy}
+
 /** This package object holds custom exceptions common to the XLCR application.
   */
 package object xlcr {

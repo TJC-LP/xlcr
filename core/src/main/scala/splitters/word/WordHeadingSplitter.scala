@@ -10,21 +10,13 @@ import org.apache.poi.xwpf.usermodel.{XWPFDocument, XWPFParagraph, XWPFTable}
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.jdk.CollectionConverters._
 
-/** Splits a DOCX on Heading 1 paragraphs. */
-class WordHeadingSplitter
-    extends DocumentSplitter[
-      MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type
-    ] {
-
-  private val mime =
-    MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument
+/** Splits a DOCX on Heading 1 paragraphs. */
+trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T] {
 
   override def split(
-      content: FileContent[
-        MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument.type
-      ],
+      content: FileContent[T],
       cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] = {
+  ): Seq[DocChunk[T]] = {
 
     if (!cfg.hasStrategy(SplitStrategy.Heading))
       return Seq(DocChunk(content, "document", 0, 1))
@@ -71,7 +63,7 @@ class WordHeadingSplitter
           .filter(_.nonEmpty)
           .getOrElse(s"Section ${sectionIdx + 1}")
 
-        val fc = FileContent(baos.toByteArray, mime)
+        val fc = FileContent.fromBytes[T](baos.toByteArray)
         DocChunk(fc, label, sectionIdx, total)
       }
       .toSeq

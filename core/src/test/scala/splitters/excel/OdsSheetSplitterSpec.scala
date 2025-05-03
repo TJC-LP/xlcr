@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
-class OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
+object OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
   private val logger = LoggerFactory.getLogger(getClass)
 
   // Helper to create a test ODS file with multiple sheets
@@ -54,7 +54,7 @@ class OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
       .asInstanceOf[FileContent[
         MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
       ]]
-    val splitter = new OdsSheetSplitter()
+    val splitter = OdsSheetSplitter
 
     // This should not crash, but return the original content
     val result =
@@ -73,7 +73,7 @@ class OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
         .asInstanceOf[FileContent[
           MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
         ]]
-      val splitter = new OdsSheetSplitter()
+      val splitter = OdsSheetSplitter
 
       // Split the ODS file
       val result =
@@ -122,7 +122,7 @@ class OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
         .asInstanceOf[FileContent[
           MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
         ]]
-    val splitter = new OdsSheetSplitter()
+    val splitter = OdsSheetSplitter
 
     // Use a different strategy
     val result = splitter.split(content, SplitConfig(Some(SplitStrategy.Page)))

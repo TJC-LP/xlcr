@@ -3,7 +3,7 @@ package splitters
 package text
 
 import models.FileContent
-import types.MimeType
+import types.MimeType.TextPlain
 
 /** Splitter for plain-text documents that supports two modes:
   *
@@ -15,12 +15,12 @@ import types.MimeType
   *    windows (\`SplitConfig.maxChars\`) with optional overlap (\`SplitConfig.overlap\`).
   *    Only used when explicitly requested.
   */
-class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
+object TextSplitter extends DocumentSplitter[TextPlain.type] {
 
   override def split(
-      content: FileContent[MimeType.TextPlain.type],
+      content: FileContent[TextPlain.type],
       cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] = {
+  ): Seq[DocChunk[TextPlain.type]] = {
     // Note: Chunk is the default strategy for text files (set in DocumentSplitter),
     // but we check if another strategy was explicitly requested
     if (
@@ -39,15 +39,15 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
     * This approach is simpler but doesn't respect paragraph boundaries.
     */
   private def splitByCharactersWithOverlap(
-      content: FileContent[MimeType.TextPlain.type],
+      content: FileContent[TextPlain.type],
       cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] = {
+  ): Seq[DocChunk[TextPlain.type]] = {
     val txt = new String(content.data, java.nio.charset.StandardCharsets.UTF_8)
 
     val chunkSize = math.max(1, cfg.maxChars)
     val overlap = math.max(0, cfg.overlap.min(chunkSize - 1))
 
-    val builder = Seq.newBuilder[DocChunk[_ <: MimeType]]
+    val builder = Seq.newBuilder[DocChunk[TextPlain.type]]
 
     var start = 0
     var idx = 0
@@ -55,7 +55,7 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
       val end = math.min(start + chunkSize, txt.length)
       val slice = txt.substring(start, end)
       val bytes = slice.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-      val fc = FileContent(bytes, MimeType.TextPlain)
+      val fc = FileContent(bytes, TextPlain)
       builder += DocChunk(
         fc,
         label = s"chars ${start}-${end - 1}",
@@ -76,9 +76,9 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
     * This is the default approach for text files as it produces more coherent chunks.
     */
   private def splitByParagraphs(
-      content: FileContent[MimeType.TextPlain.type],
+      content: FileContent[TextPlain.type],
       cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] = {
+  ): Seq[DocChunk[TextPlain.type]] = {
     val txt = new String(content.data, java.nio.charset.StandardCharsets.UTF_8)
 
     // Split the text into paragraphs
@@ -86,7 +86,7 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
     if (paragraphs.isEmpty) return Seq.empty
 
     val chunkSize = math.max(1, cfg.maxChars)
-    val builder = Seq.newBuilder[DocChunk[_ <: MimeType]]
+    val builder = Seq.newBuilder[DocChunk[TextPlain.type]]
 
     var currentChunk = new StringBuilder()
     var idx = 0
@@ -101,7 +101,7 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
       ) {
         val chunkText = currentChunk.toString()
         val bytes = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-        val fc = FileContent(bytes, MimeType.TextPlain)
+        val fc = FileContent(bytes, TextPlain)
         val endPara = currentPara - 1 // Last paragraph in current chunk
 
         // Calculate character bounds for this chunk
@@ -128,7 +128,7 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
           val end = math.min(start + chunkSize, paragraph.length)
           val slice = paragraph.substring(start, end)
           val bytes = slice.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-          val fc = FileContent(bytes, MimeType.TextPlain)
+          val fc = FileContent(bytes, TextPlain)
 
           // Calculate the absolute character position in the original text
           val paraStart = txt.indexOf(paragraph)
@@ -160,7 +160,7 @@ class TextSplitter extends DocumentSplitter[MimeType.TextPlain.type] {
     if (currentChunk.nonEmpty) {
       val chunkText = currentChunk.toString()
       val bytes = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-      val fc = FileContent(bytes, MimeType.TextPlain)
+      val fc = FileContent(bytes, TextPlain)
       val endPara = currentPara - 1 // Last paragraph processed
 
       // Calculate character bounds for this chunk

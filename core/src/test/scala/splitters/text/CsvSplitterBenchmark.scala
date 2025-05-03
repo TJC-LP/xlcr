@@ -52,7 +52,7 @@ object CsvSplitterBenchmark {
     val chunkConfig = SplitConfig(maxChars = 1000) // 1000 rows per chunk
 
     // Create splitter
-    val splitter = new CsvSplitter()
+    val splitter = CsvSplitter
 
     // Measure chunk splitting performance
     println("Testing splitIntoChunks...")

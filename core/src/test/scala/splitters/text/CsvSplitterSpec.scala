@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 
 import java.nio.file.{Files, Paths}
 
-class CsvSplitterSpec extends AnyFlatSpec with Matchers {
+object CsvSplitterSpec extends AnyFlatSpec with Matchers {
 
   "CsvSplitter" should "split CSV by individual rows with Row strategy" in {
     val filePath = getClass.getResource("/text_samples/sample.csv").getPath
@@ -23,7 +23,7 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
       strategy = Some(SplitStrategy.Row)
     )
 
-    val splitter = new CsvSplitter()
+    val splitter = CsvSplitter
     val chunks = splitter.split(content, cfg)
 
     // We should have one chunk per row (excluding header)
@@ -63,7 +63,7 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
       maxChars = 100 // Small character limit to force multiple chunks
     )
 
-    val splitter = new CsvSplitter()
+    val splitter = CsvSplitter
     val chunks = splitter.split(content, cfg)
 
     // We should have multiple chunks
@@ -113,13 +113,13 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
 
     // First test with a very small limit (should create many small chunks)
     val smallCfg = SplitConfig(maxChars = 50)
-    val smallChunks = new CsvSplitter().split(content, smallCfg)
+    val smallChunks = CsvSplitter.split(content, smallCfg)
 
     smallChunks.length should be > 3 // Should have multiple small chunks
 
     // Then test with a very large limit (should create one chunk with all rows)
     val largeCfg = SplitConfig(maxChars = 100000)
-    val largeChunks = new CsvSplitter().split(content, largeCfg)
+    val largeChunks = CsvSplitter.split(content, largeCfg)
 
     largeChunks.length shouldBe 1 // Should have just one chunk
 
@@ -137,14 +137,14 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     // Empty content
     val emptyContent = FileContent("".getBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
-    val emptyChunks = new CsvSplitter().split(emptyContent, SplitConfig())
+    val emptyChunks = CsvSplitter.split(emptyContent, SplitConfig())
     emptyChunks.isEmpty shouldBe true
 
     // CSV with just a header
     val headerContent =
       FileContent("Header1,Header2,Header3".getBytes, MimeType.TextCsv)
         .asInstanceOf[FileContent[MimeType.TextCsv.type]]
-    val headerChunks = new CsvSplitter().split(headerContent, SplitConfig())
+    val headerChunks = CsvSplitter.split(headerContent, SplitConfig())
     headerChunks.isEmpty shouldBe true
 
     // CSV with header and empty rows
@@ -152,7 +152,7 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
       FileContent("Header1,Header2\n\n\n".getBytes, MimeType.TextCsv)
         .asInstanceOf[FileContent[MimeType.TextCsv.type]]
     val emptyRowsChunks =
-      new CsvSplitter().split(emptyRowsContent, SplitConfig())
+      CsvSplitter.split(emptyRowsContent, SplitConfig())
     emptyRowsChunks.isEmpty shouldBe true
   }
 }

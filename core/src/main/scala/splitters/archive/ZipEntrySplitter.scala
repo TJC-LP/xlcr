@@ -13,14 +13,14 @@ import java.util.zip.{ZipEntry, ZipInputStream}
 import scala.collection.mutable.ListBuffer
 
 /** Splits a ZIP archive into its constituent files.
-  * 
+  *
   * Features:
   * - Extracts files from ZIP archives
   * - Filters out macOS metadata files and directories
   * - Determines appropriate MIME types for extracted files
   * - Preserves original file paths in metadata
   */
-class ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
+object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   override def split(
@@ -42,11 +42,11 @@ class ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
       var entry: ZipEntry = zipInputStream.getNextEntry()
       while (entry != null) {
         val entryName = entry.getName
-        
+
         // Skip directories and macOS metadata files
         if (!entry.isDirectory && !PathFilter.isMacOsMetadata(entryName)) {
           logger.debug(s"Processing ZIP entry: $entryName")
-          
+
           // Read the ZIP entry content
           val baos = new ByteArrayOutputStream()
           val buffer = new Array[Byte](8192)
@@ -64,7 +64,7 @@ class ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
 
           // Get clean entry name for display
           val displayName = PathFilter.cleanPathForDisplay(entryName)
-          
+
           // Create a chunk for this entry
           val fileContent = FileContent(baos.toByteArray, mime)
           chunks += DocChunk(

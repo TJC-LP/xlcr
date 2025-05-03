@@ -14,9 +14,12 @@ import splitters.excel.{
   OdsSheetSplitter
 }
 import splitters.pdf.PdfPageSplitter
-import splitters.powerpoint.PowerPointSlideSplitter
+import splitters.powerpoint.{
+  PowerPointPptSlideSplitter,
+  PowerPointPptxSlideSplitter
+}
 import splitters.text.{CsvSplitter, TextSplitter}
-import splitters.word.WordHeadingSplitter
+import splitters.word.{WordDocxHeadingSplitter, WordDocHeadingSplitter}
 import types.MimeType
 
 /** Provides the core bridges and splitters for registration via ServiceLoader.
@@ -98,9 +101,9 @@ class CoreRegistrations extends BridgeProvider with SplitterProvider {
       )
     )
 
-  override def getSplitters: Iterable[SplitterInfo] = Seq(
+  override def getSplitters: Iterable[SplitterInfo[_ <: MimeType]] = Seq(
     // PDF
-    SplitterInfo(MimeType.ApplicationPdf, new PdfPageSplitter),
+    SplitterInfo(MimeType.ApplicationPdf, PdfPageSplitter),
     // Excel
     SplitterInfo(MimeType.ApplicationVndMsExcel, ExcelXlsSheetSplitter),
     SplitterInfo(
@@ -109,35 +112,33 @@ class CoreRegistrations extends BridgeProvider with SplitterProvider {
     ),
     SplitterInfo(
       MimeType.ApplicationVndOasisOpendocumentSpreadsheet,
-      new OdsSheetSplitter
+      OdsSheetSplitter
     ),
     // PowerPoint
     SplitterInfo(
       MimeType.ApplicationVndMsPowerpoint,
-      new PowerPointSlideSplitter
+      PowerPointPptSlideSplitter
     ),
     SplitterInfo(
       MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
-      new PowerPointSlideSplitter
+      PowerPointPptxSlideSplitter
     ),
     // Word
     SplitterInfo(
+      MimeType.ApplicationMsWord,
+      WordDocHeadingSplitter
+    ),
+    SplitterInfo(
       MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
-      new WordHeadingSplitter
+      WordDocxHeadingSplitter
     ),
     // Email
-    SplitterInfo(MimeType.MessageRfc822, new EmailAttachmentSplitter),
-    SplitterInfo(MimeType.ApplicationVndMsOutlook, new OutlookMsgSplitter),
+    SplitterInfo(MimeType.MessageRfc822, EmailAttachmentSplitter),
+    SplitterInfo(MimeType.ApplicationVndMsOutlook, OutlookMsgSplitter),
     // Archives
-    SplitterInfo(MimeType.ApplicationZip, new ArchiveEntrySplitter),
-    SplitterInfo(MimeType.ApplicationZip, new ZipEntrySplitter),
-    SplitterInfo(MimeType.ApplicationGzip, new ArchiveEntrySplitter),
-    SplitterInfo(MimeType.ApplicationSevenz, new ArchiveEntrySplitter),
-    SplitterInfo(MimeType.ApplicationTar, new ArchiveEntrySplitter),
-    SplitterInfo(MimeType.ApplicationBzip2, new ArchiveEntrySplitter),
-    SplitterInfo(MimeType.ApplicationXz, new ArchiveEntrySplitter),
+    SplitterInfo(MimeType.ApplicationZip, ZipEntrySplitter),
     // Text/CSV
-    SplitterInfo(MimeType.TextPlain, new TextSplitter),
-    SplitterInfo(MimeType.TextCsv, new CsvSplitter)
+    SplitterInfo(MimeType.TextPlain, TextSplitter),
+    SplitterInfo(MimeType.TextCsv, CsvSplitter)
   )
 }

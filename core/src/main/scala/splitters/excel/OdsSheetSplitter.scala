@@ -10,7 +10,7 @@ import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.logging.Level
 
-class OdsSheetSplitter
+object OdsSheetSplitter
     extends DocumentSplitter[
       MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
     ] {

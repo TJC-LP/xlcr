@@ -11,7 +11,7 @@ import org.scalatest.matchers.should.Matchers
 
 import java.io.ByteArrayOutputStream
 
-class ExcelSheetSplitterSpec extends AnyFlatSpec with Matchers {
+object ExcelSheetSplitterSpec extends AnyFlatSpec with Matchers {
 
   it should "split a workbook into individual sheet files" in {
     // Build an in‑memory workbook with 3 sheets

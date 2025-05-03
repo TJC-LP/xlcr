@@ -69,7 +69,7 @@ object DocumentSplitter {
   // Helper to register a single SplitterInfo
   private def registerSplitterInfo(
       reg: PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]],
-      info: SplitterInfo
+      info: SplitterInfo[_ <: MimeType]
   ): Unit = {
     logger.debug(
       s"Registering ${info.splitter.getClass.getSimpleName} for ${info.mime} with priority ${info.splitter.priority}"
@@ -77,7 +77,7 @@ object DocumentSplitter {
     // Ensure the splitter type matches the expected type for the registry
     reg.register(
       info.mime,
-      info.splitter.asInstanceOf[DocumentSplitter[_ <: MimeType]]
+      info.splitter
     )
   }
 
@@ -92,7 +92,7 @@ object DocumentSplitter {
   /** Register a splitter for a MIME type. (Mainly for testing or manual registration)
     */
   def register[I <: MimeType](
-      mime: MimeType,
+      mime: I,
       splitter: DocumentSplitter[I]
   ): Unit = {
     registerSplitterInfo(registry, SplitterInfo(mime, splitter))

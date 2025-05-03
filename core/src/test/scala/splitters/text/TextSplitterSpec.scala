@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 
 import java.nio.file.{Files, Paths}
 
-class TextSplitterSpec extends AnyFlatSpec with Matchers {
+object TextSplitterSpec extends AnyFlatSpec with Matchers {
 
   "TextSplitter" should "split text into chunks using the Chunk strategy" in {
     val filePath = getClass.getResource("/text_samples/sample.txt").getPath
@@ -24,7 +24,7 @@ class TextSplitterSpec extends AnyFlatSpec with Matchers {
       maxChars = 500 // Small enough to split our sample
     )
 
-    val splitter = new TextSplitter()
+    val splitter = TextSplitter
     val chunks = splitter.split(content, cfg)
 
     // We should have multiple chunks
@@ -66,7 +66,7 @@ class TextSplitterSpec extends AnyFlatSpec with Matchers {
       overlap = 0 // No overlap to avoid memory issues
     )
 
-    val splitter = new TextSplitter()
+    val splitter = TextSplitter
     val chunks = splitter.split(shortContent, cfg)
 
     // We should have multiple chunks

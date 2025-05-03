@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 import java.io.ByteArrayOutputStream
 
-class PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
+object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   override def split(

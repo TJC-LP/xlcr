@@ -6,13 +6,12 @@ import models.FileContent
 import types.{FileType, MimeType}
 
 import org.apache.poi.hsmf.MAPIMessage
-// no extra imports needed
 
 /** Splits a Microsoft Outlook .msg file into body + attachments, mirroring the
   * behaviour of EmailAttachmentSplitter but using POI‑HSMF to read the MSG
   * container directly.
   */
-class OutlookMsgSplitter
+object OutlookMsgSplitter
     extends DocumentSplitter[MimeType.ApplicationVndMsOutlook.type] {
 
   override def split(

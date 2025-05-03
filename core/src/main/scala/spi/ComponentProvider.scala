@@ -21,9 +21,9 @@ case class BridgeInfo[I <: MimeType, O <: MimeType](
 
 /** Information needed to register a DocumentSplitter.
   */
-case class SplitterInfo(
-    mime: MimeType,
-    splitter: DocumentSplitter[_ <: MimeType]
+case class SplitterInfo[T <: MimeType](
+    mime: T,
+    splitter: DocumentSplitter[T]
 )
 
 /** Service Provider Interface for modules contributing Bridges.
@@ -35,5 +35,5 @@ trait BridgeProvider {
 /** Service Provider Interface for modules contributing DocumentSplitters.
   */
 trait SplitterProvider {
-  def getSplitters: Iterable[SplitterInfo]
+  def getSplitters: Iterable[SplitterInfo[_ <: MimeType]]
 }

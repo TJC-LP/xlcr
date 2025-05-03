@@ -11,17 +11,14 @@ import java.io.{File, FileInputStream, FileOutputStream}
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class PowerPointSlideSplitter extends DocumentSplitter[MimeType] {
+trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
 
   override def split(
-      content: FileContent[MimeType],
+      content: FileContent[T],
       cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] = {
+  ): Seq[DocChunk[T]] = {
 
-    if (
-      !cfg.hasStrategy(SplitStrategy.Slide) ||
-      content.mimeType != MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation
-    )
+    if (!cfg.hasStrategy(SplitStrategy.Slide))
       return Seq(DocChunk(content, "presentation", 0, 1))
 
     // To avoid ZipEntry issues, write the content to a temporary file first

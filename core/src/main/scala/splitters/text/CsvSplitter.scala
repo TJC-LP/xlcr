@@ -17,7 +17,7 @@ import types.MimeType
   *
   * Each chunk preserves the header and maintains complete rows for context integrity.
   */
-class CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
+object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
 
   override def split(
       content: FileContent[MimeType.TextCsv.type],
