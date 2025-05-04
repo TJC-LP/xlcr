@@ -53,54 +53,50 @@ case class SplitStep(
             .getOrElse(MimeType.ApplicationOctet)
         val content = FileContent(bytes, mime)
 
-        // Perform the split – any exception will be captured by the wrapper and
-        // converted into a proper `StepResult` with the error field populated.
-        val chunks = DocumentSplitter.split(content, config)
-
-        /* ---------- NEW GUARD ------------------------------------------- */
-        val totalBytes = chunks.iterator.map(_.content.data.length.toLong).sum
-        if (totalBytes > maxBytesPerRow || chunks.size > maxChunksPerRow)
-          throw new IllegalArgumentException(
-            s"Split output too large for one Spark row " +
-              s"(bytes=$totalBytes, chunks=${chunks.size}). " +
-              s"Max allowed: ${maxBytesPerRow} bytes / " +
-              s"${maxChunksPerRow} chunks."
-          )
-        /* ---------------------------------------------------------------- */
-
-        // Determine splitter implementation & strategy used (for lineage meta)
-        val splitterImpl = DocumentSplitter
-          .forMime(mime)
-          .map(_.getClass.getSimpleName)
+        // Initialise variables that we capture for lineage (determined before action)
+        val splitterOpt = DocumentSplitter.forMime(mime)
+        val splitterImplName = splitterOpt.map(_.getClass.getSimpleName)
 
         val effectiveStrategy = config.strategy match {
           case Some(SplitStrategy.Auto) =>
             Some(SplitConfig.defaultStrategyForMime(mime).displayName)
           case Some(strategy) => Some(strategy.displayName)
-          case None =>
-            Some(SplitConfig.defaultStrategyForMime(mime).displayName)
+          case None => Some(SplitConfig.defaultStrategyForMime(mime).displayName)
         }
 
-        val paramsMap = scala.collection.mutable.Map[String, String]()
-        effectiveStrategy.foreach(s => paramsMap.put("strategy", s))
+        val params: Option[Map[String, String]] = effectiveStrategy.map(s => Map("strategy" -> s))
 
-        val params = if (paramsMap.isEmpty) None else Some(paramsMap.toMap)
+        UdfHelpers.FoundImplementation[
+          Seq[(Array[Byte], String, Int, String, Int)]
+        ](
+          implementationName = splitterImplName,
+          params = params,
+          action = () => {
+            // Perform the split – exceptions propagate to wrapper
+            val chunks = DocumentSplitter.split(content, config)
 
-        // Convert chunks into a serialisable representation expected further
-        // downstream. We include index / label / total so that the caller can
-        // explode them and attach the information to the lineage element of
-        // each resulting row.
-        val chunkTuples = chunks.map { chunk =>
-          (
-            chunk.content.data,
-            chunk.content.mimeType.mimeType,
-            chunk.index,
-            chunk.label,
-            chunk.total
-          )
-        }
+            // Guard against huge outputs
+            val totalBytes = chunks.iterator.map(_.content.data.length.toLong).sum
+            if (totalBytes > maxBytesPerRow || chunks.size > maxChunksPerRow)
+              throw new IllegalArgumentException(
+                s"Split output too large for one Spark row " +
+                  s"(bytes=$totalBytes, chunks=${chunks.size}). " +
+                  s"Max allowed: ${maxBytesPerRow} bytes / " +
+                  s"${maxChunksPerRow} chunks."
+              )
 
-        (chunkTuples, splitterImpl, params)
+            // Transform chunks into serialisable tuples expected downstream
+            chunks.map { chunk =>
+              (
+                chunk.content.data,
+                chunk.content.mimeType.mimeType,
+                chunk.index,
+                chunk.label,
+                chunk.total
+              )
+            }
+          }
+        )
     }
   }
 

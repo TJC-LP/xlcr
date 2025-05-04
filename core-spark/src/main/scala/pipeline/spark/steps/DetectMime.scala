@@ -23,31 +23,30 @@ object DetectMime extends SparkStep {
 
   private val detectUdf = wrapUdf(
     name,
-    scala.concurrent.duration.Duration(30, "seconds"),
-    Some("TikaAutoDetectParser")
+    scala.concurrent.duration.Duration(30, "seconds")
   ) { bytes: Array[Byte] =>
-    val md = new TikaMetadata()
-    try {
-      val parser = new AutoDetectParser()
-      val handler =
-        new BodyContentHandler(1) // body truncated, we only need headers
-      val stream = TikaInputStream.get(bytes)
-      parser.parse(stream, handler, md, new ParseContext())
-    } catch {
-      case e @ (_: IOException | _: TikaException | _: SAXException) =>
-      // Log the exception if needed
-      // logger.warn(s"Error during MIME detection: ${e.getMessage}")
-    }
+    // *Finding* phase: We already know we will use Tika's AutoDetectParser.
+    val implName = "TikaAutoDetectParser"
 
-    // Always return the metadata, even if an exception occurred
-    val metadataMap = md.names().map(n => n -> md.get(n)).toMap
+    // Action encapsulated to allow error capture
+    UdfHelpers.FoundImplementation[Map[String, String]](
+      implementationName = Some(implName),
+      params = None,
+      action = () => {
+        val md = new TikaMetadata()
+        try {
+          val parser = new AutoDetectParser()
+          val handler = new BodyContentHandler(1)
+          val stream = TikaInputStream.get(bytes)
+          parser.parse(stream, handler, md, new ParseContext())
+        } catch {
+          case _: IOException | _: TikaException | _: SAXException =>
+        }
 
-    // Get detected MIME type for parameters
-    val detectedMime =
-      Option(md.get("Content-Type")).getOrElse("application/octet-stream")
-    val params = Map("detectedMime" -> detectedMime)
-
-    (metadataMap, Some("TikaAutoDetectParser"), Some(params))
+        val metadataMap = md.names().map(n => n -> md.get(n)).toMap
+        metadataMap
+      }
+    )
   }
 
   override def doTransform(

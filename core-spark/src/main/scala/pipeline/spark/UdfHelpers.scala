@@ -57,6 +57,18 @@ object UdfHelpers {
   )
 
   // -----------------------------------------------------------------------
+  // New helper that separates *finding* an implementation from executing the
+  // potentially-failing action.  This enables us to record the selected
+  // implementation in the lineage even if the action itself throws.
+  // -----------------------------------------------------------------------
+
+  case class FoundImplementation[+R](
+      implementationName: Option[String],
+      params:          Option[Map[String, String]],
+      action: () => R
+  )
+
+  // -----------------------------------------------------------------------
   // Helper to append lineage entry to lineage array
   // -----------------------------------------------------------------------
   
@@ -90,23 +102,12 @@ object UdfHelpers {
 
   def wrapUdf[A: TypeTag, R: TypeTag](
       name: String,
-      timeout: ScalaDuration = ScalaDuration.Inf,
-      implementation: Option[String] = None,
-      params: Option[Map[String, String]] = None
-  )(f: A => (R, Option[String], Option[Map[String, String]])): UserDefinedFunction = {
-    val safe = (a: A) => executeTimed(timeout, name, implementation, params) { f(a) }
+      timeout: ScalaDuration = ScalaDuration.Inf
+  )(f: A => FoundImplementation[R]): UserDefinedFunction = {
+    val safe = (a: A) => executeTimed(timeout, name) { f(a) }
     F.udf(safe)
   }
 
-  // For compatibility with existing code that doesn't track implementation
-  def wrapUdf[A: TypeTag, R: TypeTag](
-      name: String,
-      timeout: ScalaDuration,
-      f: A => R
-  ): UserDefinedFunction = {
-    val wrappedF = (a: A) => (f(a), None: Option[String], None: Option[Map[String, String]])
-    wrapUdf(name, timeout, None, None)(wrappedF)
-  }
 
   // -----------------------------------------------------------------------
   // Two‑arg variant
@@ -114,64 +115,62 @@ object UdfHelpers {
 
   def wrapUdf2[A: TypeTag, B: TypeTag, R: TypeTag](
       name: String,
-      timeout: ScalaDuration = ScalaDuration.Inf,
-      implementation: Option[String] = None,
-      params: Option[Map[String, String]] = None
-  )(f: (A, B) => (R, Option[String], Option[Map[String, String]])): UserDefinedFunction = {
-    val safe = (a: A, b: B) => executeTimed(timeout, name, implementation, params) { f(a, b) }
+      timeout: ScalaDuration = ScalaDuration.Inf
+  )(f: (A, B) => FoundImplementation[R]): UserDefinedFunction = {
+    val safe = (a: A, b: B) => executeTimed(timeout, name) { f(a, b) }
     F.udf(safe)
-  }
-  
-  // For compatibility with existing code that doesn't track implementation
-  def wrapUdf2[A: TypeTag, B: TypeTag, R: TypeTag](
-      name: String,
-      timeout: ScalaDuration,
-      f: (A, B) => R
-  ): UserDefinedFunction = {
-    val wrappedF = (a: A, b: B) => (f(a, b), None: Option[String], None: Option[Map[String, String]])
-    wrapUdf2(name, timeout, None, None)(wrappedF)
   }
 
   /* ---------------- private helpers ------------------------------------ */
 
   private def executeTimed[R](
       timeout: ScalaDuration,
-      name: String,
-      defaultImplementation: Option[String] = None,
-      defaultParams: Option[Map[String, String]] = None
-  )(thunk: => (R, Option[String], Option[Map[String, String]])): StepResult[R] = {
+      name: String
+  )(thunk: => FoundImplementation[R]): StepResult[R] = {
     val start = Instant.now().toEpochMilli
-    def fail(msg: String) = StepResult[R](
-      None,
-      Lineage(
-        start,
-        Instant.now().toEpochMilli,
-        Instant.now().toEpochMilli - start,
-        Some(msg),
-        name,
-        defaultImplementation,
-        defaultParams,
-        None, // sourceId to be added later
-        None  // chunk
+
+    // State we can update in case the action fails after finding an
+    // implementation.
+    var implName: Option[String] = None
+    var implParams: Option[Map[String, String]] = None
+
+    def fail(msg: String): StepResult[R] = {
+      val endFail = Instant.now().toEpochMilli
+      StepResult[R](
+        None,
+        Lineage(
+          start,
+          endFail,
+          endFail - start,
+          Some(msg),
+          name,
+          implName,
+          implParams,
+          None,
+          None
+        )
       )
-    )
+    }
 
     try {
-      val (result, implName, params): (R, Option[String], Option[Map[String, String]]) =
-        if (timeout != ScalaDuration.Inf) {
-          // -------------------------------------------------------------
-          // Hard timeout – run `thunk` on its own thread and cancel the
-          // Future if we exceed the limit. This sends Thread.interrupt to
-          // the running code which is honored by most libraries and avoids
-          // the soft-cancellation delay we observed with the ZIO fiber
-          // approach.
-          // -------------------------------------------------------------
+      // First, perform the *finding* work.  This should be fast and will give
+      // us the implementation metadata even if the subsequent action blows
+      // up.
+      val found: FoundImplementation[R] = thunk
+      implName = found.implementationName
+      implParams = found.params
 
+      // Helper to actually run the potentially long-running action with an
+      // optional hard timeout.
+      def runAction(): R = found.action()
+
+      val result: R =
+        if (timeout != ScalaDuration.Inf) {
           import java.util.concurrent.{Executors, TimeUnit, TimeoutException => JTimeout}
 
           val exec = Executors.newSingleThreadExecutor()
           try {
-            val fut = exec.submit(() => thunk)
+            val fut = exec.submit(() => runAction())
             try fut.get(timeout.toMillis, TimeUnit.MILLISECONDS)
             catch {
               case _: JTimeout =>
@@ -181,15 +180,12 @@ object UdfHelpers {
           } finally {
             exec.shutdownNow()
           }
-        } else thunk
+        } else runAction()
 
       val end = Instant.now().toEpochMilli
-      val finalImplName = implName.orElse(defaultImplementation)
-      val finalParams = params.orElse(defaultParams)
-
       StepResult(
         Some(result),
-        Lineage(start, end, end - start, None, name, finalImplName, finalParams, None, None)
+        Lineage(start, end, end - start, None, name, implName, implParams, None, None)
       )
     } catch {
       case t: Throwable => fail(t.getMessage)

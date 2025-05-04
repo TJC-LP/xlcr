@@ -29,34 +29,36 @@ case class ConvertStep(
         val inMime =
           MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)
 
-        // Skip conversion if input and output MIME types match
+        // Identity case: no conversion required
         if (inMime.matches(to)) {
-          // No conversion needed, return original bytes with identity bridge info
-          (bytes, Some("IdentityBridge"), Some(Map("conversion" -> "identity")))
+          UdfHelpers.FoundImplementation[
+            Array[Byte]
+          ](
+            implementationName = Some("IdentityBridge"),
+            params = Some(Map("conversion" -> "identity")),
+            action = () => bytes
+          )
         } else {
-          // Create FileContent with the specific MIME type
           val fc = FileContent[inMime.type](bytes, inMime)
 
           BridgeRegistry
             .findBridge(inMime, to)
             .map { b =>
-              // We know the bridge works with our mime types even though we can't enforce it at compile time
-              // due to type erasure, so we can safely cast here
               val bridge = b.asInstanceOf[Bridge[_, inMime.type, to.type]]
 
-              // Return both the converted data and the bridge implementation name
               val bridgeImpl = bridge.getClass.getSimpleName
 
-              // Create parameters map with conversion info
-              val paramsBuilder = scala.collection.mutable.Map[String, String](
+              val params = Map(
                 "fromMime" -> inMime.mimeType,
                 "toMime" -> to.mimeType
               )
 
-              (
-                bridge.convert(fc).data,
-                Some(bridgeImpl),
-                Some(paramsBuilder.toMap)
+              UdfHelpers.FoundImplementation[
+                Array[Byte]
+              ](
+                implementationName = Some(bridgeImpl),
+                params = Some(params),
+                action = () => bridge.convert(fc).data
               )
             }
             .getOrElse {

@@ -34,28 +34,23 @@ case class ExtractStep(
       BridgeRegistry
         .findBridge(inMime, to)
         .map { b =>
-          // We know the bridge works with our mime types even though we can't enforce it at compile time
-          // due to type erasure, so we can safely cast here
           val bridge = b.asInstanceOf[Bridge[_, inMime.type, to.type]]
-
-          val out = bridge.convert(fc)
-          val extractedText =
-            new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
-
-          // Get the bridge implementation info
           val bridgeImpl = bridge.getClass.getSimpleName
 
-          // Create parameters map with extraction info
-          val paramsBuilder = scala.collection.mutable.Map[String, String](
+          val params = Map(
             "fromMime" -> inMime.mimeType,
             "toMime" -> to.mimeType,
             "outputColumn" -> outCol
           )
 
-          // Aspose licensing is handled automatically via the component initialization
-          // No need to check or add license status metadata
-
-          (extractedText, Some(bridgeImpl), Some(paramsBuilder.toMap))
+          UdfHelpers.FoundImplementation[String](
+            implementationName = Some(bridgeImpl),
+            params = Some(params),
+            action = () => {
+              val out = bridge.convert(fc)
+              new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
+            }
+          )
         }
         .getOrElse {
           throw UnsupportedConversionException(
