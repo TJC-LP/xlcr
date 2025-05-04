@@ -2,6 +2,9 @@ package com.tjclp
 
 import com.tjclp.xlcr.splitters.{DocumentSplitter, SplitStrategy}
 
+import java.io.IOException
+import java.nio.file.Path
+
 /** This package object holds custom exceptions common to the XLCR application.
   */
 package object xlcr {

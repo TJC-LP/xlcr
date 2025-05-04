@@ -3,8 +3,7 @@ package bridges
 
 // No need to import SimpleBridge since we're in the same package
 // (avoids warning about hidden imports)
-import types.{MimeType, Priority}
-import utils.Prioritized
+import types.{MimeType, Prioritized, Priority}
 import utils.aspose.AsposeLicense
 
 /** A convenience trait that combines SimpleBridge with HighPriorityBridge for Aspose bridges.

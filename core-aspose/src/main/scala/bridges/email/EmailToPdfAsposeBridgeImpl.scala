@@ -6,11 +6,11 @@ import models.FileContent
 import parsers.Parser
 import renderers.Renderer
 import types.MimeType
-import types.MimeType.{ApplicationPdf, MessageRfc822}
+import types.MimeType.ApplicationPdf
 import utils.aspose.AsposeLicense
+
 import com.aspose.email.{MailMessage, MhtSaveOptions}
 import com.aspose.words.{Document, LoadFormat, LoadOptions, SaveFormat}
-
 import org.slf4j.LoggerFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
@@ -87,7 +87,7 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
     /** Load the email message from bytes.
       * This method can be overridden by specific implementations if needed.
       */
-    protected def loadEmail(data: Array[Byte]): MailMessage = {
+    private def loadEmail(data: Array[Byte]): MailMessage = {
       MailMessage.load(new ByteArrayInputStream(data))
     }
 

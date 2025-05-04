@@ -4,15 +4,7 @@ package bridges
 import models.{FileContent, Model}
 import parsers.Parser
 import renderers.Renderer
-import types.{MimeType, Priority}
-import utils.Prioritized
-
-import com.tjclp.xlcr.{
-  BridgeError,
-  ParserError,
-  RendererError,
-  UnsupportedConversionError
-}
+import types.{MimeType, Prioritized, Priority}
 
 import scala.reflect.ClassTag
 
@@ -38,13 +30,16 @@ trait BaseBridge[M <: Model, I <: MimeType, O <: MimeType] extends Prioritized {
   override def priority: Priority = Priority.DEFAULT
 
   /** Convert input: FileContent[I] -> M -> FileContent[O]
-    * 
+    *
     * @param input The input file content to convert
     * @param config Optional bridge-specific configuration
     * @return The converted file content
     */
   @throws[BridgeError]
-  def convert(input: FileContent[I], config: Option[BridgeConfig] = None): FileContent[O] = {
+  def convert(
+      input: FileContent[I],
+      config: Option[BridgeConfig] = None
+  ): FileContent[O] = {
     val model = parseInput(input)
     render(model)
   }
@@ -66,7 +61,7 @@ trait BaseBridge[M <: Model, I <: MimeType, O <: MimeType] extends Prioritized {
   def render(model: M): FileContent[O] = {
     outputRenderer.render(model)
   }
-  
+
   // Protected accessors for inputParser and outputRenderer - unneeded with private[bridges]
   // private def protected_inputParser: Parser[I, M] = inputParser
   // private def protected_outputRenderer: Renderer[M, O] = outputRenderer
@@ -103,7 +98,7 @@ trait BaseBridge[M <: Model, I <: MimeType, O <: MimeType] extends Prioritized {
 
   /** Convert with diff: merges the source FileContent[I] into the existingFileContent[O],
     * requiring that M is Mergeable. By default, throws if not implemented.
-    * 
+    *
     * @param source The source file content to merge
     * @param existing The existing file content to merge into
     * @param config Optional bridge-specific configuration
@@ -126,6 +121,6 @@ trait BaseBridge[M <: Model, I <: MimeType, O <: MimeType] extends Prioritized {
 
   /** @return Renderer for the output mime type
     */
-  // Package-private visibility allows access within the bridges package  
+  // Package-private visibility allows access within the bridges package
   private[bridges] def outputRenderer: Renderer[M, O]
 }

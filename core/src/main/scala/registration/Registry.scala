@@ -1,7 +1,7 @@
 package com.tjclp.xlcr
-package utils
+package registration
 
-import types.Priority
+import types.{Prioritized, Priority}
 
 import org.slf4j.LoggerFactory
 
@@ -39,36 +39,46 @@ trait Registry[K, V <: Prioritized, P, I] {
   /** Name for this registry, used for logging. */
   protected def registryName: String
 
-  private val logger = LoggerFactory.getLogger(s"com.tjclp.xlcr.utils.${registryName}")
+  private val logger =
+    LoggerFactory.getLogger(s"com.tjclp.xlcr.utils.${registryName}")
 
   /** The underlying thread-safe priority registry instance. */
   protected lazy val registry: PriorityRegistry[K, V] = {
     logger.info(s"Initializing $registryName using ServiceLoader...")
     val reg = new PriorityRegistry[K, V](keySubtypeCheck)
-    
+
     // Load and register all components from ServiceLoader providers
     try {
       val loader = ServiceLoader.load(providerClass)
       loader.iterator().asScala.foreach { provider =>
-        logger.info(s"Loading components from provider: ${provider.getClass.getName}")
+        logger.info(
+          s"Loading components from provider: ${provider.getClass.getName}"
+        )
         try {
           extractProviderInfo(provider).foreach { info =>
             val key = getKey(info)
             val value = getValue(info)
-            logger.debug(s"Registering ${value.getClass.getSimpleName} for key $key with priority ${value.priority}")
+            logger.debug(
+              s"Registering ${value.getClass.getSimpleName} for key $key with priority ${value.priority}"
+            )
             reg.register(key, value)
           }
         } catch {
           case e: Throwable =>
-            logger.error(s"Failed to load components from provider ${provider.getClass.getName}: ${e.getMessage}", e)
+            logger.error(
+              s"Failed to load components from provider ${provider.getClass.getName}: ${e.getMessage}",
+              e
+            )
         }
       }
     } catch {
       case e: Throwable =>
         logger.error(s"Failed to initialize registry: ${e.getMessage}", e)
     }
-    
-    logger.info(s"$registryName initialization complete. Registered ${reg.size} keys.")
+
+    logger.info(
+      s"$registryName initialization complete. Registered ${reg.size} keys."
+    )
     reg
   }
 
@@ -80,7 +90,9 @@ trait Registry[K, V <: Prioritized, P, I] {
 
   /** Register a component with the given key. */
   def register[VT <: V](key: K, value: VT): Unit = {
-    logger.info(s"Registering ${value.getClass.getSimpleName} for key $key with priority ${value.priority}")
+    logger.info(
+      s"Registering ${value.getClass.getSimpleName} for key $key with priority ${value.priority}"
+    )
     registry.register(key, value)
   }
 
@@ -100,8 +112,12 @@ trait Registry[K, V <: Prioritized, P, I] {
   /** Diagnostic method to list all registered entries with their priorities. */
   def listEntries(): Seq[(K, String, Priority)] = {
     registry.entries
-      .map { case (key, value) => (key, value.getClass.getSimpleName, value.priority) }
+      .map { case (key, value) =>
+        (key, value.getClass.getSimpleName, value.priority)
+      }
       .toSeq
-      .sortBy(t => (t._1.toString, -t._3.value)) // Sort by key, then priority desc
+      .sortBy(t =>
+        (t._1.toString, -t._3.value)
+      ) // Sort by key, then priority desc
   }
 }

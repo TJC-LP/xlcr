@@ -4,8 +4,7 @@ package bridges
 // No need to import Bridge since we're in the same package
 // (avoids warning about hidden imports)
 import models.Model
-import types.{MimeType, Priority}
-import utils.Prioritized
+import types.{MimeType, Prioritized, Priority}
 import utils.aspose.AsposeLicense
 
 /** Trait for Aspose bridges to directly set priority to HIGH.

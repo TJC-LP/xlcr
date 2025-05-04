@@ -1,8 +1,8 @@
 package com.tjclp.xlcr
-package registration
+package splitters
 
 import models.FileContent
-import splitters.{DocChunk, DocumentSplitter, SplitConfig}
+import registration.PriorityRegistry
 import types.{MimeType, Priority}
 
 import org.scalatest.BeforeAndAfterEach

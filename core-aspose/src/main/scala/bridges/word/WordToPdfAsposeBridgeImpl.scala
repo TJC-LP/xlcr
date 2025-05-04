@@ -7,7 +7,6 @@ import parsers.Parser
 import renderers.Renderer
 import types.MimeType.ApplicationPdf
 import types.{MimeType, Priority}
-import utils.Prioritized
 import utils.aspose.AsposeLicense
 
 import com.aspose.words.{Document, SaveFormat}
@@ -19,8 +18,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
   * This trait contains all the business logic for the bridge.
   */
 trait WordToPdfAsposeBridgeImpl[I <: MimeType]
-    extends HighPrioritySimpleBridge[I, ApplicationPdf.type]
-    with Prioritized {
+    extends HighPrioritySimpleBridge[I, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /** Set priority to HIGH for all Aspose bridges
@@ -83,7 +81,7 @@ trait WordToPdfAsposeBridgeImpl[I <: MimeType]
   /** Convert a Word document to PDF.
     * Common implementation that works for both Scala 2 and Scala 3.
     */
-  protected def convertDocToPdf(
+  private def convertDocToPdf(
       inputStream: ByteArrayInputStream
   ): ByteArrayOutputStream = {
     val asposeDoc = new Document(inputStream)

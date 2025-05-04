@@ -5,10 +5,6 @@ import compression.AnchorExtractor.Dimension
 
 import scala.collection.mutable
 
-
-
-
-
 /** Represents a spreadsheet grid for anchor extraction.
   */
 case class SheetGrid(
@@ -121,7 +117,6 @@ case class SheetGrid(
             coords -> parseFormulaReferences(formula)
           }
       }
-      .toMap
   }
 
   /** Parse an Excel formula to extract all cell references

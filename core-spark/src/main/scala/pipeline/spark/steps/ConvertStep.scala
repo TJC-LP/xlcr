@@ -43,7 +43,7 @@ case class ConvertStep(
               // We know the bridge works with our mime types even though we can't enforce it at compile time
               // due to type erasure, so we can safely cast here
               val bridge = b.asInstanceOf[Bridge[_, inMime.type, to.type]]
-              
+
               // Return both the converted data and the bridge implementation name
               val bridgeImpl = bridge.getClass.getSimpleName
 
@@ -53,7 +53,11 @@ case class ConvertStep(
                 "toMime" -> to.mimeType
               )
 
-              (bridge.convert(fc).data, Some(bridgeImpl), Some(paramsBuilder.toMap))
+              (
+                bridge.convert(fc).data,
+                Some(bridgeImpl),
+                Some(paramsBuilder.toMap)
+              )
             }
             .getOrElse {
               throw UnsupportedConversionException(
@@ -97,21 +101,4 @@ case class ConvertStep(
       )
       .drop(Result, LineageEntry)
   }
-}
-
-// Convenience singletons for common conversions
-object ToPdf extends ConvertStep(MimeType.ApplicationPdf) {
-  SparkPipelineRegistry.register(this)
-}
-
-object ToPng extends ConvertStep(MimeType.ImagePng) {
-  SparkPipelineRegistry.register(this)
-}
-
-object ToText extends ConvertStep(MimeType.TextPlain) {
-  SparkPipelineRegistry.register(this)
-}
-
-object ToXml extends ConvertStep(MimeType.ApplicationXml) {
-  SparkPipelineRegistry.register(this)
 }

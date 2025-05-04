@@ -1,9 +1,10 @@
 package com.tjclp.xlcr
-package utils
+package registration
 
 import bridges.BridgeRegistry
-import splitters.{DocumentSplitter, SplitterRegistry}
-import types.{MimeType, Priority}
+import splitters.SplitterRegistry
+import types.MimeType
+
 import org.slf4j.LoggerFactory
 
 /** Utility for diagnosing registration and selection issues in the bridge and splitter registries.

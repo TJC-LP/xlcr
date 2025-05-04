@@ -37,7 +37,7 @@ case class ExtractStep(
           // We know the bridge works with our mime types even though we can't enforce it at compile time
           // due to type erasure, so we can safely cast here
           val bridge = b.asInstanceOf[Bridge[_, inMime.type, to.type]]
-          
+
           val out = bridge.convert(fc)
           val extractedText =
             new String(out.data, java.nio.charset.StandardCharsets.UTF_8)
@@ -84,14 +84,4 @@ case class ExtractStep(
       .withColumn(outCol, F.col(ResultData))
       .drop(Result, LineageEntry)
   }
-}
-
-// convenience singletons ---------------------------------------------------
-
-object ExtractText extends ExtractStep(MimeType.TextPlain, "text") {
-  SparkPipelineRegistry.register(this)
-}
-
-object ExtractXml extends ExtractStep(MimeType.ApplicationXml, "xml") {
-  SparkPipelineRegistry.register(this)
 }
