@@ -2,9 +2,9 @@ package com.tjclp.xlcr
 package bridges
 
 import models.Model
+import registration.Registry
 import spi.{BridgeInfo, BridgeProvider}
 import types.{MimeType, Priority}
-import utils.Registry
 
 import scala.reflect.ClassTag
 

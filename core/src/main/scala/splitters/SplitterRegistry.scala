@@ -1,9 +1,9 @@
 package com.tjclp.xlcr
 package splitters
 
+import registration.Registry
 import spi.{SplitterInfo, SplitterProvider}
 import types.{MimeType, Priority}
-import utils.{Prioritized, Registry}
 
 import scala.reflect.ClassTag
 

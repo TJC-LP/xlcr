@@ -2,8 +2,7 @@ package com.tjclp.xlcr
 package splitters
 
 import models.FileContent
-import types.{MimeType, Priority}
-import utils.Prioritized
+import types.{MimeType, Prioritized, Priority}
 
 import org.slf4j.LoggerFactory
 

@@ -1,9 +1,9 @@
 package com.tjclp.xlcr
-package splitters
+package registration
 
 import models.FileContent
+import splitters.{DocChunk, DocumentSplitter, SplitConfig}
 import types.{MimeType, Priority}
-import utils.PriorityRegistry
 
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
@@ -53,7 +53,7 @@ class PrioritizedDocumentSplitterSpec
   }
 
   class AsposePriorityTestSplitter extends DocumentSplitter[testMimeType.type] {
-    override def priority: Priority = Priority.ASPOSE
+    override def priority: Priority = Priority.HIGH
 
     override def split(
         content: FileContent[testMimeType.type],
@@ -205,6 +205,6 @@ class PrioritizedDocumentSplitterSpec
     priorities should be(priorities.sorted.reverse)
 
     // The first one should be ASPOSE priority
-    allSplitters.head.priority should be(Priority.ASPOSE)
+    allSplitters.head.priority should be(Priority.HIGH)
   }
 }
