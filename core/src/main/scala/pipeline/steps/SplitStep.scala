@@ -34,7 +34,6 @@ final case class SplitStep(
     DocumentSplitter
       .splitBytesOnly(input, cfg) // Seq[FileContent[_ <: MimeType]]
       .toList
-      .map(_.asInstanceOf[FileContent[MimeType]])
   }
 
   /** Default strategy heuristics (copied from the existing Pipeline util). */

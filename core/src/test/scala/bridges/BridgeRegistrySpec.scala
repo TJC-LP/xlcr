@@ -21,7 +21,7 @@ class BridgeRegistrySpec
     super.beforeAll()
     // Store current registrations
     originalRegistry = BridgeRegistry
-      .listRegisteredBridges()
+      .listBridges()
       .map { case (inMime, outMime, _, _) =>
         (inMime, outMime) -> BridgeRegistry.findBridge(inMime, outMime).get
       }

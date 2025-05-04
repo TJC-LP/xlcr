@@ -109,7 +109,7 @@ object Pipeline {
       inputMime: MimeType,
       outputMime: MimeType
   ): Boolean = {
-    BridgeRegistry.supportsMergingLegacy(inputMime, outputMime)
+    BridgeRegistry.supportsMerging(inputMime, outputMime)
   }
 
   /* =====================================================================
@@ -454,17 +454,17 @@ object Pipeline {
       config: Option[bridges.BridgeConfig] = None
   ): Try[FileContent[MimeType]] = {
     Try {
-      BridgeRegistry.findBridgeForMatching(input.mimeType, outMime)(
-        bridge => {
+      BridgeRegistry.findBridge(input.mimeType, outMime) match {
+        case Some(bridge) => 
           bridge
             .convert(input, config)
             .asInstanceOf[FileContent[MimeType]]
-        },
-        throw new UnsupportedConversionException(
-          input.mimeType.mimeType,
-          outMime.mimeType
-        )
-      )
+        case None =>
+          throw new UnsupportedConversionException(
+            input.mimeType.mimeType,
+            outMime.mimeType
+          )
+      }
     }
   }
 
@@ -489,8 +489,8 @@ object Pipeline {
 
     val existingContent = FileContent.fromPath[MimeType](existingPath)
 
-    BridgeRegistry.findMergeableBridgeForMatching(incoming.mimeType, outputMime)(
-      bridge => {
+    BridgeRegistry.findMergeableBridge(incoming.mimeType, outputMime) match {
+      case Some(bridge) => 
         bridge
           .convertWithDiff(
             incoming,
@@ -498,11 +498,11 @@ object Pipeline {
             config
           )
           .asInstanceOf[FileContent[MimeType]]
-      },
-      throw new UnsupportedConversionException(
-        incoming.mimeType.mimeType,
-        outputMime.mimeType
-      )
-    )
+      case None =>
+        throw new UnsupportedConversionException(
+          incoming.mimeType.mimeType,
+          outputMime.mimeType
+        )
+    }
   }
 }

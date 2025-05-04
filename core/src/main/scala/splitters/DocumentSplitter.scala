@@ -47,28 +47,32 @@ object DocumentSplitter {
     * If multiple splitters are registered for the MIME type,
     * the one with the highest priority will be returned.
     * This method also considers subtypes.
-    * 
+    *
     * @tparam T The mime type to find a splitter for
     * @param mime The mime type instance
     * @return An optional splitter that can handle the given mime type
     */
   def forMime[T <: MimeType](mime: T): Option[DocumentSplitter[T]] = {
-    SplitterRegistry.findSplitter[T](mime) // Delegate to the registry's type-safe method
+    SplitterRegistry.findSplitter[T](
+      mime
+    ) // Delegate to the registry's type-safe method
   }
 
   /** Find all splitters registered for a MIME type, sorted by priority (highest first).
     * This method also considers subtypes.
-    * 
+    *
     * @tparam T The mime type to find splitters for
     * @param mime The mime type instance
     * @return A list of splitters that can handle the given mime type
     */
   def allForMime[T <: MimeType](mime: T): List[DocumentSplitter[T]] = {
-    SplitterRegistry.findAllSplitters[T](mime) // Delegate to the registry's type-safe method
+    SplitterRegistry.findAllSplitters[T](
+      mime
+    ) // Delegate to the registry's type-safe method
   }
 
   /** Primary entry‑point returning enriched chunks with type safety.
-    * 
+    *
     * @tparam T The mime type of the content to split
     * @param content The file content to split
     * @param cfg The split configuration
@@ -89,7 +93,7 @@ object DocumentSplitter {
       }
 
     // Use type-safe method
-    val splitterOpt = SplitterRegistry.findSplitter[T](content.mimeType.asInstanceOf[T])
+    val splitterOpt = SplitterRegistry.findSplitter(content.mimeType)
     logger.debug(
       s"Using splitter ${splitterOpt.map(_.getClass.getSimpleName).getOrElse("None")} for MIME type ${content.mimeType} with strategy ${configToUse.strategy}"
     )
