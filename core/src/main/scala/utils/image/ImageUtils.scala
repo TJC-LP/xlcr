@@ -43,7 +43,7 @@ object ImageUtils {
     // Calculate scale factor to fit within bounds while maintaining aspect ratio
     val widthScale  = maxWidth.toDouble / originalWidth
     val heightScale = maxHeight.toDouble / originalHeight
-    val scale       = Math.min(widthScale, heightScale)
+    val scale       = Math.min(widthScale, heightScale).min(1)
 
     val newWidth  = Math.max(1, Math.round(originalWidth * scale).toInt)
     val newHeight = Math.max(1, Math.round(originalHeight * scale).toInt)
@@ -56,10 +56,10 @@ object ImageUtils {
 
     (newWidth, newHeight)
   }
-  
+
   /**
-   * Scale an image to fit within maximum dimensions while preserving aspect ratio.
-   * Uses bilinear interpolation for better quality results.
+   * Scale an image to fit within maximum dimensions while preserving aspect ratio. Uses bilinear
+   * interpolation for better quality results.
    *
    * @param image
    *   The source image to resize
@@ -77,7 +77,7 @@ object ImageUtils {
   ): BufferedImage = {
     val originalWidth  = image.getWidth
     val originalHeight = image.getHeight
-    
+
     // Calculate optimal dimensions
     val (newWidth, newHeight) = calculateOptimalDimensions(
       originalWidth,
@@ -85,39 +85,39 @@ object ImageUtils {
       maxWidth,
       maxHeight
     )
-    
+
     // If no resizing needed, return the original
     if (newWidth == originalWidth && newHeight == originalHeight) {
       return image
     }
-    
+
     // Create a new BufferedImage with the target dimensions
     val resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB)
-    
+
     // Get graphics context and set rendering hints for better quality
     val g = resizedImage.createGraphics()
-    
+
     // Set bilinear interpolation for smoother scaling
     g.setRenderingHint(
       RenderingHints.KEY_INTERPOLATION,
       RenderingHints.VALUE_INTERPOLATION_BILINEAR
     )
-    
+
     // Additional quality hints
     g.setRenderingHint(
       RenderingHints.KEY_RENDERING,
       RenderingHints.VALUE_RENDER_QUALITY
     )
-    
+
     g.setRenderingHint(
       RenderingHints.KEY_ANTIALIASING,
       RenderingHints.VALUE_ANTIALIAS_ON
     )
-    
+
     // Draw the scaled image
     g.drawImage(image, 0, 0, newWidth, newHeight, null)
     g.dispose()
-    
+
     resizedImage
   }
 }

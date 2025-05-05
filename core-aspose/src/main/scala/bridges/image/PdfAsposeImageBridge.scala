@@ -68,11 +68,16 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
       // Get the page to render (Aspose uses 1-based indexing)
       val pageNumber = cfg.pageIdx + 1
       val page       = document.getPages.get_Item(pageNumber)
+      val pageInfo   = page.getPageInfo
+
+      // Scale up by DPI
+      val pageWidth  = pageInfo.getWidth * cfg.initialDpi / 72
+      val pageHeight = pageInfo.getHeight * cfg.initialDpi / 72
 
       // Calculate dimensions that respect max width/height while preserving aspect ratio
       val (width, height) = ImageUtils.calculateOptimalDimensions(
-        page.getPageInfo.getWidth.toInt,
-        page.getPageInfo.getHeight.toInt,
+        pageWidth.toInt,
+        pageHeight.toInt,
         cfg.maxWidthPx,
         cfg.maxHeightPx
       )
