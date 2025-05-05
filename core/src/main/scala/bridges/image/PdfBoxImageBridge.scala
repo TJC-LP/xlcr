@@ -5,6 +5,7 @@ import models.FileContent
 import renderers.RendererConfig
 import types.MimeType
 import types.MimeType.{ApplicationPdf, ImageJpeg}
+import utils.image.ImageUtils
 
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.{ImageType, PDFRenderer}
@@ -87,33 +88,9 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
       maxWidth: Int,
       maxHeight: Int
   ): BufferedImage = {
-    val originalWidth = image.getWidth
-    val originalHeight = image.getHeight
-
-    if (originalWidth <= maxWidth && originalHeight <= maxHeight) {
-      return image // No scaling needed
-    }
-
-    // Calculate scale factor to fit within bounds while maintaining aspect ratio
-    val widthScale = maxWidth.toDouble / originalWidth
-    val heightScale = maxHeight.toDouble / originalHeight
-    val scale = Math.min(widthScale, heightScale)
-
-    val newWidth = (originalWidth * scale).toInt
-    val newHeight = (originalHeight * scale).toInt
-
-    logger.debug(
-      s"Scaling image from ${originalWidth}x$originalHeight to ${newWidth}x$newHeight"
-    )
-
-    // Create scaled instance
-    val scaledImage =
-      new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB)
-    val g = scaledImage.createGraphics()
-    g.drawImage(image, 0, 0, newWidth, newHeight, null)
-    g.dispose()
-
-    scaledImage
+    // Use the ImageUtils resizeImage method which applies bilinear interpolation
+    // for better quality and handles all the dimension calculations
+    ImageUtils.resizeImage(image, maxWidth, maxHeight)
   }
 
   /** Render a BufferedImage as JPEG with specified quality.
