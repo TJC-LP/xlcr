@@ -125,6 +125,11 @@ object Pipeline {
     * @param outputType Optional MIME type override for the produced chunks.
     * @param recursive  Whether to recursively extract nested archives.
     * @param maxRecursionDepth Maximum recursion depth for nested archives.
+    * @param maxImageWidth Maximum width in pixels for image output
+    * @param maxImageHeight Maximum height in pixels for image output
+    * @param maxImageSizeBytes Maximum size in bytes for image output
+    * @param imageDpi DPI for image rendering
+    * @param jpegQuality JPEG quality (0.0-1.0, default: 0.85)
     */
   def split(
       inputPath: String,
@@ -133,7 +138,6 @@ object Pipeline {
       outputType: Option[MimeType] = None,
       recursive: Boolean = false,
       maxRecursionDepth: Int = 5,
-      outputFormat: Option[String] = None,
       maxImageWidth: Int = 2000,
       maxImageHeight: Int = 2000,
       maxImageSizeBytes: Long = 1024 * 1024 * 5,
@@ -145,7 +149,7 @@ object Pipeline {
       s"Starting split process. Input file: $inputPath, Output dir: $outputDir, " +
         s"Strategy: ${strategy.map(_.toString).getOrElse("default")}, OverrideType: ${outputType.map(_.mimeType).getOrElse("auto")}, " +
         s"Recursive: $recursive, MaxDepth: $maxRecursionDepth}, " +
-        s"OutputFormat: ${outputFormat.getOrElse("default")}"
+        s"MaxImageSize: $maxImageSizeBytes bytes, DPI: $imageDpi"
     )
 
     val inPath = Paths.get(inputPath)
@@ -177,12 +181,12 @@ object Pipeline {
       strategy = Some(effStrategy),
       recursive = recursive,
       maxRecursionDepth = maxRecursionDepth,
-      outputFormat = outputFormat,
       maxImageWidth = maxImageWidth,
       maxImageHeight = maxImageHeight,
       maxImageSizeBytes = maxImageSizeBytes,
       imageDpi = imageDpi,
-      jpegQuality = jpegQuality
+      jpegQuality = jpegQuality,
+      autoTuneImages = true
     )
 
     // Start with current depth = 0
@@ -265,8 +269,53 @@ object Pipeline {
 
       val outPath = outputDir.resolve(fileName)
 
-      // First write the current chunk
-      utils.FileUtils.writeBytes(outPath, chunk.content.data) match {
+      // Check if we need to convert the content based on outputType
+      val wantedMime = outputType.getOrElse(chunk.content.mimeType)
+      
+      // If the chunk MIME type doesn't match what we want, try to convert it
+      val finalContent = if (wantedMime != chunk.content.mimeType) {
+        // Look for a bridge that can convert from the chunk's MIME type to the wanted MIME type
+        logger.info(s"Converting chunk from ${chunk.content.mimeType.mimeType} to ${wantedMime.mimeType}")
+        
+        // Create appropriate bridge config for image rendering if needed
+        val bridgeConfig = (chunk.content.mimeType, wantedMime) match {
+          case (MimeType.ApplicationPdf, MimeType.ImagePng | MimeType.ImageJpeg) =>
+            // For PDF to image conversion, use ImageRenderConfig
+            Some(bridges.image.ImageRenderConfig(
+              targetMime = wantedMime,
+              maxBytes = cfg.maxImageSizeBytes,
+              maxWidthPx = cfg.maxImageWidth,
+              maxHeightPx = cfg.maxImageHeight,
+              initialDpi = cfg.imageDpi,
+              initialQuality = cfg.jpegQuality,
+              autoTune = cfg.autoTuneImages
+            ))
+          case _ => None
+        }
+        
+        // Attempt conversion
+        // We need to be careful with the types here, so use a safer approach
+        try {
+          // Use doRegularConversion which handles the type casting internally
+          doRegularConversion(chunk.content, wantedMime, bridgeConfig) match {
+            case Success(convertedContent) => 
+              convertedContent
+            case Failure(ex) =>
+              logger.warn(s"Failed to convert chunk: ${ex.getMessage}. Using original format.")
+              chunk.content
+          }
+        } catch {
+          case ex: Exception =>
+            logger.warn(s"Unexpected error during conversion: ${ex.getMessage}. Using original format.")
+            chunk.content
+        }
+      } else {
+        // No conversion needed
+        chunk.content
+      }
+      
+      // First write the current chunk with possibly converted content
+      utils.FileUtils.writeBytes(outPath, finalContent.data) match {
         case Success(_) =>
           logger.info(s"Wrote chunk #${chunk.index} to $outPath")
           successCount += 1

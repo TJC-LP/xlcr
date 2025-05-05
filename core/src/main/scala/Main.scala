@@ -154,10 +154,30 @@ object Main {
             sys.exit(1)
           }
 
-          // Parse optional strategy and output type
+          // Parse optional strategy
           val splitStrategyOpt =
             config.splitStrategy.flatMap(SplitStrategy.fromString)
-          val outputMimeOpt = config.outputType.flatMap(parseMimeOrExtension)
+            
+          // Handle output type - combine --type and --format options
+          // The format option is kept for backward compatibility
+          val outputMimeOpt = {
+            if (config.outputType.isDefined) {
+              // If explicit type is set, use it
+              config.outputType.flatMap(parseMimeOrExtension)
+            } else if (config.outputFormat.isDefined) {
+              // Otherwise, if format is set, use it for backward compatibility
+              config.outputFormat.flatMap { fmt =>
+                fmt.toLowerCase match {
+                  case "png" => Some(types.MimeType.ImagePng)
+                  case "jpg" | "jpeg" => Some(types.MimeType.ImageJpeg)
+                  case "pdf" => Some(types.MimeType.ApplicationPdf)
+                  case _ => None
+                }
+              }
+            } else {
+              None
+            }
+          }
 
           Pipeline.split(
             inputPath = config.input,
@@ -166,7 +186,6 @@ object Main {
             outputType = outputMimeOpt,
             recursive = config.recursiveExtraction,
             maxRecursionDepth = config.maxRecursionDepth,
-            outputFormat = config.outputFormat,
             maxImageWidth = config.maxImageWidth,
             maxImageHeight = config.maxImageHeight,
             maxImageSizeBytes = config.maxImageSizeBytes,
@@ -202,12 +221,14 @@ object Main {
               (inputMime, outputMime) match {
                 // Check if this is a PDF -> Image conversion
                 case (MimeType.ApplicationPdf, MimeType.ImagePng | MimeType.ImageJpeg) =>
-                  Some(bridges.PdfToImageConfig(
-                    maxWidthPixels = config.maxImageWidth,
-                    maxHeightPixels = config.maxImageHeight,
-                    maxSizeBytes = config.maxImageSizeBytes,
-                    dpi = config.imageDpi,
-                    jpegQuality = config.jpegQuality
+                  Some(bridges.image.ImageRenderConfig(
+                    targetMime = outputMime,
+                    maxBytes = config.maxImageSizeBytes,
+                    maxWidthPx = config.maxImageWidth,
+                    maxHeightPx = config.maxImageHeight,
+                    initialDpi = config.imageDpi,
+                    initialQuality = config.jpegQuality,
+                    autoTune = true
                   ))
                 // Add other bridge configurations here as needed
                 case _ => None

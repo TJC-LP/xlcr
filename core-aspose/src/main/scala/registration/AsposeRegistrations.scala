@@ -3,6 +3,7 @@ package registration
 
 import bridges.email.{EmailEmlToPdfAsposeBridge, OutlookMsgToPdfAsposeBridge}
 import bridges.excel._
+import bridges.image.{PdfToJpegAsposeBridge, PdfToPngAsposeBridge}
 import bridges.powerpoint.{
   PowerPointPptToPdfAsposeBridge,
   PowerPointPptxToPdfAsposeBridge
@@ -81,6 +82,17 @@ class AsposeRegistrations extends BridgeProvider with SplitterProvider {
         MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
         MimeType.ApplicationPdf,
         PowerPointPptxToPdfAsposeBridge
+      ),
+      // PDF -> Images
+      BridgeInfo(
+        MimeType.ApplicationPdf,
+        MimeType.ImagePng,
+        PdfToPngAsposeBridge
+      ),
+      BridgeInfo(
+        MimeType.ApplicationPdf,
+        MimeType.ImageJpeg,
+        PdfToJpegAsposeBridge
       )
     )
 
