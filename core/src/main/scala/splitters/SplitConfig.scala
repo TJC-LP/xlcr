@@ -21,13 +21,19 @@ case class SplitConfig(
     autoTuneImages: Boolean = true, // Whether to auto-tune image quality/size
 
     // Excel and zip settings
-    maxFileCount: Long = 1000L
+    maxFileCount: Long = 1000L,
+    
+    // PowerPoint slide extraction settings
+    useCloneForSlides: Boolean = true, // Use clone method instead of remove for slide extraction
+    preserveSlideNotes: Boolean = true, // Preserve slide notes during extraction
 ) {
+
   /** Helper method to check if a strategy is set to a specific value */
   def hasStrategy(s: SplitStrategy): Boolean = strategy.contains(s)
 }
 
 object SplitConfig {
+
   /** Create a SplitConfig with a strategy automatically chosen from the input
     * MIME type. The other parameters default to the same values as the primary
     * case-class constructor so callers only specify what they need.
@@ -56,7 +62,9 @@ object SplitConfig {
     // Excel
     case MimeType.ApplicationVndMsExcel |
         MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet |
-        MimeType.ApplicationVndOasisOpendocumentSpreadsheet =>
+        MimeType.ApplicationVndOasisOpendocumentSpreadsheet |
+        MimeType.ApplicationVndMsExcelSheetMacroEnabled |
+        MimeType.ApplicationVndMsExcelSheetBinary =>
       SplitStrategy.Sheet
 
     // PowerPoint
