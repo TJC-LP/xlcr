@@ -40,27 +40,62 @@ trait BaseBridge[M <: Model, I <: MimeType, O <: MimeType] extends Prioritized {
       input: FileContent[I],
       config: Option[BridgeConfig] = None
   ): FileContent[O] = {
-    val model = parseInput(input)
-    render(model)
+    val model = parseInput(input, config)
+    render(model, config)
   }
 
   /** Parse input file content into an internal model M
     *
+    * @param input The input file content to parse
+    * @param config Optional bridge-specific configuration
     * @throws ParserError on parse failures
     */
   @throws[ParserError]
-  def parseInput(input: FileContent[I]): M = {
-    inputParser.parse(input)
+  def parseInput(
+      input: FileContent[I],
+      config: Option[BridgeConfig] = None
+  ): M = {
+    // Extract and convert parser config if possible
+    val parserConfig = getParserConfig(config)
+
+    // Pass the parser config to the parser
+    inputParser.parse(input, parserConfig)
   }
 
   /** Render a model M into the output file content O
     *
+    * @param model The model to render
+    * @param config Optional bridge-specific configuration
     * @throws RendererError on render failures
     */
   @throws[RendererError]
-  def render(model: M): FileContent[O] = {
-    outputRenderer.render(model)
+  def render(model: M, config: Option[BridgeConfig] = None): FileContent[O] = {
+    // Extract and convert renderer config if possible
+    val rendererConfig = getRendererConfig(config)
+
+    // Pass the renderer config to the renderer
+    outputRenderer.render(model, rendererConfig)
   }
+
+  /** Extract parser configuration from bridge configuration.
+    * Can be overridden by specific bridge implementations to provide custom conversion.
+    *
+    * @param config Optional bridge configuration
+    * @return Optional parser configuration
+    */
+  protected def getParserConfig(
+      config: Option[BridgeConfig]
+  ): Option[parsers.ParserConfig] = None
+
+  /** Extract renderer configuration from bridge configuration.
+    * Can be overridden by specific bridge implementations to provide custom conversion.
+    *
+    * @param config Optional bridge configuration
+    * @return Optional renderer configuration
+    */
+  protected def getRendererConfig(
+      config: Option[BridgeConfig]
+  ): Option[renderers.RendererConfig] = None
 
   // Protected accessors for inputParser and outputRenderer - unneeded with private[bridges]
   // private def protected_inputParser: Parser[I, M] = inputParser

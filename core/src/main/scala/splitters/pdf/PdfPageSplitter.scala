@@ -2,8 +2,6 @@ package com.tjclp.xlcr
 package splitters
 package pdf
 
-import bridges.image.PdfImageRenderer
-import bridges.image.PdfImageRenderer.RenderConfig
 import models.FileContent
 import types.MimeType
 
@@ -12,6 +10,12 @@ import org.slf4j.LoggerFactory
 
 import java.io.ByteArrayOutputStream
 
+/** PDF Page splitter that splits a PDF into individual pages.
+  * 
+  * This implementation extracts each page of a PDF into a separate one-page PDF document.
+  * Unlike previous implementations, it is format-agnostic; any format conversion
+  * (e.g., to PNG or JPEG) is now handled by Pipeline via the bridge system.
+  */
 object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -23,51 +27,30 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
     if (!cfg.hasStrategy(SplitStrategy.Page))
       return Seq(DocChunk(content, "document", 0, 1))
 
-    // Determine output format - use PDF by default
-    val outputFormat = cfg.outputFormat.getOrElse("pdf").toLowerCase
-
-    // Create render config for images if needed
-    val renderCfg = RenderConfig(
-      maxWidthPixels = cfg.maxImageWidth,
-      maxHeightPixels = cfg.maxImageHeight,
-      maxSizeBytes = cfg.maxImageSizeBytes,
-      dpi = cfg.imageDpi,
-      jpegQuality = cfg.jpegQuality
-    )
-
+    // Load the PDF document
     val original = PDDocument.load(content.data)
     try {
       val total = original.getNumberOfPages
+      logger.info(s"Splitting PDF into $total pages")
 
+      // Extract each page as a single-page PDF
       (0 until total).map { idx =>
-        outputFormat match {
-          case "png" =>
-            // Render as PNG
-            logger.info(s"Rendering PDF page ${idx + 1} of $total as PNG")
-            val imageBytes =
-              PdfImageRenderer.renderPageAsPng(content.data, idx, renderCfg)
-            val fc = FileContent(imageBytes, MimeType.ImagePng)
-            DocChunk(fc, s"Page ${idx + 1}", idx, total)
-
-          case "jpg" | "jpeg" =>
-            // Render as JPEG
-            logger.info(s"Rendering PDF page ${idx + 1} of $total as JPEG")
-            val imageBytes =
-              PdfImageRenderer.renderPageAsJpeg(content.data, idx, renderCfg)
-            val fc = FileContent(imageBytes, MimeType.ImageJpeg)
-            DocChunk(fc, s"Page ${idx + 1}", idx, total)
-
-          case _ =>
-            // Default: Extract as PDF (one page per PDF)
-            val chunkDoc = new PDDocument()
-            try {
-              chunkDoc.addPage(original.getPage(idx))
-              val baos = new ByteArrayOutputStream()
-              chunkDoc.save(baos)
-              val fc = FileContent(baos.toByteArray, MimeType.ApplicationPdf)
-              DocChunk(fc, s"Page ${idx + 1}", idx, total)
-            } finally chunkDoc.close()
-        }
+        // Create a new document with only one page
+        val chunkDoc = new PDDocument()
+        try {
+          // Add the current page to the new document
+          chunkDoc.addPage(original.getPage(idx))
+          
+          // Save the new document to a byte array
+          val baos = new ByteArrayOutputStream()
+          chunkDoc.save(baos)
+          
+          // Create a FileContent with the new document
+          val fc = FileContent(baos.toByteArray, MimeType.ApplicationPdf)
+          
+          // Create a DocChunk with the page information
+          DocChunk(fc, s"Page ${idx + 1}", idx, total)
+        } finally chunkDoc.close()
       }
     } finally original.close()
   }

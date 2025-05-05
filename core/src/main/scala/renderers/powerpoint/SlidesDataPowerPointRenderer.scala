@@ -4,8 +4,7 @@ package renderers.powerpoint
 import bridges.image.SvgToPngBridge
 import models.FileContent
 import models.powerpoint._
-import renderers.Renderer
-import types.MimeType
+import renderers.SimpleRenderer
 import types.MimeType.{ApplicationVndMsPowerpoint, ImageSvgXml}
 
 import org.apache.poi.common.usermodel.fonts.FontGroup
@@ -19,15 +18,17 @@ import java.nio.file.{Files, Paths}
 import java.util.Base64
 import scala.util.Try
 
-/**
- * SlidesDataPowerPointRenderer converts a SlidesData model into a PowerPoint PPTX file,
- * now handling images (including optional SVG), background colors, fonts, line/stroke styling, etc.
- *
- * If the image content is inline SVG, we use SvgToPngBridge to convert it to PNG before embedding.
- */
-class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMsPowerpoint.type] {
+/** SlidesDataPowerPointRenderer converts a SlidesData model into a PowerPoint PPTX file,
+  * now handling images (including optional SVG), background colors, fonts, line/stroke styling, etc.
+  *
+  * If the image content is inline SVG, we use SvgToPngBridge to convert it to PNG before embedding.
+  */
+class SlidesDataPowerPointRenderer
+    extends SimpleRenderer[SlidesData, ApplicationVndMsPowerpoint.type] {
 
-  override def render(model: SlidesData): FileContent[ApplicationVndMsPowerpoint.type] = {
+  override def render(
+      model: SlidesData
+  ): FileContent[ApplicationVndMsPowerpoint.type] = {
     val ppt = new XMLSlideShow()
 
     // For each slide in SlidesData:
@@ -42,9 +43,16 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
 
       // For each element, create shapes
       slideData.elements.foreach { element =>
-        val anchorRect = element.position.map { pos =>
-          new Rectangle(pos.x.toInt, pos.y.toInt, pos.width.toInt, pos.height.toInt)
-        }.getOrElse(new Rectangle(50, 50, 300, 50))
+        val anchorRect = element.position
+          .map { pos =>
+            new Rectangle(
+              pos.x.toInt,
+              pos.y.toInt,
+              pos.width.toInt,
+              pos.height.toInt
+            )
+          }
+          .getOrElse(new Rectangle(50, 50, 300, 50))
 
         element.elementType.toLowerCase match {
           case "text" =>
@@ -70,14 +78,17 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
 
     val pptBytes = outputStream.toByteArray
     outputStream.close()
-    FileContent[ApplicationVndMsPowerpoint.type](pptBytes, ApplicationVndMsPowerpoint)
+    FileContent[ApplicationVndMsPowerpoint.type](
+      pptBytes,
+      ApplicationVndMsPowerpoint
+    )
   }
 
   private def handleTextElement(
-                                 pptSlide: XSLFSlide,
-                                 element: SlideElement,
-                                 anchorRect: Rectangle
-                               ): Unit = {
+      pptSlide: XSLFSlide,
+      element: SlideElement,
+      anchorRect: Rectangle
+  ): Unit = {
     val textBox: XSLFTextBox = pptSlide.createTextBox()
     textBox.setAnchor(anchorRect)
 
@@ -123,11 +134,11 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
   }
 
   private def handleImageElement(
-                                  ppt: XMLSlideShow,
-                                  pptSlide: XSLFSlide,
-                                  element: SlideElement,
-                                  anchorRect: Rectangle
-                                ): Unit = {
+      ppt: XMLSlideShow,
+      pptSlide: XSLFSlide,
+      element: SlideElement,
+      anchorRect: Rectangle
+  ): Unit = {
     element.content.foreach { contentStr =>
       // Attempt to load or decode the image bytes
       val rawBytes = loadImageBytes(contentStr)
@@ -135,7 +146,9 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
         // If we detect inline SVG, convert to PNG via SvgToPngBridge
         val isSvg = isSvgBytes(rawBytes)
         val imageBytes = if (isSvg) {
-          convertSvgToPng(rawBytes).getOrElse(rawBytes) // fallback if conversion fails
+          convertSvgToPng(rawBytes).getOrElse(
+            rawBytes
+          ) // fallback if conversion fails
         } else rawBytes
 
         val pictureType = guessPictureType(imageBytes)
@@ -161,9 +174,8 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
     }
   }
 
-  /**
-   * Convert inline SVG bytes into PNG bytes using the SvgToPngBridge.
-   */
+  /** Convert inline SVG bytes into PNG bytes using the SvgToPngBridge.
+    */
   private def convertSvgToPng(svgBytes: Array[Byte]): Option[Array[Byte]] = {
     Try {
       val svgContent = FileContent[ImageSvgXml.type](svgBytes, ImageSvgXml)
@@ -172,10 +184,9 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
     }.toOption
   }
 
-  /**
-   * Attempt to load image bytes from either a file path or a base64-encoded string (including data URIs).
-   * Also handles raw inline SVG if the content starts with "<svg".
-   */
+  /** Attempt to load image bytes from either a file path or a base64-encoded string (including data URIs).
+    * Also handles raw inline SVG if the content starts with "<svg".
+    */
   private def loadImageBytes(contentStr: String): Array[Byte] = {
     val trimmed = contentStr.trim
     // If data uri or base64
@@ -194,18 +205,16 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
     }
   }
 
-  /**
-   * Determine if the raw bytes are likely base64
-   */
+  /** Determine if the raw bytes are likely base64
+    */
   private def isLikelyBase64(s: String): Boolean = {
     // extremely naive check: at least 40 chars, only base64
     s.length > 40 && s.matches("^[A-Za-z0-9+/=]+$")
   }
 
-  /**
-   * Determine the PictureType from raw bytes. If we detect raw SVG, use PictureType.SVG
-   * (though we'll convert them to PNG anyway).
-   */
+  /** Determine the PictureType from raw bytes. If we detect raw SVG, use PictureType.SVG
+    * (though we'll convert them to PNG anyway).
+    */
   private def guessPictureType(bytes: Array[Byte]): PictureType = {
     if (isSvgBytes(bytes)) PictureType.SVG
     else if (isJpeg(bytes)) PictureType.JPEG
@@ -216,18 +225,18 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
 
   private def isPng(bytes: Array[Byte]): Boolean = {
     bytes.length > 8 &&
-      bytes(0) == 0x89.toByte && bytes(1) == 0x50.toByte &&
-      bytes(2) == 0x4E.toByte && bytes(3) == 0x47.toByte
+    bytes(0) == 0x89.toByte && bytes(1) == 0x50.toByte &&
+    bytes(2) == 0x4e.toByte && bytes(3) == 0x47.toByte
   }
 
   private def isJpeg(bytes: Array[Byte]): Boolean = {
     bytes.length > 2 &&
-      bytes(0) == 0xFF.toByte && bytes(1) == 0xD8.toByte
+    bytes(0) == 0xff.toByte && bytes(1) == 0xd8.toByte
   }
 
   private def isGif(bytes: Array[Byte]): Boolean = {
     bytes.length > 3 &&
-      bytes(0) == 'G'.toByte && bytes(1) == 'I'.toByte && bytes(2) == 'F'.toByte
+    bytes(0) == 'G'.toByte && bytes(1) == 'I'.toByte && bytes(2) == 'F'.toByte
   }
 
   private def isSvgBytes(data: Array[Byte]): Boolean = {
@@ -236,15 +245,15 @@ class SlidesDataPowerPointRenderer extends Renderer[SlidesData, ApplicationVndMs
   }
 
   private def handleShapeElement(
-                                  pptSlide: XSLFSlide,
-                                  element: SlideElement,
-                                  anchorRect: Rectangle
-                                ): Unit = {
+      pptSlide: XSLFSlide,
+      element: SlideElement,
+      anchorRect: Rectangle
+  ): Unit = {
     val shapeBox = pptSlide.createTextBox()
     shapeBox.setAnchor(anchorRect)
 
     // shape type can be used for something special if needed
-    element.shapeType.foreach { stype => /* no-op for now */}
+    element.shapeType.foreach { stype => /* no-op for now */ }
 
     // Apply style
     element.style.foreach { style =>

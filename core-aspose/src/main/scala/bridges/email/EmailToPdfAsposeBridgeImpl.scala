@@ -4,7 +4,7 @@ package email
 
 import models.FileContent
 import parsers.Parser
-import renderers.Renderer
+import renderers.{Renderer, SimpleRenderer}
 import types.MimeType
 import types.MimeType.ApplicationPdf
 import utils.aspose.AsposeLicense
@@ -25,24 +25,9 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override private[bridges] def inputParser: Parser[I, M] =
-    EmailToPdfAsposeParser
-
   override private[bridges] def outputRenderer
       : Renderer[M, ApplicationPdf.type] =
     EmailToPdfAsposeRenderer
-
-  /** Simple parser that just wraps email bytes in a FileContent for direct usage.
-    */
-  private object EmailToPdfAsposeParser extends Parser[I, M] {
-    override def parse(input: FileContent[I]): M = {
-      AsposeLicense.initializeIfNeeded()
-      logger.info(
-        s"Parsing ${input.mimeType.getClass.getSimpleName} bytes for Aspose.Email conversion."
-      )
-      input
-    }
-  }
 
   /** Renderer that performs email to PDF conversion via Aspose.Email and Aspose.Words.
     * The conversion happens in two steps:
@@ -50,7 +35,7 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
     * 2. Convert MHTML to PDF using Aspose.Words
     */
   private object EmailToPdfAsposeRenderer
-      extends Renderer[M, ApplicationPdf.type] {
+      extends SimpleRenderer[M, ApplicationPdf.type] {
     override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()

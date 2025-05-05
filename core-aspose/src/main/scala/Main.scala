@@ -180,7 +180,26 @@ object Main {
           // Parse strategy and output type
           val splitStrategyOpt =
             cfg.splitStrategy.flatMap(SplitStrategy.fromString)
-          val outputMimeOpt = cfg.outputType.flatMap(parseMimeOrExtension)
+            
+          // Handle output type - combine --type and --format options
+          val outputMimeOpt = {
+            if (cfg.outputType.isDefined) {
+              // If explicit type is set, use it
+              cfg.outputType.flatMap(parseMimeOrExtension)
+            } else if (cfg.outputFormat.isDefined) {
+              // Otherwise, if format is set, use it for backward compatibility
+              cfg.outputFormat.flatMap { fmt =>
+                fmt.toLowerCase match {
+                  case "png" => Some(types.MimeType.ImagePng)
+                  case "jpg" | "jpeg" => Some(types.MimeType.ImageJpeg)
+                  case "pdf" => Some(types.MimeType.ApplicationPdf)
+                  case _ => None
+                }
+              }
+            } else {
+              None
+            }
+          }
 
           // Run the split operation
           Try(
@@ -191,7 +210,6 @@ object Main {
               outputType = outputMimeOpt,
               recursive = cfg.recursiveExtraction,
               maxRecursionDepth = cfg.maxRecursionDepth,
-              outputFormat = cfg.outputFormat,
               maxImageWidth = cfg.maxImageWidth,
               maxImageHeight = cfg.maxImageHeight,
               maxImageSizeBytes = cfg.maxImageSizeBytes,

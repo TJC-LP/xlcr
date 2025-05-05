@@ -7,7 +7,7 @@ import compression.utils.SheetGridUtils
 import models.FileContent
 import models.excel.SheetsData
 import models.spreadsheetllm.CompressedWorkbook
-import parsers.Parser
+import parsers.{ParserConfig, SimpleParser}
 import types.MimeType
 
 import org.slf4j.{Logger, LoggerFactory}
@@ -22,7 +22,8 @@ import scala.util.Try // Import Try
   * compression pipeline for LLM-friendly output.
   * Compatible with Scala 2.12.
   */
-trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook] {
+trait ExcelToLLMParser[I <: MimeType]
+    extends SimpleParser[I, CompressedWorkbook] {
   protected val logger: Logger = LoggerFactory.getLogger(getClass)
 
   /** Configuration for the compression pipeline */
@@ -122,7 +123,7 @@ trait ExcelToLLMParser[I <: MimeType] extends Parser[I, CompressedWorkbook] {
   }
 
   /** The underlying Excel parser to use */
-  protected def excelParser: Parser[I, SheetsData]
+  protected def excelParser: parsers.Parser[I, SheetsData]
 }
 
 /** Factory for creating Excel parsers that output CompressedWorkbook models.
@@ -162,7 +163,10 @@ object ExcelToLLMParser {
     // For now, use the default SheetsDataExcelParser and cast its type.
     // This cast is potentially unsafe if SheetsDataExcelParser only supports XLSX (XSSF).
     val specificParser = new SheetsDataExcelParser()
-      .asInstanceOf[Parser[MimeType.ApplicationVndMsExcel.type, SheetsData]]
+      .asInstanceOf[SimpleParser[
+        MimeType.ApplicationVndMsExcel.type,
+        SheetsData
+      ]]
     new XlsToLLMParser(config, specificParser)
   }
 }

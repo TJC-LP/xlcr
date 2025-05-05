@@ -3,7 +3,7 @@ package renderers.tika
 
 import models.FileContent
 import models.tika.TikaModel
-import renderers.Renderer
+import renderers.SimpleRenderer
 import types.MimeType
 
 import java.nio.charset.StandardCharsets
@@ -16,7 +16,7 @@ import scala.util.{Failure, Success, Try}
  * M = Input mime type (the TikaModel's type)
  * O = Output mime type
  */
-trait TikaRenderer[O <: MimeType] extends Renderer[TikaModel[O], O] {
+trait TikaRenderer[O <: MimeType] extends SimpleRenderer[TikaModel[O], O] {
   implicit val mimeTag: ClassTag[O]
   
   // Explicitly declare mime type
@@ -28,7 +28,7 @@ trait TikaRenderer[O <: MimeType] extends Renderer[TikaModel[O], O] {
    * @throws RendererError on failure
    */
   @throws[RendererError]
-  def render(model: TikaModel[O]): FileContent[O] = {
+  override def render(model: TikaModel[O]): FileContent[O] = {
     Try {
       val textBytes = model.text.getBytes(StandardCharsets.UTF_8)
       FileContent[O](textBytes, mimeType)

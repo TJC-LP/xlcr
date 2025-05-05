@@ -12,7 +12,8 @@ import java.nio.charset.StandardCharsets
 import scala.collection.mutable
 import scala.collection.compat._
 
-class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
+class SheetsDataMarkdownParser
+    extends SheetsDataSimpleParser[TextMarkdown.type] {
   // --------------------------------------------------------------------------
   // Parse: Markdown -> SheetsData
   // --------------------------------------------------------------------------

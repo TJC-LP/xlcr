@@ -4,17 +4,17 @@ package excel
 
 import models.FileContent
 import parsers.Parser
-import renderers.Renderer
+import renderers.{Renderer, SimpleRenderer}
 import types.MimeType
 import types.MimeType.ApplicationPdf
 import utils.aspose.AsposeLicense
+
 import com.aspose.cells.{
   PageOrientationType,
   PaperSizeType,
   PdfSaveOptions,
   Workbook
 }
-
 import org.slf4j.LoggerFactory
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
@@ -32,30 +32,15 @@ trait ExcelToPdfAsposeBridgeImpl[I <: MimeType]
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override private[bridges] def inputParser: Parser[I, M] =
-    ExcelToPdfAsposeParser
-
   override private[bridges] def outputRenderer
       : Renderer[M, ApplicationPdf.type] =
     ExcelToPdfAsposeRenderer
-
-  /** Simple parser that just wraps Excel bytes in a FileContent for direct usage.
-    */
-  private object ExcelToPdfAsposeParser extends Parser[I, M] {
-    override def parse(input: FileContent[I]): M = {
-      AsposeLicense.initializeIfNeeded()
-      logger.info(
-        s"Parsing ${input.mimeType.getClass.getSimpleName} bytes into a direct file model for Aspose.Cells conversion."
-      )
-      input
-    }
-  }
 
   /** Renderer that performs any Excel format -> PDF conversion via Aspose.Cells.
     * This handles all Excel formats: XLSX, XLS, XLSM, XLSB, ODS, etc.
     */
   private object ExcelToPdfAsposeRenderer
-      extends Renderer[M, ApplicationPdf.type] {
+      extends SimpleRenderer[M, ApplicationPdf.type] {
     override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()
