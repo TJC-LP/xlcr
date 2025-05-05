@@ -4,7 +4,7 @@ package word
 
 import models.FileContent
 import parsers.Parser
-import renderers.Renderer
+import renderers.{Renderer, SimpleRenderer}
 import types.MimeType.ApplicationPdf
 import types.{MimeType, Priority}
 import utils.aspose.AsposeLicense
@@ -25,27 +25,13 @@ trait WordToPdfAsposeBridgeImpl[I <: MimeType]
     */
   override def priority: Priority = Priority.HIGH
 
-  private[bridges] def inputParser: Parser[I, M] =
-    WordToPdfAsposeParser
-
   private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     WordToPdfAsposeRenderer
-
-  /** Parser that simply wraps the input bytes in a WordDocModel.
-    */
-  private object WordToPdfAsposeParser extends Parser[I, M] {
-    override def parse(input: M): M = {
-      // Initialize Aspose license if needed
-      AsposeLicense.initializeIfNeeded()
-      logger.info("Parsing Word file content to WordDocModel.")
-      input
-    }
-  }
 
   /** Renderer that uses Aspose.Words to convert WordDocModel -> PDF.
     */
   private object WordToPdfAsposeRenderer
-      extends Renderer[M, ApplicationPdf.type] {
+      extends SimpleRenderer[M, ApplicationPdf.type] {
     override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()

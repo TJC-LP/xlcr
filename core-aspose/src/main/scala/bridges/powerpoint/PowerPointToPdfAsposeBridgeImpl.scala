@@ -3,8 +3,7 @@ package bridges
 package powerpoint
 
 import models.FileContent
-import parsers.Parser
-import renderers.Renderer
+import renderers.{Renderer, SimpleRenderer}
 import types.MimeType
 import types.MimeType.ApplicationPdf
 import utils.aspose.AsposeLicense
@@ -24,30 +23,15 @@ trait PowerPointToPdfAsposeBridgeImpl[I <: MimeType]
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override private[bridges] def inputParser: Parser[I, M] =
-    PowerPointToPdfAsposeParser
-
   override private[bridges] def outputRenderer
       : Renderer[M, ApplicationPdf.type] =
     PowerPointToPdfAsposeRenderer
-
-  /** Simple parser that just wraps PowerPoint bytes in a FileContent for direct usage.
-    */
-  private object PowerPointToPdfAsposeParser extends Parser[I, M] {
-    override def parse(input: FileContent[I]): M = {
-      AsposeLicense.initializeIfNeeded()
-      logger.info(
-        s"Parsing ${input.mimeType.getClass.getSimpleName} bytes for Aspose.Slides conversion."
-      )
-      input
-    }
-  }
 
   /** Renderer that performs PowerPoint to PDF conversion via Aspose.Slides.
     * This works for both PPT and PPTX formats.
     */
   private object PowerPointToPdfAsposeRenderer
-      extends Renderer[M, ApplicationPdf.type] {
+      extends SimpleRenderer[M, ApplicationPdf.type] {
     override def render(model: M): FileContent[ApplicationPdf.type] = {
       try {
         AsposeLicense.initializeIfNeeded()

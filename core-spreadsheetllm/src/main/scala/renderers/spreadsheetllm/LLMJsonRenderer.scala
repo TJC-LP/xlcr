@@ -3,7 +3,7 @@ package renderers.spreadsheetllm
 
 import models.FileContent
 import models.spreadsheetllm.CompressedWorkbook
-import renderers.Renderer
+import renderers.SimpleRenderer
 import types.MimeType
 
 import io.circe._
@@ -12,21 +12,22 @@ import org.slf4j.LoggerFactory
 
 import scala.util.Try
 
-/**
- * Renderer that converts a CompressedWorkbook model to a LLM-friendly JSON
- * representation with embedded markdown for formatting.
- * Compatible with Scala 2.12.
- */
-class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJson.type] {
+/** Renderer that converts a CompressedWorkbook model to a LLM-friendly JSON
+  * representation with embedded markdown for formatting.
+  * Compatible with Scala 2.12.
+  */
+class LLMJsonRenderer
+    extends SimpleRenderer[CompressedWorkbook, MimeType.ApplicationJson.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /**
-   * Render a CompressedWorkbook to LLM-optimized JSON.
-   *
-   * @param model The compressed workbook model
-   * @return FileContent containing the JSON representation
-   */
-  override def render(model: CompressedWorkbook): FileContent[MimeType.ApplicationJson.type] = {
+  /** Render a CompressedWorkbook to LLM-optimized JSON.
+    *
+    * @param model The compressed workbook model
+    * @return FileContent containing the JSON representation
+    */
+  override def render(
+      model: CompressedWorkbook
+  ): FileContent[MimeType.ApplicationJson.type] = {
     logger.info(s"Rendering CompressedWorkbook to LLM JSON format")
 
     // Convert the model to a JSON object
@@ -41,12 +42,11 @@ class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJ
     FileContent(jsonBytes, MimeType.ApplicationJson)
   }
 
-  /**
-   * Convert the CompressedWorkbook model to a JSON object.
-   *
-   * @param workbook The CompressedWorkbook model
-   * @return JSON representation
-   */
+  /** Convert the CompressedWorkbook model to a JSON object.
+    *
+    * @param workbook The CompressedWorkbook model
+    * @return JSON representation
+    */
   private def modelToJson(workbook: CompressedWorkbook): Json = {
     // Create a JSON object for each sheet
     val sheetJsons = workbook.sheets.map { sheet =>
@@ -84,7 +84,9 @@ class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJ
               "id" -> Json.fromString(table.id),
               "range" -> Json.fromString(table.range),
               "hasHeaders" -> Json.fromBoolean(table.hasHeaders),
-              "headerRow" -> table.headerRow.fold(Json.Null)(row => Json.fromInt(row))
+              "headerRow" -> table.headerRow.fold(Json.Null)(row =>
+                Json.fromInt(row)
+              )
             )
           }.asJson
         }
@@ -111,38 +113,42 @@ class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJ
     )
   }
 
-  /**
-   * Manually encode the compression stats map to JSON
-   * since there's no automatic encoder for Map[String, Any]
-   */
+  /** Manually encode the compression stats map to JSON
+    * since there's no automatic encoder for Map[String, Any]
+    */
   private def encodeCompressionStats(stats: Map[String, Any]): Json = {
     val fields = stats.map { case (key, value) =>
       val jsonValue = value match {
         case s: String => Json.fromString(s)
-        case i: Int => Json.fromInt(i)
-        case d: Double => Json.fromDoubleOrNull(d) // Use fromDoubleOrNull for safety
-        case b: Boolean => Json.fromBoolean(b)
+        case i: Int    => Json.fromInt(i)
+        case d: Double =>
+          Json.fromDoubleOrNull(d) // Use fromDoubleOrNull for safety
+        case b: Boolean   => Json.fromBoolean(b)
         case m: Map[_, _] =>
           // Assuming the map is Map[String, String] based on original code comment context
           // This requires an implicit Encoder[Map[String, String]] which Circe provides
           m.asInstanceOf[Map[String, String]].asJson
         case l: List[_] =>
           // Assuming list items are Map[String, Any] based on original code comment context
-          Json.fromValues(l.map(item => encodeCompressionStats(item.asInstanceOf[Map[String, Any]])))
-        case other => Json.fromString(other.toString) // Fallback for other types
+          Json.fromValues(
+            l.map(item =>
+              encodeCompressionStats(item.asInstanceOf[Map[String, Any]])
+            )
+          )
+        case other =>
+          Json.fromString(other.toString) // Fallback for other types
       }
       (key, jsonValue)
     }
     Json.obj(fields.toSeq: _*)
   }
 
-  /**
-   * Apply Markdown formatting to values based on content type.
-   * This enhances the JSON with formatting cues for LLMs.
-   *
-   * @param value The cell value or format descriptor
-   * @return The value with Markdown formatting applied
-   */
+  /** Apply Markdown formatting to values based on content type.
+    * This enhances the JSON with formatting cues for LLMs.
+    *
+    * @param value The cell value or format descriptor
+    * @return The value with Markdown formatting applied
+    */
   private def applyMarkdownFormatting(value: String): String = {
     // Check if this is a format descriptor
     if (value.contains("<") && value.contains(">")) {
@@ -168,15 +174,14 @@ class LLMJsonRenderer extends Renderer[CompressedWorkbook, MimeType.ApplicationJ
   }
 }
 
-/**
- * Factory for creating LLM JSON renderers.
- */
+/** Factory for creating LLM JSON renderers.
+  */
 object LLMJsonRenderer {
-  /**
-   * Create a new LLMJsonRenderer.
-   *
-   * @return A new renderer instance
-   */
+
+  /** Create a new LLMJsonRenderer.
+    *
+    * @return A new renderer instance
+    */
   def apply(): LLMJsonRenderer = {
     new LLMJsonRenderer()
   }

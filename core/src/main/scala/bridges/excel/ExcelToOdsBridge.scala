@@ -3,8 +3,8 @@ package bridges.excel
 
 import bridges.SimpleBridge
 import models.FileContent
-import parsers.Parser
-import renderers.Renderer
+import parsers.{Parser, SimpleParser}
+import renderers.{Renderer, SimpleRenderer}
 import types.MimeType.{
   ApplicationVndOasisOpendocumentSpreadsheet,
   ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
@@ -25,18 +25,21 @@ object ExcelToOdsBridge
     ] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override private[bridges] def inputParser
+  override def inputParser
       : Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
     ExcelToOdsParser
 
-  override private[bridges] def outputRenderer
+  override def outputRenderer
       : Renderer[M, ApplicationVndOasisOpendocumentSpreadsheet.type] =
     ExcelToOdsRenderer
 
   /** Simple parser that just wraps Excel bytes in a FileContent for direct usage.
     */
   private object ExcelToOdsParser
-      extends Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] {
+      extends SimpleParser[
+        ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
+        M
+      ] {
     override def parse(
         input: FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]
     ): M = {
@@ -48,7 +51,10 @@ object ExcelToOdsBridge
   /** Renderer that performs the XLSX -> ODS conversion using Apache POI and ODFDOM
     */
   private object ExcelToOdsRenderer
-      extends Renderer[M, ApplicationVndOasisOpendocumentSpreadsheet.type] {
+      extends SimpleRenderer[
+        M,
+        ApplicationVndOasisOpendocumentSpreadsheet.type
+      ] {
     override def render(
         model: M
     ): FileContent[ApplicationVndOasisOpendocumentSpreadsheet.type] = {

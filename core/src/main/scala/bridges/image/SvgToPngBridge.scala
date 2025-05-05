@@ -3,8 +3,8 @@ package bridges.image
 
 import bridges.SimpleBridge
 import models.FileContent
-import parsers.Parser
-import renderers.Renderer
+import parsers.{Parser, SimpleParser}
+import renderers.{Renderer, SimpleRenderer}
 import types.MimeType.{ImagePng, ImageSvgXml}
 
 import org.apache.batik.transcoder.image.PNGTranscoder
@@ -23,7 +23,7 @@ import scala.util.{Failure, Success, Try}
 object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
   override type M = FileContent[ImageSvgXml.type]
 
-  override private[bridges] def inputParser: Parser[ImageSvgXml.type, M] =
+  override def inputParser: Parser[ImageSvgXml.type, M] =
     SvgParser
 
   override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] =
@@ -31,14 +31,14 @@ object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
 
   /** Simple parser that wraps the input SVG bytes in an SvgModel.
     */
-  private object SvgParser extends Parser[ImageSvgXml.type, M] {
+  private object SvgParser extends SimpleParser[ImageSvgXml.type, M] {
     override def parse(input: FileContent[ImageSvgXml.type]): M =
       FileContent[ImageSvgXml.type](input.data, ImageSvgXml)
   }
 
   /** Renderer that uses Apache Batik to convert the raw SVG bytes to PNG.
     */
-  private object PngRenderer extends Renderer[M, ImagePng.type] {
+  private object PngRenderer extends SimpleRenderer[M, ImagePng.type] {
     override def render(model: M): FileContent[ImagePng.type] =
       Try {
         val transcoder = new PNGTranscoder()

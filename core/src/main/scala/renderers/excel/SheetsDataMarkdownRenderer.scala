@@ -7,7 +7,8 @@ import types.MimeType.TextMarkdown
 
 import java.nio.charset.StandardCharsets
 
-class SheetsDataMarkdownRenderer extends SheetsDataRenderer[TextMarkdown.type] {
+class SheetsDataMarkdownRenderer
+    extends SheetsDataSimpleRenderer[TextMarkdown.type] {
   override def render(model: SheetsData): FileContent[TextMarkdown.type] = {
     val markdown = model.sheets.map(sheetToMarkdown).mkString("\n\n---\n\n")
     FileContent(markdown.getBytes(StandardCharsets.UTF_8), TextMarkdown)
@@ -45,7 +46,9 @@ class SheetsDataMarkdownRenderer extends SheetsDataRenderer[TextMarkdown.type] {
   }
 
   private def formatCellContent(cellData: models.excel.CellData): String = {
-    val value = escapeMarkdown(cellData.formattedValue.getOrElse(cellData.value.getOrElse("")))
+    val value = escapeMarkdown(
+      cellData.formattedValue.getOrElse(cellData.value.getOrElse(""))
+    )
     val otherDetails = List(
       Some(s"REF:``${cellData.referenceA1}``"),
       Some(s"TYPE:``${cellData.cellType}``"),
