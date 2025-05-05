@@ -2,8 +2,8 @@ package com.tjclp.xlcr
 package pipeline.spark.steps
 
 import pipeline.spark.SparkPipelineRegistry
-import types.MimeType.ApplicationXml
+import types.MimeType.ImageJpeg
 
-object ToXml extends ConvertStep(ApplicationXml) {
+object ToJpg extends ConvertStep(ImageJpeg) {
   SparkPipelineRegistry.register(this)
 }
