@@ -352,13 +352,13 @@ object MimeType extends Serializable {
 
   case object ApplicationVndMsExcelSheetMacroEnabled extends MimeType {
     val baseType: String = "application"
-    val subType: String = "vnd.ms-excel.sheet.macroEnabled.12"
+    val subType: String = "vnd.ms-excel.sheet.macroenabled.12"
     val parameters: Map[String, String] = Map.empty
   }
 
   case object ApplicationVndMsExcelSheetBinary extends MimeType {
     val baseType: String = "application"
-    val subType: String = "vnd.ms-excel.sheet.binary.macroEnabled.12"
+    val subType: String = "vnd.ms-excel.sheet.binary.macroenabled.12"
     val parameters: Map[String, String] = Map.empty
   }
 

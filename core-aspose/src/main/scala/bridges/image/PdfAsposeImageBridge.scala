@@ -3,12 +3,13 @@ package bridges.image
 
 import models.FileContent
 import renderers.RendererConfig
-import types.MimeType
+import types.{MimeType, Priority}
 import types.MimeType.{ApplicationPdf, ImageJpeg, ImagePng}
 import utils.aspose.AsposeLicense
 
 import com.aspose.pdf.Document
 import com.aspose.pdf.devices.{JpegDevice, PngDevice, Resolution}
+import com.tjclp.xlcr.bridges.HighPrioritySimpleBridge
 import org.slf4j.LoggerFactory
 
 import java.io.ByteArrayOutputStream
@@ -24,12 +25,9 @@ import scala.reflect.ClassTag
   */
 abstract class PdfAsposeImageBridge[O <: MimeType](implicit
     override val classTag: ClassTag[O]
-) extends PdfToImageBridgeBase[O] {
+) extends PdfToImageBridgeBase[O] with HighPrioritySimpleBridge[ApplicationPdf.type, O] {
 
   private val logger = LoggerFactory.getLogger(getClass)
-
-  // Initialize Aspose license if available
-  AsposeLicense.initializeIfNeeded()
 
   // Default implementation for the output renderer - uses our renderPage method
   override private[bridges] def outputRenderer =
@@ -98,16 +96,4 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
       document.close()
     }
   }
-}
-
-/** Concrete implementation of PDF to PNG conversion using Aspose.
-  */
-object PdfToPngAsposeBridge extends PdfAsposeImageBridge[ImagePng.type] {
-  override val targetMime: ImagePng.type = ImagePng
-}
-
-/** Concrete implementation of PDF to JPEG conversion using Aspose.
-  */
-object PdfToJpegAsposeBridge extends PdfAsposeImageBridge[ImageJpeg.type] {
-  override val targetMime: ImageJpeg.type = ImageJpeg
 }

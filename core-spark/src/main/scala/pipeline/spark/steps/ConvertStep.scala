@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package pipeline.spark
 package steps
 
-import bridges.{Bridge, BridgeRegistry}
+import bridges.{Bridge, BridgeConfig, BridgeRegistry}
 import models.FileContent
 import types.MimeType
 
@@ -16,7 +16,8 @@ import scala.concurrent.duration.{Duration => ScalaDuration}
 case class ConvertStep(
     to: MimeType,
     rowTimeout: ScalaDuration =
-      scala.concurrent.duration.Duration(30, "seconds")
+      scala.concurrent.duration.Duration(30, "seconds"),
+    config: Option[BridgeConfig] = None
 ) extends SparkStep {
   override val name: String = s"to${to.mimeType.split('/').last.capitalize}"
   override val meta: Map[String, String] =
@@ -58,7 +59,7 @@ case class ConvertStep(
               ](
                 implementationName = Some(bridgeImpl),
                 params = Some(params),
-                action = () => bridge.convert(fc).data
+                action = () => bridge.convert(fc, config).data
               )
             }
             .getOrElse {
