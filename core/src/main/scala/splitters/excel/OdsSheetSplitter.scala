@@ -7,7 +7,7 @@ import types.MimeType
 
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import java.util.logging.Level
 
 object OdsSheetSplitter
@@ -28,11 +28,11 @@ object OdsSheetSplitter
   )
 
   override def split(
-      content: FileContent[
-        MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
-      ],
-      cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] = {
+    content: FileContent[
+      MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
+    ],
+    cfg: SplitConfig
+  ): Seq[DocChunk[MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type]] = {
 
     if (
       !cfg.hasStrategy(SplitStrategy.Sheet) || !supported.contains(
@@ -46,8 +46,8 @@ object OdsSheetSplitter
       val tempDoc = OdfSpreadsheetDocument.loadDocument(
         new ByteArrayInputStream(content.data)
       )
-      val sheets = tempDoc.getTableList(false)
-      val total = sheets.size()
+      val sheets     = tempDoc.getTableList(false)
+      val total      = sheets.size()
       val sheetNames = (0 until total).map(idx => sheets.get(idx).getTableName)
 
       tempDoc.close()
