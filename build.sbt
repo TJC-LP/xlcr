@@ -414,8 +414,8 @@ ThisBuild / githubWorkflowBuildPreamble ++= Seq(
   WorkflowStep.Sbt(List("scalafmtCheckAll"), name = Some("Check Formatting")),
   WorkflowStep.Sbt(List("Test/compile"), name = Some("Compile Tests")),
   WorkflowStep.Sbt(
-    List("coverage", "test", "coverageReport"),
-    name = Some("Run Tests with Coverage")
+    List("test"),
+    name = Some("Run Tests")
   )
 )
 
@@ -482,10 +482,9 @@ lazy val root = (project in file("."))
       "scalafixAll3",
       ";++3.3.4; core/scalafix; coreAspose/scalafix; coreSpreadsheetLLM/scalafix"
     ),
-    // Add coverage report generation task
     addCommandAlias(
       "validateCode",
-      ";scalafmtCheckAll;scalafixAll;coverage;test;coverageReport"
+      ";scalafmtCheckAll;scalafixAll;test"
     )
   )
   .settings(assemblySettings)

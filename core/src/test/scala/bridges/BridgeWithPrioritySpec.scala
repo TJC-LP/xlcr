@@ -1,13 +1,13 @@
 package com.tjclp.xlcr
 package bridges
 
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+
 import models.FileContent
 import parsers.Parser
 import renderers.Renderer
 import types.{ MimeType, Priority }
-
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 
 class BridgeWithPrioritySpec extends AnyFlatSpec with Matchers {
 
