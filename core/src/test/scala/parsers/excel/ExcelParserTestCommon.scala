@@ -1,16 +1,23 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import org.apache.poi.ss.usermodel.{Sheet, FillPatternType, FormulaError, IndexedColors, BorderStyle}
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
-
 import java.io.FileOutputStream
 import java.nio.file.Path
+
 import com.tjclp.xlcr.compat.Using
 
+import org.apache.poi.ss.usermodel.{
+  BorderStyle,
+  FillPatternType,
+  FormulaError,
+  IndexedColors,
+  Sheet
+}
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+
 /**
- * Common utilities for Excel parser tests to reduce code duplication
- * and provide consistent test data creation.
+ * Common utilities for Excel parser tests to reduce code duplication and provide consistent test
+ * data creation.
  */
 object ExcelParserTestCommon {
 
@@ -65,7 +72,7 @@ object ExcelParserTestCommon {
     val cell1 = row.createCell(0)
     cell1.setCellValue("Bold")
     val boldStyle = workbook.createCellStyle()
-    val boldFont = workbook.createFont()
+    val boldFont  = workbook.createFont()
     boldFont.setBold(true)
     boldStyle.setFont(boldFont)
     cell1.setCellStyle(boldStyle)

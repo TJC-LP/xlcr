@@ -1,19 +1,19 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import models.FileContent
-import models.excel.SheetsData
-import types.MimeType
+import java.nio.file.{ Files, Path }
 
 import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.nio.file.{Files, Path}
+import models.FileContent
+import models.excel.SheetsData
+import types.MimeType
 
 class SheetsDataExcelParserSpec extends AnyFlatSpec with Matchers with BeforeAndAfter {
   private type Excel = MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
-  private val parser = new SheetsDataExcelParser()
+  private val parser             = new SheetsDataExcelParser()
   private var tempFilePath: Path = _
 
   before {
@@ -31,11 +31,11 @@ class SheetsDataExcelParserSpec extends AnyFlatSpec with Matchers with BeforeAnd
 
     val result = parser.parse(input)
     result shouldBe a[SheetsData]
-    result.sheets should have length 3
+    (result.sheets should have).length(3)
 
     // Check sheet names
     val sheetNames = result.sheets.map(_.name)
-    sheetNames should contain allOf("DataTypes", "Formatting", "Formulas")
+    (sheetNames should contain).allOf("DataTypes", "Formatting", "Formulas")
   }
 
   it should "parse various data types correctly" in {
@@ -43,7 +43,7 @@ class SheetsDataExcelParserSpec extends AnyFlatSpec with Matchers with BeforeAnd
     val bytes = Files.readAllBytes(tempFilePath)
     val input = FileContent[Excel](bytes, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
 
-    val result = parser.parse(input)
+    val result         = parser.parse(input)
     val dataTypesSheet = result.sheets.find(_.name == "DataTypes").get
 
     // Get cells from first row
@@ -73,9 +73,10 @@ class SheetsDataExcelParserSpec extends AnyFlatSpec with Matchers with BeforeAnd
   it should "parse cell formatting correctly" in {
     ExcelParserTestCommon.createComplexWorkbook(tempFilePath)
     val bytes = Files.readAllBytes(tempFilePath)
-    val input = FileContent.fromBytes[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type](bytes)
+    val input =
+      FileContent.fromBytes[MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type](bytes)
 
-    val result = parser.parse(input)
+    val result          = parser.parse(input)
     val formattingSheet = result.sheets.find(_.name == "Formatting").get
 
     // Get cells from first row
@@ -108,7 +109,7 @@ class SheetsDataExcelParserSpec extends AnyFlatSpec with Matchers with BeforeAnd
     val bytes = Files.readAllBytes(tempFilePath)
     val input = FileContent[Excel](bytes, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
 
-    val result = parser.parse(input)
+    val result        = parser.parse(input)
     val formulasSheet = result.sheets.find(_.name == "Formulas").get
 
     // Get formula cells from second row

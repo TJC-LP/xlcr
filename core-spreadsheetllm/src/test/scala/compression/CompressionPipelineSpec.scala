@@ -1,10 +1,10 @@
 package com.tjclp.xlcr
 package compression
 
-import compression.models.CellInfo
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import compression.models.CellInfo
 
 class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
 
@@ -28,12 +28,12 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
     val sheetData = Map(
       "TestSheet" -> (cells.values.toSeq, 11, 2)
     )
-    
+
     // Create a configuration with coordinate preservation enabled
     val config = SpreadsheetLLMConfig(
       preserveOriginalCoordinates = true,
       anchorThreshold = 0, // Lower threshold to force pruning of distant cells
-      threads = 1 // Single thread for predictable testing
+      threads = 1          // Single thread for predictable testing
     )
 
     // Compress the workbook with a single sheet
@@ -56,7 +56,7 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
     if (compressedSheet.content.contains("ID")) {
       compressedSheet.content("ID") match {
         case Left(address) => address should startWith("A") // Should be in column A
-        case Right(_) => fail("Expected a single cell reference")
+        case Right(_)      => fail("Expected a single cell reference")
       }
     }
 
@@ -64,13 +64,13 @@ class CompressionPipelineSpec extends AnyFlatSpec with Matchers {
     if (compressedSheet.content.contains("1") && compressedSheet.content.contains("ID")) {
       val idAddress = compressedSheet.content("ID") match {
         case Left(address) => address
-        case Right(_) => fail("Expected a single cell reference")
+        case Right(_)      => fail("Expected a single cell reference")
       }
       val idRow = idAddress.drop(1).toInt
 
       val oneAddress = compressedSheet.content("1") match {
         case Left(address) => address
-        case Right(_) => fail("Expected a single cell reference")
+        case Right(_)      => fail("Expected a single cell reference")
       }
       val oneRow = oneAddress.drop(1).toInt
 

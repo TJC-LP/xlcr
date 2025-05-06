@@ -1,32 +1,33 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import models.FileContent
-import models.excel.{SheetData, SheetsData}
-import types.MimeType
-import types.MimeType.TextMarkdown
+import java.nio.charset.StandardCharsets
+
+import scala.collection.mutable
 
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
-import java.nio.charset.StandardCharsets
-import scala.collection.mutable
+import models.FileContent
+import models.excel.{ SheetData, SheetsData }
+import types.MimeType.TextMarkdown
 
-class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
+class SheetsDataMarkdownParser
+    extends SheetsDataSimpleParser[TextMarkdown.type] {
   // --------------------------------------------------------------------------
   // Parse: Markdown -> SheetsData
   // --------------------------------------------------------------------------
   override def parse(input: FileContent[TextMarkdown.type]): SheetsData = {
     val markdownString = new String(input.data, StandardCharsets.UTF_8)
-    val workbook = parseMarkdownToWorkbook(markdownString)
-    val (sheets, _) = workbookToSheetsData(workbook)
+    val workbook       = parseMarkdownToWorkbook(markdownString)
+    val (sheets, _)    = workbookToSheetsData(workbook)
     workbook.close()
     SheetsData(sheets)
   }
 
   private def parseMarkdownToWorkbook(md: String): XSSFWorkbook = {
-    val lines = md.linesIterator.toList
-    val workbook = new XSSFWorkbook()
+    val lines       = md.linesIterator.toList
+    val workbook    = new XSSFWorkbook()
     val sheetBlocks = splitSheets(lines)
 
     sheetBlocks.foreach { case (sheetName, contentLines) =>
@@ -37,19 +38,18 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
   }
 
   private def splitSheets(lines: List[String]): List[(String, List[String])] = {
-    val result = mutable.ListBuffer.empty[(String, List[String])]
+    val result           = mutable.ListBuffer.empty[(String, List[String])]
     var currentSheetName = "Sheet1"
-    val currentBlock = mutable.ListBuffer.empty[String]
-    var firstSheet = true
+    val currentBlock     = mutable.ListBuffer.empty[String]
+    var firstSheet       = true
 
-    def pushBlock(): Unit = {
+    def pushBlock(): Unit =
       if (currentBlock.nonEmpty) {
         result += ((currentSheetName, currentBlock.toList))
         currentBlock.clear()
       }
-    }
 
-    for (line <- lines) {
+    for (line <- lines)
       if (line.trim.startsWith("# ")) {
         if (!firstSheet) pushBlock()
         else firstSheet = false
@@ -57,7 +57,6 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
       } else {
         currentBlock += line
       }
-    }
     if (currentBlock.nonEmpty) pushBlock()
 
     result.toList
@@ -73,13 +72,14 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
     val colHeaders = headerCols.drop(1)
 
     // skip any table separators
-    val contentLines = dataLines.tail.filterNot(_.matches("""\|\s*-*:?\|\s*.*"""))
+    val contentLines =
+      dataLines.tail.filterNot(_.matches("""\|\s*-*:?\|\s*.*"""))
 
     for ((line, i) <- contentLines.zipWithIndex) {
       val cells = parseMarkdownRow(line)
-      // Import StringOps from compat package for Scala 2.12
-      import com.tjclp.xlcr.compat._
-      
+      // Import scala.collection.compat for String extensions
+      import scala.collection.compat._
+
       if (cells.nonEmpty) {
         val rowNumberString = cells.head.trim
         // row is 1-based
@@ -87,15 +87,18 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
         if (rowIndex >= 0) {
           val rowObj = sheet.createRow(rowIndex)
           for (colIndex <- colHeaders.indices) {
-            val value = if (colIndex + 1 < cells.size) cells(colIndex + 1).trim else ""
+            val value =
+              if (colIndex + 1 < cells.size) cells(colIndex + 1).trim else ""
             val cleanedValue = extractValue(value)
-            val cellType = determineCellType(value, cleanedValue)
-            val cellObj = rowObj.createCell(colIndex, cellType)
+            val cellType     = determineCellType(value, cleanedValue)
+            val cellObj      = rowObj.createCell(colIndex, cellType)
             cellType match {
               case CellType.NUMERIC =>
                 cellObj.setCellValue(cleanedValue.toDoubleOption.getOrElse(0.0))
               case CellType.BOOLEAN =>
-                cellObj.setCellValue(cleanedValue.toBooleanOption.getOrElse(false))
+                cellObj.setCellValue(
+                  cleanedValue.toBooleanOption.getOrElse(false)
+                )
               case CellType.FORMULA =>
                 cellObj.setCellFormula(cleanedValue)
               case CellType.BLANK =>
@@ -121,31 +124,39 @@ class SheetsDataMarkdownParser extends SheetsDataParser[TextMarkdown.type] {
     val valueRegex = """(?s).*?VALUE:``(.*?)``.*""".r
     mdCell match {
       case valueRegex(captured) => captured
-      case _ => mdCell
+      case _                    => mdCell
     }
   }
 
-  private def determineCellType(fullValue: String, cleanedValue: String): CellType = {
+  private def determineCellType(
+    fullValue: String,
+    cleanedValue: String
+  ): CellType = {
     val typeRegex = """(?s).*?TYPE:``(.*?)``.*""".r
     val explicitTypeOpt = fullValue match {
       case typeRegex(t) => Some(t)
-      case _ => None
+      case _            => None
     }
     explicitTypeOpt match {
       case Some("NUMERIC") => CellType.NUMERIC
       case Some("BOOLEAN") => CellType.BOOLEAN
       case Some("FORMULA") => CellType.FORMULA
-      case Some("BLANK") => CellType.BLANK
-      case Some(_) => CellType.STRING
+      case Some("BLANK")   => CellType.BLANK
+      case Some(_)         => CellType.STRING
       case None =>
         if (cleanedValue.matches("""-?\d+(\.\d+)?""")) CellType.NUMERIC
-        else if (cleanedValue.equalsIgnoreCase("true") || cleanedValue.equalsIgnoreCase("false")) CellType.BOOLEAN
+        else if (
+          cleanedValue.equalsIgnoreCase("true") || cleanedValue
+            .equalsIgnoreCase("false")
+        ) CellType.BOOLEAN
         else if (cleanedValue.isEmpty) CellType.BLANK
         else CellType.STRING
     }
   }
 
-  private def workbookToSheetsData(workbook: XSSFWorkbook): (List[SheetData], FormulaEvaluator) = {
+  private def workbookToSheetsData(
+    workbook: XSSFWorkbook
+  ): (List[SheetData], FormulaEvaluator) = {
     val evaluator = workbook.getCreationHelper.createFormulaEvaluator()
     val sheets = (0 until workbook.getNumberOfSheets).map { idx =>
       val sheet = workbook.getSheetAt(idx)

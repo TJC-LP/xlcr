@@ -1,21 +1,23 @@
 package com.tjclp.xlcr
 package renderers.tika
 
-import models.tika.TikaModel
-import renderers.tika.TikaRenderer
-import types.MimeType
+import scala.reflect.ClassTag
+
 import base.RendererSpec
+import models.tika.TikaModel
+import types.MimeType.TextPlain
 
 class TikaRendererSpec extends RendererSpec {
 
   "TikaRenderer" should "render TikaModel to bytes" in {
-    val renderer = new TikaRenderer[MimeType.TextPlain.type] {
-      val mimeType = MimeType.TextPlain
-      val mimeTag = implicitly[scala.reflect.ClassTag[MimeType.TextPlain.type]]
+    val renderer = new TikaRenderer[TextPlain.type] {
+      val mimeType: TextPlain.type = TextPlain
+      val mimeTag: ClassTag[TextPlain.type] =
+        implicitly[scala.reflect.ClassTag[TextPlain.type]]
     }
-    val model = TikaModel[MimeType.TextPlain.type]("Some text", Map.empty)
+    val model  = TikaModel[TextPlain.type]("Some text", Map.empty)
     val result = renderer.render(model)
-    result.mimeType shouldBe MimeType.TextPlain
+    result.mimeType shouldBe TextPlain
     new String(result.data) shouldBe "Some text"
   }
 }

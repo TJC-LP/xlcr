@@ -1,13 +1,12 @@
 package com.tjclp.xlcr
 package base
 
-import models.{FileContent, Model}
-import renderers.Renderer
-import types.MimeType
-
-import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import models.{ FileContent, Model }
+import renderers.Renderer
+import types.MimeType
 
 trait RendererSpec extends AnyFlatSpec with Matchers {
 
@@ -15,10 +14,10 @@ trait RendererSpec extends AnyFlatSpec with Matchers {
    * Helper method to render a model and compare with expected FileContent.
    */
   def renderAndCompare[M <: Model, O <: MimeType](
-                                                   renderer: Renderer[M, O],
-                                                   model: M,
-                                                   expected: FileContent[O]
-                                                 ): Unit = {
+    renderer: Renderer[M, O],
+    model: M,
+    expected: FileContent[O]
+  ): Unit = {
     val result = renderer.render(model)
     result.mimeType shouldBe expected.mimeType
     result.data shouldBe expected.data
@@ -28,10 +27,10 @@ trait RendererSpec extends AnyFlatSpec with Matchers {
    * Check for expected RendererError on invalid model
    */
   def renderWithError[M <: Model, O <: MimeType](
-                                                  renderer: Renderer[M, O],
-                                                  model: M,
-                                                  errorSubstring: String
-                                                ): Unit = {
+    renderer: Renderer[M, O],
+    model: M,
+    errorSubstring: String
+  ): Unit = {
     val ex = intercept[RendererError] {
       renderer.render(model)
     }

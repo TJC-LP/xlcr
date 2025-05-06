@@ -1,97 +1,102 @@
 package com.tjclp.xlcr
 package parsers.powerpoint
 
-import models.FileContent
-import models.powerpoint._
-import parsers.Parser
-import types.MimeType
-import types.MimeType.ApplicationVndMsPowerpoint
+import java.awt.{ Color, Rectangle }
+import java.io.ByteArrayInputStream
 
-import org.apache.poi.sl.usermodel.{ColorStyle, PaintStyle}
+import scala.jdk.CollectionConverters._
+import scala.util.Try
+
+import org.apache.poi.sl.usermodel.ColorStyle
 import org.apache.poi.sl.usermodel.PaintStyle.SolidPaint
 import org.apache.poi.xslf.usermodel._
 
-import java.awt.{Color, Rectangle}
-import java.io.ByteArrayInputStream
-// Import the right collection converters based on Scala version
-import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
-// Import Using from our compat package
-import com.tjclp.xlcr.compat.Using
-import scala.util.Try
+import models.FileContent
+import models.powerpoint._
+import parsers.SimpleParser
+import types.MimeType.ApplicationVndMsPowerpoint
+import compat.Using
 
 /**
- * SlidesDataPowerPointParser parses PowerPoint presentations (PPTX) into SlidesData,
- * including style (fill color, stroke color/width) and text font details.
+ * SlidesDataPowerPointParser parses PowerPoint presentations (PPTX) into SlidesData, including
+ * style (fill color, stroke color/width) and text font details.
  */
-object SlidesDataPowerPointParser extends Parser[ApplicationVndMsPowerpoint.type, SlidesData] {
-  override def parse(input: FileContent[ApplicationVndMsPowerpoint.type]): SlidesData = {
+object SlidesDataPowerPointParser
+    extends SimpleParser[ApplicationVndMsPowerpoint.type, SlidesData] {
+  override def parse(
+    input: FileContent[ApplicationVndMsPowerpoint.type]
+  ): SlidesData =
     Try {
       Using.resource(new ByteArrayInputStream(input.data)) { bais =>
         val ppt = new XMLSlideShow(bais)
-        val slides = ppt.getSlides.asScala.zipWithIndex.map { case (slide, idx) =>
-          val title = Option(slide.getTitle)
-          val notes = Option(slide.getNotes).map { notesSlide =>
-            notesSlide.getShapes.asScala.collect {
-              case ts: XSLFTextShape => ts.getText
-            }.mkString(" ")
-          }
+        val slides = ppt.getSlides.asScala.zipWithIndex.map {
+          case (slide, idx) =>
+            val title = Option(slide.getTitle)
+            val notes = Option(slide.getNotes).map { notesSlide =>
+              notesSlide.getShapes.asScala
+                .collect { case ts: XSLFTextShape =>
+                  ts.getText
+                }
+                .mkString(" ")
+            }
 
-          // Extract shapes from the slide
-          val elements = slide.getShapes.asScala.toList.map { shape =>
-            val elementType = guessElementType(shape)
-            val contentOpt = getTextContent(shape)
-            val shapeTypeOpt = guessShapeType(shape)
-            val anchorRect = rectangleFromAnchor(shape.getAnchor)
-            val rotationDeg = getRotation(shape)
-            val positionOpt = Some(
-              Position(
-                x = anchorRect.x.toDouble,
-                y = anchorRect.y.toDouble,
-                width = anchorRect.width.toDouble,
-                height = anchorRect.height.toDouble,
-                rotation = Some(rotationDeg)
+            // Extract shapes from the slide
+            val elements = slide.getShapes.asScala.toList.map { shape =>
+              val elementType  = guessElementType(shape)
+              val contentOpt   = getTextContent(shape)
+              val shapeTypeOpt = guessShapeType(shape)
+              val anchorRect   = rectangleFromAnchor(shape.getAnchor)
+              val rotationDeg  = getRotation(shape)
+              val positionOpt = Some(
+                Position(
+                  x = anchorRect.x.toDouble,
+                  y = anchorRect.y.toDouble,
+                  width = anchorRect.width.toDouble,
+                  height = anchorRect.height.toDouble,
+                  rotation = Some(rotationDeg)
+                )
               )
+
+              val styleOpt = buildStyle(shape)
+
+              SlideElement(
+                elementType = elementType,
+                shapeType = shapeTypeOpt,
+                content = contentOpt,
+                position = positionOpt,
+                style = styleOpt
+              )
+            }
+
+            // Extract background color if any
+            val backgroundColor = Option(slide.getBackground).flatMap { bg =>
+              Option(bg.getFillColor).map(c => colorToHex(c))
+            }
+
+            SlideData(
+              title = title,
+              index = idx,
+              elements = elements,
+              notes = notes,
+              backgroundColor = backgroundColor
             )
-
-            val styleOpt = buildStyle(shape)
-
-            SlideElement(
-              elementType = elementType,
-              shapeType = shapeTypeOpt,
-              content = contentOpt,
-              position = positionOpt,
-              style = styleOpt
-            )
-          }
-
-          // Extract background color if any
-          val backgroundColor = Option(slide.getBackground).flatMap { bg =>
-            Option(bg.getFillColor).map(c => colorToHex(c))
-          }
-
-          SlideData(
-            title = title,
-            index = idx,
-            elements = elements,
-            notes = notes,
-            backgroundColor = backgroundColor
-          )
         }.toList
 
         ppt.close()
         SlidesData(slides)
       }
-    }.recover {
-      case ex: Exception =>
-        throw ParserError(s"Failed to parse PowerPoint to SlidesData: ${ex.getMessage}", Some(ex))
+    }.recover { case ex: Exception =>
+      throw ParserError(
+        s"Failed to parse PowerPoint to SlidesData: ${ex.getMessage}",
+        Some(ex)
+      )
     }.get
-  }
 
   /**
    * Build a SlideElementStyle from the shape's fill, line, and text run properties.
    */
   private def buildStyle(shape: XSLFShape): Option[SlideElementStyle] = {
-    val fillColor = getFillColor(shape)
+    val fillColor   = getFillColor(shape)
     val strokeColor = getLineColor(shape)
     val strokeWidth = getLineWidth(shape)
 
@@ -121,7 +126,7 @@ object SlidesDataPowerPointParser extends Parser[ApplicationVndMsPowerpoint.type
   /**
    * Extract fill color from a shape, returning a hex string if we find it.
    */
-  private def getFillColor(shape: XSLFShape): Option[String] = {
+  private def getFillColor(shape: XSLFShape): Option[String] =
     shape match {
       case auto: XSLFAutoShape =>
         Option(auto.getFillColor).map(colorToHex)
@@ -129,30 +134,27 @@ object SlidesDataPowerPointParser extends Parser[ApplicationVndMsPowerpoint.type
         Option(textShape.getFillColor).map(colorToHex)
       case _ => None
     }
-  }
 
   /**
    * Extract line color from a shape, returning a hex string if found.
    */
-  private def getLineColor(shape: XSLFShape): Option[String] = {
+  private def getLineColor(shape: XSLFShape): Option[String] =
     shape match {
       case sh: XSLFSimpleShape =>
         Option(sh.getLineColor).map(colorToHex)
       case _ => None
     }
-  }
 
   /**
    * Extract line width from a shape, if available.
    */
-  private def getLineWidth(shape: XSLFShape): Option[Double] = {
+  private def getLineWidth(shape: XSLFShape): Option[Double] =
     shape match {
       case sh: XSLFSimpleShape =>
         val lw = sh.getLineWidth
         if (lw > 0) Some(lw) else None
       case _ => None
     }
-  }
 
   /**
    * Convert a single text run to PptFontData, extracting color, size, bold, italic, etc.
@@ -179,70 +181,65 @@ object SlidesDataPowerPointParser extends Parser[ApplicationVndMsPowerpoint.type
   /**
    * Convert an Apache ColorStyle to a java.awt.Color
    */
-  private def toAwtColor(cs: ColorStyle): Color = {
+  private def toAwtColor(cs: ColorStyle): Color =
     cs.getColor
-  }
 
   /**
    * Attempt to extract text content from a shape if it's a text shape.
    */
-  private def getTextContent(shape: XSLFShape): Option[String] = {
+  private def getTextContent(shape: XSLFShape): Option[String] =
     shape match {
       case ts: XSLFTextShape =>
         val txt = ts.getText
         Option(txt).filterNot(_.trim.isEmpty)
       case _ => None
     }
-  }
 
   /**
    * Provide a top-level guess for shape type: text/image/shape
    */
-  private def guessElementType(shape: XSLFShape): String = {
+  private def guessElementType(shape: XSLFShape): String =
     shape match {
-      case _: XSLFTextShape => "text"
+      case _: XSLFTextShape    => "text"
       case _: XSLFPictureShape => "image"
-      case _ => "shape"
+      case _                   => "shape"
     }
-  }
 
   /**
    * Provide a more specific shape type, e.g. "XSLFAutoShape"
    */
-  private def guessShapeType(shape: XSLFShape): Option[String] = {
+  private def guessShapeType(shape: XSLFShape): Option[String] =
     shape match {
-      case _: XSLFTextShape => None
+      case _: XSLFTextShape    => None
       case _: XSLFPictureShape => None
-      case other => Some(other.getClass.getSimpleName)
+      case other               => Some(other.getClass.getSimpleName)
     }
-  }
 
   /**
    * Convert the anchor (Rectangle2D) to a concrete Rectangle of integer coords.
    */
-  private def rectangleFromAnchor(rect2D: java.awt.geom.Rectangle2D): Rectangle = {
+  private def rectangleFromAnchor(
+    rect2D: java.awt.geom.Rectangle2D
+  ): Rectangle =
     new Rectangle(
       rect2D.getX.toInt,
       rect2D.getY.toInt,
       rect2D.getWidth.toInt,
       rect2D.getHeight.toInt
     )
-  }
 
   /**
    * Retrieve the shape's rotation, or 0.0 if not available.
    */
-  private def getRotation(shape: XSLFShape): Double = {
+  private def getRotation(shape: XSLFShape): Double =
     shape match {
       case s: XSLFSimpleShape => s.getRotation
-      case _ => 0.0
+      case _                  => 0.0
     }
-  }
 
   /**
    * Convert Java Color to #RRGGBB format
    */
-  private def colorToHex(color: Color): String = {
-    f"#${color.getRGB & 0xFFFFFF}%06X"
-  }
+  private def colorToHex(color: Color): String =
+    f"#${color.getRGB & 0xffffff}%06X"
 }

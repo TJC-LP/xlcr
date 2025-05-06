@@ -2,16 +2,14 @@
 package com.tjclp.xlcr
 package parsers.tika
 
+import org.xml.sax.ContentHandler
+
 import types.MimeType
 import types.MimeType.ApplicationXml
 
-import org.xml.sax.ContentHandler
-
 /**
- * A TikaParser that produces TikaModel[ApplicationXml.type].
- * Usage:
- * val parser = new TikaXmlParser()
- * val result: TikaModel[ApplicationXml.type] = parser.parse(fileContent)
+ * A TikaParser that produces TikaModel[ApplicationXml.type]. Usage: val parser = new
+ * TikaXmlParser() val result: TikaModel[ApplicationXml.type] = parser.parse(fileContent)
  */
 class TikaXmlParser extends TikaParser[MimeType, ApplicationXml.type] {
 

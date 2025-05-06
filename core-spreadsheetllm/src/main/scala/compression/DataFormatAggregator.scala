@@ -1,20 +1,20 @@
 package com.tjclp.xlcr
 package compression
 
-import com.tjclp.xlcr.compression.models.{CellInfo, SheetGrid}
-import com.tjclp.xlcr.compat.StringOps
+import scala.collection.compat._
+
+import com.tjclp.xlcr.compression.models.{ CellInfo, SheetGrid }
+
 import org.slf4j.LoggerFactory
 
-import scala.util.matching.Regex
-
 /**
- * DataFormatAggregator applies format-based rules to compress regions of similar data.
- * It focuses on deterministic formats like dates, currencies, and numbers,
- * replacing specific values with format descriptors to reduce token usage.
+ * DataFormatAggregator applies format-based rules to compress regions of similar data. It focuses
+ * on deterministic formats like dates, currencies, and numbers, replacing specific values with
+ * format descriptors to reduce token usage.
  *
- * This is the third step in the SpreadsheetLLM compression pipeline,
- * applied after AnchorExtractor and InvertedIndexTranslator.
- * 
+ * This is the third step in the SpreadsheetLLM compression pipeline, applied after AnchorExtractor
+ * and InvertedIndexTranslator.
+ *
  * Implementation is aligned with the original TableDataAggregation.py algorithm.
  */
 object DataFormatAggregator {
@@ -23,34 +23,37 @@ object DataFormatAggregator {
   // Scala 2 compatible definition of DataType
   sealed trait DataType
   object DataType {
-    case object Integer extends DataType
-    case object Float extends DataType
-    case object Date extends DataType
-    case object Time extends DataType
-    case object Currency extends DataType
-    case object Percentage extends DataType
-    case object Year extends DataType
+    case object Integer            extends DataType
+    case object Float              extends DataType
+    case object Date               extends DataType
+    case object Time               extends DataType
+    case object Currency           extends DataType
+    case object Percentage         extends DataType
+    case object Year               extends DataType
     case object ScientificNotation extends DataType
-    case object Email extends DataType
-    case object Text extends DataType
-    case object Empty extends DataType
-    case object Fraction extends DataType
-    case object IpAddress extends DataType
+    case object Email              extends DataType
+    case object Text               extends DataType
+    case object Empty              extends DataType
+    case object Fraction           extends DataType
+    case object IpAddress          extends DataType
   }
 
   /**
    * Applies format-based aggregation to the dictionary produced by the InvertedIndexTranslator.
    * Replaces regions of similar values with type descriptors.
    *
-   * @param contentMap The map of cell content to locations from InvertedIndexTranslator
-   * @param grid       The original sheet grid with cell information
-   * @return An updated map with format aggregation applied
+   * @param contentMap
+   *   The map of cell content to locations from InvertedIndexTranslator
+   * @param grid
+   *   The original sheet grid with cell information
+   * @return
+   *   An updated map with format aggregation applied
    */
   def aggregate(
-                 contentMap: Map[String, Either[String, List[String]]],
-                 grid: SheetGrid,
-                 config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()
-               ): Map[String, Either[String, List[String]]] = {
+    contentMap: Map[String, Either[String, List[String]]],
+    grid: SheetGrid,
+    config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()
+  ): Map[String, Either[String, List[String]]] = {
     if (contentMap.isEmpty) {
       return contentMap
     }
@@ -74,31 +77,41 @@ object DataFormatAggregator {
 
     // Log compression results
     val compressionRatio = if (result.nonEmpty) contentMap.size.toDouble / result.size else 1.0
-    logger.info(f"Format aggregation: ${contentMap.size} entries -> ${result.size} entries ($compressionRatio%.2fx compression)")
+    logger.info(
+      f"Format aggregation: ${contentMap.size} entries -> ${result.size} entries ($compressionRatio%.2fx compression)"
+    )
 
     result
   }
 
   /**
-   * Applies format-based aggregation directly to cells in the grid before dictionary building.
-   * This approach provides more consistent aggregation by replacing cell values with type
-   * descriptors before inverted index translation.
+   * Applies format-based aggregation directly to cells in the grid before dictionary building. This
+   * approach provides more consistent aggregation by replacing cell values with type descriptors
+   * before inverted index translation.
    *
-   * @param grid   The anchored/pruned SheetGrid to process
-   * @param config The pipeline configuration
-   * @return A new SheetGrid with cell values replaced by type descriptors where appropriate
+   * @param grid
+   *   The anchored/pruned SheetGrid to process
+   * @param config
+   *   The pipeline configuration
+   * @return
+   *   A new SheetGrid with cell values replaced by type descriptors where appropriate
    */
-  def aggregateCells(grid: SheetGrid, config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()): SheetGrid = {
+  def aggregateCells(
+    grid: SheetGrid,
+    config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()
+  ): SheetGrid = {
     if (grid.cells.isEmpty) {
       logger.info("SheetGrid is empty; skipping cell aggregation.")
       return grid
     }
 
-    logger.info("Performing type-based data aggregation on grid cells before dictionary compression")
+    logger.info(
+      "Performing type-based data aggregation on grid cells before dictionary compression"
+    )
 
     // Count original cell types for logging
     val originalCellCount = grid.cells.size
-    val typeCounts = collection.mutable.Map[DataType, Int]().withDefaultValue(0)
+    val typeCounts        = collection.mutable.Map[DataType, Int]().withDefaultValue(0)
 
     // Special debug mode for specific date/number detection issues
     val isDebugMode = config.verbose || config.debugDataDetection
@@ -129,7 +142,9 @@ object DataFormatAggregator {
       }
 
       if (suspiciousCells.nonEmpty) {
-        logger.debug(s"Found ${suspiciousCells.size} suspicious cells that might have detection issues:")
+        logger.debug(
+          s"Found ${suspiciousCells.size} suspicious cells that might have detection issues:"
+        )
         suspiciousCells.take(20).foreach { case ((r, c), cellInfo) =>
           val address = InvertedIndexTranslator.CellAddress(r, c).toA1Notation
           logger.debug(f"  $address: '${cellInfo.value}' " +
@@ -146,13 +161,13 @@ object DataFormatAggregator {
 
       // Identify data type using existing inference logic
       val dataType = inferDataType(
-        value         = cellInfo.value,
-        isEmpty       = cellInfo.isEmpty,
-        isDateFlag    = cellInfo.isDate,
+        value = cellInfo.value,
+        isEmpty = cellInfo.isEmpty,
+        isDateFlag = cellInfo.isDate,
         isNumericFlag = cellInfo.isNumeric,
-        formatString  = cellInfo.numberFormatString,
-        config        = Some(config),
-        cellAddress   = Some(cellAddress)
+        formatString = cellInfo.numberFormatString,
+        config = Some(config),
+        cellAddress = Some(cellAddress)
       )
 
       // Track type counts for logging
@@ -166,9 +181,9 @@ object DataFormatAggregator {
       // Determine if this cell should be aggregated
       val shouldAggregate = dataType match {
         case DataType.Integer | DataType.Float | DataType.Currency |
-             DataType.Percentage | DataType.Date | DataType.Time |
-             DataType.Year | DataType.ScientificNotation |
-             DataType.Email | DataType.IpAddress | DataType.Fraction => true
+            DataType.Percentage | DataType.Date | DataType.Time |
+            DataType.Year | DataType.ScientificNotation |
+            DataType.Email | DataType.IpAddress | DataType.Fraction => true
         case _ => false
       }
 
@@ -177,42 +192,47 @@ object DataFormatAggregator {
         // Create the appropriate type descriptor string
         val aggregatedValue = dataType match {
           case DataType.Integer => "<IntNum>"
-          case DataType.Float => "<FloatNum>"
-          case DataType.Date =>
+          case DataType.Float   => "<FloatNum>"
+          case DataType.Date    =>
             // For dates, we can include format information if available
             cellInfo.numberFormatString match {
               case Some(format) if format.nonEmpty => s"<DateData:$format>"
-              case _ => "<DateData>"
+              case _                               => "<DateData>"
             }
-          case DataType.Time => "<TimeData>"
-          case DataType.Currency => "<CurrencyData>"
+          case DataType.Time       => "<TimeData>"
+          case DataType.Currency   => "<CurrencyData>"
           case DataType.Percentage => "<PercentageNum>"
-          case DataType.Year => "<YearData>"
-          case DataType.ScientificNotation => "<SentificNum>" // Note: Typo "SentificNum" matches original Python code
-          case DataType.Email => "<EmailData>"
-          case DataType.Fraction => "<FractionData>"
+          case DataType.Year       => "<YearData>"
+          case DataType.ScientificNotation =>
+            "<SentificNum>" // Note: Typo "SentificNum" matches original Python code
+          case DataType.Email     => "<EmailData>"
+          case DataType.Fraction  => "<FractionData>"
           case DataType.IpAddress => "<IPAddressData>"
-          case _ => cellInfo.value // Shouldn't happen due to shouldAggregate check
+          case _                  => cellInfo.value // Shouldn't happen due to shouldAggregate check
         }
 
         // Verbose logging for aggregation decisions
         if (isDebugMode) {
-          logger.debug(f"AGGREGATING $cellAddress: '${cellInfo.value}' -> '$aggregatedValue' (detected as $dataType)")
+          logger.debug(
+            f"AGGREGATING $cellAddress: '${cellInfo.value}' -> '$aggregatedValue' (detected as $dataType)"
+          )
 
           // Extra details for date/time cells
           if (dataType == DataType.Date || dataType == DataType.Time) {
             logger.debug(f"  DATE/TIME INFO: cell=$cellAddress, value='${cellInfo.value}', " +
-                        f"isDateFlag=${cellInfo.isDate}, " +
-                        f"formatString=${cellInfo.numberFormatString.getOrElse("none")}, " +
-                        f"matches date pattern=${isDateByPattern(cellInfo.value, isDebugMode, cellAddress)}, " +
-                        f"matches time pattern=${isTimeByPattern(cellInfo.value)}")
+              f"isDateFlag=${cellInfo.isDate}, " +
+              f"formatString=${cellInfo.numberFormatString.getOrElse("none")}, " +
+              f"matches date pattern=${isDateByPattern(cellInfo.value, isDebugMode, cellAddress)}, " +
+              f"matches time pattern=${isTimeByPattern(cellInfo.value)}")
           }
           // Extra details for numeric cells
           else if (dataType == DataType.Integer || dataType == DataType.Float) {
-            logger.debug(f"  NUMBER INFO: cell=$cellAddress, value='${cellInfo.value}', " +
-                        f"isNumericFlag=${cellInfo.isNumeric}, " +
-                        f"formatString=${cellInfo.numberFormatString.getOrElse("none")}, " +
-                        f"matches numeric pattern=${isNumericByPattern(cellInfo.value, isDebugMode, cellAddress)}")
+            logger.debug(
+              f"  NUMBER INFO: cell=$cellAddress, value='${cellInfo.value}', " +
+                f"isNumericFlag=${cellInfo.isNumeric}, " +
+                f"formatString=${cellInfo.numberFormatString.getOrElse("none")}, " +
+                f"matches numeric pattern=${isNumericByPattern(cellInfo.value, isDebugMode, cellAddress)}"
+            )
           }
         }
 
@@ -233,7 +253,9 @@ object DataFormatAggregator {
       k == DataType.Email || k == DataType.IpAddress || k == DataType.Fraction
     }.values.sum
 
-    logger.info(f"Cell aggregation: $originalCellCount cells -> $aggregatedCount aggregated cells (${aggregatedCount * 100.0 / originalCellCount}%.1f%% aggregated)")
+    logger.info(
+      f"Cell aggregation: $originalCellCount cells -> $aggregatedCount aggregated cells (${aggregatedCount * 100.0 / originalCellCount}%.1f%% aggregated)"
+    )
 
     // Extended logging for debugging type detection issues
     if (isDebugMode) {
@@ -253,8 +275,8 @@ object DataFormatAggregator {
           dateCells.toSeq.sortBy(_._2._3).foreach { case ((r, c), (value, _, address)) =>
             val cellInfo = grid.cells((r, c))
             logger.debug(f"  $address: '$value' (isDateFlag=${cellInfo.isDate}, " +
-                        f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
-                        f"matches pattern=${isDateByPattern(value, isDebugMode, address)})")
+              f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
+              f"matches pattern=${isDateByPattern(value, isDebugMode, address)})")
           }
         }
 
@@ -266,9 +288,11 @@ object DataFormatAggregator {
           logger.debug("NUMERIC CELLS DETECTED:")
           numericCells.toSeq.sortBy(_._2._3).foreach { case ((r, c), (value, dataType, address)) =>
             val cellInfo = grid.cells((r, c))
-            logger.debug(f"  $address: '$value' -> $dataType (isNumericFlag=${cellInfo.isNumeric}, " +
-                        f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
-                        f"matches numeric pattern=${isNumericByPattern(value, isDebugMode, address)})")
+            logger.debug(
+              f"  $address: '$value' -> $dataType (isNumericFlag=${cellInfo.isNumeric}, " +
+                f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
+                f"matches numeric pattern=${isNumericByPattern(value, isDebugMode, address)})"
+            )
           }
         }
 
@@ -287,11 +311,13 @@ object DataFormatAggregator {
             .sortBy(_._2._3)
             .foreach { case ((r, c), (value, _, address)) =>
               val cellInfo = grid.cells((r, c))
-              logger.debug(f"  $address: '$value' classified as TEXT but contains numbers/symbols " +
-                          f"(isDateFlag=${cellInfo.isDate}, isNumericFlag=${cellInfo.isNumeric}, " +
-                          f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
-                          f"matches date pattern=${isDateByPattern(value, isDebugMode, address)}, " +
-                          f"matches numeric pattern=${isNumericByPattern(value, isDebugMode, address)})")
+              logger.debug(
+                f"  $address: '$value' classified as TEXT but contains numbers/symbols " +
+                  f"(isDateFlag=${cellInfo.isDate}, isNumericFlag=${cellInfo.isNumeric}, " +
+                  f"format=${cellInfo.numberFormatString.getOrElse("none")}, " +
+                  f"matches date pattern=${isDateByPattern(value, isDebugMode, address)}, " +
+                  f"matches numeric pattern=${isNumericByPattern(value, isDebugMode, address)})"
+              )
             }
         }
       }
@@ -302,16 +328,24 @@ object DataFormatAggregator {
   }
 
   /**
-   * Builds a map from cell content to its detected data type.
-   * Also captures Number Format Strings from Excel when available.
+   * Builds a map from cell content to its detected data type. Also captures Number Format Strings
+   * from Excel when available.
    *
-   * @param cells Sequence of cell information
-   * @return Tuple of (Map from cell value to detected data type, Map from cell value to NFS)
+   * @param cells
+   *   Sequence of cell information
+   * @return
+   *   Tuple of (Map from cell value to detected data type, Map from cell value to NFS)
    */
   private def buildTypeMap(cells: Seq[CellInfo]): (Map[String, DataType], Map[String, String]) = {
     // Build a map from cell value to data type
     val typeMap = cells.map { cell =>
-      val dataType = inferDataType(cell.value, cell.isEmpty, cell.isDate, cell.isNumeric, cell.numberFormatString)
+      val dataType = inferDataType(
+        cell.value,
+        cell.isEmpty,
+        cell.isDate,
+        cell.isNumeric,
+        cell.numberFormatString
+      )
       (cell.value, dataType)
     }.toMap
 
@@ -331,38 +365,45 @@ object DataFormatAggregator {
    * Infers data type with pattern matching, with additional logging when verbose is enabled.
    * Implements the rules from CaseJudge.py and TableDataAggregation.py
    *
-   * @param value         The cell value as a string
-   * @param isEmpty       Whether the cell is empty
-   * @param isDateFlag    Whether the cell was flagged as a date by Excel
-   * @param isNumericFlag Whether the cell was flagged as numeric by Excel
-   * @param formatString  The number format string from Excel if available
-   * @param config        Optional configuration for verbose logging
-   * @param cellAddress   Optional cell address for debug logging
-   * @return The detected DataType
+   * @param value
+   *   The cell value as a string
+   * @param isEmpty
+   *   Whether the cell is empty
+   * @param isDateFlag
+   *   Whether the cell was flagged as a date by Excel
+   * @param isNumericFlag
+   *   Whether the cell was flagged as numeric by Excel
+   * @param formatString
+   *   The number format string from Excel if available
+   * @param config
+   *   Optional configuration for verbose logging
+   * @param cellAddress
+   *   Optional cell address for debug logging
+   * @return
+   *   The detected DataType
    */
   private def inferDataType(
-                             value: String,
-                             isEmpty: Boolean,
-                             isDateFlag: Boolean,
-                             isNumericFlag: Boolean,
-                             formatString: Option[String] = None,
-                             config: Option[SpreadsheetLLMConfig] = None,
-                             cellAddress: Option[String] = None
-                           ): DataType = {
+    value: String,
+    isEmpty: Boolean,
+    isDateFlag: Boolean,
+    isNumericFlag: Boolean,
+    formatString: Option[String] = None,
+    config: Option[SpreadsheetLLMConfig] = None,
+    cellAddress: Option[String] = None
+  ): DataType = {
     // Use for detailed debug logging if provided
     val isVerbose = config.exists(_.verbose)
     val logPrefix = cellAddress.map(addr => s"[$addr] ").getOrElse("")
 
-    def debugLog(message: String): Unit = {
+    def debugLog(message: String): Unit =
       if (isVerbose) logger.debug(s"${logPrefix}TYPE INFERENCE: $message")
-    }
 
     if (isEmpty) {
       debugLog("Empty cell -> DataType.Empty")
       DataType.Empty
-    // If we have a format string, use it as first priority
+      // If we have a format string, use it as first priority
     } else if (formatString.isDefined && formatString.get.nonEmpty) {
-      val nfs = formatString.get
+      val nfs     = formatString.get
       val nfsType = getTypeFromNfs(nfs)
       if (nfsType != DataType.Text) {
         debugLog(s"Using format string '$nfs' -> $nfsType")
@@ -377,54 +418,54 @@ object DataFormatAggregator {
     if (isDateFlag) {
       debugLog(s"Excel date flag is true for '$value' -> DataType.Date")
       DataType.Date
-    // Check special date formats from Python CaseJudge.py
+      // Check special date formats from Python CaseJudge.py
     } else if (isDateByPattern(value, isVerbose, cellAddress.getOrElse(""))) {
       debugLog(s"'$value' matches date pattern -> DataType.Date")
       DataType.Date
-    // Check for time formats
+      // Check for time formats
     } else if (isTimeByPattern(value)) {
       debugLog(s"'$value' matches time pattern -> DataType.Time")
       DataType.Time
-    // Check for percentage (immediately visible pattern)
+      // Check for percentage (immediately visible pattern)
     } else if (isPercentageByPattern(value)) {
       debugLog(s"'$value' matches percentage pattern -> DataType.Percentage")
       DataType.Percentage
-    // Check for currency symbols
+      // Check for currency symbols
     } else if (isCurrencyByPattern(value)) {
       debugLog(s"'$value' matches currency pattern -> DataType.Currency")
       DataType.Currency
-    // Check for scientific notation
+      // Check for scientific notation
     } else if (isScientificNotation(value)) {
       debugLog(s"'$value' matches scientific notation pattern -> DataType.ScientificNotation")
       DataType.ScientificNotation
-    // Check for email format
+      // Check for email format
     } else if (isEmailByPattern(value)) {
       debugLog(s"'$value' matches email pattern -> DataType.Email")
       DataType.Email
-    // Check for year (standalone)
+      // Check for year (standalone)
     } else if (isYearPattern(value)) {
       debugLog(s"'$value' matches year pattern -> DataType.Year")
       DataType.Year
-    // Check for fractions
+      // Check for fractions
     } else if (isFractionPattern(value)) {
       debugLog(s"'$value' matches fraction pattern -> DataType.Fraction")
       DataType.Fraction
-    // Check for IP addresses
+      // Check for IP addresses
     } else if (isIpAddress(value)) {
       debugLog(s"'$value' matches IP address pattern -> DataType.IpAddress")
       DataType.IpAddress
-    // For numeric types, check if it's a decimal or integer
+      // For numeric types, check if it's a decimal or integer
     } else if (isNumericByPattern(value, isVerbose, cellAddress.getOrElse("")) || isNumericFlag) {
       if (value.contains(".")) {
         debugLog(s"'$value' is numeric with decimal point -> DataType.Float" +
-                 (if (isNumericFlag) " (Excel flag)" else " (pattern match)"))
+          (if (isNumericFlag) " (Excel flag)" else " (pattern match)"))
         DataType.Float
       } else {
         debugLog(s"'$value' is numeric without decimal point -> DataType.Integer" +
-                 (if (isNumericFlag) " (Excel flag)" else " (pattern match)"))
+          (if (isNumericFlag) " (Excel flag)" else " (pattern match)"))
         DataType.Integer
       }
-    // If none of the above patterns match, it's text
+      // If none of the above patterns match, it's text
     } else {
       // Detailed logging for text cells that might be missing detection
       if (isVerbose) {
@@ -436,7 +477,9 @@ object DataFormatAggregator {
         )
         val closeMatches = patterns.filter(_._2).map(_._1)
         if (closeMatches.nonEmpty) {
-          debugLog(s"'$value' classified as TEXT but has some pattern matches: ${closeMatches.mkString(", ")}")
+          debugLog(
+            s"'$value' classified as TEXT but has some pattern matches: ${closeMatches.mkString(", ")}"
+          )
         } else if (value.matches(""".*\d+.*""")) {
           debugLog(s"'$value' classified as TEXT but contains numbers")
         } else {
@@ -449,52 +492,55 @@ object DataFormatAggregator {
   }
 
   /**
-   * Convert Excel number format string to a DataType.
-   * Based on the config.DIC dictionary in Python code.
+   * Convert Excel number format string to a DataType. Based on the config.DIC dictionary in Python
+   * code.
    */
   private def getTypeFromNfs(nfs: String): DataType = {
     // Mapping similar to Python's DIC dictionary
     val nfsMap = Map(
-      "0" -> DataType.Integer,
-      "0.00" -> DataType.Float,
-      "#,##0" -> DataType.Integer,
-      "#,##0.00" -> DataType.Float,
-      "0%" -> DataType.Percentage,
-      "0.00%" -> DataType.Percentage,
-      "0.00E+00" -> DataType.ScientificNotation,
-      "#,##0;(#,##0)" -> DataType.Integer,
-      "#,##0;[Red](#,##0)" -> DataType.Integer,
-      "#,##0.00;(#,##0.00)" -> DataType.Float,
+      "0"                        -> DataType.Integer,
+      "0.00"                     -> DataType.Float,
+      "#,##0"                    -> DataType.Integer,
+      "#,##0.00"                 -> DataType.Float,
+      "0%"                       -> DataType.Percentage,
+      "0.00%"                    -> DataType.Percentage,
+      "0.00E+00"                 -> DataType.ScientificNotation,
+      "#,##0;(#,##0)"            -> DataType.Integer,
+      "#,##0;[Red](#,##0)"       -> DataType.Integer,
+      "#,##0.00;(#,##0.00)"      -> DataType.Float,
       "#,##0.00;[Red](#,##0.00)" -> DataType.Float,
-      "##0.0E+0" -> DataType.ScientificNotation,
+      "##0.0E+0"                 -> DataType.ScientificNotation,
 
       // Date formats
-      "d/m/yyyy" -> DataType.Date,
-      "d-mm-yy" -> DataType.Date,
-      "d-mmm" -> DataType.Date,
-      "mmm-yy" -> DataType.Date,
+      "d/m/yyyy"   -> DataType.Date,
+      "d-mm-yy"    -> DataType.Date,
+      "d-mmm"      -> DataType.Date,
+      "mmm-yy"     -> DataType.Date,
       "yyyy-mm-dd" -> DataType.Date,
 
       // Time formats
-      "h:mm tt" -> DataType.Time,
-      "h:mm:ss tt" -> DataType.Time,
-      "H:mm" -> DataType.Time,
-      "H:mm:ss" -> DataType.Time,
+      "h:mm tt"       -> DataType.Time,
+      "h:mm:ss tt"    -> DataType.Time,
+      "H:mm"          -> DataType.Time,
+      "H:mm:ss"       -> DataType.Time,
       "m/d/yyyy H:mm" -> DataType.Time,
-      "mm:ss" -> DataType.Time,
-      "[h]:mm:ss" -> DataType.Time,
-      "mmss.0" -> DataType.Time
+      "mm:ss"         -> DataType.Time,
+      "[h]:mm:ss"     -> DataType.Time,
+      "mmss.0"        -> DataType.Time
     )
 
     // Look for the exact format string
-    nfsMap.getOrElse(nfs, {
+    nfsMap.getOrElse(
+      nfs,
       // If exact match not found, use pattern matching
       if (nfs.contains("%")) {
         DataType.Percentage
       } else if (nfs.contains("E+") || nfs.contains("e+")) {
         DataType.ScientificNotation
-      } else if ((nfs.contains("d") || nfs.contains("m") || nfs.contains("y")) &&
-              (nfs.contains("/") || nfs.contains("-"))) {
+      } else if (
+        (nfs.contains("d") || nfs.contains("m") || nfs.contains("y")) &&
+        (nfs.contains("/") || nfs.contains("-"))
+      ) {
         DataType.Date
       } else if (nfs.contains("h") || nfs.contains("H") || nfs.contains("s")) {
         DataType.Time
@@ -507,18 +553,26 @@ object DataFormatAggregator {
       } else {
         DataType.Text
       }
-    })
+    )
   }
 
   /**
    * Pattern matching for date detection based on Python CaseJudge.py
    *
-   * @param value The cell value to check
-   * @param verbose Whether to log detailed pattern matching information
-   * @param cellAddress Optional cell address for debug logs
-   * @return Whether the value matches any date pattern
+   * @param value
+   *   The cell value to check
+   * @param verbose
+   *   Whether to log detailed pattern matching information
+   * @param cellAddress
+   *   Optional cell address for debug logs
+   * @return
+   *   Whether the value matches any date pattern
    */
-  private def isDateByPattern(value: String, verbose: Boolean = false, cellAddress: String = ""): Boolean = {
+  private def isDateByPattern(
+    value: String,
+    verbose: Boolean = false,
+    cellAddress: String = ""
+  ): Boolean = {
     // Date patterns from Python with descriptive names for debugging
     val datePatterns = Seq(
       ("YYYY-MM-DD", """\d{4}[-/]\d{1,2}[-/]\d{1,2}"""),
@@ -597,25 +651,25 @@ object DataFormatAggregator {
   /**
    * Pattern matching for fractions like "1/2", "3/4", etc.
    */
-  private def isFractionPattern(value: String): Boolean = {
+  private def isFractionPattern(value: String): Boolean =
     try {
       val parts = value.split('/')
       if (parts.length != 2) {
         return false
       }
-      val numerator = parts(0).trim.toInt
+      val numerator   = parts(0).trim.toInt
       val denominator = parts(1).trim.toInt
       denominator != 0
     } catch {
       case _: Exception => false
     }
-  }
 
   /**
    * Pattern matching for IP addresses (IPv4 and IPv6)
    */
   private def isIpAddress(value: String): Boolean = {
-    val ipv4Pattern = """^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"""
+    val ipv4Pattern =
+      """^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"""
     val ipv6Pattern = """^([\da-fA-F]{1,4}:){7}([\da-fA-F]{1,4})$"""
     value.matches(ipv4Pattern) || value.matches(ipv6Pattern)
   }
@@ -623,12 +677,20 @@ object DataFormatAggregator {
   /**
    * Pattern matching for numeric values, handles common formats
    *
-   * @param value The cell value to check
-   * @param verbose Whether to log detailed pattern matching information
-   * @param cellAddress Optional cell address for debug logs
-   * @return Whether the value matches any numeric pattern
+   * @param value
+   *   The cell value to check
+   * @param verbose
+   *   Whether to log detailed pattern matching information
+   * @param cellAddress
+   *   Optional cell address for debug logs
+   * @return
+   *   Whether the value matches any numeric pattern
    */
-  private def isNumericByPattern(value: String, verbose: Boolean = false, cellAddress: String = ""): Boolean = {
+  private def isNumericByPattern(
+    value: String,
+    verbose: Boolean = false,
+    cellAddress: String = ""
+  ): Boolean = {
     // First check for clean numeric patterns with descriptive names for debugging
     val numericPatterns = Seq(
       ("Integer", """^-?\d+$"""),
@@ -639,7 +701,7 @@ object DataFormatAggregator {
 
     // For standard usage
     if (!verbose) {
-      val cleanIntPattern = """^-?\d+$"""
+      val cleanIntPattern     = """^-?\d+$"""
       val cleanDecimalPattern = """^-?\d+\.\d+$"""
 
       // Check basic integer or decimal
@@ -648,7 +710,7 @@ object DataFormatAggregator {
       }
 
       // Handle numbers with commas for thousands separator
-      val thousandsPattern = """^-?[\d,]+$"""
+      val thousandsPattern        = """^-?[\d,]+$"""
       val thousandsDecimalPattern = """^-?[\d,]+\.\d+$"""
 
       if (value.matches(thousandsPattern) || value.matches(thousandsDecimalPattern)) {
@@ -667,7 +729,8 @@ object DataFormatAggregator {
         // Special handling for thousands separator patterns
         if (matches && (desc == "Integer with commas" || desc == "Decimal with commas")) {
           val noCommas = value.replace(",", "")
-          val isValidNumber = noCommas.matches("""^-?\d+$""") || noCommas.matches("""^-?\d+\.\d+$""")
+          val isValidNumber =
+            noCommas.matches("""^-?\d+$""") || noCommas.matches("""^-?\d+\.\d+$""")
           if (isValidNumber) {
             isNumeric = true
             (desc, true, s"valid number after comma removal: $noCommas")
@@ -686,7 +749,9 @@ object DataFormatAggregator {
       val matches = matchResults.filter(_._2).map(_._1)
       if (matches.nonEmpty) {
         val prefix = if (cellAddress.nonEmpty) s"[$cellAddress] " else ""
-        logger.debug(s"${prefix}VALUE '${value}' matches numeric patterns: ${matches.mkString(", ")}")
+        logger.debug(
+          s"${prefix}VALUE '${value}' matches numeric patterns: ${matches.mkString(", ")}"
+        )
 
         // Log special notes for thousands separators
         matchResults.filter(r => r._2 && r._3.nonEmpty).foreach { case (desc, _, note) =>
@@ -699,38 +764,44 @@ object DataFormatAggregator {
   }
 
   /**
-   * Process a string value to prepare it for numeric pattern matching.
-   * Based on Python TableDataAggregation.py:check_and_process_string
+   * Process a string value to prepare it for numeric pattern matching. Based on Python
+   * TableDataAggregation.py:check_and_process_string
    */
-  private def processStringForNumeric(input: String): String = {
-    if (input.forall(c => c.isDigit || c == ',' || c == '.' || (c == '+' || c == '-') && input.indexOf(c) == 0)) {
+  private def processStringForNumeric(input: String): String =
+    if (
+      input.forall(c =>
+        c.isDigit || c == ',' || c == '.' || (c == '+' || c == '-') && input.indexOf(c) == 0
+      )
+    ) {
       input.replace(",", "")
     } else {
       input
     }
-  }
 
   /**
-   * Separates content map entries into those that should be aggregated
-   * and those that should be preserved as-is.
+   * Separates content map entries into those that should be aggregated and those that should be
+   * preserved as-is.
    *
-   * @param contentMap The map of cell content to locations
-   * @param typeMap    Map from cell value to data type
-   * @return Tuple of (candidates for aggregation, entries to preserve)
+   * @param contentMap
+   *   The map of cell content to locations
+   * @param typeMap
+   *   Map from cell value to data type
+   * @return
+   *   Tuple of (candidates for aggregation, entries to preserve)
    */
   private def partitionAggregationCandidates(
-                                              contentMap: Map[String, Either[String, List[String]]],
-                                              typeMap: Map[String, DataType]
-                                            ): (Map[String, Either[String, List[String]]], Map[String, Either[String, List[String]]]) = {
+    contentMap: Map[String, Either[String, List[String]]],
+    typeMap: Map[String, DataType]
+  ): (Map[String, Either[String, List[String]]], Map[String, Either[String, List[String]]]) = {
     val (candidates, preserved) = contentMap.partition { case (content, _) =>
       val dataType = typeMap.getOrElse(content, DataType.Text)
 
       // Only aggregate deterministic formats based on TableDataAggregation.py
       val isCandidate = dataType match {
         case DataType.Integer | DataType.Float | DataType.Currency |
-             DataType.Percentage | DataType.Date | DataType.Time |
-             DataType.Year | DataType.ScientificNotation |
-             DataType.Email | DataType.IpAddress | DataType.Fraction => true
+            DataType.Percentage | DataType.Date | DataType.Time |
+            DataType.Year | DataType.ScientificNotation |
+            DataType.Email | DataType.IpAddress | DataType.Fraction => true
         case _ => false
       }
 
@@ -744,39 +815,42 @@ object DataFormatAggregator {
   }
 
   /**
-   * Represents a format descriptor for a region of cells.
-   * Needs to be defined before groupByFormat which uses it.
+   * Represents a format descriptor for a region of cells. Needs to be defined before groupByFormat
+   * which uses it.
    *
-   * @param dataType    The type of data in the region
-   * @param formatCode  Optional Excel number format code
-   * @param sampleValue Optional sample value from the region
+   * @param dataType
+   *   The type of data in the region
+   * @param formatCode
+   *   Optional Excel number format code
+   * @param sampleValue
+   *   Optional sample value from the region
    */
   case class FormatDescriptor(
-                               dataType: DataType,
-                               formatCode: Option[String] = None,
-                               sampleValue: Option[String] = None
-                             ) { // Removed trailing colon
+    dataType: DataType,
+    formatCode: Option[String] = None,
+    sampleValue: Option[String] = None
+  ) { // Removed trailing colon
 
     /**
-     * Convert to a string representation for use as a map key.
-     * Creates a more descriptive and LLM-friendly format description.
+     * Convert to a string representation for use as a map key. Creates a more descriptive and
+     * LLM-friendly format description.
      */
     def toFormatString: String = {
       // Get a more human-readable description of the dataType
       val typeDesc = dataType match {
-        case DataType.Date => "DateData"
-        case DataType.Time => "TimeData"
-        case DataType.Currency => "CurrencyData"
-        case DataType.Percentage => "PercentageNum"
-        case DataType.Integer => "IntNum"
-        case DataType.Float => "FloatNum"
-        case DataType.Year => "YearData"
+        case DataType.Date               => "DateData"
+        case DataType.Time               => "TimeData"
+        case DataType.Currency           => "CurrencyData"
+        case DataType.Percentage         => "PercentageNum"
+        case DataType.Integer            => "IntNum"
+        case DataType.Float              => "FloatNum"
+        case DataType.Year               => "YearData"
         case DataType.ScientificNotation => "SentificNum" // Typo preserved
-        case DataType.Email => "EmailData"
-        case DataType.Fraction => "FractionData"
-        case DataType.IpAddress => "IPAddressData"
-        case DataType.Text => "Text"
-        case DataType.Empty => "Empty"
+        case DataType.Email              => "EmailData"
+        case DataType.Fraction           => "FractionData"
+        case DataType.IpAddress          => "IPAddressData"
+        case DataType.Text               => "Text"
+        case DataType.Empty              => "Empty"
       }
 
       // Match Python naming conventions from TableDataAggregation.py
@@ -785,19 +859,23 @@ object DataFormatAggregator {
   }
 
   /**
-   * Groups aggregation candidates by their data type and format.
-   * Uses Excel's Number Format Strings when available.
+   * Groups aggregation candidates by their data type and format. Uses Excel's Number Format Strings
+   * when available.
    *
-   * @param candidates Content map entries that are candidates for aggregation
-   * @param typeMap    Map from cell value to data type
-   * @param formatMap  Map from cell value to Excel number format string
-   * @return Map from format descriptor to the entries of that format
+   * @param candidates
+   *   Content map entries that are candidates for aggregation
+   * @param typeMap
+   *   Map from cell value to data type
+   * @param formatMap
+   *   Map from cell value to Excel number format string
+   * @return
+   *   Map from format descriptor to the entries of that format
    */
   private def groupByFormat(
-                             candidates: Map[String, Either[String, List[String]]],
-                             typeMap: Map[String, DataType],
-                             formatMap: Map[String, String] = Map.empty
-                           ): Map[FormatDescriptor, Map[String, Either[String, List[String]]]] = {
+    candidates: Map[String, Either[String, List[String]]],
+    typeMap: Map[String, DataType],
+    formatMap: Map[String, String] = Map.empty
+  ): Map[FormatDescriptor, Map[String, Either[String, List[String]]]] = {
     if (candidates.isEmpty) {
       logger.info("No candidates to group by format")
       return Map.empty
@@ -807,7 +885,7 @@ object DataFormatAggregator {
     // This is a preprocessing step to help with aggregation similar to Python's dfs algorithm
     val isAllIntegers = candidates.keys.forall(s =>
       typeMap.getOrElse(s, DataType.Text) == DataType.Integer ||
-      typeMap.getOrElse(s, DataType.Text) == DataType.Float
+        typeMap.getOrElse(s, DataType.Text) == DataType.Float
     )
 
     if (isAllIntegers && candidates.size >= 2 && candidates.size <= 15) {
@@ -815,10 +893,11 @@ object DataFormatAggregator {
       // Choose the smallest value as the representative
       val minValue = candidates.keys.minBy(_.trim.toDoubleOption.getOrElse(Double.MaxValue))
 
-      val dataType = typeMap.getOrElse(minValue, DataType.Integer)
+      val dataType   = typeMap.getOrElse(minValue, DataType.Integer)
       val formatCode = inferFormatCode(minValue, dataType, formatMap.get(minValue))
       // Use the format that tests expect
-      val descriptor = FormatDescriptor(dataType, formatCode, Some("<Number like " + minValue + ">"))
+      val descriptor =
+        FormatDescriptor(dataType, formatCode, Some("<Number like " + minValue + ">"))
       return Map(descriptor -> candidates)
     }
 
@@ -844,19 +923,23 @@ object DataFormatAggregator {
   }
 
   /**
-   * Detects format code from a cell value using pattern recognition.
-   * Uses Number Format Strings from Excel when available.
+   * Detects format code from a cell value using pattern recognition. Uses Number Format Strings
+   * from Excel when available.
    *
-   * @param value       The cell value as a string
-   * @param dataType    The detected data type
-   * @param originalNFS Optional Number Format String from Excel (if available)
-   * @return An optional format code
+   * @param value
+   *   The cell value as a string
+   * @param dataType
+   *   The detected data type
+   * @param originalNFS
+   *   Optional Number Format String from Excel (if available)
+   * @return
+   *   An optional format code
    */
   private def inferFormatCode(
-                               value: String,
-                               dataType: DataType,
-                               originalNFS: Option[String] = None
-                             ): Option[String] = {
+    value: String,
+    dataType: DataType,
+    originalNFS: Option[String] = None
+  ): Option[String] = {
     // If we have an original NFS from Excel, normalize it
     if (originalNFS.isDefined && originalNFS.get.nonEmpty) {
       val nfs = originalNFS.get
@@ -896,10 +979,10 @@ object DataFormatAggregator {
       case DataType.Date =>
         // Detect common date formats
         val datePatterns = Map(
-          """^\d{1,2}/\d{1,2}/\d{4}$""".r -> "mm/dd/yyyy",
-          """^\d{4}-\d{1,2}-\d{1,2}$""".r -> "yyyy-mm-dd",
+          """^\d{1,2}/\d{1,2}/\d{4}$""".r     -> "mm/dd/yyyy",
+          """^\d{4}-\d{1,2}-\d{1,2}$""".r     -> "yyyy-mm-dd",
           """^\d{1,2}-[A-Za-z]{3}-\d{4}$""".r -> "dd-mmm-yyyy",
-          """^\d{1,2}\.\d{1,2}\.\d{4}$""".r -> "dd.mm.yyyy"
+          """^\d{1,2}\.\d{1,2}\.\d{4}$""".r   -> "dd.mm.yyyy"
         )
 
         datePatterns.collectFirst {
@@ -909,8 +992,8 @@ object DataFormatAggregator {
       case DataType.Time =>
         // Detect common time formats
         val timePatterns = Map(
-          """^\d{1,2}:\d{2}$""".r -> "hh:mm",
-          """^\d{1,2}:\d{2}:\d{2}$""".r -> "hh:mm:ss",
+          """^\d{1,2}:\d{2}$""".r              -> "hh:mm",
+          """^\d{1,2}:\d{2}:\d{2}$""".r        -> "hh:mm:ss",
           """^\d{1,2}:\d{2}\s*[AaPp][Mm]$""".r -> "hh:mm am/pm"
         )
 
@@ -921,26 +1004,26 @@ object DataFormatAggregator {
       case DataType.Currency =>
         // Format based on decimals and thousands separators
         val hasDecimals = value.contains(".")
-        val format = if (hasDecimals) "$#,##0.00" else "$#,##0"
+        val format      = if (hasDecimals) "$#,##0.00" else "$#,##0"
         Some(format)
 
       case DataType.Percentage =>
         // Format based on decimals
         val percentValue = value.replace("%", "").trim
-        val hasDecimals = percentValue.contains(".")
-        val format = if (hasDecimals) "0.00%" else "0%"
+        val hasDecimals  = percentValue.contains(".")
+        val format       = if (hasDecimals) "0.00%" else "0%"
         Some(format)
 
       case DataType.Float =>
         // Format based on thousands separators
         val hasCommas = value.contains(",")
-        val format = if (hasCommas) "#,##0.00" else "#0.00"
+        val format    = if (hasCommas) "#,##0.00" else "#0.00"
         Some(format)
 
       case DataType.Integer =>
         // Format based on thousands separators
         val hasCommas = value.contains(",")
-        val format = if (hasCommas) "#,##0" else "#0"
+        val format    = if (hasCommas) "#,##0" else "#0"
         Some(format)
 
       case DataType.ScientificNotation =>
@@ -963,15 +1046,17 @@ object DataFormatAggregator {
   }
 
   /**
-   * Aggregates each format group into a single descriptor entry.
-   * Based on the Python aggregation logic in TableDataAggregation.py
+   * Aggregates each format group into a single descriptor entry. Based on the Python aggregation
+   * logic in TableDataAggregation.py
    *
-   * @param formatGroups Map from format descriptor to entries of that format
-   * @return Map with aggregated format entries
+   * @param formatGroups
+   *   Map from format descriptor to entries of that format
+   * @return
+   *   Map with aggregated format entries
    */
   private def aggregateFormatGroups(
-                                     formatGroups: Map[FormatDescriptor, Map[String, Either[String, List[String]]]]
-                                   ): Map[String, Either[String, List[String]]] = {
+    formatGroups: Map[FormatDescriptor, Map[String, Either[String, List[String]]]]
+  ): Map[String, Either[String, List[String]]] = {
     if (formatGroups.isEmpty) {
       logger.info("No format groups to aggregate")
       return Map.empty
@@ -984,13 +1069,13 @@ object DataFormatAggregator {
         val locationEither = entries.values.head
         val locations = locationEither match {
           case Left(singleLocation) => List(singleLocation)
-          case Right(locationList) => locationList
+          case Right(locationList)  => locationList
         }
 
         // Use the format descriptor as the new key, with better naming
         val formatKey = formatDescriptor.formatCode match {
           case Some(code) => s"<DateData:$code>"
-          case None => "<DateData>"
+          case None       => "<DateData>"
         }
 
         if (locations.size == 1) {
@@ -998,7 +1083,7 @@ object DataFormatAggregator {
         } else {
           Map(formatKey -> Right(locations))
         }
-      // For other types with size 1, keep original, except for well-known types
+        // For other types with size 1, keep original, except for well-known types
       } else if (entries.size == 1 && !shouldAlwaysAggregate(formatDescriptor.dataType)) {
         entries
       } else {
@@ -1006,7 +1091,7 @@ object DataFormatAggregator {
         val allLocations = entries.flatMap { case (_, locationEither) =>
           locationEither match {
             case Left(singleLocation) => List(singleLocation)
-            case Right(locationList) => locationList
+            case Right(locationList)  => locationList
           }
         }.toList
 
@@ -1024,37 +1109,35 @@ object DataFormatAggregator {
   }
 
   /**
-   * Creates format descriptors using Python-style naming from TableDataAggregation.py
-   * With compatibility for existing test cases
+   * Creates format descriptors using Python-style naming from TableDataAggregation.py With
+   * compatibility for existing test cases
    */
-  private def pyStyleFormatString(dataType: DataType, sampleValue: Option[String]): String = {
+  private def pyStyleFormatString(dataType: DataType, sampleValue: Option[String]): String =
     dataType match {
-      case DataType.Year => "<YearData>"
-      case DataType.Integer => "<IntNum>"
-      case DataType.Float => "<FloatNum>"
-      case DataType.Percentage => "<PercentageNum>"
+      case DataType.Year               => "<YearData>"
+      case DataType.Integer            => "<IntNum>"
+      case DataType.Float              => "<FloatNum>"
+      case DataType.Percentage         => "<PercentageNum>"
       case DataType.ScientificNotation => "<SentificNum>" // Typo preserved
-      case DataType.Date => "<DateData>"
-      case DataType.Time => "<TimeData>"
-      case DataType.Currency => "<CurrencyData>"
-      case DataType.Email => "<EmailData>"
-      case DataType.IpAddress => "<IPAddressData>"
-      case DataType.Fraction => "<FractionData>"
-      case DataType.Text => sampleValue.getOrElse("<Text>")
-      case DataType.Empty => ""
+      case DataType.Date               => "<DateData>"
+      case DataType.Time               => "<TimeData>"
+      case DataType.Currency           => "<CurrencyData>"
+      case DataType.Email              => "<EmailData>"
+      case DataType.IpAddress          => "<IPAddressData>"
+      case DataType.Fraction           => "<FractionData>"
+      case DataType.Text               => sampleValue.getOrElse("<Text>")
+      case DataType.Empty              => ""
     }
-  }
 
   /**
-   * Determines if a data type should always be aggregated, even with just one entry.
-   * This helps consistency in the output and makes the data more readable for LLMs.
+   * Determines if a data type should always be aggregated, even with just one entry. This helps
+   * consistency in the output and makes the data more readable for LLMs.
    */
-  private def shouldAlwaysAggregate(dataType: DataType): Boolean = {
+  private def shouldAlwaysAggregate(dataType: DataType): Boolean =
     dataType match {
       case DataType.Date | DataType.Time | DataType.Currency |
-           DataType.Percentage | DataType.Year | DataType.Email |
-           DataType.IpAddress | DataType.Fraction => true
+          DataType.Percentage | DataType.Year | DataType.Email |
+          DataType.IpAddress | DataType.Fraction => true
       case _ => false
     }
-  }
 } // End of DataFormatAggregator object

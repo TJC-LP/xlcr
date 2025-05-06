@@ -1,48 +1,53 @@
 package com.tjclp.xlcr
 
+import java.nio.file.{ Files, Paths }
+
+import scala.jdk.CollectionConverters._
+import scala.util.{ Failure, Success, Try }
+
+import com.tjclp.xlcr.types.{ FileType, MimeType }
 import com.tjclp.xlcr.utils.FileUtils
-import com.tjclp.xlcr.types.{FileType, MimeType}
+
 import org.slf4j.LoggerFactory
 
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
-// Import the right collection converters based on Scala version
-import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
-import scala.util.{Failure, Success, Try}
-
 /**
- * DirectoryPipeline provides simple directory-based conversions
- * using the existing Pipeline for single-file transformations.
+ * DirectoryPipeline provides simple directory-based conversions using the existing Pipeline for
+ * single-file transformations.
  */
 object DirectoryPipeline {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
-   * Convert each file in inputDir using a dictionary that maps from
-   * an input MimeType -> desired output MimeType.
+   * Convert each file in inputDir using a dictionary that maps from an input MimeType -> desired
+   * output MimeType.
    *
-   * Steps:
-   * 1) For each file in inputDir, detect the input MIME.
-   * 2) Look up the corresponding output MIME in mimeMappings (if not found, skip or log).
-   * 3) Figure out the proper file extension for that output MIME type (if we recognize it).
-   * 4) Construct the new output filename with that extension in outputDir.
-   * 5) Call Pipeline.run(...) for single-file transformation.
+   * Steps: 1) For each file in inputDir, detect the input MIME. 2) Look up the corresponding output
+   * MIME in mimeMappings (if not found, skip or log). 3) Figure out the proper file extension for
+   * that output MIME type (if we recognize it). 4) Construct the new output filename with that
+   * extension in outputDir. 5) Call Pipeline.run(...) for single-file transformation.
    *
-   * @param inputDir    path to directory containing input files
-   * @param outputDir   path to directory for the converted output
-   * @param mimeMappings dictionary from input MIME -> output MIME
-   * @param diffMode    whether to merge changes if applicable
+   * @param inputDir
+   *   path to directory containing input files
+   * @param outputDir
+   *   path to directory for the converted output
+   * @param mimeMappings
+   *   dictionary from input MIME -> output MIME
+   * @param diffMode
+   *   whether to merge changes if applicable
    */
   def runDirectoryToDirectory(
-                               inputDir: String,
-                               outputDir: String,
-                               mimeMappings: Map[MimeType, MimeType],
-                               diffMode: Boolean = false
-                             ): Unit = {
-    val inPath = Paths.get(inputDir)
+    inputDir: String,
+    outputDir: String,
+    mimeMappings: Map[MimeType, MimeType],
+    diffMode: Boolean = false
+  ): Unit = {
+    val inPath  = Paths.get(inputDir)
     val outPath = Paths.get(outputDir)
 
     if (!Files.isDirectory(inPath)) {
-      throw new IllegalArgumentException(s"Input directory does not exist or is not a directory: $inputDir")
+      throw new IllegalArgumentException(
+        s"Input directory does not exist or is not a directory: $inputDir"
+      )
     }
     if (!Files.exists(outPath)) {
       Files.createDirectories(outPath)
@@ -62,10 +67,12 @@ object DirectoryPipeline {
       val inputMime = FileUtils.detectMimeType(file)
       mimeMappings.get(inputMime) match {
         case None =>
-          logger.warn(s"No mapping found for MIME type: ${inputMime.mimeType}, skipping file: $file")
+          logger.warn(
+            s"No mapping found for MIME type: ${inputMime.mimeType}, skipping file: $file"
+          )
         case Some(outputMime) =>
           // We'll figure out the extension from outputMime if possible
-          val maybeExt = findExtensionForMime(outputMime)
+          val maybeExt     = findExtensionForMime(outputMime)
           val originalName = file.getFileName.toString
 
           // We'll remove any existing extension from originalName, then add the new extension
@@ -74,11 +81,13 @@ object DirectoryPipeline {
             if (idx >= 0) originalName.substring(0, idx)
             else originalName
           }
-          val outExt = maybeExt.getOrElse("dat") // fallback to .dat if unknown
+          val outExt      = maybeExt.getOrElse("dat") // fallback to .dat if unknown
           val outFileName = s"$baseName.$outExt"
-          val outFile = outPath.resolve(outFileName)
+          val outFile     = outPath.resolve(outFileName)
 
-          logger.info(s"Converting $file (mime: ${inputMime.mimeType}) -> $outFile (mime: ${outputMime.mimeType})")
+          logger.info(
+            s"Converting $file (mime: ${inputMime.mimeType}) -> $outFile (mime: ${outputMime.mimeType})"
+          )
           Try {
             Pipeline.run(file.toString, outFile.toString, diffMode)
           } match {
@@ -92,8 +101,8 @@ object DirectoryPipeline {
   }
 
   /**
-   * A helper to find a known extension from a given MIME type,
-   * leveraging our FileType enum if we can.
+   * A helper to find a known extension from a given MIME type, leveraging our FileType enum if we
+   * can.
    */
   private def findExtensionForMime(mime: MimeType): Option[String] = {
     // Attempt to look up in FileType enum

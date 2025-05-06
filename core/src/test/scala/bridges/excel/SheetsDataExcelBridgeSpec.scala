@@ -1,12 +1,12 @@
 package com.tjclp.xlcr
 package bridges.excel
 
+import org.scalatest.BeforeAndAfter
+
 import base.BridgeSpec
 import models.FileContent
 import models.excel.SheetsData
 import types.MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
-
-import org.scalatest.BeforeAndAfter
 
 class SheetsDataExcelBridgeSpec extends BridgeSpec with BeforeAndAfter {
 

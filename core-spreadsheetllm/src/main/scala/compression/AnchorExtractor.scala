@@ -1,20 +1,22 @@
 package com.tjclp.xlcr
 package compression
 
+import com.tjclp.xlcr.models.excel.SheetData
+
+import org.slf4j.LoggerFactory
+
 import compression.anchors.AnchorAnalyzer
 import compression.models.SheetGrid
 import compression.tables.TableDetector
 import compression.utils.SheetGridUtils
-import com.tjclp.xlcr.models.excel.SheetData
-import org.slf4j.LoggerFactory
 
 /**
- * AnchorExtractor identifies structural anchors in a spreadsheet and prunes away
- * less-informative cells. This is the first step in the SpreadsheetLLM compression pipeline.
+ * AnchorExtractor identifies structural anchors in a spreadsheet and prunes away less-informative
+ * cells. This is the first step in the SpreadsheetLLM compression pipeline.
  *
- * Anchors are heterogeneous rows and columns that define table boundaries and structural
- * elements (like headers, footers, or column labels). Cells that are far from any anchor
- * are pruned to reduce the spreadsheet size while preserving its structure.
+ * Anchors are heterogeneous rows and columns that define table boundaries and structural elements
+ * (like headers, footers, or column labels). Cells that are far from any anchor are pruned to
+ * reduce the spreadsheet size while preserving its structure.
  */
 object AnchorExtractor {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -22,10 +24,14 @@ object AnchorExtractor {
   /**
    * Main entry point for the anchor extraction process.
    *
-   * @param sheetData       The sheet data to process
-   * @param anchorThreshold How many neighboring rows/columns to keep around anchors
-   * @param config          Configuration options for table detection
-   * @return A new grid with non-anchor cells pruned but original coordinates preserved
+   * @param sheetData
+   *   The sheet data to process
+   * @param anchorThreshold
+   *   How many neighboring rows/columns to keep around anchors
+   * @param config
+   *   Configuration options for table detection
+   * @return
+   *   A new grid with non-anchor cells pruned but original coordinates preserved
    */
   def extract(
     sheetData: SheetData,
@@ -46,10 +52,14 @@ object AnchorExtractor {
   /**
    * Main entry point for the anchor extraction process.
    *
-   * @param grid            The sheet grid to process
-   * @param anchorThreshold How many neighboring rows/columns to keep around anchors
-   * @param config          Configuration options for table detection
-   * @return A new grid with non-anchor cells pruned but original coordinates preserved
+   * @param grid
+   *   The sheet grid to process
+   * @param anchorThreshold
+   *   How many neighboring rows/columns to keep around anchors
+   * @param config
+   *   Configuration options for table detection
+   * @return
+   *   A new grid with non-anchor cells pruned but original coordinates preserved
    */
   def extract(
     grid: SheetGrid,
@@ -66,13 +76,18 @@ object AnchorExtractor {
     if (tableRegions.nonEmpty) {
       logger.info(s"Detected ${tableRegions.size} table regions in the sheet")
       tableRegions.zipWithIndex.foreach { case (table, idx) =>
-        logger.info(f"  Table ${idx + 1}: (${table.topRow},${table.leftCol}) to (${table.bottomRow},${table.rightCol}) - ${table.width}x${table.height} cells")
+        logger.info(f"  Table ${idx + 1}: (${table.topRow},${table.leftCol}) to (${table
+            .bottomRow},${table.rightCol}) - ${table.width}x${table.height} cells")
       }
     }
 
     // Step 3: Expand anchors to include neighbors within threshold
     val (rowsToKeep, colsToKeep) = AnchorAnalyzer.expandAnchors(
-      anchorRows, anchorCols, grid.rowCount, grid.colCount, anchorThreshold
+      anchorRows,
+      anchorCols,
+      grid.rowCount,
+      grid.colCount,
+      anchorThreshold
     )
 
     // Step 4: Filter the grid to only keep cells in the anchor rows and columns
@@ -88,7 +103,9 @@ object AnchorExtractor {
       1.0
     }
 
-    logger.info(f"Anchor extraction: $originalCellCount cells -> $retainedCellCount cells ($compressionRatio%.2fx compression)")
+    logger.info(
+      f"Anchor extraction: $originalCellCount cells -> $retainedCellCount cells ($compressionRatio%.2fx compression)"
+    )
 
     // Return the pruned grid directly without coordinate remapping
     prunedGrid
@@ -97,7 +114,7 @@ object AnchorExtractor {
   // Common data structures and types needed across modules
   sealed trait Dimension
   object Dimension {
-    case object Row extends Dimension
+    case object Row    extends Dimension
     case object Column extends Dimension
   }
 }

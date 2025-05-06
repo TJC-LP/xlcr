@@ -1,23 +1,22 @@
 package com.tjclp.xlcr
 package models
 
-import types.MimeType
+import java.nio.file.{ Files, Path }
 
 import org.apache.tika.Tika
 
-import java.nio.file.{Files, Path}
+import types.MimeType
 
-class FileContent[T <: MimeType](
-                                  val data: Array[Byte],
-                                  val mimeType: T
-                                ) extends Model
+class FileContent[+T <: MimeType](
+  val data: Array[Byte],
+  val mimeType: T
+) extends Model
 
 object FileContent {
   private val tika = new Tika()
 
-  def apply[T <: MimeType](data: Array[Byte], mimeType: T): FileContent[T] = {
+  def apply[T <: MimeType](data: Array[Byte], mimeType: T): FileContent[T] =
     new FileContent[T](data, mimeType)
-  }
 
   def fromPath[T <: MimeType](path: Path): FileContent[T] = {
     val bytes = Files.readAllBytes(path)

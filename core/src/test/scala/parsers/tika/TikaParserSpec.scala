@@ -3,7 +3,6 @@ package parsers.tika
 
 import base.ParserSpec
 import models.FileContent
-import models.tika.TikaModel
 import types.MimeType
 
 class TikaParserSpec extends ParserSpec {

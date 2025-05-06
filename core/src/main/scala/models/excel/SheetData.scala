@@ -1,49 +1,47 @@
 package com.tjclp.xlcr
 package models.excel
 
-import types.Mergeable
+import scala.jdk.CollectionConverters._
 
 import io.circe._
 import io.circe.syntax._
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.XSSFSheet
 
-// Import the right collection converters based on Scala version
-import com.tjclp.xlcr.compat.CollectionConverters.Implicits._
+import types.Mergeable
 
 /**
  * Represents the data of a single sheet in an Excel workbook:
- * - name: The sheet name
- * - index: The sheet index
- * - isHidden: Whether the sheet is hidden
- * - cells: A list of CellData
- * - hasAutoFilter: Whether the sheet has an auto-filter
+ *   - name: The sheet name
+ *   - index: The sheet index
+ *   - isHidden: Whether the sheet is hidden
+ *   - cells: A list of CellData
+ *   - hasAutoFilter: Whether the sheet has an auto-filter
  */
 case class SheetData(
-                      name: String,
-                      index: Int,
-                      isHidden: Boolean = false,
-                      cells: List[CellData],
-                      mergedRegions: List[String] = List.empty,
-                      protectionStatus: Boolean = false,
-                      hasAutoFilter: Boolean = false
-                    ) extends Mergeable[SheetData] {
+  name: String,
+  index: Int,
+  isHidden: Boolean = false,
+  cells: List[CellData],
+  mergedRegions: List[String] = List.empty,
+  protectionStatus: Boolean = false,
+  hasAutoFilter: Boolean = false
+) extends Mergeable[SheetData] {
 
   // Calculate row and column counts from cells
-  lazy val rowCount: Int = if (cells.isEmpty) 0 else cells.map(_.rowIndex).max + 1
+  lazy val rowCount: Int    = if (cells.isEmpty) 0 else cells.map(_.rowIndex).max + 1
   lazy val columnCount: Int = if (cells.isEmpty) 0 else cells.map(_.columnIndex).max + 1
 
   /**
-   * Merge two SheetData objects by combining their cells.
-   * The merged regions are combined.
+   * Merge two SheetData objects by combining their cells. The merged regions are combined.
    */
   override def merge(other: SheetData): SheetData = {
-    val thisMap = this.cells.map(c => c.address -> c).toMap
-    val thatMap = other.cells.map(c => c.address -> c).toMap
+    val thisMap   = this.cells.map(c => c.address -> c).toMap
+    val thatMap   = other.cells.map(c => c.address -> c).toMap
     val mergedMap = thisMap ++ thatMap
 
     val mergedCells = mergedMap.values.toList
-    val allRegions = (this.mergedRegions ++ other.mergedRegions).distinct
+    val allRegions  = (this.mergedRegions ++ other.mergedRegions).distinct
 
     this.copy(
       cells = mergedCells,
@@ -57,17 +55,15 @@ object SheetData extends SheetDataCodecs {
   /**
    * Generate a single JSON object representing one sheet.
    */
-  def toJson(sheetData: SheetData): String = {
+  def toJson(sheetData: SheetData): String =
     sheetData.asJson.spaces2
-  }
 
   /**
-   * Parse a single JSON object into a SheetData.
-   * (Preserves backward compatibility for single-sheet usage.)
+   * Parse a single JSON object into a SheetData. (Preserves backward compatibility for single-sheet
+   * usage.)
    */
-  def fromJson(json: String): Either[Error, SheetData] = {
+  def fromJson(json: String): Either[Error, SheetData] =
     io.circe.parser.decode[SheetData](json)
-  }
 
   // --------------------------------------------------------------------------
   // Multi-Sheet JSON Methods
@@ -76,33 +72,31 @@ object SheetData extends SheetDataCodecs {
   /**
    * Convert a list of SheetData objects into a JSON array string.
    */
-  def toJsonMultiple(sheets: List[SheetData]): String = {
+  def toJsonMultiple(sheets: List[SheetData]): String =
     sheets.asJson.spaces2
-  }
 
   /**
    * Parse a JSON array (or single JSON object) into a list of SheetData objects.
    *
-   * This tries to parse an array first. If that fails, it attempts to parse a
-   * single object for backward compatibility, wrapping it in a List.
+   * This tries to parse an array first. If that fails, it attempts to parse a single object for
+   * backward compatibility, wrapping it in a List.
    */
   def fromJsonMultiple(json: String): Either[Error, List[SheetData]] = {
     val parsedArray = io.circe.parser.decode[List[SheetData]](json)
     parsedArray match {
       case Right(list) => Right(list)
-      case Left(_) =>
+      case Left(_)     =>
         // If it's not an array, try parsing as a single SheetData
         io.circe.parser.decode[SheetData](json) match {
           case Right(singleSheet) => Right(List(singleSheet))
-          case Left(err) => Left(err)
+          case Left(err)          => Left(err)
         }
     }
   }
 
   /**
-   * Create a SheetData from an Apache POI Sheet by extracting relevant fields
-   * and building a list of CellData. We scan all rows and cells to determine
-   * the maximum bounding box for this sheet.
+   * Create a SheetData from an Apache POI Sheet by extracting relevant fields and building a list
+   * of CellData. We scan all rows and cells to determine the maximum bounding box for this sheet.
    */
   def fromSheet(sheet: Sheet, evaluator: FormulaEvaluator): SheetData = {
     val formatter = new DataFormatter()
