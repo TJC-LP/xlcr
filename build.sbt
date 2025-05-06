@@ -268,33 +268,6 @@ lazy val coreSpark = (project in file("core-spark"))
     )
   )
 
-// Kotlin server project
-lazy val server = (project in file("server"))
-  .enablePlugins(KotlinPlugin)
-  .dependsOn(core)
-  .settings(commonSettings)
-  .settings(assemblySettings)
-  .settings(
-    name := "xlcr-server",
-    // Support all Scala versions for server since it depends on core
-    crossScalaVersions := Seq(scala212, scala213, scala3),
-    kotlinVersion      := "1.9.10",
-    kotlincJvmTarget   := "1.8",
-    kotlinLib("stdlib"),
-    // Kotlin source directory configuration
-    Compile / sourceDirectories += baseDirectory.value / "src" / "main" / "kotlin",
-    Test / sourceDirectories += baseDirectory.value / "src" / "test" / "kotlin",
-    libraryDependencies ++= Seq(
-      // Ktor dependencies
-      "io.ktor" % "ktor-server-core"                % ktorVersion,
-      "io.ktor" % "ktor-server-cio"                 % ktorVersion,
-      "io.ktor" % "ktor-server-websockets"          % ktorVersion,
-      "io.ktor" % "ktor-server-content-negotiation" % ktorVersion,
-      // Kotlin MCP
-      "io.modelcontextprotocol" % "kotlin-sdk" % "0.2.0"
-    )
-  )
-
 // SpreadsheetLLM integration module
 lazy val coreSpreadsheetLLM = (project in file("core-spreadsheetllm"))
   .dependsOn(core)
@@ -435,12 +408,7 @@ ThisBuild / githubWorkflowTargetTags     := Seq("v*")
 
 // Add quality gates to the workflow
 ThisBuild / githubWorkflowBuildPreamble ++= Seq(
-  WorkflowStep.Sbt(List("scalafmtCheckAll"), name = Some("Check Formatting")),
-  WorkflowStep.Sbt(List("Test/compile"), name = Some("Compile Tests")),
-  WorkflowStep.Sbt(
-    List("test"),
-    name = Some("Run Tests")
-  )
+  WorkflowStep.Sbt(List("scalafmtCheckAll"), name = Some("Check Formatting"))
 )
 
 ThisBuild / evictionErrorLevel := Level.Warn
