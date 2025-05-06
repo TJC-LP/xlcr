@@ -99,7 +99,7 @@ object UdfHelpers {
         .otherwise(array_append(col(CoreSchema.Lineage), lineageEntry))
     )
   }
-  
+
   // For Scala 3, we'll create UDFs with explicit schemas since TypeTag isn't available
 
   // Create the chunk metadata schema
@@ -124,7 +124,7 @@ object UdfHelpers {
       StructField("sourceId", StringType, nullable = true),
       StructField("chunk", ChunkMetaType, nullable = true)
     ))
-    
+
     StructType(Seq(
       StructField("data", dataType, nullable = true),
       StructField("lineage", lineageSchema)
@@ -132,7 +132,7 @@ object UdfHelpers {
   }
 
   // -----------------------------------------------------------------------
-  // Single‑arg variant with per‑row timeout - Scala 3 version 
+  // Single‑arg variant with per‑row timeout - Scala 3 version
   // -----------------------------------------------------------------------
 
   def wrapUdf[A: ClassTag, R: ClassTag](
@@ -140,7 +140,7 @@ object UdfHelpers {
     timeout: ScalaDuration = ScalaDuration.Inf
   )(f: A => FoundImplementation[R]): UserDefinedFunction = {
     val safe = (a: A) => executeTimed(timeout, name)(f(a))
-    
+
     // For Scala 3, use direct schema definition based on known type patterns
     val resultSchema = summon[ClassTag[R]] match {
       case a if a.runtimeClass == classOf[Map[String, String]] =>
@@ -161,10 +161,10 @@ object UdfHelpers {
         // Default to string for unknown types
         createStepResultSchema(StringType)
     }
-    
+
     // Create the UDF with explicit Function1 to avoid Java UDF1 issues
     import org.apache.spark.sql.api.java.UDF1
-    val javaUdf: UDF1[A, StepResult[R]] = safe(_) 
+    val javaUdf: UDF1[A, StepResult[R]] = safe(_)
     F.udf(javaUdf, resultSchema)
   }
 
@@ -177,7 +177,7 @@ object UdfHelpers {
     timeout: ScalaDuration = ScalaDuration.Inf
   )(f: (A, B) => FoundImplementation[R]): UserDefinedFunction = {
     val safe = (a: A, b: B) => executeTimed(timeout, name)(f(a, b))
-    
+
     // For Scala 3, use direct schema definition based on known type patterns
     val resultSchema = summon[ClassTag[R]] match {
       case a if a.runtimeClass == classOf[Map[String, String]] =>
@@ -198,7 +198,7 @@ object UdfHelpers {
         // Default to string for unknown types
         createStepResultSchema(StringType)
     }
-    
+
     // Create the UDF with explicit Function2 to avoid Java UDF2 issues
     import org.apache.spark.sql.api.java.UDF2
     val javaUdf: UDF2[A, B, StepResult[R]] = safe(_, _)
