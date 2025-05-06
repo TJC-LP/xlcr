@@ -28,8 +28,6 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
   override val classTag: ClassTag[O]
 ) extends PdfToImageBridgeBase[O] with HighPrioritySimpleBridge[ApplicationPdf.type, O] {
 
-  private val logger = LoggerFactory.getLogger(getClass)
-
   // Default implementation for the output renderer - uses our renderPage method
   override private[bridges] def outputRenderer =
     (
@@ -68,11 +66,11 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
       // Get the page to render (Aspose uses 1-based indexing)
       val pageNumber = cfg.pageIdx + 1
       val page       = document.getPages.get_Item(pageNumber)
-      val pageInfo   = page.getPageInfo
+      val pageRect   = page.getPageRect(true)
 
       // Scale up by DPI
-      val pageWidth  = pageInfo.getWidth * cfg.initialDpi / 72
-      val pageHeight = pageInfo.getHeight * cfg.initialDpi / 72
+      val pageWidth  = pageRect.getWidth * cfg.initialDpi / 72
+      val pageHeight = pageRect.getHeight * cfg.initialDpi / 72
 
       // Calculate dimensions that respect max width/height while preserving aspect ratio
       val (width, height) = ImageUtils.calculateOptimalDimensions(
@@ -81,8 +79,6 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
         cfg.maxWidthPx,
         cfg.maxHeightPx
       )
-
-      logger.debug(s"Rendering PDF page $pageNumber with dimensions ${width}x${height}")
 
       // Configure resolution
       val resolution = new Resolution(cfg.initialDpi)
