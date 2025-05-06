@@ -1,4 +1,3 @@
-import kotlin.Keys.{ kotlinLib, kotlinVersion, kotlincJvmTarget }
 import xerial.sbt.Sonatype.sonatypeCentralHost
 import xerial.sbt.Sonatype.autoImport.*
 import sbt.librarymanagement.CrossVersion
