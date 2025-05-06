@@ -66,7 +66,7 @@ trait PdfToImageBridgeBase[O <: MimeType]
     // Extract config or use defaults
     val cfg = cfgOpt
       .collect { case c: ImageRenderConfig => c }
-      .getOrElse(ImageRenderConfig(targetMime))
+      .getOrElse(ImageRenderConfig())
 
     // Apply auto-tuning and render
     val tuned = autoTune(input.data, cfg)

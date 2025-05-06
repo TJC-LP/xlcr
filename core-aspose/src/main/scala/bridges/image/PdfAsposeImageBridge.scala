@@ -4,13 +4,13 @@ package bridges.image
 import bridges.HighPrioritySimpleBridge
 import models.FileContent
 import renderers.RendererConfig
-import types.MimeType
 import types.MimeType.{ ApplicationPdf, ImageJpeg }
+import types.Priority.LOW
+import types.{ MimeType, Priority }
 import utils.image.ImageUtils
 
 import com.aspose.pdf.Document
 import com.aspose.pdf.devices.{ JpegDevice, PngDevice, Resolution }
-import org.slf4j.LoggerFactory
 
 import java.io.ByteArrayOutputStream
 import scala.reflect.ClassTag
@@ -28,6 +28,8 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
   override val classTag: ClassTag[O]
 ) extends PdfToImageBridgeBase[O] with HighPrioritySimpleBridge[ApplicationPdf.type, O] {
 
+  override def priority: Priority = LOW // Image conversion may lead to dead hangs for certain files
+
   // Default implementation for the output renderer - uses our renderPage method
   override private[bridges] def outputRenderer =
     (
@@ -36,8 +38,8 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
     ) => {
       // Convert the RendererConfig to ImageRenderConfig or use default
       val imageConfig = ImageRenderConfig
-        .fromRendererConfig(config, targetMime)
-        .getOrElse(ImageRenderConfig(targetMime))
+        .fromRendererConfig(config)
+        .getOrElse(ImageRenderConfig())
 
       val imageBytes = renderPage(model.data, imageConfig)
       FileContent(imageBytes, targetMime)

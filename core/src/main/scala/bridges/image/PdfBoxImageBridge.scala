@@ -4,55 +4,58 @@ package bridges.image
 import models.FileContent
 import renderers.RendererConfig
 import types.MimeType
-import types.MimeType.{ApplicationPdf, ImageJpeg}
+import types.MimeType.{ ApplicationPdf, ImageJpeg }
 import utils.image.ImageUtils
 
 import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.rendering.{ImageType, PDFRenderer}
+import org.apache.pdfbox.rendering.{ ImageType, PDFRenderer }
 import org.slf4j.LoggerFactory
 
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.stream.MemoryCacheImageOutputStream
-import javax.imageio.{IIOImage, ImageIO, ImageWriteParam}
+import javax.imageio.{ IIOImage, ImageIO, ImageWriteParam }
 import scala.reflect.ClassTag
 
-/** Base implementation for PDFBox-based PDF to image conversion.
-  *
-  * Uses Apache PDFBox to render PDF pages as images with support for both
-  * PNG and JPEG output formats.
-  *
-  * @tparam O The output image MIME type
-  */
+/**
+ * Base implementation for PDFBox-based PDF to image conversion.
+ *
+ * Uses Apache PDFBox to render PDF pages as images with support for both PNG and JPEG output
+ * formats.
+ *
+ * @tparam O
+ *   The output image MIME type
+ */
 abstract class PdfBoxImageBridge[O <: MimeType](implicit
-    override val classTag: ClassTag[O]
+  override val classTag: ClassTag[O]
 ) extends PdfToImageBridgeBase[O] {
-
-  private val logger = LoggerFactory.getLogger(getClass)
 
   // Default implementation for the output renderer - uses our renderPage method
   override private[bridges] def outputRenderer =
-    (model: FileContent[ApplicationPdf.type], config: Option[RendererConfig]) =>
-      {
-        val imageBytes =
-          renderPage(
-            model.data,
-            ImageRenderConfig
-              .fromRendererConfig(config, targetMime)
-              .getOrElse(ImageRenderConfig(targetMime))
-          )
-        FileContent(imageBytes, targetMime)
-      }
+    (model: FileContent[ApplicationPdf.type], config: Option[RendererConfig]) => {
+      val imageBytes =
+        renderPage(
+          model.data,
+          ImageRenderConfig
+            .fromRendererConfig(config)
+            .getOrElse(ImageRenderConfig())
+        )
+      FileContent(imageBytes, targetMime)
+    }
 
-  /** Renders a specific page from a PDF to an image using PDFBox.
-    *
-    * @param pdfBytes The raw PDF bytes to render
-    * @param cfg The rendering configuration
-    * @return The rendered image bytes
-    */
+  /**
+   * Renders a specific page from a PDF to an image using PDFBox.
+   *
+   * @param pdfBytes
+   *   The raw PDF bytes to render
+   * @param cfg
+   *   The rendering configuration
+   * @return
+   *   The rendered image bytes
+   */
   override protected def renderPage(
-      pdfBytes: Array[Byte],
-      cfg: ImageRenderConfig
+    pdfBytes: Array[Byte],
+    cfg: ImageRenderConfig
   ): Array[Byte] = {
     val document = PDDocument.load(pdfBytes)
     try {
@@ -71,39 +74,46 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
       } else {
         renderPng(image)
       }
-    } finally {
+    } finally
       document.close()
-    }
   }
 
-  /** Scale down an image if it exceeds max dimensions.
-    *
-    * @param image The image to scale
-    * @param maxWidth Maximum width in pixels
-    * @param maxHeight Maximum height in pixels
-    * @return The scaled image (or original if no scaling needed)
-    */
+  /**
+   * Scale down an image if it exceeds max dimensions.
+   *
+   * @param image
+   *   The image to scale
+   * @param maxWidth
+   *   Maximum width in pixels
+   * @param maxHeight
+   *   Maximum height in pixels
+   * @return
+   *   The scaled image (or original if no scaling needed)
+   */
   private def scaleImageIfNeeded(
-      image: BufferedImage,
-      maxWidth: Int,
-      maxHeight: Int
-  ): BufferedImage = {
+    image: BufferedImage,
+    maxWidth: Int,
+    maxHeight: Int
+  ): BufferedImage =
     // Use the ImageUtils resizeImage method which applies bilinear interpolation
     // for better quality and handles all the dimension calculations
     ImageUtils.resizeImage(image, maxWidth, maxHeight)
-  }
 
-  /** Render a BufferedImage as JPEG with specified quality.
-    *
-    * @param image The image to render
-    * @param quality The JPEG quality factor (0.0-1.0)
-    * @return The JPEG image bytes
-    */
+  /**
+   * Render a BufferedImage as JPEG with specified quality.
+   *
+   * @param image
+   *   The image to render
+   * @param quality
+   *   The JPEG quality factor (0.0-1.0)
+   * @return
+   *   The JPEG image bytes
+   */
   private def renderJpeg(
-      image: BufferedImage,
-      quality: Float
+    image: BufferedImage,
+    quality: Float
   ): Array[Byte] = {
-    val baos = new ByteArrayOutputStream()
+    val baos         = new ByteArrayOutputStream()
     val outputStream = new MemoryCacheImageOutputStream(baos)
 
     val jpegWriter = ImageIO.getImageWritersByFormatName("jpeg").next()
@@ -120,11 +130,14 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
     baos.toByteArray
   }
 
-  /** Render a BufferedImage as PNG.
-    *
-    * @param image The image to render
-    * @return The PNG image bytes
-    */
+  /**
+   * Render a BufferedImage as PNG.
+   *
+   * @param image
+   *   The image to render
+   * @return
+   *   The PNG image bytes
+   */
   private def renderPng(image: BufferedImage): Array[Byte] = {
     val baos = new ByteArrayOutputStream()
     ImageIO.write(image, "png", baos)

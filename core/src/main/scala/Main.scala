@@ -1,31 +1,31 @@
 package com.tjclp.xlcr
 
 import splitters.SplitStrategy
-import types.{FileType, MimeType}
+import types.{ FileType, MimeType }
 
 import scopt.OParser
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.{ Files, Paths }
 
 object Main {
   def main(args: Array[String]): Unit = {
     case class ExtendedConfig(
-        input: String = "",
-        output: String = "",
-        diffMode: Boolean = false,
-        splitMode: Boolean = false,
-        splitStrategy: Option[String] = None,
-        outputType: Option[String] = None,
-        outputFormat: Option[String] = None,
-        maxImageWidth: Int = 2000,
-        maxImageHeight: Int = 2000,
-        maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default
-        imageDpi: Int = 300,
-        jpegQuality: Float = 0.85f,
-        recursiveExtraction: Boolean = false,
-        maxRecursionDepth: Int = 5,
-        mappings: Seq[String] =
-          Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
+      input: String = "",
+      output: String = "",
+      diffMode: Boolean = false,
+      splitMode: Boolean = false,
+      splitStrategy: Option[String] = None,
+      outputType: Option[String] = None,
+      outputFormat: Option[String] = None,
+      maxImageWidth: Int = 2000,
+      maxImageHeight: Int = 2000,
+      maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default
+      imageDpi: Int = 300,
+      jpegQuality: Float = 0.85f,
+      recursiveExtraction: Boolean = false,
+      maxRecursionDepth: Int = 5,
+      mappings: Seq[String] =
+        Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
     )
 
     // The registries (BridgeRegistry, DocumentSplitter) will now initialize lazily
@@ -108,7 +108,7 @@ object Main {
         val mimeMap: Map[MimeType, MimeType] = config.mappings.flatMap { pair =>
           val parts = pair.split("=", 2)
           if (parts.length == 2) {
-            val inStr = parts(0).trim
+            val inStr  = parts(0).trim
             val outStr = parts(1).trim
 
             (parseMimeOrExtension(inStr), parseMimeOrExtension(outStr)) match {
@@ -124,7 +124,7 @@ object Main {
           }
         }.toMap
 
-        val inputPath = Paths.get(config.input)
+        val inputPath  = Paths.get(config.input)
         val outputPath = Paths.get(config.output)
 
         // Branch logic based on split vs convert modes
@@ -157,10 +157,10 @@ object Main {
           // Parse optional strategy
           val splitStrategyOpt =
             config.splitStrategy.flatMap(SplitStrategy.fromString)
-            
+
           // Handle output type - combine --type and --format options
           // The format option is kept for backward compatibility
-          val outputMimeOpt = {
+          val outputMimeOpt =
             if (config.outputType.isDefined) {
               // If explicit type is set, use it
               config.outputType.flatMap(parseMimeOrExtension)
@@ -168,16 +168,15 @@ object Main {
               // Otherwise, if format is set, use it for backward compatibility
               config.outputFormat.flatMap { fmt =>
                 fmt.toLowerCase match {
-                  case "png" => Some(types.MimeType.ImagePng)
+                  case "png"          => Some(types.MimeType.ImagePng)
                   case "jpg" | "jpeg" => Some(types.MimeType.ImageJpeg)
-                  case "pdf" => Some(types.MimeType.ApplicationPdf)
-                  case _ => None
+                  case "pdf"          => Some(types.MimeType.ApplicationPdf)
+                  case _              => None
                 }
               }
             } else {
               None
             }
-          }
 
           Pipeline.split(
             inputPath = config.input,
@@ -216,13 +215,13 @@ object Main {
             // Determine if we need to create a bridge configuration
             val bridgeConfig = {
               val inputMime = utils.FileUtils.detectMimeType(Paths.get(config.input))
-              val outputMime = utils.FileUtils.detectMimeTypeFromExtension(Paths.get(config.output), strict = true)
-              
+              val outputMime =
+                utils.FileUtils.detectMimeTypeFromExtension(Paths.get(config.output), strict = true)
+
               (inputMime, outputMime) match {
                 // Check if this is a PDF -> Image conversion
                 case (MimeType.ApplicationPdf, MimeType.ImagePng | MimeType.ImageJpeg) =>
                   Some(bridges.image.ImageRenderConfig(
-                    targetMime = outputMime,
                     maxBytes = config.maxImageSizeBytes,
                     maxWidthPx = config.maxImageWidth,
                     maxHeightPx = config.maxImageHeight,
@@ -234,10 +233,10 @@ object Main {
                 case _ => None
               }
             }
-            
+
             Pipeline.run(
-              inputPath = config.input, 
-              outputPath = config.output, 
+              inputPath = config.input,
+              outputPath = config.output,
               diffMode = config.diffMode,
               config = bridgeConfig
             )
@@ -250,8 +249,9 @@ object Main {
     }
   }
 
-  /** Attempt to interpret a string as either a known MIME type or a known file extension.
-    */
+  /**
+   * Attempt to interpret a string as either a known MIME type or a known file extension.
+   */
   private def parseMimeOrExtension(str: String): Option[MimeType] = {
     // First try direct MIME type parse
     val parsedMime = MimeType.fromString(str)
