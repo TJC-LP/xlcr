@@ -15,6 +15,8 @@ import org.xml.sax.SAXException
 /**
  * MIME type detection using Apache Tika with comprehensive error handling and metrics. Detects MIME
  * type and metadata from binary content.
+ *
+ * This is the Scala 3 version with correct lambda syntax.
  */
 object DetectMime extends SparkStep {
   override val name: String = "detectMime"
@@ -25,12 +27,12 @@ object DetectMime extends SparkStep {
   private val detectUdf = wrapUdf(
     name,
     scala.concurrent.duration.Duration(30, "seconds")
-  ) { bytes: Array[Byte] =>
+  ) { (bytes: Array[Byte]) => // Note the parentheses around lambda parameter for Scala 3
     // *Finding* phase: We already know we will use Tika's AutoDetectParser.
     val implName = "TikaAutoDetectParser"
 
     // Action encapsulated to allow error capture
-    UdfHelpers.FoundImplementation[Map[String, String]](
+    FoundImplementation[Map[String, String]](
       implementationName = Some(implName),
       params = None,
       action = () => {
@@ -58,7 +60,7 @@ object DetectMime extends SparkStep {
     val withResult = df.withColumn(Result, detectUdf(F.col(Content)))
 
     // Append the lineage entry to the lineage column
-    val withLineage = UdfHelpers.appendLineageEntry(
+    val withLineage = appendLineageEntry(
       withResult,
       F.col(ResultLineage)
     )

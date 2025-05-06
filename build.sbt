@@ -1,6 +1,7 @@
 import kotlin.Keys.{ kotlinLib, kotlinVersion, kotlincJvmTarget }
 import xerial.sbt.Sonatype.sonatypeCentralHost
 import xerial.sbt.Sonatype.autoImport.*
+import sbt.librarymanagement.CrossVersion
 
 // Define Scala versions
 val scala212 = "2.12.18"
@@ -53,6 +54,8 @@ val zioConfigVersion = "4.0.1"
 val zioHttpVersion   = "3.0.0-RC4"
 val tikaVersion      = "2.9.1"
 val sparkVersion     = "3.5.2"
+val compatVersion    = "2.13.0" // keep in one place
+val xmlVersion       = "2.3.0"
 
 // Common settings and dependencies
 lazy val commonSettings = Seq(
@@ -75,6 +78,7 @@ lazy val commonSettings = Seq(
     "dev.zio"                %% "zio-streams"             % zioVersion,
     "org.scala-lang.modules" %% "scala-collection-compat" % "2.13.0"
   ),
+
   // Source directory configuration for cross-compilation
   Compile / unmanagedSourceDirectories ++= {
     // sbt typically includes src/main/scala automatically.
@@ -231,16 +235,36 @@ lazy val coreSpark = (project in file("core-spark"))
   .settings(commonSettings)
   .settings(assemblySettings)
   .settings(
-    name         := "xlcr-core-spark",
-    scalaVersion := "2.12.18",
-    // Only support Scala 2.12 and 2.13 for Spark (not Scala 3)
-    crossScalaVersions := Seq(scala212, scala213),
+    name               := "xlcr-core-spark",
+    scalaVersion       := "2.12.18",
+    crossScalaVersions := Seq(scala212, scala213, scala3),
+    // ---------------------------------------------------------------------
+    // Spark does not ship native Scala-3 artefacts (yet).  Because Scala 3
+    // remains binary-compatible with Scala 2.13, we can safely depend on the
+    // 2.13 JARs when cross-building with Scala 3.  sbt exposes a helper
+    // (`CrossVersion.for3Use2_13`) that performs this substitution for us.
+    // ---------------------------------------------------------------------
     libraryDependencies ++= Seq(
-      "org.apache.spark" %% "spark-sql"            % sparkVersion % "provided",
-      "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion % "provided",
-      "io.circe"         %% "circe-generic"        % circeVersion,
-      "io.circe"         %% "circe-parser"         % circeVersion,
-      "org.scalatest"    %% "scalatest"            % "3.2.19"     % Test
+      ("org.apache.spark" %% "spark-sql" % sparkVersion % "provided")
+        .cross(CrossVersion.for3Use2_13),
+      ("org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion % "provided")
+        .cross(CrossVersion.for3Use2_13),
+      // "org.scala-lang.modules" % "scala-xml"     % "2.3.0",
+      // Testing
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test
+    ),
+    // eliminate any _3 variants that slipped in
+    excludeDependencies ++= Seq(
+      ExclusionRule("org.scala-lang.modules", "scala-collection-compat_3"),
+      ExclusionRule("org.scala-lang.modules", "scala-xml_3")
+    ),
+
+    // then add exactly the artefacts we want
+    libraryDependencies ++= Seq(
+      ("org.scala-lang.modules" % "scala-collection-compat" % compatVersion)
+        .cross(CrossVersion.for3Use2_13),
+      ("org.scala-lang.modules" % "scala-xml" % xmlVersion)
+        .cross(CrossVersion.for3Use2_13)
     )
   )
 
@@ -459,13 +483,13 @@ lazy val root = (project in file("."))
     // Custom tasks for different Scala versions
     addCommandAlias(
       "compileScala3",
-      ";++3.3.4; core/compile; coreAspose/compile; coreSpreadsheetLLM/compile"
+      ";++3.3.4; compile"
     ),
     addCommandAlias("compileScala2", ";++2.12.18; compile"),
     addCommandAlias("compileScala213", ";++2.13.14; compile"),
     addCommandAlias(
       "testScala3",
-      ";++3.3.4; core/test; coreAspose/test; coreSpreadsheetLLM/test"
+      ";++3.3.4; test"
     ),
     addCommandAlias("testScala2", ";++2.12.18; test"),
     addCommandAlias("testScala213", ";++2.13.14; test"),
@@ -480,7 +504,7 @@ lazy val root = (project in file("."))
     ),
     addCommandAlias(
       "scalafixAll3",
-      ";++3.3.4; core/scalafix; coreAspose/scalafix; coreSpreadsheetLLM/scalafix"
+      ";++3.3.4; scalafixAll"
     ),
     addCommandAlias(
       "validateCode",
