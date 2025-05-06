@@ -2,46 +2,42 @@ package com.tjclp.xlcr
 package bridges
 package excel
 
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import com.aspose.cells.{ PageOrientationType, PaperSizeType, PdfSaveOptions, Workbook }
+import org.slf4j.LoggerFactory
+
 import models.FileContent
-import parsers.Parser
-import renderers.{Renderer, SimpleRenderer}
+import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType
 import types.MimeType.ApplicationPdf
 import utils.aspose.AsposeLicense
 
-import com.aspose.cells.{
-  PageOrientationType,
-  PaperSizeType,
-  PdfSaveOptions,
-  Workbook
-}
-import org.slf4j.LoggerFactory
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-
-/** Generic Excel to PDF bridge implementation that works with both Scala 2 and Scala 3.
-  * This trait contains the business logic for converting Excel files to PDF.
-  *
-  * This implementation handles all Excel formats using the same core conversion logic,
-  * parameterized by the specific input MIME type.
-  *
-  * @tparam I The specific Excel input MimeType
-  */
+/**
+ * Generic Excel to PDF bridge implementation that works with both Scala 2 and Scala 3. This trait
+ * contains the business logic for converting Excel files to PDF.
+ *
+ * This implementation handles all Excel formats using the same core conversion logic, parameterized
+ * by the specific input MIME type.
+ *
+ * @tparam I
+ *   The specific Excel input MimeType
+ */
 trait ExcelToPdfAsposeBridgeImpl[I <: MimeType]
     extends HighPrioritySimpleBridge[I, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override private[bridges] def outputRenderer
-      : Renderer[M, ApplicationPdf.type] =
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     ExcelToPdfAsposeRenderer
 
-  /** Renderer that performs any Excel format -> PDF conversion via Aspose.Cells.
-    * This handles all Excel formats: XLSX, XLS, XLSM, XLSB, ODS, etc.
-    */
+  /**
+   * Renderer that performs any Excel format -> PDF conversion via Aspose.Cells. This handles all
+   * Excel formats: XLSX, XLS, XLSM, XLSB, ODS, etc.
+   */
   private object ExcelToPdfAsposeRenderer
       extends SimpleRenderer[M, ApplicationPdf.type] {
-    override def render(model: M): FileContent[ApplicationPdf.type] = {
+    override def render(model: M): FileContent[ApplicationPdf.type] =
       try {
         AsposeLicense.initializeIfNeeded()
         logger.info(
@@ -49,14 +45,14 @@ trait ExcelToPdfAsposeBridgeImpl[I <: MimeType]
         )
 
         // Load workbook from bytes
-        val bais = new ByteArrayInputStream(model.data)
+        val bais     = new ByteArrayInputStream(model.data)
         val workbook = new Workbook(bais)
         bais.close()
 
         // Optional page setup across all worksheets
         val worksheets = workbook.getWorksheets
         for (i <- 0 until worksheets.getCount) {
-          val sheet = worksheets.get(i)
+          val sheet     = worksheets.get(i)
           val pageSetup = sheet.getPageSetup
           // Example: landscape orientation, A4 paper size
           pageSetup.setOrientation(PageOrientationType.LANDSCAPE)
@@ -89,6 +85,5 @@ trait ExcelToPdfAsposeBridgeImpl[I <: MimeType]
             Some(ex)
           )
       }
-    }
   }
 }

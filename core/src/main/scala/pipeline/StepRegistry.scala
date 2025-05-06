@@ -1,22 +1,22 @@
 package com.tjclp.xlcr
 package pipeline
+import scala.collection.concurrent.TrieMap
+
 import pipeline.steps._
 import splitters.SplitStrategy._
 import types.MimeType
 
-import scala.collection.concurrent.TrieMap
-
-/** A *very* small registry that lets the CLI (or other dynamic layers) look
-  * up a `PipelineStep` implementation by name.
-  *
-  * The API is intentionally un‑typed – callers are expected to cast the step
-  * to the appropriate `PipelineStep[A, B]` once they know the concrete types
-  * involved (which is usually inferred when steps are chained statically).
-  *
-  * More sophisticated type‑safe discovery mechanisms (e.g. using dependent
-  * types or shapeless) can be built on top later, but for now a simple Map
-  * keeps the implementation lightweight.
-  */
+/**
+ * A *very* small registry that lets the CLI (or other dynamic layers) look up a `PipelineStep`
+ * implementation by name.
+ *
+ * The API is intentionally un‑typed – callers are expected to cast the step to the appropriate
+ * `PipelineStep[A, B]` once they know the concrete types involved (which is usually inferred when
+ * steps are chained statically).
+ *
+ * More sophisticated type‑safe discovery mechanisms (e.g. using dependent types or shapeless) can
+ * be built on top later, but for now a simple Map keeps the implementation lightweight.
+ */
 object StepRegistry {
 
   private val steps = TrieMap.empty[String, PipelineStep[_, _]]

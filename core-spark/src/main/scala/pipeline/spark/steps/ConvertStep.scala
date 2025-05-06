@@ -2,22 +2,19 @@ package com.tjclp.xlcr
 package pipeline.spark
 package steps
 
-import bridges.{Bridge, BridgeConfig, BridgeRegistry}
+import scala.concurrent.duration.{ Duration => ScalaDuration }
+
+import org.apache.spark.sql.{ functions => F, Column, DataFrame, SparkSession }
+
+import bridges.{ Bridge, BridgeConfig, BridgeRegistry }
 import models.FileContent
 import types.MimeType
 
-import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
-
-/** Conversion step that transforms content from one MIME type to another.
-  * Uses the BridgeRegistry to find appropriate converters with error handling and metrics.
-  */
-import scala.concurrent.duration.{Duration => ScalaDuration}
-
 case class ConvertStep(
-    to: MimeType,
-    rowTimeout: ScalaDuration =
-      scala.concurrent.duration.Duration(30, "seconds"),
-    config: Option[BridgeConfig] = None
+  to: MimeType,
+  rowTimeout: ScalaDuration =
+    scala.concurrent.duration.Duration(30, "seconds"),
+  config: Option[BridgeConfig] = None
 ) extends SparkStep {
   override val name: String = s"to${to.mimeType.split('/').last.capitalize}"
   override val meta: Map[String, String] =
@@ -51,7 +48,7 @@ case class ConvertStep(
 
               val params = Map(
                 "fromMime" -> inMime.mimeType,
-                "toMime" -> to.mimeType
+                "toMime"   -> to.mimeType
               )
 
               UdfHelpers.FoundImplementation[
@@ -72,7 +69,7 @@ case class ConvertStep(
     }
 
   override def doTransform(
-      df: DataFrame
+    df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
     // Create the UDF

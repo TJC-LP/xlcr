@@ -1,10 +1,10 @@
 package com.tjclp.xlcr
 package models
 
-import models.excel.{CellData, SheetData}
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import models.excel.{ CellData, SheetData }
 
 class SheetDataSpec extends AnyFlatSpec with Matchers {
 
@@ -12,10 +12,10 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
     val workbook = new XSSFWorkbook()
-    val sheet = workbook.createSheet("HiddenTestSheet")
+    val sheet    = workbook.createSheet("HiddenTestSheet")
 
     // Create row 0
-    val row0 = sheet.createRow(0)
+    val row0  = sheet.createRow(0)
     val cell0 = row0.createCell(0)
     cell0.setCellValue("VisibleCell")
 
@@ -26,7 +26,7 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     cell1.setCellValue("HiddenCellByRow")
 
     // Create row 2
-    val row2 = sheet.createRow(2)
+    val row2  = sheet.createRow(2)
     val cell2 = row2.createCell(0)
     cell2.setCellValue("HiddenCellByStyle")
 
@@ -36,7 +36,7 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     cell2.setCellStyle(style)
 
     // Create row 3
-    val row3 = sheet.createRow(3)
+    val row3  = sheet.createRow(3)
     val cell3 = row3.createCell(1)
     cell3.setCellValue("HiddenByColumn")
     sheet.setColumnHidden(1, true)
@@ -44,7 +44,7 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     // Evaluate all cells
     val evaluator = workbook.getCreationHelper.createFormulaEvaluator()
 
-    val sheetData = SheetData.fromSheet(sheet, evaluator)
+    val sheetData         = SheetData.fromSheet(sheet, evaluator)
     val cellDataByAddress = sheetData.cells.map(cd => cd.address -> cd).toMap
 
     // row 0, col 0 => A1
@@ -85,7 +85,7 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "deserialize from JSON correctly" in {
-    val json = SheetData.toJson(sampleSheetData)
+    val json   = SheetData.toJson(sampleSheetData)
     val parsed = SheetData.fromJson(json)
 
     parsed shouldBe a[Right[_, _]]
@@ -94,26 +94,26 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
 
   it should "handle multiple sheets in JSON array" in {
     val sheets = List(sampleSheetData, sampleSheetData.copy(name = "Sheet2", index = 1))
-    val json = SheetData.toJsonMultiple(sheets)
+    val json   = SheetData.toJsonMultiple(sheets)
 
     val parsed = SheetData.fromJsonMultiple(json)
     parsed shouldBe a[Right[_, _]]
-    parsed.toOption.get should have length 2
+    (parsed.toOption.get should have).length(2)
     parsed.toOption.get.map(_.name) should contain theSameElementsAs List("Sheet1", "Sheet2")
   }
 
   it should "handle single sheet JSON as multiple for backward compatibility" in {
-    val json = SheetData.toJson(sampleSheetData)
+    val json   = SheetData.toJson(sampleSheetData)
     val parsed = SheetData.fromJsonMultiple(json)
 
     parsed shouldBe a[Right[_, _]]
-    parsed.toOption.get should have length 1
+    (parsed.toOption.get should have).length(1)
     parsed.toOption.get.head shouldBe sampleSheetData
   }
 
   it should "fail gracefully with invalid JSON" in {
     val invalidJson = """{"name": "Sheet1", "invalid": true"""
-    val parsed = SheetData.fromJson(invalidJson)
+    val parsed      = SheetData.fromJson(invalidJson)
     parsed shouldBe a[Left[_, _]]
   }
 
@@ -121,23 +121,23 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
     val formulaCell = sampleCellData.copy(
       cellType = "FORMULA",
       formula = Some("=SUM(A1:A10)"),
-      value = Some("55"),
+      value = Some("55")
     )
 
     val numericCell = sampleCellData.copy(
       cellType = "NUMERIC",
-      value = Some("42.5"),
+      value = Some("42.5")
     )
 
     val sheetWithFormulas = sampleSheetData.copy(
-      cells = List(sampleCellData, formulaCell, numericCell),
+      cells = List(sampleCellData, formulaCell, numericCell)
     )
 
-    val json = SheetData.toJson(sheetWithFormulas)
+    val json   = SheetData.toJson(sheetWithFormulas)
     val parsed = SheetData.fromJson(json)
 
     parsed shouldBe a[Right[_, _]]
-    parsed.toOption.get.cells should have length 3
+    (parsed.toOption.get.cells should have).length(3)
     parsed.toOption.get.cells.find(_.formula.isDefined) shouldBe defined
   }
 
@@ -146,12 +146,12 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
       mergedRegions = List("A1:B2", "C3:D4")
     )
 
-    val json = SheetData.toJson(sheetWithMerges)
+    val json   = SheetData.toJson(sheetWithMerges)
     val parsed = SheetData.fromJson(json)
 
     parsed shouldBe a[Right[_, _]]
-    parsed.toOption.get.mergedRegions should have length 2
-    parsed.toOption.get.mergedRegions should contain allOf("A1:B2", "C3:D4")
+    (parsed.toOption.get.mergedRegions should have).length(2)
+    (parsed.toOption.get.mergedRegions should contain).allOf("A1:B2", "C3:D4")
   }
 
   it should "preserve cell formatting information" in {
@@ -164,7 +164,7 @@ class SheetDataSpec extends AnyFlatSpec with Matchers {
       cells = List(formattedCell)
     )
 
-    val json = SheetData.toJson(sheetWithFormatting)
+    val json   = SheetData.toJson(sheetWithFormatting)
     val parsed = SheetData.fromJson(json)
 
     parsed shouldBe a[Right[_, _]]

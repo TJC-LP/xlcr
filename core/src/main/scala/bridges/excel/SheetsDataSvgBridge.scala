@@ -7,9 +7,10 @@ import parsers.excel.SheetsDataParser
 import renderers.excel.SheetsDataSvgRenderer
 import types.MimeType.ImageSvgXml
 
-/** ExcelSvgOutputBridge produces an SVG representation of SheetsData.
-  * This replaces ExcelSvgParser logic.
-  */
+/**
+ * ExcelSvgOutputBridge produces an SVG representation of SheetsData. This replaces ExcelSvgParser
+ * logic.
+ */
 object SheetsDataSvgBridge
     extends SymmetricBridge[
       SheetsData,

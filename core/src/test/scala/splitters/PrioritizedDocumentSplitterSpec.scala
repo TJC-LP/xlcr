@@ -1,13 +1,13 @@
 package com.tjclp.xlcr
 package splitters
 
-import models.FileContent
-import registration.PriorityRegistry
-import types.{MimeType, Priority}
-
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import models.FileContent
+import registration.PriorityRegistry
+import types.{ MimeType, Priority }
 
 class PrioritizedDocumentSplitterSpec
     extends AnyFlatSpec
@@ -22,11 +22,10 @@ class PrioritizedDocumentSplitterSpec
     override def priority: Priority = Priority.LOW
 
     override def split(
-        content: FileContent[testMimeType.type],
-        cfg: SplitConfig
-    ): Seq[DocChunk[_ <: MimeType]] = {
+      content: FileContent[testMimeType.type],
+      cfg: SplitConfig
+    ): Seq[DocChunk[_ <: MimeType]] =
       Seq(DocChunk(content, "low-priority-splitter", 0, 1))
-    }
   }
 
   class DefaultPriorityTestSplitter
@@ -34,33 +33,30 @@ class PrioritizedDocumentSplitterSpec
     override def priority: Priority = Priority.DEFAULT
 
     override def split(
-        content: FileContent[testMimeType.type],
-        cfg: SplitConfig
-    ): Seq[DocChunk[_ <: MimeType]] = {
+      content: FileContent[testMimeType.type],
+      cfg: SplitConfig
+    ): Seq[DocChunk[_ <: MimeType]] =
       Seq(DocChunk(content, "default-priority-splitter", 0, 1))
-    }
   }
 
   class HighPriorityTestSplitter extends DocumentSplitter[testMimeType.type] {
     override def priority: Priority = Priority.HIGH
 
     override def split(
-        content: FileContent[testMimeType.type],
-        cfg: SplitConfig
-    ): Seq[DocChunk[_ <: MimeType]] = {
+      content: FileContent[testMimeType.type],
+      cfg: SplitConfig
+    ): Seq[DocChunk[_ <: MimeType]] =
       Seq(DocChunk(content, "high-priority-splitter", 0, 1))
-    }
   }
 
   class AsposePriorityTestSplitter extends DocumentSplitter[testMimeType.type] {
     override def priority: Priority = Priority.HIGH
 
     override def split(
-        content: FileContent[testMimeType.type],
-        cfg: SplitConfig
-    ): Seq[DocChunk[_ <: MimeType]] = {
+      content: FileContent[testMimeType.type],
+      cfg: SplitConfig
+    ): Seq[DocChunk[_ <: MimeType]] =
       Seq(DocChunk(content, "aspose-priority-splitter", 0, 1))
-    }
   }
 
   // Create a wrapper method that uses a separate PriorityRegistry for isolated testing
@@ -69,26 +65,23 @@ class PrioritizedDocumentSplitterSpec
       new PriorityRegistry[MimeType, DocumentSplitter[_ <: MimeType]]()
 
     def register[I <: MimeType](
-        mime: MimeType,
-        splitter: DocumentSplitter[I]
-    ): Unit = {
+      mime: MimeType,
+      splitter: DocumentSplitter[I]
+    ): Unit =
       registry.register(
         mime,
         splitter.asInstanceOf[DocumentSplitter[_ <: MimeType]]
       )
-    }
 
-    def getAll(mime: MimeType): List[DocumentSplitter[_ <: MimeType]] = {
+    def getAll(mime: MimeType): List[DocumentSplitter[_ <: MimeType]] =
       registry.getAll(mime)
-    }
 
-    def get(mime: MimeType): Option[DocumentSplitter[_ <: MimeType]] = {
+    def get(mime: MimeType): Option[DocumentSplitter[_ <: MimeType]] =
       registry.get(mime)
-    }
 
     def split(
-        content: FileContent[_ <: MimeType],
-        cfg: SplitConfig
+      content: FileContent[_ <: MimeType],
+      cfg: SplitConfig
     ): Seq[DocChunk[_ <: MimeType]] = {
       val splitterOpt = registry.get(content.mimeType)
       splitterOpt
@@ -151,16 +144,15 @@ class PrioritizedDocumentSplitterSpec
       private var priorityValue: Priority = Priority.DEFAULT
 
       // Allow setting priority for testing
-      def setPriority(p: Priority): Unit = { priorityValue = p }
+      def setPriority(p: Priority): Unit = priorityValue = p
 
       override def priority: Priority = priorityValue
 
       override def split(
-          content: FileContent[testMimeType.type],
-          cfg: SplitConfig
-      ): Seq[DocChunk[_ <: MimeType]] = {
+        content: FileContent[testMimeType.type],
+        cfg: SplitConfig
+      ): Seq[DocChunk[_ <: MimeType]] =
         Seq(DocChunk(content, s"priority-${priority.value}", 0, 1))
-      }
     }
 
     // Register a default splitter

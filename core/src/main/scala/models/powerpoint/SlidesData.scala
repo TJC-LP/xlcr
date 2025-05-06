@@ -10,7 +10,7 @@ final case class SlidesData(slides: List[SlideData]) extends Model with Mergeabl
     val mergedMap = other.slides.foldLeft(existingMap) { (acc, newSlide) =>
       acc.get(newSlide.index) match {
         case Some(existingSlide) => acc.updated(newSlide.index, existingSlide.merge(newSlide))
-        case None => acc.updated(newSlide.index, newSlide)
+        case None                => acc.updated(newSlide.index, newSlide)
       }
     }
     SlidesData(mergedMap.values.toList.sortBy(_.index))

@@ -2,11 +2,11 @@ package com.tjclp.xlcr
 package splitters
 package email
 
-import models.FileContent
-import types.MimeType
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import models.FileContent
+import types.MimeType
 
 class EmailAttachmentSplitterSpec extends AnyFlatSpec with Matchers {
 

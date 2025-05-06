@@ -1,22 +1,23 @@
 package com.tjclp.xlcr
 package utils
 
-import types.MimeType
+import java.nio.file.{ Files, Paths }
+
+import scala.util.{ Failure, Success }
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.nio.file.{Files, Paths}
-import scala.util.{Failure, Success}
+import types.MimeType
 
 class FileUtilsSpec extends AnyFlatSpec with Matchers {
 
   it should "correctly detect MIME types from file extensions" in {
-    val jsonPath = Paths.get("test.json")
-    val xlsPath = Paths.get("test.xls")
-    val xlsxPath = Paths.get("test.xlsx")
-    val xlsmPath = Paths.get("test.xlsm")
-    val xlsbPath = Paths.get("test.xlsb")
+    val jsonPath    = Paths.get("test.json")
+    val xlsPath     = Paths.get("test.xls")
+    val xlsxPath    = Paths.get("test.xlsx")
+    val xlsmPath    = Paths.get("test.xlsm")
+    val xlsbPath    = Paths.get("test.xlsb")
     val unknownPath = Paths.get("test.unknown")
     FileUtils.detectMimeType(jsonPath) shouldBe MimeType.ApplicationJson
     FileUtils.detectMimeType(xlsPath) shouldBe MimeType.ApplicationVndMsExcel
@@ -48,7 +49,7 @@ class FileUtilsSpec extends AnyFlatSpec with Matchers {
       ("test.doc", MimeType.ApplicationMsWord),
       ("test.docx", MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument),
       ("test.pdf", MimeType.ApplicationPdf),
-          ("test.xml", MimeType.ApplicationXml),
+      ("test.xml", MimeType.ApplicationXml),
       ("test.json", MimeType.ApplicationJson),
       ("test.md", MimeType.TextMarkdown),
       ("test.svg", MimeType.ImageSvgXml),

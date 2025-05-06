@@ -1,13 +1,13 @@
 package com.tjclp.xlcr
 package splitters.powerpoint
 
-import models.FileContent
-import splitters.{ DocChunk, SplitConfig, SplitStrategy }
-import types.MimeType
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import com.aspose.slides.Presentation
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import models.FileContent
+import splitters.{ DocChunk, SplitConfig, SplitStrategy }
+import types.MimeType
 
 /**
  * Base implementation for PowerPoint slide splitters. Used by both PPT and PPTX splitters.

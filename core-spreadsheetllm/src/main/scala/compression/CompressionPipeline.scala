@@ -1,43 +1,47 @@
 package com.tjclp.xlcr
 package compression
 
-import anchors.AnchorAnalyzer
-import models.{CellInfo, SheetGrid, TableRegion}
-import tables.TableDetector
-import com.tjclp.xlcr.models.spreadsheetllm.{
-  CompressedSheet,
-  CompressedWorkbook
-}
+import scala.concurrent.ExecutionContextExecutor
+
+import com.tjclp.xlcr.models.spreadsheetllm.{ CompressedSheet, CompressedWorkbook }
 
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.ExecutionContextExecutor
+import anchors.AnchorAnalyzer
+import models.{ CellInfo, SheetGrid, TableRegion }
+import tables.TableDetector
 
-/** CompressionPipeline orchestrates the complete SpreadsheetLLM compression process,
-  * applying each step in sequence to transform raw sheet data into a compressed representation.
-  *
-  * The compression pipeline consists of three main stages:
-  * 1. Anchor Extraction: Identifies structural anchors and prunes unnecessary cells
-  * 2. Inverted Index Translation: Converts the grid to a compact dictionary format
-  * 3. Data Format Aggregation: Groups similar data by type to reduce token usage
-  */
+/**
+ * CompressionPipeline orchestrates the complete SpreadsheetLLM compression process, applying each
+ * step in sequence to transform raw sheet data into a compressed representation.
+ *
+ * The compression pipeline consists of three main stages:
+ *   1. Anchor Extraction: Identifies structural anchors and prunes unnecessary cells 2. Inverted
+ *      Index Translation: Converts the grid to a compact dictionary format 3. Data Format
+ *      Aggregation: Groups similar data by type to reduce token usage
+ */
 object CompressionPipeline {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /** Compresses a workbook containing multiple sheets.
-    *
-    * @param workbookName The name of the workbook (filename)
-    * @param sheets       Map of sheet names to their raw cell data
-    * @param config       Configuration options for the compression
-    * @return A compressed workbook model
-    */
+  /**
+   * Compresses a workbook containing multiple sheets.
+   *
+   * @param workbookName
+   *   The name of the workbook (filename)
+   * @param sheets
+   *   Map of sheet names to their raw cell data
+   * @param config
+   *   Configuration options for the compression
+   * @return
+   *   A compressed workbook model
+   */
   def compressWorkbook(
-      workbookName: String,
-      sheets: Map[
-        String,
-        (Seq[CellInfo], Int, Int)
-      ], // (cells, rowCount, colCount)
-      config: SpreadsheetLLMConfig
+    workbookName: String,
+    sheets: Map[
+      String,
+      (Seq[CellInfo], Int, Int)
+    ], // (cells, rowCount, colCount)
+    config: SpreadsheetLLMConfig
   ): CompressedWorkbook = {
     logger.info(
       s"Starting compression for workbook: $workbookName with ${sheets.size} sheets"
@@ -51,7 +55,7 @@ object CompressionPipeline {
         // Process sheets in parallel
         import java.util.concurrent.Executors
         import scala.concurrent.duration._
-        import scala.concurrent.{Await, ExecutionContext, Future}
+        import scala.concurrent.{ Await, ExecutionContext, Future }
 
         val executor = Executors.newFixedThreadPool(config.threads)
         implicit val ec: ExecutionContextExecutor =
@@ -66,11 +70,10 @@ object CompressionPipeline {
           }
 
           val futureList = Future.sequence(futures.toList)
-          val result = Await.result(futureList, 1.hour)
+          val result     = Await.result(futureList, 1.hour)
           result
-        } finally {
+        } finally
           executor.shutdown()
-        }
       } else {
         // Process sheets sequentially
         logger.info("Using sequential processing")
@@ -81,9 +84,9 @@ object CompressionPipeline {
 
     // Create the workbook metadata
     val metadata = Map(
-      "fileName" -> workbookName,
-      "sheetCount" -> sheets.size.toString,
-      "threadCount" -> config.threads.toString,
+      "fileName"        -> workbookName,
+      "sheetCount"      -> sheets.size.toString,
+      "threadCount"     -> config.threads.toString,
       "compressionDate" -> java.time.LocalDateTime.now().toString
     )
 
@@ -95,21 +98,28 @@ object CompressionPipeline {
     )
   }
 
-  /** Compresses a sheet using the full SpreadsheetLLM compression pipeline.
-    *
-    * @param sheetName The name of the sheet
-    * @param rawCells  The raw cells from the sheet
-    * @param rowCount  The original number of rows in the sheet
-    * @param colCount  The original number of columns in the sheet
-    * @param config    Configuration options for the compression
-    * @return A compressed sheet model
-    */
+  /**
+   * Compresses a sheet using the full SpreadsheetLLM compression pipeline.
+   *
+   * @param sheetName
+   *   The name of the sheet
+   * @param rawCells
+   *   The raw cells from the sheet
+   * @param rowCount
+   *   The original number of rows in the sheet
+   * @param colCount
+   *   The original number of columns in the sheet
+   * @param config
+   *   Configuration options for the compression
+   * @return
+   *   A compressed sheet model
+   */
   private def compressSheet(
-      sheetName: String,
-      rawCells: Seq[CellInfo],
-      rowCount: Int,
-      colCount: Int,
-      config: SpreadsheetLLMConfig
+    sheetName: String,
+    rawCells: Seq[CellInfo],
+    rowCount: Int,
+    colCount: Int,
+    config: SpreadsheetLLMConfig
   ): CompressedSheet = {
     logger.info(
       s"Starting compression for sheet: $sheetName (${rowCount}x$colCount cells)"
@@ -117,7 +127,7 @@ object CompressionPipeline {
 
     // Create the initial sheet grid from raw cells
     val cellMap = rawCells.map(cell => (cell.row, cell.col) -> cell).toMap
-    val grid = SheetGrid(cellMap, rowCount, colCount)
+    val grid    = SheetGrid(cellMap, rowCount, colCount)
 
     // Metadata to track compression steps
     var compressionMetadata = Map.empty[String, String]
@@ -177,7 +187,8 @@ object CompressionPipeline {
                 val range =
                   s"${topLeft.toA1Notation}:${bottomRight.toA1Notation}"
                 logger.info(
-                  f"Table ${idx + 1}: $range (${region.width}x${region.height}) - anchor rows: ${region.anchorRows.size}, anchor cols: ${region.anchorCols.size}"
+                  f"Table ${idx + 1}: $range (${region.width}x${region.height}) - anchor rows: ${region
+                      .anchorRows.size}, anchor cols: ${region.anchorCols.size}"
                 )
               }
             }
@@ -194,12 +205,12 @@ object CompressionPipeline {
         val endTime = System.currentTimeMillis()
 
         val metadata = Map(
-          "anchorExtraction" -> "enabled",
-          "anchorThreshold" -> config.anchorThreshold.toString,
-          "extractionTimeMs" -> (endTime - startTime).toString,
+          "anchorExtraction"  -> "enabled",
+          "anchorThreshold"   -> config.anchorThreshold.toString,
+          "extractionTimeMs"  -> (endTime - startTime).toString,
           "originalCellCount" -> (grid.rowCount * grid.colCount).toString,
           "retainedCellCount" -> extractedGrid.cells.size.toString,
-          "tablesDetected" -> tableRegions.size.toString
+          "tablesDetected"    -> tableRegions.size.toString
         )
 
         // Convert TableRegion objects to ranges for later use
@@ -244,9 +255,9 @@ object CompressionPipeline {
         val endFormatTime = System.currentTimeMillis()
 
         val metadata = Map(
-          "formatAggregation" -> "enabled",
+          "formatAggregation"    -> "enabled",
           "cellBasedAggregation" -> "true",
-          "aggregationTimeMs" -> (endFormatTime - startFormatTime).toString
+          "aggregationTimeMs"    -> (endFormatTime - startFormatTime).toString
         )
 
         (aggregatedGrid, metadata)
@@ -257,20 +268,20 @@ object CompressionPipeline {
     // Step 3: Inverted Index Translation (on the already type-aggregated grid)
     logger.info("Performing inverted index translation")
     val startIndexTime = System.currentTimeMillis()
-    val finalContent = InvertedIndexTranslator.translate(processedGrid, config)
-    val endIndexTime = System.currentTimeMillis()
+    val finalContent   = InvertedIndexTranslator.translate(processedGrid, config)
+    val endIndexTime   = System.currentTimeMillis()
 
     val indexMetadata = Map(
       "invertedIndexTranslation" -> "enabled",
-      "translationTimeMs" -> (endIndexTime - startIndexTime).toString,
-      "uniqueContentCount" -> finalContent.size.toString
+      "translationTimeMs"        -> (endIndexTime - startIndexTime).toString,
+      "uniqueContentCount"       -> finalContent.size.toString
     )
 
     compressionMetadata ++= indexMetadata
 
     // Calculate overall compression metrics
     val originalCellCount = rowCount * colCount
-    val finalEntryCount = finalContent.size
+    val finalEntryCount   = finalContent.size
     val overallCompressionRatio =
       if (finalEntryCount > 0) originalCellCount.toDouble / finalEntryCount
       else 1.0
@@ -308,9 +319,8 @@ object CompressionPipeline {
     )
 
     // Add detected tables
-    for ((range, hasHeaders, headerRow) <- detectedTables) {
+    for ((range, hasHeaders, headerRow) <- detectedTables)
       compressedSheet = compressedSheet.addTable(range, hasHeaders, headerRow)
-    }
 
     // Log detected tables
     if (compressedSheet.tables.nonEmpty) {

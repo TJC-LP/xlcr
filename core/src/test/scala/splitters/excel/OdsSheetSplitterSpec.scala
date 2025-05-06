@@ -2,15 +2,15 @@ package com.tjclp.xlcr
 package splitters
 package excel
 
-import models.FileContent
-import types.MimeType
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.slf4j.LoggerFactory
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import models.FileContent
+import types.MimeType
 
 object OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -141,7 +141,7 @@ object OdsSheetSplitterSpec extends AnyFlatSpec with Matchers {
     // Define a test using the DocumentSplitter entry point
     def testTextContentViaSplitter(): Unit = {
       // Create a text content that should not be processed
-      val textBytes = "test data".getBytes
+      val textBytes   = "test data".getBytes
       val textContent = FileContent(textBytes, MimeType.TextPlain)
 
       // Split using the facade

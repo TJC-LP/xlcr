@@ -2,19 +2,20 @@ package com.tjclp.xlcr
 package pipeline.spark
 package steps
 
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import java.io.IOException
+
+import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
 import org.apache.tika.exception.TikaException
 import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{Metadata => TikaMetadata}
-import org.apache.tika.parser.{AutoDetectParser, ParseContext}
+import org.apache.tika.metadata.{ Metadata => TikaMetadata }
+import org.apache.tika.parser.{ AutoDetectParser, ParseContext }
 import org.apache.tika.sax.BodyContentHandler
 import org.xml.sax.SAXException
 
-import java.io.IOException
-
-/** MIME type detection using Apache Tika with comprehensive error handling and metrics.
-  * Detects MIME type and metadata from binary content.
-  */
+/**
+ * MIME type detection using Apache Tika with comprehensive error handling and metrics. Detects MIME
+ * type and metadata from binary content.
+ */
 object DetectMime extends SparkStep {
   override val name: String = "detectMime"
 
@@ -35,9 +36,9 @@ object DetectMime extends SparkStep {
       action = () => {
         val md = new TikaMetadata()
         try {
-          val parser = new AutoDetectParser()
+          val parser  = new AutoDetectParser()
           val handler = new BodyContentHandler(1)
-          val stream = TikaInputStream.get(bytes)
+          val stream  = TikaInputStream.get(bytes)
           parser.parse(stream, handler, md, new ParseContext())
         } catch {
           case _: IOException | _: TikaException | _: SAXException =>
@@ -50,7 +51,7 @@ object DetectMime extends SparkStep {
   }
 
   override def doTransform(
-      df: DataFrame
+    df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     // Apply the UDF and capture result in a StepResult
     import CoreSchema._

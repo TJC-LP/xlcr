@@ -1,6 +1,13 @@
 package com.tjclp.xlcr
 package bridges.image
 
+import java.io.ByteArrayOutputStream
+
+import scala.reflect.ClassTag
+
+import com.aspose.pdf.Document
+import com.aspose.pdf.devices.{ JpegDevice, PngDevice, Resolution }
+
 import bridges.HighPrioritySimpleBridge
 import models.FileContent
 import renderers.RendererConfig
@@ -8,12 +15,6 @@ import types.MimeType.{ ApplicationPdf, ImageJpeg }
 import types.Priority.LOW
 import types.{ MimeType, Priority }
 import utils.image.ImageUtils
-
-import com.aspose.pdf.Document
-import com.aspose.pdf.devices.{ JpegDevice, PngDevice, Resolution }
-
-import java.io.ByteArrayOutputStream
-import scala.reflect.ClassTag
 
 /**
  * Base implementation for Aspose-based PDF to image conversion.

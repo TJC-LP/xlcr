@@ -1,15 +1,15 @@
 package com.tjclp.xlcr
 package utils
 
-import org.apache.poi.ss.usermodel.{Cell, CellType, FillPatternType, FormulaError, IndexedColors, BorderStyle, WorkbookFactory}
+import java.io.FileOutputStream
+import java.nio.file.Path
+
+import com.tjclp.xlcr.compat.Using
+
+import org.apache.poi.ss.usermodel._
 import org.apache.poi.ss.util.CellReference
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.slf4j.LoggerFactory
-
-import java.io.{FileOutputStream, ByteArrayInputStream}
-import java.nio.file.Path
-import scala.util.{Try, Success, Failure}
-import com.tjclp.xlcr.compat.Using
 
 object TestExcelHelpers {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -19,9 +19,9 @@ object TestExcelHelpers {
    */
   def createBasicExcel(path: Path): Unit = {
     val workbook = new XSSFWorkbook()
-    val sheet = workbook.createSheet("Sheet1")
-    val row = sheet.createRow(0)
-    val cell = row.createCell(0)
+    val sheet    = workbook.createSheet("Sheet1")
+    val row      = sheet.createRow(0)
+    val cell     = row.createCell(0)
     cell.setCellValue("Test Cell")
 
     Using.resource(new FileOutputStream(path.toFile)) { fos =>
@@ -35,8 +35,8 @@ object TestExcelHelpers {
    */
   def createMultiDataTypeExcel(path: Path): Unit = {
     val workbook = new XSSFWorkbook()
-    val sheet = workbook.createSheet("DataTypes")
-    val row = sheet.createRow(0)
+    val sheet    = workbook.createSheet("DataTypes")
+    val row      = sheet.createRow(0)
 
     // String
     row.createCell(0).setCellValue("Text")
@@ -68,14 +68,14 @@ object TestExcelHelpers {
    */
   def createStyledExcel(path: Path): Unit = {
     val workbook = new XSSFWorkbook()
-    val sheet = workbook.createSheet("Formatting")
-    val row = sheet.createRow(0)
+    val sheet    = workbook.createSheet("Formatting")
+    val row      = sheet.createRow(0)
 
     // Bold Cell
     val cell1 = row.createCell(0)
     cell1.setCellValue("Bold")
     val boldStyle = workbook.createCellStyle()
-    val boldFont = workbook.createFont()
+    val boldFont  = workbook.createFont()
     boldFont.setBold(true)
     boldStyle.setFont(boldFont)
     cell1.setCellStyle(boldStyle)
@@ -92,7 +92,7 @@ object TestExcelHelpers {
     val cell3 = row.createCell(2)
     cell3.setCellValue("Italic")
     val italicStyle = workbook.createCellStyle()
-    val italicFont = workbook.createFont()
+    val italicFont  = workbook.createFont()
     italicFont.setItalic(true)
     italicStyle.setFont(italicFont)
     cell3.setCellStyle(italicStyle)
@@ -108,7 +108,7 @@ object TestExcelHelpers {
    */
   def createFormulaExcel(path: Path): Unit = {
     val workbook = new XSSFWorkbook()
-    val sheet = workbook.createSheet("Formulas")
+    val sheet    = workbook.createSheet("Formulas")
 
     // Create data cells
     val row1 = sheet.createRow(0)
@@ -151,7 +151,9 @@ object TestExcelHelpers {
 
         // Compare sheet structure
         if (sheet1.getLastRowNum != sheet2.getLastRowNum) {
-          logger.error(s"Row count mismatch in sheet $sheetIndex: ${sheet1.getLastRowNum} vs ${sheet2.getLastRowNum}")
+          logger.error(
+            s"Row count mismatch in sheet $sheetIndex: ${sheet1.getLastRowNum} vs ${sheet2.getLastRowNum}"
+          )
           return false
         }
 
@@ -167,13 +169,17 @@ object TestExcelHelpers {
           val row2 = sheet2.getRow(rowIndex)
 
           if ((row1 == null && row2 != null) || (row1 != null && row2 == null)) {
-            logger.error(s"Row existence mismatch at index $rowIndex in sheet ${sheet1.getSheetName}")
+            logger.error(
+              s"Row existence mismatch at index $rowIndex in sheet ${sheet1.getSheetName}"
+            )
             return false
           }
 
           if (row1 != null && row2 != null) {
             if (row1.getLastCellNum != row2.getLastCellNum) {
-              logger.error(s"Cell count mismatch in row $rowIndex: ${row1.getLastCellNum} vs ${row2.getLastCellNum}")
+              logger.error(
+                s"Cell count mismatch in row $rowIndex: ${row1.getLastCellNum} vs ${row2.getLastCellNum}"
+              )
               return false
             }
 
@@ -182,7 +188,8 @@ object TestExcelHelpers {
               val cell1 = row1.getCell(cellIndex)
               val cell2 = row2.getCell(cellIndex)
               if (!compareCells(cell1, cell2)) {
-                val addr = s"${sheet1.getSheetName}!${CellReference.convertNumToColString(cellIndex)}${rowIndex + 1}"
+                val addr =
+                  s"${sheet1.getSheetName}!${CellReference.convertNumToColString(cellIndex)}${rowIndex + 1}"
                 logger.error(s"Cell content mismatch at $addr")
                 logger.error(s"Cell1: ${formatCellValue(cell1)}")
                 logger.error(s"Cell2: ${formatCellValue(cell2)}")
@@ -201,30 +208,30 @@ object TestExcelHelpers {
     }
   }
 
-  private def formatCellValue(cell: Cell): String = if (cell == null) "null" else {
+  private def formatCellValue(cell: Cell): String = if (cell == null) "null"
+  else {
     cell.getCellType match {
       case CellType.NUMERIC => s"NUMERIC(${cell.getNumericCellValue})"
-      case CellType.STRING => s"STRING(${cell.getStringCellValue})"
+      case CellType.STRING  => s"STRING(${cell.getStringCellValue})"
       case CellType.BOOLEAN => s"BOOLEAN(${cell.getBooleanCellValue})"
       case CellType.FORMULA => s"FORMULA(${cell.getCellFormula})"
-      case CellType.ERROR => s"ERROR(${cell.getErrorCellValue})"
-      case CellType.BLANK => "BLANK"
-      case _ => "UNKNOWN"
+      case CellType.ERROR   => s"ERROR(${cell.getErrorCellValue})"
+      case CellType.BLANK   => "BLANK"
+      case _                => "UNKNOWN"
     }
   }
 
-  private def compareCells(cell1: Cell, cell2: Cell): Boolean = {
+  private def compareCells(cell1: Cell, cell2: Cell): Boolean =
     if (cell1 == null && cell2 == null) true
     else if (cell1 == null || cell2 == null) false
     else
       cell1.getCellType == cell2.getCellType && {
         cell1.getCellType match {
           case CellType.NUMERIC => cell1.getNumericCellValue == cell2.getNumericCellValue
-          case CellType.STRING => cell1.getStringCellValue == cell2.getStringCellValue
+          case CellType.STRING  => cell1.getStringCellValue == cell2.getStringCellValue
           case CellType.BOOLEAN => cell1.getBooleanCellValue == cell2.getBooleanCellValue
           case CellType.FORMULA => cell1.getCellFormula == cell2.getCellFormula
-          case _ => true // Consider other types equal or handle specifically
+          case _                => true // Consider other types equal or handle specifically
         }
       }
-  }
 }

@@ -1,12 +1,12 @@
 package com.tjclp.xlcr
 package splitters.excel
 
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
 import compat.aspose.AsposeWorkbook
 import models.FileContent
-import splitters.{DocChunk, SplitConfig, SplitStrategy}
+import splitters.{ DocChunk, SplitConfig, SplitStrategy }
 import types.MimeType
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 /**
  * Common helper used by the Aspose-based Excel sheet splitters.

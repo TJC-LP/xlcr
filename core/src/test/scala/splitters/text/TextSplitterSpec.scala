@@ -2,18 +2,18 @@ package com.tjclp.xlcr
 package splitters
 package text
 
-import models.FileContent
-import types.MimeType
+import java.nio.file.{ Files, Paths }
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.nio.file.{Files, Paths}
+import models.FileContent
+import types.MimeType
 
 object TextSplitterSpec extends AnyFlatSpec with Matchers {
 
   "TextSplitter" should "split text into chunks using the Chunk strategy" in {
-    val filePath = getClass.getResource("/text_samples/sample.txt").getPath
+    val filePath  = getClass.getResource("/text_samples/sample.txt").getPath
     val fileBytes = Files.readAllBytes(Paths.get(filePath))
     val content = FileContent(fileBytes, MimeType.TextPlain)
       .asInstanceOf[FileContent[MimeType.TextPlain.type]]
@@ -25,14 +25,14 @@ object TextSplitterSpec extends AnyFlatSpec with Matchers {
     )
 
     val splitter = TextSplitter
-    val chunks = splitter.split(content, cfg)
+    val chunks   = splitter.split(content, cfg)
 
     // We should have multiple chunks
     chunks.length should be > 1
 
     // Verify labels show paragraph ranges and character bounds
     chunks.foreach { chunk =>
-      chunk.label should (startWith("paragraphs") or startWith("paragraph"))
+      chunk.label should (startWith("paragraphs").or(startWith("paragraph")))
       chunk.label should include("chars")
       println(
         s"Chunk label: ${chunk.label}, size: ${chunk.content.data.length} bytes"
@@ -47,7 +47,7 @@ object TextSplitterSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "use character ranges in labels with Chunk strategy" in {
-    val filePath = getClass.getResource("/text_samples/sample.txt").getPath
+    val filePath  = getClass.getResource("/text_samples/sample.txt").getPath
     val fileBytes = Files.readAllBytes(Paths.get(filePath))
     val content = FileContent(fileBytes, MimeType.TextPlain)
       .asInstanceOf[FileContent[MimeType.TextPlain.type]]
@@ -63,11 +63,11 @@ object TextSplitterSpec extends AnyFlatSpec with Matchers {
     val cfg = SplitConfig(
       strategy = Some(SplitStrategy.Chunk),
       maxChars = 30, // Very small chunks for test
-      overlap = 0 // No overlap to avoid memory issues
+      overlap = 0    // No overlap to avoid memory issues
     )
 
     val splitter = TextSplitter
-    val chunks = splitter.split(shortContent, cfg)
+    val chunks   = splitter.split(shortContent, cfg)
 
     // We should have multiple chunks
     chunks.length should be > 1
@@ -76,7 +76,7 @@ object TextSplitterSpec extends AnyFlatSpec with Matchers {
     chunks.foreach { chunk =>
       chunk.label should include("chars")
       // Labels should include paragraph number and character positions
-      chunk.label should (startWith("paragraph") or startWith("paragraphs"))
+      chunk.label should (startWith("paragraph").or(startWith("paragraphs")))
       // Create debug output to verify the formatting
       println(
         s"Chunk label: ${chunk.label}, size: ${chunk.content.data.length} bytes"

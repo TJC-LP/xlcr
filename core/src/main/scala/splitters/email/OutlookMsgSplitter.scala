@@ -2,21 +2,21 @@ package com.tjclp.xlcr
 package splitters
 package email
 
-import models.FileContent
-import types.{FileType, MimeType}
-
 import org.apache.poi.hsmf.MAPIMessage
 
-/** Splits a Microsoft Outlook .msg file into body + attachments, mirroring the
-  * behaviour of EmailAttachmentSplitter but using POI‑HSMF to read the MSG
-  * container directly.
-  */
+import models.FileContent
+import types.{ FileType, MimeType }
+
+/**
+ * Splits a Microsoft Outlook .msg file into body + attachments, mirroring the behaviour of
+ * EmailAttachmentSplitter but using POI‑HSMF to read the MSG container directly.
+ */
 object OutlookMsgSplitter
     extends DocumentSplitter[MimeType.ApplicationVndMsOutlook.type] {
 
   override def split(
-      content: FileContent[MimeType.ApplicationVndMsOutlook.type],
-      cfg: SplitConfig
+    content: FileContent[MimeType.ApplicationVndMsOutlook.type],
+    cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     if (!cfg.hasStrategy(SplitStrategy.Attachment))

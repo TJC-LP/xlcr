@@ -2,13 +2,13 @@ package com.tjclp.xlcr
 package splitters
 package excel
 
-import models.FileContent
-import types.MimeType
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import java.util.logging.Level
 
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
-import java.util.logging.Level
+import models.FileContent
+import types.MimeType
 
 object OdsSheetSplitter
     extends DocumentSplitter[

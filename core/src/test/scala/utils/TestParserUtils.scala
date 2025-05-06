@@ -1,15 +1,15 @@
 package com.tjclp.xlcr
 package utils
 
-import org.apache.pdfbox.pdmodel.{PDDocument, PDPage, PDPageContentStream}
-import org.apache.pdfbox.pdmodel.font.PDType1Font
+import java.nio.file.{ Files, Path }
 
-import java.nio.file.{Files, Path}
+import org.apache.pdfbox.pdmodel.font.PDType1Font
+import org.apache.pdfbox.pdmodel.{ PDDocument, PDPage, PDPageContentStream }
 
 object TestParserUtils {
 
   def createMinimalPdfFile(path: Path): Unit = {
-    val doc = new PDDocument()
+    val doc  = new PDDocument()
     val page = new PDPage()
     doc.addPage(page)
 
@@ -25,11 +25,9 @@ object TestParserUtils {
     doc.close()
   }
 
-  def createJsonTestFile(path: Path, json: String): Unit = {
+  def createJsonTestFile(path: Path, json: String): Unit =
     Files.write(path, json.getBytes("UTF-8"))
-  }
 
-  def writeMarkdownTestFile(path: Path, markdown: String): Unit = {
+  def writeMarkdownTestFile(path: Path, markdown: String): Unit =
     Files.write(path, markdown.getBytes("UTF-8"))
-  }
 }

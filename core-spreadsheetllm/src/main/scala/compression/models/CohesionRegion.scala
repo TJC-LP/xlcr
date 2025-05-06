@@ -1,23 +1,30 @@
 package com.tjclp.xlcr
 package compression.models
 
-/** Represents a cohesion region within a sheet - an area where cells should be kept together
-  * due to their relationship, formatting, or other structural cues.
-  *
-  * @param topRow Row index of the top of the region
-  * @param bottomRow Row index of the bottom of the region
-  * @param leftCol Column index of the left side of the region
-  * @param rightCol Column index of the right side of the region
-  * @param cohesionType The type of cohesion that caused this region to be created
-  * @param strength Relative strength of the cohesion (higher means stronger relationship)
-  */
+/**
+ * Represents a cohesion region within a sheet - an area where cells should be kept together due to
+ * their relationship, formatting, or other structural cues.
+ *
+ * @param topRow
+ *   Row index of the top of the region
+ * @param bottomRow
+ *   Row index of the bottom of the region
+ * @param leftCol
+ *   Column index of the left side of the region
+ * @param rightCol
+ *   Column index of the right side of the region
+ * @param cohesionType
+ *   The type of cohesion that caused this region to be created
+ * @param strength
+ *   Relative strength of the cohesion (higher means stronger relationship)
+ */
 case class CohesionRegion(
-    topRow: Int,
-    bottomRow: Int,
-    leftCol: Int,
-    rightCol: Int,
-    cohesionType: CohesionType,
-    strength: Int = 1
+  topRow: Int,
+  bottomRow: Int,
+  leftCol: Int,
+  rightCol: Int,
+  cohesionType: CohesionType,
+  strength: Int = 1
 ) {
 
   /** Width of the region */
@@ -53,16 +60,21 @@ case class CohesionRegion(
     !(rightCol < tableRegion.leftCol || leftCol > tableRegion.rightCol ||
       bottomRow < tableRegion.topRow || topRow > tableRegion.bottomRow)
 
-  /** Sophisticated overlap check with support for directional exceptions
-    * @param other Region to check for overlap with
-    * @param exceptForward If true, don't count as overlap if this region fully contains other
-    * @param exceptBackward If true, don't count as overlap if other region fully contains this
-    * @return True if regions overlap under the given constraints
-    */
+  /**
+   * Sophisticated overlap check with support for directional exceptions
+   * @param other
+   *   Region to check for overlap with
+   * @param exceptForward
+   *   If true, don't count as overlap if this region fully contains other
+   * @param exceptBackward
+   *   If true, don't count as overlap if other region fully contains this
+   * @return
+   *   True if regions overlap under the given constraints
+   */
   def overlapsWith(
-      other: TableRegion,
-      exceptForward: Boolean = false,
-      exceptBackward: Boolean = false
+    other: TableRegion,
+    exceptForward: Boolean = false,
+    exceptBackward: Boolean = false
   ): Boolean = {
     // Skip if this fully contains other and we're excepting forward containment
     if (exceptForward && this.contains(other)) return false
@@ -78,8 +90,8 @@ case class CohesionRegion(
 
   /** Convert this cohesion region to a table region */
   def toTableRegion(
-      anchorRows: Set[Int] = Set.empty,
-      anchorCols: Set[Int] = Set.empty
+    anchorRows: Set[Int] = Set.empty,
+    anchorCols: Set[Int] = Set.empty
   ): TableRegion =
     TableRegion(topRow, bottomRow, leftCol, rightCol, anchorRows, anchorCols)
 }

@@ -5,25 +5,19 @@ import bridges.excel._
 import bridges.image._
 import bridges.powerpoint._
 import bridges.tika._
-import spi.{BridgeInfo, BridgeProvider, SplitterInfo, SplitterProvider}
-import splitters.archive.{ArchiveEntrySplitter, ZipEntrySplitter}
-import splitters.email.{EmailAttachmentSplitter, OutlookMsgSplitter}
-import splitters.excel.{
-  ExcelXlsSheetSplitter,
-  ExcelXlsxSheetSplitter,
-  OdsSheetSplitter
-}
+import spi.{ BridgeInfo, BridgeProvider, SplitterInfo, SplitterProvider }
+import splitters.archive.ZipEntrySplitter
+import splitters.email.{ EmailAttachmentSplitter, OutlookMsgSplitter }
+import splitters.excel.{ ExcelXlsSheetSplitter, ExcelXlsxSheetSplitter, OdsSheetSplitter }
 import splitters.pdf.PdfPageSplitter
-import splitters.powerpoint.{
-  PowerPointPptSlideSplitter,
-  PowerPointPptxSlideSplitter
-}
-import splitters.text.{CsvSplitter, TextSplitter}
-import splitters.word.{WordDocxHeadingSplitter, WordDocHeadingSplitter}
+import splitters.powerpoint.{ PowerPointPptSlideSplitter, PowerPointPptxSlideSplitter }
+import splitters.text.{ CsvSplitter, TextSplitter }
+import splitters.word.{ WordDocHeadingSplitter, WordDocxHeadingSplitter }
 import types.MimeType
 
-/** Provides the core bridges and splitters for registration via ServiceLoader.
-  */
+/**
+ * Provides the core bridges and splitters for registration via ServiceLoader.
+ */
 class CoreRegistrations extends BridgeProvider with SplitterProvider {
 
   override def getBridges: Iterable[BridgeInfo[_ <: MimeType, _ <: MimeType]] =

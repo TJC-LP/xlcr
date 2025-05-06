@@ -2,14 +2,14 @@ package com.tjclp.xlcr
 package splitters
 package excel
 
-import models.FileContent
-import types.MimeType
+import java.io.ByteArrayOutputStream
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.ByteArrayOutputStream
+import models.FileContent
+import types.MimeType
 
 object ExcelSheetSplitterSpec extends AnyFlatSpec with Matchers {
 
@@ -35,7 +35,7 @@ object ExcelSheetSplitterSpec extends AnyFlatSpec with Matchers {
       SplitConfig(strategy = Some(SplitStrategy.Sheet))
     )
 
-    chunks should have length 3
+    (chunks should have).length(3)
     all(
       chunks.map(_.content.mimeType)
     ) shouldBe MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet

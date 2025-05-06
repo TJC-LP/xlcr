@@ -1,20 +1,18 @@
 package com.tjclp.xlcr.pipeline
 
-import zio.{Duration, Task, ZIO}
-
 import java.util.concurrent.TimeoutException
+
+import zio.{ Duration, Task, ZIO }
 
 /**
  * An *effectful* pipeline step backed by ZIO `Task`.
  *
- * The motivation is to keep `PipelineStep` 100 % pure / synchronous while
- * giving callers an equally simple abstraction when they need:
- *   • time‑outs
- *   • parallelism and concurrency (`zipPar`, `collectAllPar`, …)
- *   • error capture / aggregation via `Either` or `Cause`
+ * The motivation is to keep `PipelineStep` 100 % pure / synchronous while giving callers an equally
+ * simple abstraction when they need: • time‑outs • parallelism and concurrency (`zipPar`,
+ * `collectAllPar`, …) • error capture / aggregation via `Either` or `Cause`
  *
- * Design goals remain the same: small surface, cross‑build compatible, no
- * extra dependencies besides ZIO (already on the class‑path).
+ * Design goals remain the same: small surface, cross‑build compatible, no extra dependencies
+ * besides ZIO (already on the class‑path).
  */
 trait ZStep[-A, +B] { self =>
 
@@ -29,8 +27,6 @@ trait ZStep[-A, +B] { self =>
   final def map[C](f: B => C): ZStep[A, C] =
     (a: A) => self.run(a).map(f)
 
-
-
   /** Apply a timeout to **this** step only. */
   final def withTimeout(d: Duration): ZStep[A, B] =
     (a: A) => self.run(a).timeoutFail(new TimeoutException(s"Step timed out after $d"))(d)
@@ -40,15 +36,15 @@ trait ZStep[-A, +B] { self =>
   /* ------------------------------------------------------------------ */
 
   /**
-   * Run two downstream steps in *parallel* on the *same* intermediate value
-   * and return their results as a Tuple2.
+   * Run two downstream steps in *parallel* on the *same* intermediate value and return their
+   * results as a Tuple2.
    */
   final def fanOut[C, D](left: ZStep[B, C], right: ZStep[B, D]): ZStep[A, (C, D)] =
     (a: A) =>
-      for (
-        b <- self.run(a);
+      for {
+        b  <- self.run(a)
         cd <- left.run(b).zipPar(right.run(b))
-      ) yield cd
+      } yield cd
 
   /** Alias for `fanOut` that some callers may find more obvious. */
   final def split[C, D](left: ZStep[B, C], right: ZStep[B, D]): ZStep[A, (C, D)] =

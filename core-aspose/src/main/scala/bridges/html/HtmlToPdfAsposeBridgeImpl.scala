@@ -2,39 +2,41 @@ package com.tjclp.xlcr
 package bridges
 package html
 
-import models.FileContent
-import parsers.Parser
-import renderers.{Renderer, SimpleRenderer}
-import types.MimeType.{ApplicationPdf, TextHtml}
-import types.{MimeType, Priority}
-import utils.aspose.AsposeLicense
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
-import com.aspose.words.{Document, SaveFormat, LoadFormat, LoadOptions}
+import com.aspose.words.{ Document, LoadFormat, LoadOptions, SaveFormat }
 import org.slf4j.LoggerFactory
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import models.FileContent
+import renderers.{ Renderer, SimpleRenderer }
+import types.MimeType.{ ApplicationPdf, TextHtml }
+import types.Priority
+import utils.aspose.AsposeLicense
 
-/** Common implementation for HtmlToPdfAsposeBridge that works with both Scala 2 and Scala 3.
-  * This trait converts HTML documents to PDF using Aspose.Words for simpler HTML
-  * or Aspose.PDF for more complex HTML with CSS.
-  */
+/**
+ * Common implementation for HtmlToPdfAsposeBridge that works with both Scala 2 and Scala 3. This
+ * trait converts HTML documents to PDF using Aspose.Words for simpler HTML or Aspose.PDF for more
+ * complex HTML with CSS.
+ */
 trait HtmlToPdfAsposeBridgeImpl
     extends HighPrioritySimpleBridge[TextHtml.type, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /** Set priority to HIGH for all Aspose bridges
-    */
+  /**
+   * Set priority to HIGH for all Aspose bridges
+   */
   override def priority: Priority = Priority.HIGH
 
   private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     HtmlToPdfAsposeRenderer
 
-  /** Renderer that uses Aspose.Words to convert HTML -> PDF.
-    * For simple HTML documents with basic formatting.
-    */
+  /**
+   * Renderer that uses Aspose.Words to convert HTML -> PDF. For simple HTML documents with basic
+   * formatting.
+   */
   private object HtmlToPdfAsposeRenderer
       extends SimpleRenderer[M, ApplicationPdf.type] {
-    override def render(model: M): FileContent[ApplicationPdf.type] = {
+    override def render(model: M): FileContent[ApplicationPdf.type] =
       try {
         AsposeLicense.initializeIfNeeded()
         logger.info("Rendering HTML to PDF using Aspose.Words.")
@@ -63,14 +65,14 @@ trait HtmlToPdfAsposeBridgeImpl
             Some(ex)
           )
       }
-    }
   }
 
-  /** Convert an HTML document to PDF using Aspose.Words.
-    * Common implementation that works for both Scala 2 and Scala 3.
-    */
+  /**
+   * Convert an HTML document to PDF using Aspose.Words. Common implementation that works for both
+   * Scala 2 and Scala 3.
+   */
   private def convertHtmlToPdf(
-      inputStream: ByteArrayInputStream
+    inputStream: ByteArrayInputStream
   ): ByteArrayOutputStream = {
     // Create load options and explicitly set format to HTML
     val loadOptions = new LoadOptions()
@@ -79,7 +81,7 @@ trait HtmlToPdfAsposeBridgeImpl
     // Load the HTML document
     val asposeDoc = new Document(inputStream, loadOptions)
     val pdfOutput = new ByteArrayOutputStream()
-    
+
     // Save as PDF
     asposeDoc.save(pdfOutput, SaveFormat.PDF)
     pdfOutput

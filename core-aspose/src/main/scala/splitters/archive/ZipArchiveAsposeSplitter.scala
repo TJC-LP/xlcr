@@ -1,23 +1,22 @@
 package com.tjclp.xlcr
 package splitters.archive
 
-import models.FileContent
-import splitters.{DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy}
-import types.{FileType, MimeType}
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters._
+import scala.util.Try
 
 import com.aspose.zip.Archive
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.collection.mutable.ListBuffer
-import scala.util.Try
+import models.FileContent
+import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy }
+import types.{ FileType, MimeType }
 
-// Import the correct collection converters based on Scala version
-import scala.jdk.CollectionConverters._
-
-/** ZIP archive splitter using Aspose.ZIP library.
-  * Extracts all entries from a ZIP archive file.
-  * Supports recursive extraction of nested archives with zipbomb protection.
-  */
+/**
+ * ZIP archive splitter using Aspose.ZIP library. Extracts all entries from a ZIP archive file.
+ * Supports recursive extraction of nested archives with zipbomb protection.
+ */
 object ZipArchiveAsposeSplitter
     extends HighPrioritySplitter[MimeType.ApplicationZip.type] {
 
@@ -29,8 +28,8 @@ object ZipArchiveAsposeSplitter
   ]()
 
   override def split(
-      content: FileContent[MimeType.ApplicationZip.type],
-      cfg: SplitConfig
+    content: FileContent[MimeType.ApplicationZip.type],
+    cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
     // Version-independent implementation with early returns handled for both Scala 2 and 3
 
@@ -58,13 +57,13 @@ object ZipArchiveAsposeSplitter
       chunks.zipWithIndex.map { case (chunk, newIndex) =>
         chunk.copy(index = newIndex, total = total)
       }
-    } finally {
+    } finally
       cleanupExtractSession(sessionId)
-    }
   }
 
-  /** Initialize a tracking session for zipbomb protection
-    */
+  /**
+   * Initialize a tracking session for zipbomb protection
+   */
   private def initExtractSession(): java.util.UUID = {
     val sessionId = java.util.UUID.randomUUID()
     extractedSizeMap.put(
@@ -74,30 +73,31 @@ object ZipArchiveAsposeSplitter
     sessionId
   }
 
-  /** Clean up tracking session
-    */
-  private def cleanupExtractSession(sessionId: java.util.UUID): Unit = {
+  /**
+   * Clean up tracking session
+   */
+  private def cleanupExtractSession(sessionId: java.util.UUID): Unit =
     extractedSizeMap.remove(sessionId)
-  }
 
-  /** Extract ZIP archive entries
-    */
+  /**
+   * Extract ZIP archive entries
+   */
   private def extractEntries(
-      content: FileContent[MimeType.ApplicationZip.type],
-      cfg: SplitConfig,
-      sessionId: java.util.UUID
+    content: FileContent[MimeType.ApplicationZip.type],
+    cfg: SplitConfig,
+    sessionId: java.util.UUID
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
-    val input = new ByteArrayInputStream(content.data)
+    val input  = new ByteArrayInputStream(content.data)
 
     try {
       // Use Aspose.ZIP to extract ZIP archive entries
       val zipArchive = new Archive(input)
-      val entries = zipArchive.getEntries.asScala
+      val entries    = zipArchive.getEntries.asScala
 
       // Check for potential zipbomb by calculating compression ratio
-      val totalCompressed = entries.map(_.getCompressedSize).sum
+      val totalCompressed   = entries.map(_.getCompressedSize).sum
       val totalUncompressed = entries.map(_.getUncompressedSize).sum
 
       // If compression ratio > 100, log a warning (potential zipbomb)
@@ -115,9 +115,7 @@ object ZipArchiveAsposeSplitter
         val entryName = entry.getName
 
         // Skip __MACOSX directories and files
-        if (
-          entryName.startsWith("__MACOSX") || entryName.contains("/__MACOSX/")
-        ) {
+        if (entryName.startsWith("__MACOSX") || entryName.contains("/__MACOSX/")) {
           logger.debug(s"Skipping macOS metadata: $entryName")
         }
         // Handle directories - just log them
@@ -146,7 +144,7 @@ object ZipArchiveAsposeSplitter
           outputStream.close()
 
           // Calculate compression ratio for zipbomb detection
-          val compressedSize = entry.getCompressedSize
+          val compressedSize   = entry.getCompressedSize
           val uncompressedSize = entry.getUncompressedSize
 
           if (compressedSize > 0 && uncompressedSize / compressedSize > 1000) {
@@ -172,10 +170,10 @@ object ZipArchiveAsposeSplitter
             index,
             0, // Will update total later
             Map(
-              "compressed_size" -> compressedSize.toString,
+              "compressed_size"   -> compressedSize.toString,
               "uncompressed_size" -> uncompressedSize.toString,
-              "archive_type" -> "zip",
-              "path" -> entryName // Include full path for nested extraction
+              "archive_type"      -> "zip",
+              "path"              -> entryName // Include full path for nested extraction
             )
           )
         }
@@ -185,34 +183,35 @@ object ZipArchiveAsposeSplitter
     } catch {
       case e: Exception =>
         logger.error(s"Error extracting ZIP archive: ${e.getMessage}", e)
-    } finally {
+    } finally
       Try(input.close())
-    }
 
     chunks.toSeq
   }
 
-  /** Cleans a path for display by:
-    * 1. Removing macOS-specific hidden file prefix "._"
-    * 2. Taking only the last path component (filename)
-    * 3. Handling special characters
-    */
+  /**
+   * Cleans a path for display by:
+   *   1. Removing macOS-specific hidden file prefix "._" 2. Taking only the last path component
+   *      (filename) 3. Handling special characters
+   */
   private def cleanPathForDisplay(path: String): String = {
     val lastComponent = path.split("/").last
     if (lastComponent.startsWith("._")) lastComponent.substring(2)
     else lastComponent
   }
 
-  /** Track the extracted size and check against limits
-    *
-    * @return true if extraction can continue, false if limit exceeded
-    */
+  /**
+   * Track the extracted size and check against limits
+   *
+   * @return
+   *   true if extraction can continue, false if limit exceeded
+   */
   private def trackExtractedSize(
-      sessionId: java.util.UUID,
-      byteCount: Long,
-      maxSize: Long
+    sessionId: java.util.UUID,
+    byteCount: Long,
+    maxSize: Long
   ): Boolean = {
-    val counter = extractedSizeMap.get(sessionId)
+    val counter  = extractedSizeMap.get(sessionId)
     val newTotal = counter.addAndGet(byteCount)
 
     if (newTotal > maxSize) {

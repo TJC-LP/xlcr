@@ -1,13 +1,12 @@
 package com.tjclp.xlcr
 package bridges.html
 
+import org.scalatest.BeforeAndAfterAll
+
 import base.BridgeSpec
 import models.FileContent
-import types.MimeType
-import types.MimeType.{TextHtml, ApplicationPdf}
+import types.MimeType.{ ApplicationPdf, TextHtml }
 import utils.aspose.AsposeLicense
-
-import org.scalatest.BeforeAndAfterAll
 
 class HtmlToPdfAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll {
 
@@ -30,16 +29,16 @@ class HtmlToPdfAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll {
                  |</html>""".stripMargin
 
     val input = FileContent[TextHtml.type](html.getBytes("UTF-8"), TextHtml)
-    
+
     // Convert HTML to PDF
     val result = HtmlToPdfAsposeBridge.convert(input)
-    
+
     // Verify the result
     result.mimeType shouldBe ApplicationPdf
-    
+
     // PDF files should start with %PDF
     new String(result.data.take(4)) should be("%PDF")
-    
+
     // Minimum size check to ensure it's a valid PDF
     result.data.length should be > 100
   }

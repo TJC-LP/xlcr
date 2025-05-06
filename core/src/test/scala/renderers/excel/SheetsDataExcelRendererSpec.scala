@@ -1,15 +1,16 @@
 package com.tjclp.xlcr
 package renderers.excel
 
-import models.excel.{SheetsData, SheetData, CellData, CellDataStyle, FontData}
+import java.io.ByteArrayInputStream
 
-import org.apache.poi.ss.usermodel.{BorderStyle, CellType, FillPatternType}
+import com.tjclp.xlcr.compat.Using
+
+import org.apache.poi.ss.usermodel.{ BorderStyle, CellType, FillPatternType }
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.ByteArrayInputStream
-import com.tjclp.xlcr.compat.Using
+import models.excel.{ CellData, CellDataStyle, FontData, SheetData, SheetsData }
 
 class SheetsDataExcelRendererSpec extends AnyFlatSpec with Matchers {
   private val renderer = new SheetsDataExcelRenderer()
@@ -29,7 +30,7 @@ class SheetsDataExcelRendererSpec extends AnyFlatSpec with Matchers {
       )
     )
 
-    val model = SheetsData(List(sheetData))
+    val model  = SheetsData(List(sheetData))
     val result = renderer.render(model)
 
     // Verify the output
@@ -75,13 +76,13 @@ class SheetsDataExcelRendererSpec extends AnyFlatSpec with Matchers {
       )
     )
 
-    val model = SheetsData(List(sheetData))
+    val model  = SheetsData(List(sheetData))
     val result = renderer.render(model)
 
     Using.resource(new ByteArrayInputStream(result.data)) { is =>
       val workbook = new XSSFWorkbook(is)
-      val sheet = workbook.getSheetAt(0)
-      val cell = sheet.getRow(0).getCell(0)
+      val sheet    = workbook.getSheetAt(0)
+      val cell     = sheet.getRow(0).getCell(0)
 
       val cellStyle = cell.getCellStyle
       cellStyle.getFillPattern shouldBe FillPatternType.SOLID_FOREGROUND
@@ -115,12 +116,12 @@ class SheetsDataExcelRendererSpec extends AnyFlatSpec with Matchers {
       )
     )
 
-    val model = SheetsData(List(sheetData))
+    val model  = SheetsData(List(sheetData))
     val result = renderer.render(model)
 
     Using.resource(new ByteArrayInputStream(result.data)) { is =>
       val workbook = new XSSFWorkbook(is)
-      val sheet = workbook.getSheetAt(0)
+      val sheet    = workbook.getSheetAt(0)
 
       val formulaCell = sheet.getRow(1).getCell(0)
       formulaCell.getCellType shouldBe CellType.FORMULA
@@ -144,12 +145,12 @@ class SheetsDataExcelRendererSpec extends AnyFlatSpec with Matchers {
       mergedRegions = List("A1:B2")
     )
 
-    val model = SheetsData(List(sheetData))
+    val model  = SheetsData(List(sheetData))
     val result = renderer.render(model)
 
     Using.resource(new ByteArrayInputStream(result.data)) { is =>
       val workbook = new XSSFWorkbook(is)
-      val sheet = workbook.getSheetAt(0)
+      val sheet    = workbook.getSheetAt(0)
 
       sheet.getNumMergedRegions shouldBe 1
       val mergedRegion = sheet.getMergedRegion(0)

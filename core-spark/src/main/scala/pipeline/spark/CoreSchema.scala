@@ -2,27 +2,28 @@ package com.tjclp.xlcr
 package pipeline.spark
 
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Column, DataFrame, functions => F}
+import org.apache.spark.sql.{ functions => F, Column, DataFrame }
 
-/** Central place that defines the **core contract** that every row in the Spark
-  * pipeline must satisfy.
-  *
-  *  – Only these columns are *required* and validated after each `SparkStep`.
-  *  – Additional user-defined columns can appear / disappear freely.
-  *
-  * Having the contract in one file makes evolution (adding a column, changing a
-  * type) a single-point change.
-  */
+/**
+ * Central place that defines the **core contract** that every row in the Spark pipeline must
+ * satisfy.
+ *
+ * – Only these columns are *required* and validated after each `SparkStep`. – Additional
+ * user-defined columns can appear / disappear freely.
+ *
+ * Having the contract in one file makes evolution (adding a column, changing a type) a single-point
+ * change.
+ */
 object CoreSchema {
   /* --------------------------------------------------------------------- */
   /* Column names & nested types                                           */
   /* --------------------------------------------------------------------- */
 
-  val Id = "id"
-  val Content = "content"
-  val Mime = "mime"
-  val Metadata = "metadata"
-  val Lineage = "lineage"
+  val Id         = "id"
+  val Content    = "content"
+  val Mime       = "mime"
+  val Metadata   = "metadata"
+  val Lineage    = "lineage"
   val ChunkIndex = "chunkIndex"
   val ChunkLabel = "chunkLabel"
   val ChunkTotal = "chunkTotal"
@@ -59,13 +60,13 @@ object CoreSchema {
   val LineageArrayType: DataType = ArrayType(LineageType, containsNull = true)
 
   // Temporary columns
-  val LineageEntry = "lineageEntry"
+  val LineageEntry      = "lineageEntry"
   val LineageEntryError = "result.lineage.error"
-  val Result = "result"
-  val ResultData = "result.data"
-  val ResultLineage = "result.lineage"
-  val Chunks = "chunks"
-  val Chunk = "chunk"
+  val Result            = "result"
+  val ResultData        = "result.data"
+  val ResultLineage     = "result.lineage"
+  val Chunks            = "chunks"
+  val Chunk             = "chunk"
 
   /* --------------------------------------------------------------------- */
   /* Public API                                                            */
@@ -92,8 +93,9 @@ object CoreSchema {
     )
   )
 
-  /** Validate that the provided DataFrame contains the core columns with the
-   * expected data types. Throws `IllegalStateException` on mismatch.
+  /**
+   * Validate that the provided DataFrame contains the core columns with the expected data types.
+   * Throws `IllegalStateException` on mismatch.
    */
   def requireCore(df: DataFrame, stepName: String = "<unknown>"): Unit = {
     val missing = required.filterNot(f => hasField(df, f.name, f.dataType))
@@ -109,11 +111,10 @@ object CoreSchema {
     }
   }
 
-
-  /** Initialise an arbitrary DataFrame so that it satisfies the core schema.
-    * Missing columns are added with NULL / default values; existing columns are
-    * kept as-is.
-    */
+  /**
+   * Initialise an arbitrary DataFrame so that it satisfies the core schema. Missing columns are
+   * added with NULL / default values; existing columns are kept as-is.
+   */
   def ensure(df: DataFrame): DataFrame = {
 
     // add each required column if it does not exist

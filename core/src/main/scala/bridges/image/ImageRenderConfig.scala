@@ -3,7 +3,6 @@ package bridges.image
 
 import bridges.BridgeConfig
 import renderers.RendererConfig
-import types.MimeType
 
 /**
  * Generic config for any "binary → raster image" conversion.

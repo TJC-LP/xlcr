@@ -2,13 +2,13 @@ package com.tjclp.xlcr
 package splitters
 package excel
 
-import models.FileContent
-import types.MimeType
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import org.apache.poi.openxml4j.util.ZipSecureFile
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import models.FileContent
+import types.MimeType
 
 /**
  * Trait providing common Excel sheet splitting functionality. Can be mixed into specific splitter

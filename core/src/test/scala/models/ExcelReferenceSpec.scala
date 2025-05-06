@@ -1,12 +1,12 @@
 package com.tjclp.xlcr
 package models
 
-import models.excel.ExcelReference
-import models.excel.ExcelReference.{Cell, Row, Col, Range, Named}
-import utils.excel.ExcelUtils
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import models.excel.ExcelReference
+import models.excel.ExcelReference.{ Cell, Col, Named, Range, Row }
+import utils.excel.ExcelUtils
 
 class ExcelReferenceSpec extends AnyFlatSpec with Matchers {
 
@@ -84,7 +84,7 @@ class ExcelReferenceSpec extends AnyFlatSpec with Matchers {
       Cell("Sheet1", Row(1), Col(0)),
       Cell("Sheet1", Row(3), Col(2))
     )
-    val insideCell: Cell = Cell("Sheet1", Row(2), Col(1))
+    val insideCell: Cell  = Cell("Sheet1", Row(2), Col(1))
     val outsideCell: Cell = Cell("Sheet1", Row(4), Col(3))
 
     range.contains(insideCell) shouldBe true
@@ -125,8 +125,8 @@ class ExcelReferenceSpec extends AnyFlatSpec with Matchers {
       Cell("Sheet1", Row(3), Col(2))
     )
 
-    val insideCell: Cell = Cell("Sheet1", Row(2), Col(1))
-    val outsideCell: Cell = Cell("Sheet1", Row(4), Col(3))
+    val insideCell: Cell     = Cell("Sheet1", Row(2), Col(1))
+    val outsideCell: Cell    = Cell("Sheet1", Row(4), Col(3))
     val wrongSheetCell: Cell = Cell("Sheet2", Row(2), Col(1))
 
     range.contains(insideCell) shouldBe true

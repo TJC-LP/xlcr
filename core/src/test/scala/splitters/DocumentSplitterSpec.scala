@@ -1,18 +1,18 @@
 package com.tjclp.xlcr
 package splitters
 
-import models.FileContent
-import types.MimeType
+import java.io.ByteArrayOutputStream
 
-import org.apache.pdfbox.pdmodel.{PDDocument, PDPage}
+import org.apache.pdfbox.pdmodel.{ PDDocument, PDPage }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.ByteArrayOutputStream
+import models.FileContent
+import types.MimeType
 
 /**
-  * Basic sanity checks for the new DocumentSplitter infrastructure.
-  */
+ * Basic sanity checks for the new DocumentSplitter infrastructure.
+ */
 class DocumentSplitterSpec extends AnyFlatSpec with Matchers {
 
   it should "split a two‑page PDF into two separate chunks" in {
@@ -33,7 +33,7 @@ class DocumentSplitterSpec extends AnyFlatSpec with Matchers {
 
     val chunks = DocumentSplitter.split(fc, SplitConfig(strategy = Some(SplitStrategy.Page)))
 
-    chunks should have length 2
+    (chunks should have).length(2)
     all(chunks.map(_.content.mimeType)) shouldBe MimeType.ApplicationPdf
 
     chunks.foreach { chunk =>

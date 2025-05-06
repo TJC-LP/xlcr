@@ -2,16 +2,16 @@ package com.tjclp.xlcr
 package bridges
 package image
 
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import com.aspose.pdf.{ Document, Image => PdfImage, MarginInfo, PageSize }
+import org.slf4j.LoggerFactory
+
 import models.FileContent
 import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType.ApplicationPdf
 import types.{ MimeType, Priority }
 import utils.aspose.AsposeLicense
-
-import com.aspose.pdf.{ Document, Image => PdfImage, MarginInfo, PageSize }
-import org.slf4j.LoggerFactory
-
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 /**
  * Common implementation for Image to PDF conversion using Aspose.PDF. This trait provides the core

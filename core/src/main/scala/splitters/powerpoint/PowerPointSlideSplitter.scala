@@ -2,20 +2,21 @@ package com.tjclp.xlcr
 package splitters
 package powerpoint
 
-import models.FileContent
-import types.MimeType
+import java.io.{ File, FileInputStream, FileOutputStream }
+
+import scala.jdk.CollectionConverters._
+import scala.util.Try
 
 import org.apache.poi.xslf.usermodel.XMLSlideShow
 
-import java.io.{File, FileInputStream, FileOutputStream}
-import scala.jdk.CollectionConverters._
-import scala.util.Try
+import models.FileContent
+import types.MimeType
 
 trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
 
   override def split(
-      content: FileContent[T],
-      cfg: SplitConfig
+    content: FileContent[T],
+    cfg: SplitConfig
   ): Seq[DocChunk[T]] = {
 
     if (!cfg.hasStrategy(SplitStrategy.Slide))
@@ -37,7 +38,7 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
 
       try {
         val slides = src.getSlides.asScala.toList
-        val total = slides.size
+        val total  = slides.size
 
         // Process each slide - we'll use a separate temporary file for each destination
         val chunks = slides.zipWithIndex.flatMap { case (originalSlide, idx) =>
@@ -71,14 +72,12 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
                 // Create file content and chunk
                 val fc = FileContent(destBytes, content.mimeType)
                 Some(DocChunk(fc, title, idx, total))
-              } finally {
+              } finally
                 // Always close the destination
                 dest.close()
-              }
-            } finally {
+            } finally
               // Clean up the temp file
               Try(destFile.delete())
-            }
           } catch {
             case ex: Exception =>
               println(s"Error processing slide ${idx + 1}: ${ex.getMessage}")
@@ -94,13 +93,11 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
         } else {
           chunks
         }
-      } finally {
+      } finally
         // Close source after all slides are processed
         Try(src.close())
-      }
-    } finally {
+    } finally
       // Clean up the main temp file
       Try(tempFile.delete())
-    }
   }
 }

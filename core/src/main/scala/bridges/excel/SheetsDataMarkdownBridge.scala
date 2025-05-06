@@ -7,10 +7,10 @@ import parsers.excel.SheetsDataMarkdownParser
 import renderers.excel.SheetsDataMarkdownRenderer
 import types.MimeType.TextMarkdown
 
-/** SheetsDataMarkdownBridge is a symmetric bridge that converts
-  * SheetsData to/from Markdown. This merges the logic from the
-  * older MarkdownExcelInputBridge and ExcelMarkdownOutputBridge.
-  */
+/**
+ * SheetsDataMarkdownBridge is a symmetric bridge that converts SheetsData to/from Markdown. This
+ * merges the logic from the older MarkdownExcelInputBridge and ExcelMarkdownOutputBridge.
+ */
 object SheetsDataMarkdownBridge
     extends MergeableSymmetricBridge[
       SheetsData,

@@ -1,22 +1,23 @@
 package com.tjclp.xlcr
 package bridges
 
-import models.Model
-import registration.Registry
-import spi.{BridgeInfo, BridgeProvider}
-import types.{MimeType, Priority}
-
 import scala.reflect.ClassTag
 
-/** BridgeRegistry manages Bridges between mime types, discovered via SPI.
-  * It extends the generic Registry trait with strong typing.
-  */
+import models.Model
+import registration.Registry
+import spi.{ BridgeInfo, BridgeProvider }
+import types.{ MimeType, Priority }
+
+/**
+ * BridgeRegistry manages Bridges between mime types, discovered via SPI. It extends the generic
+ * Registry trait with strong typing.
+ */
 object BridgeRegistry
     extends Registry[
-      (MimeType, MimeType), // K: Key is a tuple of MimeTypes
+      (MimeType, MimeType),                             // K: Key is a tuple of MimeTypes
       Bridge[_ <: Model, _ <: MimeType, _ <: MimeType], // V: Value is a Bridge
-      BridgeProvider, // P: SPI Provider type
-      BridgeInfo[_ <: MimeType, _ <: MimeType], // I: Info object type
+      BridgeProvider,                                   // P: SPI Provider type
+      BridgeInfo[_ <: MimeType, _ <: MimeType]          // I: Info object type
     ] {
 
   // Implement abstract members from Registry trait
@@ -28,23 +29,23 @@ object BridgeRegistry
     ClassTag(classOf[Bridge[_, _, _]])
 
   override protected def extractProviderInfo(
-      provider: BridgeProvider
+    provider: BridgeProvider
   ): Iterable[BridgeInfo[_ <: MimeType, _ <: MimeType]] =
     provider.getBridges
 
   override protected def getKey(
-      info: BridgeInfo[_ <: MimeType, _ <: MimeType]
+    info: BridgeInfo[_ <: MimeType, _ <: MimeType]
   ): (MimeType, MimeType) =
     (info.inMime, info.outMime)
 
   override protected def getValue(
-      info: BridgeInfo[_ <: MimeType, _ <: MimeType]
+    info: BridgeInfo[_ <: MimeType, _ <: MimeType]
   ): Bridge[_ <: Model, _ <: MimeType, _ <: MimeType] =
     info.bridge
 
   // Override keySubtypeCheck to provide MIME type subtype logic
   override protected def keySubtypeCheck
-      : Option[((MimeType, MimeType), (MimeType, MimeType)) => Boolean] = Some {
+    : Option[((MimeType, MimeType), (MimeType, MimeType)) => Boolean] = Some {
     case (
           (requestInMime, requestOutMime),
           (registeredInMime, registeredOutMime)
@@ -53,43 +54,55 @@ object BridgeRegistry
       (registeredInMime == MimeType.Wildcard ||
         (requestInMime.baseType == registeredInMime.baseType &&
           requestInMime.subType == registeredInMime.subType)) &&
-        // And check if the output mime types match exactly
-        requestOutMime.baseType == registeredOutMime.baseType &&
-        requestOutMime.subType == registeredOutMime.subType
+      // And check if the output mime types match exactly
+      requestOutMime.baseType == registeredOutMime.baseType &&
+      requestOutMime.subType == registeredOutMime.subType
   }
 
-  /** Explicitly register a bridge dynamically with full type safety.
-    * Useful for bridges that depend on runtime configuration.
-    *
-    * @tparam M The model type used by the bridge
-    * @tparam I The input mime type
-    * @tparam O The output mime type
-    * @param inMime The input mime type
-    * @param outMime The output mime type
-    * @param bridge The bridge implementation
-    */
+  /**
+   * Explicitly register a bridge dynamically with full type safety. Useful for bridges that depend
+   * on runtime configuration.
+   *
+   * @tparam M
+   *   The model type used by the bridge
+   * @tparam I
+   *   The input mime type
+   * @tparam O
+   *   The output mime type
+   * @param inMime
+   *   The input mime type
+   * @param outMime
+   *   The output mime type
+   * @param bridge
+   *   The bridge implementation
+   */
   def register[M <: Model, I <: MimeType, O <: MimeType](
-      inMime: I,
-      outMime: O,
-      bridge: Bridge[M, I, O]
-  ): Unit = {
+    inMime: I,
+    outMime: O,
+    bridge: Bridge[M, I, O]
+  ): Unit =
     super.register((inMime, outMime), bridge)
-  }
 
-  /** Find the appropriate bridge for converting between mime types, preserving type information.
-    * Returns Some(bridge) if found, otherwise None.
-    * If multiple bridges are registered, the one with the highest priority is returned.
-    *
-    * @tparam I The input mime type
-    * @tparam O The output mime type
-    * @param inMime The input mime type
-    * @param outMime The output mime type
-    * @return An optional bridge that can convert from inMime to outMime
-    */
+  /**
+   * Find the appropriate bridge for converting between mime types, preserving type information.
+   * Returns Some(bridge) if found, otherwise None. If multiple bridges are registered, the one with
+   * the highest priority is returned.
+   *
+   * @tparam I
+   *   The input mime type
+   * @tparam O
+   *   The output mime type
+   * @param inMime
+   *   The input mime type
+   * @param outMime
+   *   The output mime type
+   * @return
+   *   An optional bridge that can convert from inMime to outMime
+   */
   def findBridge[I <: MimeType, O <: MimeType](
-      inMime: I,
-      outMime: O
-  ): Option[Bridge[_ <: Model, I, O]] = {
+    inMime: I,
+    outMime: O
+  ): Option[Bridge[_ <: Model, I, O]] =
     // First try with subtypes
     super
       .getWithSubtypes((inMime, outMime))
@@ -100,20 +113,25 @@ object BridgeRegistry
           .get((MimeType.Wildcard, outMime))
           .map(_.asInstanceOf[Bridge[_ <: Model, I, O]])
       }
-  }
 
-  /** Find all bridges registered for the given mime types, in priority order.
-    * Includes exact matches, subtype matches, and wildcard matches.
-    *
-    * @tparam I The input mime type
-    * @tparam O The output mime type
-    * @param inMime The input mime type
-    * @param outMime The output mime type
-    * @return A list of bridges that can convert from inMime to outMime
-    */
+  /**
+   * Find all bridges registered for the given mime types, in priority order. Includes exact
+   * matches, subtype matches, and wildcard matches.
+   *
+   * @tparam I
+   *   The input mime type
+   * @tparam O
+   *   The output mime type
+   * @param inMime
+   *   The input mime type
+   * @param outMime
+   *   The output mime type
+   * @return
+   *   A list of bridges that can convert from inMime to outMime
+   */
   def findAllBridges[I <: MimeType, O <: MimeType](
-      inMime: I,
-      outMime: O
+    inMime: I,
+    outMime: O
   ): List[Bridge[_ <: Model, I, O]] = {
     // Get all matches including subtypes
     val allMatches = super.getAllWithSubtypes((inMime, outMime))
@@ -134,46 +152,55 @@ object BridgeRegistry
       .map(_.asInstanceOf[Bridge[_ <: Model, I, O]])
   }
 
-  /** Check if we can merge between these mime types
-    *
-    * @tparam I The input mime type
-    * @tparam O The output mime type
-    * @param input The input mime type
-    * @param output The output mime type
-    * @return True if a mergeable bridge exists for these mime types
-    */
+  /**
+   * Check if we can merge between these mime types
+   *
+   * @tparam I
+   *   The input mime type
+   * @tparam O
+   *   The output mime type
+   * @param input
+   *   The input mime type
+   * @param output
+   *   The output mime type
+   * @return
+   *   True if a mergeable bridge exists for these mime types
+   */
   def supportsMerging[I <: MimeType, O <: MimeType](
-      input: I,
-      output: O
-  ): Boolean = {
+    input: I,
+    output: O
+  ): Boolean =
     // Use explicit type parameters to avoid ambiguity
     findMergeableBridge[I, O](input, output).isDefined
-  }
 
-  /** Find a bridge that supports merging between these mime types
-    * Checks exact matches, subtype matches, and wildcard matches.
-    *
-    * @tparam I The input mime type
-    * @tparam O The output mime type
-    * @param input The input mime type
-    * @param output The output mime type
-    * @return An optional mergeable bridge that can convert from input to output
-    */
+  /**
+   * Find a bridge that supports merging between these mime types Checks exact matches, subtype
+   * matches, and wildcard matches.
+   *
+   * @tparam I
+   *   The input mime type
+   * @tparam O
+   *   The output mime type
+   * @param input
+   *   The input mime type
+   * @param output
+   *   The output mime type
+   * @return
+   *   An optional mergeable bridge that can convert from input to output
+   */
   def findMergeableBridge[I <: MimeType, O <: MimeType](
-      input: I,
-      output: O
-  ): Option[MergeableBridge[_ <: Model, I, O]] = {
+    input: I,
+    output: O
+  ): Option[MergeableBridge[_ <: Model, I, O]] =
     // Use explicit type parameters to avoid ambiguity
-    findBridge[I, O](input, output) collect {
+    findBridge[I, O](input, output).collect {
       case b: MergeableBridge[_, _, _] =>
         b.asInstanceOf[MergeableBridge[_ <: Model, I, O]]
     }
-  }
 
   /** Diagnostic method to list registered bridges (uses trait method). */
-  def listBridges(): Seq[(MimeType, MimeType, String, Priority)] = {
+  def listBridges(): Seq[(MimeType, MimeType, String, Priority)] =
     super.listEntries().map { case ((in, out), name, prio) =>
       (in, out, name, prio)
     }
-  }
 }

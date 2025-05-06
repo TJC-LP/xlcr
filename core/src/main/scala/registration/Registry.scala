@@ -1,21 +1,27 @@
 package com.tjclp.xlcr
 package registration
 
-import types.{Prioritized, Priority}
-
-import org.slf4j.LoggerFactory
-
 import java.util.ServiceLoader
+
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 
-/** A streamlined, thread-safe registry for discovering and managing prioritized components via SPI.
-  *
-  * @tparam K The key type used for lookup (e.g., MimeType or (MimeType, MimeType))
-  * @tparam V The component type being registered (must extend Prioritized)
-  * @tparam P The SPI Provider interface type
-  * @tparam I The component Info object type returned by the provider
-  */
+import org.slf4j.LoggerFactory
+
+import types.{ Prioritized, Priority }
+
+/**
+ * A streamlined, thread-safe registry for discovering and managing prioritized components via SPI.
+ *
+ * @tparam K
+ *   The key type used for lookup (e.g., MimeType or (MimeType, MimeType))
+ * @tparam V
+ *   The component type being registered (must extend Prioritized)
+ * @tparam P
+ *   The SPI Provider interface type
+ * @tparam I
+ *   The component Info object type returned by the provider
+ */
 trait Registry[K, V <: Prioritized, P, I] {
   // Abstract members that concrete registries must implement
   /** The Class object for the SPI Provider interface. */
@@ -54,16 +60,16 @@ trait Registry[K, V <: Prioritized, P, I] {
         logger.info(
           s"Loading components from provider: ${provider.getClass.getName}"
         )
-        try {
+        try
           extractProviderInfo(provider).foreach { info =>
-            val key = getKey(info)
+            val key   = getKey(info)
             val value = getValue(info)
             logger.debug(
               s"Registering ${value.getClass.getSimpleName} for key $key with priority ${value.priority}"
             )
             reg.register(key, value)
           }
-        } catch {
+        catch {
           case e: Throwable =>
             logger.error(
               s"Failed to load components from provider ${provider.getClass.getName}: ${e.getMessage}",
@@ -85,7 +91,7 @@ trait Registry[K, V <: Prioritized, P, I] {
   /** Explicitly trigger the lazy initialization. */
   def init(): Unit = {
     registry.size // Force initialization
-    () // Return Unit
+    ()            // Return Unit
   }
 
   /** Register a component with the given key. */
@@ -97,20 +103,20 @@ trait Registry[K, V <: Prioritized, P, I] {
   }
 
   /** Core lookup methods - find the highest priority value for a key. */
-  def get(key: K): Option[V] = registry.get(key)
+  def get(key: K): Option[V]             = registry.get(key)
   def getWithSubtypes(key: K): Option[V] = registry.getWithSubtypes(key)
 
   /** Get all values registered for a key, sorted by priority (highest first). */
-  def getAll(key: K): List[V] = registry.getAll(key)
+  def getAll(key: K): List[V]             = registry.getAll(key)
   def getAllWithSubtypes(key: K): List[V] = registry.getAllWithSubtypes(key)
 
   /** Basic registry information. */
   def contains(key: K): Boolean = registry.contains(key)
-  def keys: Set[K] = registry.keys
-  def size: Int = registry.size
+  def keys: Set[K]              = registry.keys
+  def size: Int                 = registry.size
 
   /** Diagnostic method to list all registered entries with their priorities. */
-  def listEntries(): Seq[(K, String, Priority)] = {
+  def listEntries(): Seq[(K, String, Priority)] =
     registry.entries
       .map { case (key, value) =>
         (key, value.getClass.getSimpleName, value.priority)
@@ -119,5 +125,4 @@ trait Registry[K, V <: Prioritized, P, I] {
       .sortBy(t =>
         (t._1.toString, -t._3.value)
       ) // Sort by key, then priority desc
-  }
 }

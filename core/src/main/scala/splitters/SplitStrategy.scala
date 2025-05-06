@@ -3,6 +3,7 @@ package splitters
 
 /** Splitting strategies supported for different document types. */
 sealed trait SplitStrategy {
+
   /** Returns a clean, serialization-friendly string representation */
   def displayName: String
 }

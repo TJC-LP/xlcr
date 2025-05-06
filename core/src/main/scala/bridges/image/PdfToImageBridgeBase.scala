@@ -1,13 +1,14 @@
 package com.tjclp.xlcr
 package bridges.image
 
+import scala.reflect.ClassTag
+
+import org.slf4j.LoggerFactory
+
 import bridges.{ BridgeConfig, SimpleBridge }
 import models.FileContent
 import types.MimeType
 import types.MimeType.ApplicationPdf
-
-import org.slf4j.LoggerFactory
-import scala.reflect.ClassTag
 
 /**
  * Base trait for PDF to image bridges that provides common auto-tuning functionality.

@@ -1,36 +1,39 @@
 package com.tjclp.xlcr
 package parsers.excel
 
-import compat.Using
-import models.FileContent
-import models.excel.{SheetData, SheetsData}
-import parsers.ParserConfig
-import types.MimeType
+import java.io.ByteArrayInputStream
+
+import scala.util.Try
 
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
-import java.io.ByteArrayInputStream
-import scala.util.Try
+import compat.Using
+import models.FileContent
+import models.excel.{ SheetData, SheetsData }
+import parsers.ParserConfig
+import types.MimeType
 
-/** SheetsDataExcelParser parses Excel files (XLSX) into SheetsData.
-  */
+/**
+ * SheetsDataExcelParser parses Excel files (XLSX) into SheetsData.
+ */
 class SheetsDataExcelParser
     extends SheetsDataParser[
       MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
     ] {
 
-  /** Configuration-aware version that uses the config parameter.
-    * This is required for the ExcelParserConfig that we created.
-    */
+  /**
+   * Configuration-aware version that uses the config parameter. This is required for the
+   * ExcelParserConfig that we created.
+   */
   override def parse(
-      input: FileContent[
-        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
-      ],
-      config: Option[ParserConfig] = None
-  ): SheetsData = {
+    input: FileContent[
+      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type
+    ],
+    config: Option[ParserConfig] = None
+  ): SheetsData =
     Try {
       Using.resource(new ByteArrayInputStream(input.data)) { bais =>
-        val workbook = WorkbookFactory.create(bais)
+        val workbook  = WorkbookFactory.create(bais)
         val evaluator = workbook.getCreationHelper.createFormulaEvaluator()
 
         // Apply config if provided and it's an ExcelParserConfig
@@ -54,5 +57,4 @@ class SheetsDataExcelParser
         Some(ex)
       )
     }.get
-  }
 }

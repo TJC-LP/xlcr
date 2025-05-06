@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 class ConfigSpec extends AnyFlatSpec with Matchers {
 
   "Config" should "parse valid command line arguments" in {
-    val args = Array("input.xlsx", "output.json")
+    val args   = Array("input.xlsx", "output.json")
     val config = Config.parse(args)
 
     config.input shouldBe "input.xlsx"

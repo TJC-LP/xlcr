@@ -1,15 +1,16 @@
 package com.tjclp.xlcr
 
+import java.nio.file.{ Files, Paths, StandardCopyOption }
+
+import scala.util.{ Failure, Success, Try }
+
+import org.slf4j.LoggerFactory
+
 import bridges.BridgeRegistry
 import models.FileContent
 import splitters._
 import types.MimeType
 import utils.FileUtils
-
-import org.slf4j.LoggerFactory
-
-import java.nio.file.{ Files, Paths, StandardCopyOption }
-import scala.util.{ Failure, Success, Try }
 
 object Pipeline {
   private val logger = LoggerFactory.getLogger(getClass)

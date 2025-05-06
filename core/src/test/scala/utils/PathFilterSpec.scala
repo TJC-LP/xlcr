@@ -31,7 +31,9 @@ class PathFilterSpec extends AnyFlatSpec with Matchers {
 
   it should "normalize path separators" in {
     PathFilter.normalizeSeparators("folder\\file.txt") shouldBe "folder/file.txt"
-    PathFilter.normalizeSeparators("folder\\subfolder\\file.txt") shouldBe "folder/subfolder/file.txt"
+    PathFilter.normalizeSeparators(
+      "folder\\subfolder\\file.txt"
+    ) shouldBe "folder/subfolder/file.txt"
     PathFilter.normalizeSeparators("folder/file.txt") shouldBe "folder/file.txt"
   }
 
@@ -47,8 +49,8 @@ class PathFilterSpec extends AnyFlatSpec with Matchers {
     )
 
     val filtered = PathFilter.filterPaths(paths)
-    filtered should contain ("file.txt")
-    filtered should contain ("folder/file.doc")
+    filtered should contain("file.txt")
+    filtered should contain("folder/file.doc")
     filtered should not contain "__MACOSX/file.xlsx"
     filtered should not contain "folder/__MACOSX/file.pptx"
     filtered should not contain "folder/._file.pdf"
@@ -69,9 +71,9 @@ class PathFilterSpec extends AnyFlatSpec with Matchers {
       includeMacOsFilter = true,
       additionalFilters = Seq("\\.tmp$", "\\.bak$")
     )
-    
-    filtered should contain ("file.txt")
-    filtered should contain ("document.doc")
+
+    filtered should contain("file.txt")
+    filtered should contain("document.doc")
     filtered should not contain "temp.tmp"
     filtered should not contain "backup.bak"
   }

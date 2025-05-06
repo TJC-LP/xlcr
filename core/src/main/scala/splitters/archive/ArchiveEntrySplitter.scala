@@ -2,38 +2,40 @@ package com.tjclp.xlcr
 package splitters
 package archive
 
-import models.FileContent
-import types.Priority.LOW
-import types.{FileType, MimeType, Priority}
-import utils.PathFilter
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import scala.collection.mutable.ListBuffer
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory
 import org.slf4j.LoggerFactory
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.collection.mutable.ListBuffer
+import models.FileContent
+import types.Priority.LOW
+import types.{ FileType, MimeType, Priority }
+import utils.PathFilter
 
-/** Generic archive splitter that handles multiple archive formats:
-  * - ZIP files (.zip)
-  * - GZip files (.gz)
-  * - 7-Zip files (.7z)
-  * - TAR archives (.tar)
-  * - BZip2 files (.bz2)
-  * - XZ files (.xz)
-  *
-  * Supports recursive extraction of archives within archives.
-  * Includes zipbomb protection to prevent excessive resource usage.
-  */
+/**
+ * Generic archive splitter that handles multiple archive formats:
+ *   - ZIP files (.zip)
+ *   - GZip files (.gz)
+ *   - 7-Zip files (.7z)
+ *   - TAR archives (.tar)
+ *   - BZip2 files (.bz2)
+ *   - XZ files (.xz)
+ *
+ * Supports recursive extraction of archives within archives. Includes zipbomb protection to prevent
+ * excessive resource usage.
+ */
 class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
   override def priority: Priority = LOW // TODO: Make recursion work properly
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /** Cleans a path for display by delegating to PathFilter utility
-    */
-  private def cleanPathForDisplay(path: String): String = {
+  /**
+   * Cleans a path for display by delegating to PathFilter utility
+   */
+  private def cleanPathForDisplay(path: String): String =
     PathFilter.cleanPathForDisplay(path)
-  }
 
   // The list of MIME types this splitter can handle
   private val supportedMimeTypes = Set[MimeType](
@@ -50,8 +52,9 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
     java.util.concurrent.atomic.AtomicLong
   ]()
 
-  /** Initialize a tracking session for zipbomb protection
-    */
+  /**
+   * Initialize a tracking session for zipbomb protection
+   */
   private def initExtractSession(): java.util.UUID = {
     val sessionId = java.util.UUID.randomUUID()
     extractedSizeMap.put(
@@ -61,15 +64,17 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
     sessionId
   }
 
-  /** Track the extracted size and check against limits
-    * @return true if extraction can continue, false if limit exceeded
-    */
+  /**
+   * Track the extracted size and check against limits
+   * @return
+   *   true if extraction can continue, false if limit exceeded
+   */
   private def trackExtractedSize(
-      sessionId: java.util.UUID,
-      byteCount: Long,
-      maxSize: Long
+    sessionId: java.util.UUID,
+    byteCount: Long,
+    maxSize: Long
   ): Boolean = {
-    val counter = extractedSizeMap.get(sessionId)
+    val counter  = extractedSizeMap.get(sessionId)
     val newTotal = counter.addAndGet(byteCount)
 
     if (newTotal > maxSize) {
@@ -82,15 +87,15 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
     }
   }
 
-  /** Clean up tracking session
-    */
-  private def cleanupExtractSession(sessionId: java.util.UUID): Unit = {
+  /**
+   * Clean up tracking session
+   */
+  private def cleanupExtractSession(sessionId: java.util.UUID): Unit =
     extractedSizeMap.remove(sessionId)
-  }
 
   override def split(
-      content: FileContent[MimeType],
-      cfg: SplitConfig
+    content: FileContent[MimeType],
+    cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     // If not handling this MIME type or not requesting split, return the original
@@ -137,31 +142,31 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
       }
 
       chunks
-    } finally {
+    } finally
       cleanupExtractSession(sessionId)
-    }
   }
 
-  /** Handles ZIP archives (.zip) and similar formats
-    */
+  /**
+   * Handles ZIP archives (.zip) and similar formats
+   */
   private def splitZip(
-      content: FileContent[MimeType],
-      cfg: SplitConfig,
-      sessionId: java.util.UUID
+    content: FileContent[MimeType],
+    cfg: SplitConfig,
+    sessionId: java.util.UUID
   ): Seq[DocChunk[_ <: MimeType]] = {
     // Import break functionality
     import scala.util.control.Breaks._
 
     val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
-    val input = new ByteArrayInputStream(content.data)
+    val input  = new ByteArrayInputStream(content.data)
 
     try {
       val zipInput = new java.util.zip.ZipInputStream(input)
-      var entry = zipInput.getNextEntry()
+      var entry    = zipInput.getNextEntry()
 
       // Estimate total uncompressed size for zipbomb protection
-      var entriesProcessed = 0
-      var totalUncompressedSize = 0L
+      var entriesProcessed        = 0
+      var totalUncompressedSize   = 0L
       var potentialCompressedSize = 0L
 
       while (entry != null) {
@@ -197,9 +202,9 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
 
             // Create output stream to extract the data
             val outputStream = new ByteArrayOutputStream()
-            val buffer = new Array[Byte](8192)
-            var len = 0
-            var bytesRead = 0L
+            val buffer       = new Array[Byte](8192)
+            var len          = 0
+            var bytesRead    = 0L
 
             val maxEntrySize = 1024 * 1024 * 50 // 50MB per entry max
 
@@ -240,9 +245,7 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
 
             // Check compression ratio (zipbomb protection)
             val compressedSize = entry.getCompressedSize
-            if (
-              compressedSize > 0 && entryData.length / compressedSize > 1000
-            ) {
+            if (compressedSize > 0 && entryData.length / compressedSize > 1000) {
               logger.warn(
                 s"Suspicious compression ratio for ${entryName}: ${entryData.length / compressedSize}"
               )
@@ -266,10 +269,10 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
               chunks.length,
               0,
               Map(
-                "compressed_size" -> entry.getCompressedSize.toString,
+                "compressed_size"   -> entry.getCompressedSize.toString,
                 "uncompressed_size" -> entryData.length.toString,
-                "archive_type" -> "zip",
-                "path" -> entryName // Keep original path in metadata
+                "archive_type"      -> "zip",
+                "path"              -> entryName // Keep original path in metadata
               )
             )
           }
@@ -310,13 +313,14 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
     }.toSeq
   }
 
-  /** Handles single-entry compressed formats (GZIP, BZIP2, XZ)
-    */
+  /**
+   * Handles single-entry compressed formats (GZIP, BZIP2, XZ)
+   */
   private def splitSingleEntryCompressed(
-      content: FileContent[MimeType],
-      cfg: SplitConfig,
-      compressorName: String,
-      sessionId: java.util.UUID
+    content: FileContent[MimeType],
+    cfg: SplitConfig,
+    compressorName: String,
+    sessionId: java.util.UUID
   ): Seq[DocChunk[_ <: MimeType]] = {
     // Import break functionality
     import scala.util.control.Breaks._
@@ -328,9 +332,9 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
       val factory = new CompressorStreamFactory()
       val compressor =
         factory.createCompressorInputStream(compressorName, input)
-      val outputStream = new ByteArrayOutputStream()
-      val buffer = new Array[Byte](8192)
-      var len = 0
+      val outputStream   = new ByteArrayOutputStream()
+      val buffer         = new Array[Byte](8192)
+      var len            = 0
       var totalBytesRead = 0L
 
       // Compressed formats can expand dramatically - set reasonable limits
@@ -395,9 +399,9 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
           0,
           1,
           Map(
-            "compressed_size" -> content.data.length.toString,
+            "compressed_size"   -> content.data.length.toString,
             "uncompressed_size" -> decompressedBytes.length.toString,
-            "archive_type" -> compressorName.toLowerCase
+            "archive_type"      -> compressorName.toLowerCase
           )
         )
       )

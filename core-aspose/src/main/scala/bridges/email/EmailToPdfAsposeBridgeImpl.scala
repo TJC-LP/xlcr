@@ -2,41 +2,41 @@ package com.tjclp.xlcr
 package bridges
 package email
 
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import com.aspose.email.{ MailMessage, MhtSaveOptions }
+import com.aspose.words.{ Document, LoadFormat, LoadOptions, SaveFormat }
+import org.slf4j.LoggerFactory
+
 import models.FileContent
-import parsers.Parser
-import renderers.{Renderer, SimpleRenderer}
+import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType
 import types.MimeType.ApplicationPdf
 import utils.aspose.AsposeLicense
 
-import com.aspose.email.{MailMessage, MhtSaveOptions}
-import com.aspose.words.{Document, LoadFormat, LoadOptions, SaveFormat}
-import org.slf4j.LoggerFactory
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-
-/** Common implementation for Email to PDF bridges that works with both Scala 2 and Scala 3.
-  * This trait contains all the business logic for converting email files to PDF using Aspose.Email.
-  *
-  * @tparam I The specific email input MimeType
-  */
+/**
+ * Common implementation for Email to PDF bridges that works with both Scala 2 and Scala 3. This
+ * trait contains all the business logic for converting email files to PDF using Aspose.Email.
+ *
+ * @tparam I
+ *   The specific email input MimeType
+ */
 trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
     extends HighPrioritySimpleBridge[I, ApplicationPdf.type] {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override private[bridges] def outputRenderer
-      : Renderer[M, ApplicationPdf.type] =
+  override private[bridges] def outputRenderer: Renderer[M, ApplicationPdf.type] =
     EmailToPdfAsposeRenderer
 
-  /** Renderer that performs email to PDF conversion via Aspose.Email and Aspose.Words.
-    * The conversion happens in two steps:
-    * 1. Convert email to MHTML using Aspose.Email
-    * 2. Convert MHTML to PDF using Aspose.Words
-    */
+  /**
+   * Renderer that performs email to PDF conversion via Aspose.Email and Aspose.Words. The
+   * conversion happens in two steps:
+   *   1. Convert email to MHTML using Aspose.Email 2. Convert MHTML to PDF using Aspose.Words
+   */
   private object EmailToPdfAsposeRenderer
       extends SimpleRenderer[M, ApplicationPdf.type] {
-    override def render(model: M): FileContent[ApplicationPdf.type] = {
+    override def render(model: M): FileContent[ApplicationPdf.type] =
       try {
         AsposeLicense.initializeIfNeeded()
         logger.info(
@@ -67,17 +67,17 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
             Some(ex)
           )
       }
-    }
 
-    /** Load the email message from bytes.
-      * This method can be overridden by specific implementations if needed.
-      */
-    private def loadEmail(data: Array[Byte]): MailMessage = {
+    /**
+     * Load the email message from bytes. This method can be overridden by specific implementations
+     * if needed.
+     */
+    private def loadEmail(data: Array[Byte]): MailMessage =
       MailMessage.load(new ByteArrayInputStream(data))
-    }
 
-    /** Convert MailMessage to MHTML bytes.
-      */
+    /**
+     * Convert MailMessage to MHTML bytes.
+     */
     private def convertEmailToMhtml(message: MailMessage): Array[Byte] = {
       val mhtStream = new ByteArrayOutputStream()
 
@@ -94,8 +94,9 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
       mhtBytes
     }
 
-    /** Convert MHTML bytes to PDF bytes using Aspose.Words.
-      */
+    /**
+     * Convert MHTML bytes to PDF bytes using Aspose.Words.
+     */
     private def convertMhtmlToPdf(mhtBytes: Array[Byte]): Array[Byte] = {
       val docStream = new ByteArrayInputStream(mhtBytes)
 

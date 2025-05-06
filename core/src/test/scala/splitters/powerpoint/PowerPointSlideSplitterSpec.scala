@@ -2,14 +2,14 @@ package com.tjclp.xlcr
 package splitters
 package powerpoint
 
-import models.FileContent
-import types.MimeType
+import java.io.ByteArrayOutputStream
 
 import org.apache.poi.xslf.usermodel.XMLSlideShow
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.ByteArrayOutputStream
+import models.FileContent
+import types.MimeType
 
 class PowerPointSlideSplitterSpec extends AnyFlatSpec with Matchers {
 
@@ -35,7 +35,7 @@ class PowerPointSlideSplitterSpec extends AnyFlatSpec with Matchers {
       SplitConfig(strategy = Some(SplitStrategy.Slide))
     )
 
-    chunks should have length 2
+    (chunks should have).length(2)
     all(
       chunks.map(_.content.mimeType)
     ) shouldBe MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation

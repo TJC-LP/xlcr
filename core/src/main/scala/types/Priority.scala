@@ -2,8 +2,8 @@ package com.tjclp.xlcr
 package types
 
 /**
- * Priority levels for implementations to be used in registration systems.
- * Higher values represent higher priority implementations.
+ * Priority levels for implementations to be used in registration systems. Higher values represent
+ * higher priority implementations.
  */
 sealed trait Priority extends Ordered[Priority] {
   def value: Int
@@ -15,6 +15,7 @@ sealed trait Priority extends Ordered[Priority] {
  * Standard priority levels for implementation registration.
  */
 object Priority {
+
   /**
    * High priority implementations (commercial solutions like Aspose)
    */
@@ -39,20 +40,20 @@ object Priority {
    * Implicit conversion from Int to Priority.Custom - for backward compatibility
    */
   implicit def intToPriority(value: Int): Priority = Custom(value)
-  
+
   /**
-   * Mapping from legacy priority values to new simplified system
-   * Used for backward compatibility in existing code
+   * Mapping from legacy priority values to new simplified system Used for backward compatibility in
+   * existing code
    */
   @deprecated("Use Priority.HIGH instead", "2.0.0")
   val HIGHEST: Priority = HIGH
-  
+
   @deprecated("Use Priority.HIGH instead", "2.0.0")
   val ASPOSE: Priority = HIGH
-  
+
   @deprecated("Use Priority.DEFAULT instead", "2.0.0")
   val CORE: Priority = DEFAULT
-  
+
   @deprecated("Use Priority.LOW instead", "2.0.0")
   val LOWEST: Priority = LOW
 }

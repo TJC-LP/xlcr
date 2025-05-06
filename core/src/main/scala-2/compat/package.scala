@@ -5,13 +5,12 @@ package object compat {
   object Using {
     def resource[R <: AutoCloseable, A](resource: => R)(f: R => A): A = {
       val r = resource
-      try {
+      try
         f(r)
-      } finally {
+      finally
         if (r != null) {
           r.close()
         }
-      }
     }
   }
 }

@@ -1,21 +1,21 @@
 package com.tjclp.xlcr
 package bridges.image
 
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
+import javax.imageio.stream.MemoryCacheImageOutputStream
+import javax.imageio.{ IIOImage, ImageIO, ImageWriteParam }
+
+import scala.reflect.ClassTag
+
+import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.rendering.{ ImageType, PDFRenderer }
+
 import models.FileContent
 import renderers.RendererConfig
 import types.MimeType
 import types.MimeType.{ ApplicationPdf, ImageJpeg }
 import utils.image.ImageUtils
-
-import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.pdfbox.rendering.{ ImageType, PDFRenderer }
-import org.slf4j.LoggerFactory
-
-import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import javax.imageio.stream.MemoryCacheImageOutputStream
-import javax.imageio.{ IIOImage, ImageIO, ImageWriteParam }
-import scala.reflect.ClassTag
 
 /**
  * Base implementation for PDFBox-based PDF to image conversion.

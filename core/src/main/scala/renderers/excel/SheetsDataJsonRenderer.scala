@@ -1,18 +1,20 @@
 package com.tjclp.xlcr
 package renderers.excel
 
+import java.nio.charset.StandardCharsets
+
+import scala.util.{ Failure, Success, Try }
+
 import models.FileContent
 import models.excel.SheetsData
 import types.MimeType.ApplicationJson
 
-import java.nio.charset.StandardCharsets
-import scala.util.{Failure, Success, Try}
-
-/** SheetsDataJsonRenderer produces JSON from SheetsData.
-  */
+/**
+ * SheetsDataJsonRenderer produces JSON from SheetsData.
+ */
 class SheetsDataJsonRenderer
     extends SheetsDataSimpleRenderer[ApplicationJson.type] {
-  override def render(model: SheetsData): FileContent[ApplicationJson.type] = {
+  override def render(model: SheetsData): FileContent[ApplicationJson.type] =
     Try {
       val sheets = model.sheets
       // Let's reuse the static toJsonMultiple from SheetData
@@ -30,5 +32,4 @@ class SheetsDataJsonRenderer
         )
       case Success(fc) => fc
     }
-  }
 }

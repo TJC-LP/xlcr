@@ -2,18 +2,18 @@ package com.tjclp.xlcr
 package splitters
 package text
 
-import models.FileContent
-import types.MimeType
+import java.nio.file.{ Files, Paths }
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.nio.file.{Files, Paths}
+import models.FileContent
+import types.MimeType
 
 object CsvSplitterSpec extends AnyFlatSpec with Matchers {
 
   "CsvSplitter" should "split CSV by individual rows with Row strategy" in {
-    val filePath = getClass.getResource("/text_samples/sample.csv").getPath
+    val filePath  = getClass.getResource("/text_samples/sample.csv").getPath
     val fileBytes = Files.readAllBytes(Paths.get(filePath))
     val content = FileContent(fileBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
@@ -24,7 +24,7 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
     )
 
     val splitter = CsvSplitter
-    val chunks = splitter.split(content, cfg)
+    val chunks   = splitter.split(content, cfg)
 
     // We should have one chunk per row (excluding header)
     val expectedRows = 10
@@ -37,7 +37,7 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
 
       // Each chunk should contain the header + 1 row
       val chunkContent = new String(chunk.content.data)
-      val lines = chunkContent.split("\n")
+      val lines        = chunkContent.split("\n")
       lines.length shouldBe 2
 
       // First line should be header
@@ -52,7 +52,7 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "group rows into chunks based on character count with default strategy" in {
-    val filePath = getClass.getResource("/text_samples/sample.csv").getPath
+    val filePath  = getClass.getResource("/text_samples/sample.csv").getPath
     val fileBytes = Files.readAllBytes(Paths.get(filePath))
     val content = FileContent(fileBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
@@ -60,11 +60,11 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
     // Config with default strategy but small maxChars to force multiple chunks
     val cfg = SplitConfig(
       strategy = None, // Use default
-      maxChars = 100 // Small character limit to force multiple chunks
+      maxChars = 100   // Small character limit to force multiple chunks
     )
 
     val splitter = CsvSplitter
-    val chunks = splitter.split(content, cfg)
+    val chunks   = splitter.split(content, cfg)
 
     // We should have multiple chunks
     chunks.length should be > 1
@@ -75,7 +75,7 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
 
       // Each chunk should contain the header + some rows
       val chunkContent = new String(chunk.content.data)
-      val lines = chunkContent.split("\n")
+      val lines        = chunkContent.split("\n")
       lines.length should be > 1
 
       // First line should be header
@@ -98,7 +98,7 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
     // Print chunk statistics for debugging
     chunks.foreach { chunk =>
       val chunkContent = new String(chunk.content.data)
-      val lines = chunkContent.split("\n")
+      val lines        = chunkContent.split("\n")
       println(
         s"Chunk '${chunk.label}': ${chunkContent.length} chars, ${lines.length - 1} rows (plus header)"
       )
@@ -106,29 +106,29 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "handle both very small and large character limits correctly" in {
-    val filePath = getClass.getResource("/text_samples/sample.csv").getPath
+    val filePath  = getClass.getResource("/text_samples/sample.csv").getPath
     val fileBytes = Files.readAllBytes(Paths.get(filePath))
     val content = FileContent(fileBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
 
     // First test with a very small limit (should create many small chunks)
-    val smallCfg = SplitConfig(maxChars = 50)
+    val smallCfg    = SplitConfig(maxChars = 50)
     val smallChunks = CsvSplitter.split(content, smallCfg)
 
     smallChunks.length should be > 3 // Should have multiple small chunks
 
     // Then test with a very large limit (should create one chunk with all rows)
-    val largeCfg = SplitConfig(maxChars = 100000)
+    val largeCfg    = SplitConfig(maxChars = 100000)
     val largeChunks = CsvSplitter.split(content, largeCfg)
 
     largeChunks.length shouldBe 1 // Should have just one chunk
 
     // The single large chunk should contain all rows
-    val csv = new String(content.data)
+    val csv        = new String(content.data)
     val totalLines = csv.split("\n").length
 
     val largeChunkContent = new String(largeChunks.head.content.data)
-    val largeChunkLines = largeChunkContent.split("\n").length
+    val largeChunkLines   = largeChunkContent.split("\n").length
 
     largeChunkLines shouldBe totalLines
   }

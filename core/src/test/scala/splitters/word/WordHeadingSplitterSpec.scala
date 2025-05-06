@@ -2,14 +2,14 @@ package com.tjclp.xlcr
 package splitters
 package word
 
-import models.FileContent
-import types.MimeType
+import java.io.ByteArrayOutputStream
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.ByteArrayOutputStream
+import models.FileContent
+import types.MimeType
 
 class WordHeadingSplitterSpec extends AnyFlatSpec with Matchers {
 
@@ -39,7 +39,7 @@ class WordHeadingSplitterSpec extends AnyFlatSpec with Matchers {
       SplitConfig(strategy = Some(SplitStrategy.Heading))
     )
 
-    chunks should have length 2
+    (chunks should have).length(2)
     chunks.map(_.label) shouldBe Seq("Intro", "Details")
     all(
       chunks.map(_.content.mimeType)

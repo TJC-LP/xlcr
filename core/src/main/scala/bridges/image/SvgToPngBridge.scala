@@ -1,25 +1,23 @@
 package com.tjclp.xlcr
 package bridges.image
 
-import bridges.SimpleBridge
-import models.FileContent
-import parsers.{Parser, SimpleParser}
-import renderers.{Renderer, SimpleRenderer}
-import types.MimeType.{ImagePng, ImageSvgXml}
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import scala.util.{ Failure, Success, Try }
 
 import org.apache.batik.transcoder.image.PNGTranscoder
-import org.apache.batik.transcoder.{
-  TranscoderException,
-  TranscoderInput,
-  TranscoderOutput
-}
+import org.apache.batik.transcoder.{ TranscoderException, TranscoderInput, TranscoderOutput }
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.util.{Failure, Success, Try}
+import bridges.SimpleBridge
+import models.FileContent
+import parsers.{ Parser, SimpleParser }
+import renderers.{ Renderer, SimpleRenderer }
+import types.MimeType.{ ImagePng, ImageSvgXml }
 
-/** SvgToPngBridge parses an SVG (image/svg+xml) into SvgModel,
-  * then renders that model to PNG (image/png) using Apache Batik.
-  */
+/**
+ * SvgToPngBridge parses an SVG (image/svg+xml) into SvgModel, then renders that model to PNG
+ * (image/png) using Apache Batik.
+ */
 object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
   override type M = FileContent[ImageSvgXml.type]
 
@@ -29,26 +27,28 @@ object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
   override private[bridges] def outputRenderer: Renderer[M, ImagePng.type] =
     PngRenderer
 
-  /** Simple parser that wraps the input SVG bytes in an SvgModel.
-    */
+  /**
+   * Simple parser that wraps the input SVG bytes in an SvgModel.
+   */
   private object SvgParser extends SimpleParser[ImageSvgXml.type, M] {
     override def parse(input: FileContent[ImageSvgXml.type]): M =
       FileContent[ImageSvgXml.type](input.data, ImageSvgXml)
   }
 
-  /** Renderer that uses Apache Batik to convert the raw SVG bytes to PNG.
-    */
+  /**
+   * Renderer that uses Apache Batik to convert the raw SVG bytes to PNG.
+   */
   private object PngRenderer extends SimpleRenderer[M, ImagePng.type] {
     override def render(model: M): FileContent[ImagePng.type] =
       Try {
         val transcoder = new PNGTranscoder()
 
         // Input SVG
-        val inStream = new ByteArrayInputStream(model.data)
+        val inStream        = new ByteArrayInputStream(model.data)
         val transcoderInput = new TranscoderInput(inStream)
 
         // Output PNG
-        val outStream = new ByteArrayOutputStream()
+        val outStream        = new ByteArrayOutputStream()
         val transcoderOutput = new TranscoderOutput(outStream)
 
         // Transcode

@@ -1,10 +1,10 @@
 package com.tjclp.xlcr
 package compression
 
-import compression.models.{CellInfo, SheetGrid}
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import compression.models.{ CellInfo, SheetGrid }
 
 class InvertedIndexTranslatorSpec extends AnyFlatSpec with Matchers {
 
@@ -45,8 +45,8 @@ class InvertedIndexTranslatorSpec extends AnyFlatSpec with Matchers {
     val result = InvertedIndexTranslator.translate(grid, config)
 
     // Verify that same values are merged into a range
-    result.size shouldBe 2 // 2 unique values
-    result("Same") shouldBe Left("A1:C1") // Horizontal range
+    result.size shouldBe 2                     // 2 unique values
+    result("Same") shouldBe Left("A1:C1")      // Horizontal range
     result("Different") shouldBe Left("A2:B2") // Horizontal range
   }
 
@@ -69,40 +69,60 @@ class InvertedIndexTranslatorSpec extends AnyFlatSpec with Matchers {
     val result = InvertedIndexTranslator.translate(grid, config)
 
     // Verify that cells are properly merged based on their original coordinates
-    result.size shouldBe 2 // 2 unique values
+    result.size shouldBe 2                      // 2 unique values
     result("Repeated") shouldBe Left("F11:H11") // Original row 10+1, cols 5-7 (F-H) -> F11:H11
-    result("Header") shouldBe Left("F10:G10") // Original row 9+1, cols 5-6 (F-G) -> F10:G10
+    result("Header") shouldBe Left("F10:G10")   // Original row 9+1, cols 5-6 (F-G) -> F10:G10
   }
 
   it should "preserve original coordinates when they are provided" in {
     // Create a grid with remapped coordinates
     val cells = Map(
-      (0, 0) -> CellInfo(0, 0, "Header", originalRow = Some(2), originalCol = Some(0)), // Original coordinates
-      (0, 1) -> CellInfo(0, 1, "Value", originalRow = Some(2), originalCol = Some(1)) // Original coordinates
+      (0, 0) -> CellInfo(
+        0,
+        0,
+        "Header",
+        originalRow = Some(2),
+        originalCol = Some(0)
+      ), // Original coordinates
+      (0, 1) -> CellInfo(
+        0,
+        1,
+        "Value",
+        originalRow = Some(2),
+        originalCol = Some(1)
+      ) // Original coordinates
     )
     val grid = SheetGrid(cells, 1, 2)
 
     // Test with coordinate preservation enabled (default)
-    val configEnabled = SpreadsheetLLMConfig(preserveOriginalCoordinates = true)
+    val configEnabled          = SpreadsheetLLMConfig(preserveOriginalCoordinates = true)
     val resultWithPreservation = InvertedIndexTranslator.translate(grid, configEnabled)
 
     // Should use the original coordinates directly
-    resultWithPreservation("Header") shouldBe Left("A3") // Original position (2,0) -> A3 (1-indexed)
+    resultWithPreservation("Header") shouldBe Left(
+      "A3"
+    )                                                   // Original position (2,0) -> A3 (1-indexed)
     resultWithPreservation("Value") shouldBe Left("B3") // Original position (2,1) -> B3 (1-indexed)
 
     // Test with coordinate preservation disabled
-    val configDisabled = SpreadsheetLLMConfig(preserveOriginalCoordinates = false)
+    val configDisabled            = SpreadsheetLLMConfig(preserveOriginalCoordinates = false)
     val resultWithoutPreservation = InvertedIndexTranslator.translate(grid, configDisabled)
 
     // Should use internal coordinates when preservation disabled
     resultWithoutPreservation("Header") shouldBe Left("A1") // Internal position (0,0) -> A1
-    resultWithoutPreservation("Value") shouldBe Left("B1") // Internal position (0,1) -> B1
+    resultWithoutPreservation("Value") shouldBe Left("B1")  // Internal position (0,1) -> B1
   }
 
   it should "correctly handle coordinate preservation for cells with large shifts" in {
     // Create a grid with cells that have been shifted significantly from their original positions
     val cells = Map(
-      (0, 0) -> CellInfo(0, 0, "ShiftedValue", originalRow = Some(30), originalCol = Some(0)) // Large shift of 30 rows
+      (0, 0) -> CellInfo(
+        0,
+        0,
+        "ShiftedValue",
+        originalRow = Some(30),
+        originalCol = Some(0)
+      ) // Large shift of 30 rows
     )
     val grid = SheetGrid(cells, 1, 1)
 
@@ -132,7 +152,13 @@ class InvertedIndexTranslatorSpec extends AnyFlatSpec with Matchers {
     val originalRow = 100
     val originalCol = 10
     val complexCells = Map(
-      (1, 1) -> CellInfo(1, 1, "Complex case", originalRow = Some(originalRow), originalCol = Some(originalCol))
+      (1, 1) -> CellInfo(
+        1,
+        1,
+        "Complex case",
+        originalRow = Some(originalRow),
+        originalCol = Some(originalCol)
+      )
     )
     val complexGrid = SheetGrid(complexCells, 2, 2)
 

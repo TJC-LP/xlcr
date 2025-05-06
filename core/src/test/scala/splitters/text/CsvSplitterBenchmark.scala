@@ -5,9 +5,10 @@ package text
 import models.FileContent
 import types.MimeType
 
-/** Simple benchmark for CSV splitting performance.
-  * Not a unit test - meant to be run manually for profiling.
-  */
+/**
+ * Simple benchmark for CSV splitting performance. Not a unit test - meant to be run manually for
+ * profiling.
+ */
 object CsvSplitterBenchmark {
 
   def main(args: Array[String]): Unit = {
@@ -30,25 +31,24 @@ object CsvSplitterBenchmark {
   }
 
   def benchmarkWithSize(
-      rowCount: Int,
-      header: String,
-      rowTemplate: String
+    rowCount: Int,
+    header: String,
+    rowTemplate: String
   ): Unit = {
     println(s"\n===== Benchmarking with $rowCount rows =====")
 
     // Generate CSV content
     val sb = new StringBuilder()
     sb.append(header).append("\n")
-    for (i <- 1 to rowCount) {
+    for (i <- 1 to rowCount)
       sb.append(rowTemplate.replace("value1", s"row$i")).append("\n")
-    }
     val csvContent = sb.toString()
-    val csvBytes = csvContent.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+    val csvBytes   = csvContent.getBytes(java.nio.charset.StandardCharsets.UTF_8)
 
     // Create file content and configs
     val content = FileContent(csvBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
-    val rowConfig = SplitConfig(strategy = Some(SplitStrategy.Row))
+    val rowConfig   = SplitConfig(strategy = Some(SplitStrategy.Row))
     val chunkConfig = SplitConfig(maxChars = 1000) // 1000 rows per chunk
 
     // Create splitter
@@ -57,15 +57,15 @@ object CsvSplitterBenchmark {
     // Measure chunk splitting performance
     println("Testing splitIntoChunks...")
     val chunkStart = System.currentTimeMillis()
-    val chunks = splitter.split(content, chunkConfig)
-    val chunkEnd = System.currentTimeMillis()
+    val chunks     = splitter.split(content, chunkConfig)
+    val chunkEnd   = System.currentTimeMillis()
     println(s"Generated ${chunks.length} chunks in ${chunkEnd - chunkStart}ms")
 
     // Measure row splitting performance
     println("Testing splitByRows...")
     val rowStart = System.currentTimeMillis()
-    val rows = splitter.split(content, rowConfig)
-    val rowEnd = System.currentTimeMillis()
+    val rows     = splitter.split(content, rowConfig)
+    val rowEnd   = System.currentTimeMillis()
     println(s"Generated ${rows.length} row chunks in ${rowEnd - rowStart}ms")
 
     // Calculate performance ratio

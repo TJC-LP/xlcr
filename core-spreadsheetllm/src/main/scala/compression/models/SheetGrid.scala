@@ -1,61 +1,63 @@
 package com.tjclp.xlcr
 package compression.models
 
-import compression.AnchorExtractor.Dimension
-
 import scala.collection.mutable
 
-/** Represents a spreadsheet grid for anchor extraction.
-  */
+import compression.AnchorExtractor.Dimension
+
+/**
+ * Represents a spreadsheet grid for anchor extraction.
+ */
 case class SheetGrid(
-    cells: Map[(Int, Int), CellInfo],
-    rowCount: Int,
-    colCount: Int
+  cells: Map[(Int, Int), CellInfo],
+  rowCount: Int,
+  colCount: Int
 ) {
 
-  /** Get all cells in a specific row or column based on dimension.
-    */
-  def getCells(dim: Dimension, index: Int): Seq[CellInfo] = {
+  /**
+   * Get all cells in a specific row or column based on dimension.
+   */
+  def getCells(dim: Dimension, index: Int): Seq[CellInfo] =
     dim match {
       case Dimension.Row    => getRow(index)
       case Dimension.Column => getCol(index)
     }
-  }
 
-  /** Get all cells in a specific row.
-    */
-  def getRow(row: Int): Seq[CellInfo] = {
+  /**
+   * Get all cells in a specific row.
+   */
+  def getRow(row: Int): Seq[CellInfo] =
     // Ensure row index is valid
     if (row >= 0 && row < rowCount) {
       (0 until colCount).flatMap(col => cells.get((row, col)))
     } else {
       Seq.empty
     }
-  }
 
-  /** Get all cells in a specific column.
-    */
-  def getCol(col: Int): Seq[CellInfo] = {
+  /**
+   * Get all cells in a specific column.
+   */
+  def getCol(col: Int): Seq[CellInfo] =
     // Ensure col index is valid
     if (col >= 0 && col < colCount) {
       (0 until rowCount).flatMap(row => cells.get((row, col)))
     } else {
       Seq.empty
     }
-  }
 
-  /** Get dimension count (rowCount or colCount).
-    */
-  def getDimCount(dim: Dimension): Int = {
+  /**
+   * Get dimension count (rowCount or colCount).
+   */
+  def getDimCount(dim: Dimension): Int =
     dim match {
       case Dimension.Row    => rowCount
       case Dimension.Column => colCount
     }
-  }
 
-  /** Filter the grid to only include cells in the specified rows and columns.
-    * Preserves original row/col counts.
-    */
+  /**
+   * Filter the grid to only include cells in the specified rows and columns. Preserves original
+   * row/col counts.
+   */
   def filterToKeep(rowsToKeep: Set[Int], colsToKeep: Set[Int]): SheetGrid = {
     val filteredCells = cells.filter { case ((r, c), _) =>
       rowsToKeep.contains(r) && colsToKeep.contains(c)
@@ -64,10 +66,10 @@ case class SheetGrid(
     SheetGrid(filteredCells, rowCount, colCount)
   }
 
-  /** Remap coordinates to close gaps after pruning.
-    * This maintains logical structure while creating a more compact representation.
-    * Updates the rowCount and colCount of the returned grid.
-    */
+  /**
+   * Remap coordinates to close gaps after pruning. This maintains logical structure while creating
+   * a more compact representation. Updates the rowCount and colCount of the returned grid.
+   */
   def remapCoordinates(): SheetGrid = {
     // Get the unique, sorted row and column indices present in the filtered cells
     val presentRows = cells.keys.map(_._1).toSeq.distinct.sorted
@@ -99,15 +101,18 @@ case class SheetGrid(
     SheetGrid(remappedCells, presentRows.size, presentCols.size)
   }
 
-  /** Checks if the given cell coordinates are within the valid bounds of the grid
-    */
+  /**
+   * Checks if the given cell coordinates are within the valid bounds of the grid
+   */
   def isInBounds(row: Int, col: Int): Boolean =
     row >= 0 && row < rowCount && col >= 0 && col < colCount
 
-  /** Extracts formula references from the grid
-    * @return Map from cell coordinates to the cells they reference through formulas
-    */
-  def extractFormulaReferences(): Map[(Int, Int), Set[(Int, Int)]] = {
+  /**
+   * Extracts formula references from the grid
+   * @return
+   *   Map from cell coordinates to the cells they reference through formulas
+   */
+  def extractFormulaReferences(): Map[(Int, Int), Set[(Int, Int)]] =
     cells
       .filter { case (_, cell) => cell.isFormula }
       .flatMap { case (coords, cell) =>
@@ -117,23 +122,25 @@ case class SheetGrid(
             coords -> parseFormulaReferences(formula)
           }
       }
-  }
 
-  /** Parse an Excel formula to extract all cell references
-    * @param formula The Excel formula as a string (e.g. "=SUM(A1:B2)")
-    * @return Set of cell coordinates referenced by the formula
-    */
+  /**
+   * Parse an Excel formula to extract all cell references
+   * @param formula
+   *   The Excel formula as a string (e.g. "=SUM(A1:B2)")
+   * @return
+   *   Set of cell coordinates referenced by the formula
+   */
   private def parseFormulaReferences(formula: String): Set[(Int, Int)] = {
     // A simple regex-based parser for demonstration
     // A production parser would need to handle complex Excel formula syntax
     val cellRefPattern = """([A-Z]+)(\d+)""".r
-    val refs = mutable.Set[(Int, Int)]()
+    val refs           = mutable.Set[(Int, Int)]()
 
     // Extract single cell references like A1, B2, etc.
     cellRefPattern.findAllMatchIn(formula).foreach { matched =>
       try {
-        val col = matched.group(1)
-        val rowStr = matched.group(2)
+        val col      = matched.group(1)
+        val rowStr   = matched.group(2)
         val colIndex = colNameToIndex(col)
         val rowIndex = rowStr.toInt - 1 // Convert from 1-based to 0-based
 
@@ -151,8 +158,9 @@ case class SheetGrid(
     refs.toSet
   }
 
-  /** Convert an Excel column name to a 0-based index (A->0, B->1, Z->25, AA->26, etc.)
-    */
+  /**
+   * Convert an Excel column name to a 0-based index (A->0, B->1, Z->25, AA->26, etc.)
+   */
   private def colNameToIndex(colName: String): Int = {
     // Input validation
     if (
@@ -165,7 +173,7 @@ case class SheetGrid(
     }
 
     var result = 0
-    var power = 1
+    var power  = 1
     // Iterate from right to left
     for (i <- colName.length - 1 to 0 by -1) {
       val charValue = colName(i) - 'A' + 1

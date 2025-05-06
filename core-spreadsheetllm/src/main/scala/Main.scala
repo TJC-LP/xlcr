@@ -1,14 +1,15 @@
 package com.tjclp.xlcr
 
-import bridges.spreadsheetllm.SpreadsheetLLMBridgeRegistry
-
 import org.slf4j.LoggerFactory
 import scopt.OParser
 
-/** Main entry point for the SpreadsheetLLM CLI application using Scala 2.12 compatible syntax.
-  * This provides a command-line interface for running the SpreadsheetLLM compression
-  * on Excel files without requiring the full XLCR pipeline.
-  */
+import bridges.spreadsheetllm.SpreadsheetLLMBridgeRegistry
+
+/**
+ * Main entry point for the SpreadsheetLLM CLI application using Scala 2.12 compatible syntax. This
+ * provides a command-line interface for running the SpreadsheetLLM compression on Excel files
+ * without requiring the full XLCR pipeline.
+ */
 object Main { // Use standard object definition
 
   // Standard main method signature for Scala 2.12

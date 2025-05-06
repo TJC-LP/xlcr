@@ -1,25 +1,33 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.{BridgeConfig, ConfigConversion}
+import bridges.{ BridgeConfig, ConfigConversion }
 import parsers.ParserConfig
 import parsers.excel.ExcelParserConfig
 import renderers.RendererConfig
 import renderers.excel.ExcelRendererConfig
 
 /**
-  * Configuration for Excel bridges. This provides a unified configuration that can be
-  * converted to both Parser and Renderer configurations.
-  *
-  * @param evaluateFormulas Whether to evaluate all formulas during parsing and rendering (default: true)
-  * @param includeHiddenSheets Whether to include hidden sheets in the output (default: false)
-  * @param maxSheets Maximum number of sheets to parse (default: unlimited)
-  * @param parseNamedRanges Whether to parse named ranges (default: false)
-  * @param autoSizeColumns Whether to automatically size columns based on content (default: false)
-  * @param freezeFirstRow Whether to freeze the first row (header) (default: false)
-  * @param defaultColumnWidth Default width for columns in characters (default: 12)
-  * @param calculateOnSave Whether to calculate formulas on save (default: true)
-  */
+ * Configuration for Excel bridges. This provides a unified configuration that can be converted to
+ * both Parser and Renderer configurations.
+ *
+ * @param evaluateFormulas
+ *   Whether to evaluate all formulas during parsing and rendering (default: true)
+ * @param includeHiddenSheets
+ *   Whether to include hidden sheets in the output (default: false)
+ * @param maxSheets
+ *   Maximum number of sheets to parse (default: unlimited)
+ * @param parseNamedRanges
+ *   Whether to parse named ranges (default: false)
+ * @param autoSizeColumns
+ *   Whether to automatically size columns based on content (default: false)
+ * @param freezeFirstRow
+ *   Whether to freeze the first row (header) (default: false)
+ * @param defaultColumnWidth
+ *   Default width for columns in characters (default: 12)
+ * @param calculateOnSave
+ *   Whether to calculate formulas on save (default: true)
+ */
 case class ExcelBridgeConfig(
   evaluateFormulas: Boolean = true,
   includeHiddenSheets: Boolean = false,
@@ -32,9 +40,9 @@ case class ExcelBridgeConfig(
 ) extends BridgeConfig
 
 /**
-  * Provides implicit converters between ExcelBridgeConfig and the corresponding
-  * parser and renderer configs.
-  */
+ * Provides implicit converters between ExcelBridgeConfig and the corresponding parser and renderer
+ * configs.
+ */
 object ExcelBridgeConfig {
   // Single converter implementation that handles both parser and renderer configs
   implicit val excelConfigConverter: ConfigConversion.DualConverter[ExcelBridgeConfig] =
@@ -47,7 +55,7 @@ object ExcelBridgeConfig {
           parseNamedRanges = config.parseNamedRanges,
           includeDocumentProperties = false
         )
-        
+
       override def toRendererConfig(config: ExcelBridgeConfig): RendererConfig =
         ExcelRendererConfig(
           autoSizeColumns = config.autoSizeColumns,
@@ -57,12 +65,12 @@ object ExcelBridgeConfig {
           calculateOnSave = config.calculateOnSave
         )
     }
-    
+
   // For backward compatibility
-  implicit val toParserConfig: ConfigConversion.BridgeToParserConfig[ExcelBridgeConfig] = 
+  implicit val toParserConfig: ConfigConversion.BridgeToParserConfig[ExcelBridgeConfig] =
     excelConfigConverter
-    
+
   // For backward compatibility
-  implicit val toRendererConfig: ConfigConversion.BridgeToRendererConfig[ExcelBridgeConfig] = 
+  implicit val toRendererConfig: ConfigConversion.BridgeToRendererConfig[ExcelBridgeConfig] =
     excelConfigConverter
 }

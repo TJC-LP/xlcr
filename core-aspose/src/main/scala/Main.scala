@@ -1,29 +1,30 @@
 package com.tjclp.xlcr
 
-import splitters.SplitStrategy
-import utils.aspose.AsposeLicense.Product
-import utils.aspose.{AsposeConfig, AsposeLicense}
+import scala.util.Try
 
 import org.slf4j.LoggerFactory
 import scopt.OParser
 
-import scala.util.Try
+import splitters.SplitStrategy
+import utils.aspose.AsposeLicense.Product
+import utils.aspose.{ AsposeConfig, AsposeLicense }
 
-/** Entry point for the Aspose‑based conversion pipeline.
-  *
-  * ── Improvements over the old implementation ────────────────────────────────────
-  *   • Leverages the new `AsposeLicense` API (env‑var + auto‑discovery aware).
-  *   • DRY, iterable logic for per‑product license loading (`Map[Product, Option[String]]`).
-  *   • No ad‑hoc loggers; reuse the top‑level logger.
-  *   • Early exit on CLI parse failure handled by Scopt itself (no manual `System.exit`).
-  */
+/**
+ * Entry point for the Aspose‑based conversion pipeline.
+ *
+ * ── Improvements over the old implementation ──────────────────────────────────── • Leverages the
+ * new `AsposeLicense` API (env‑var + auto‑discovery aware). • DRY, iterable logic for per‑product
+ * license loading (`Map[Product, Option[String]]`). • No ad‑hoc loggers; reuse the top‑level
+ * logger. • Early exit on CLI parse failure handled by Scopt itself (no manual `System.exit`).
+ */
 object Main {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
-  /** Attempt to interpret a string as either a known MIME type or a known file extension.
-    */
-  private def parseMimeOrExtension(str: String): Option[types.MimeType] = {
+  /**
+   * Attempt to interpret a string as either a known MIME type or a known file extension.
+   */
+  private def parseMimeOrExtension(str: String): Option[types.MimeType] =
     // First try direct MIME type parse
     types.MimeType.fromString(str) match {
       case someMime @ Some(_) => someMime
@@ -38,7 +39,6 @@ object Main {
         val maybeFt = types.FileType.fromExtension(ext)
         maybeFt.map(_.getMimeType)
     }
-  }
 
   // ---------- CLI definition -----------------------------------------------------
   private val builder = OParser.builder[AsposeConfig]
@@ -148,8 +148,8 @@ object Main {
         if (cfg.splitMode) {
           logger.info(s"Starting split operation – cfg: $cfg")
 
-          import java.nio.file.{Files, Paths}
-          val inputPath = Paths.get(cfg.input)
+          import java.nio.file.{ Files, Paths }
+          val inputPath  = Paths.get(cfg.input)
           val outputPath = Paths.get(cfg.output)
 
           // Verify input is a file
@@ -180,9 +180,9 @@ object Main {
           // Parse strategy and output type
           val splitStrategyOpt =
             cfg.splitStrategy.flatMap(SplitStrategy.fromString)
-            
+
           // Handle output type - combine --type and --format options
-          val outputMimeOpt = {
+          val outputMimeOpt =
             if (cfg.outputType.isDefined) {
               // If explicit type is set, use it
               cfg.outputType.flatMap(parseMimeOrExtension)
@@ -190,16 +190,15 @@ object Main {
               // Otherwise, if format is set, use it for backward compatibility
               cfg.outputFormat.flatMap { fmt =>
                 fmt.toLowerCase match {
-                  case "png" => Some(types.MimeType.ImagePng)
+                  case "png"          => Some(types.MimeType.ImagePng)
                   case "jpg" | "jpeg" => Some(types.MimeType.ImageJpeg)
-                  case "pdf" => Some(types.MimeType.ApplicationPdf)
-                  case _ => None
+                  case "pdf"          => Some(types.MimeType.ApplicationPdf)
+                  case _              => None
                 }
               }
             } else {
               None
             }
-          }
 
           // Run the split operation
           Try(
@@ -234,19 +233,18 @@ object Main {
     }
 
   // ---------- licensing ----------------------------------------------------------
-  private def applyLicenses(cfg: AsposeConfig): Unit = {
-
+  private def applyLicenses(cfg: AsposeConfig): Unit =
     cfg.licenseTotal match {
       case Some(totalPath) =>
         logger.info(s"Loading Aspose.Total license → $totalPath")
         AsposeLicense.loadTotal(totalPath)
       case None =>
         val paths: Map[Product, Option[String]] = Map(
-          AsposeLicense.Product.Words -> cfg.licenseWords,
-          AsposeLicense.Product.Cells -> cfg.licenseCells,
-          AsposeLicense.Product.Email -> cfg.licenseEmail,
+          AsposeLicense.Product.Words  -> cfg.licenseWords,
+          AsposeLicense.Product.Cells  -> cfg.licenseCells,
+          AsposeLicense.Product.Email  -> cfg.licenseEmail,
           AsposeLicense.Product.Slides -> cfg.licenseSlides,
-          AsposeLicense.Product.Zip -> cfg.licenseZip
+          AsposeLicense.Product.Zip    -> cfg.licenseZip
         )
 
         val anyExplicit = paths.exists(_._2.isDefined)
@@ -265,5 +263,4 @@ object Main {
           AsposeLicense.initializeIfNeeded()
         }
     }
-  }
 }

@@ -1,11 +1,11 @@
 package com.tjclp.xlcr
 package renderers.excel
 
-import models.FileContent
-import models.excel.{SheetData, SheetsData}
-import types.MimeType.TextMarkdown
-
 import java.nio.charset.StandardCharsets
+
+import models.FileContent
+import models.excel.{ SheetData, SheetsData }
+import types.MimeType.TextMarkdown
 
 class SheetsDataMarkdownRenderer
     extends SheetsDataSimpleRenderer[TextMarkdown.type] {
@@ -34,8 +34,8 @@ class SheetsDataMarkdownRenderer
     for (row <- 1 to sheetData.rowCount) {
       sb.append(f"| $row%3d |")
       for (colIndex <- columnHeaders.indices) {
-        val ref = s"${columnHeaders(colIndex)}$row"
-        val cell = sheetData.cells.find(_.address == ref)
+        val ref         = s"${columnHeaders(colIndex)}$row"
+        val cell        = sheetData.cells.find(_.address == ref)
         val cellContent = cell.map(formatCellContent).getOrElse("")
         sb.append(s" $cellContent |")
       }
@@ -58,20 +58,18 @@ class SheetsDataMarkdownRenderer
     s"VALUE:``$value``<br>$otherDetails"
   }
 
-  private def escapeMarkdown(s: String): String = {
+  private def escapeMarkdown(s: String): String =
     s.replace("|", "\\|").replace("\n", "<br>")
-  }
 
   private def generateColumnHeaders(columnCount: Int): Seq[String] = {
-    def toColumnName(n: Int): String = {
+    def toColumnName(n: Int): String =
       if (n < 0) ""
       else {
-        val quotient = n / 26
+        val quotient  = n / 26
         val remainder = n % 26
         if (quotient == 0) (remainder + 'A').toChar.toString
         else toColumnName(quotient - 1) + (remainder + 'A').toChar
       }
-    }
 
     (0 until columnCount).map(toColumnName)
   }

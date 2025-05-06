@@ -1,24 +1,27 @@
 package com.tjclp.xlcr
 package pipeline.spark
 
+import java.nio.file.{ Files, Paths }
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+import scala.concurrent.duration.Duration
+
+import org.apache.spark.sql.functions.md5
+import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
+
 import pipeline.spark.steps._
 import pipeline.spark.steps.SparkStepUtils
 
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
-import org.apache.spark.sql.functions.{input_file_name, md5}
-
-import java.nio.file.{Files, Paths}
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import scala.concurrent.duration.Duration
-
-/** Simple demo that wires together a minimal pipeline and shows how the new
-  * CoreSchema initialisation works.
-  */
+/**
+ * Simple demo that wires together a minimal pipeline and shows how the new CoreSchema
+ * initialisation works.
+ */
 object SparkDemo {
 
-  /** Run the demo pipeline with default splitting behaviour.
-    */
+  /**
+   * Run the demo pipeline with default splitting behaviour.
+   */
   def runDemo(inputPath: String, outputPath: String): Unit = {
     implicit val spark: SparkSession = SparkSession
       .builder()
@@ -64,9 +67,8 @@ object SparkDemo {
 
       println(s"Processing complete. Results written to $outputPath")
 
-    } finally {
+    } finally
       spark.stop()
-    }
   }
 
   /** Simple pipeline: detect mime then split. */

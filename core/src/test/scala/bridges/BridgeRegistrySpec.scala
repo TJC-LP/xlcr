@@ -1,12 +1,12 @@
 package com.tjclp.xlcr
 package bridges
 
-import bridges.tika.TikaPlainTextBridge
-import types.MimeType
-
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import bridges.tika.TikaPlainTextBridge
+import types.MimeType
 
 class BridgeRegistrySpec
     extends AnyFlatSpec

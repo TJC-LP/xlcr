@@ -2,31 +2,33 @@ package com.tjclp.xlcr
 package splitters
 package email
 
+import java.io.ByteArrayInputStream
+import java.util.Properties
+
+import scala.collection.mutable.ListBuffer
+
+import jakarta.mail.internet.MimeMessage
+import jakarta.mail.{ Multipart, Part, Session }
+
 import models.FileContent
 import types.MimeType
 
-import jakarta.mail.internet.MimeMessage
-import jakarta.mail.{Multipart, Part, Session}
-
-import java.io.ByteArrayInputStream
-import java.util.Properties
-import scala.collection.mutable.ListBuffer
-
-/** Splits an .eml (RFC‑822) email into a body chunk + one chunk per attachment.
-  */
+/**
+ * Splits an .eml (RFC‑822) email into a body chunk + one chunk per attachment.
+ */
 object EmailAttachmentSplitter
     extends DocumentSplitter[MimeType.MessageRfc822.type] {
 
   override def split(
-      content: FileContent[MimeType.MessageRfc822.type],
-      cfg: SplitConfig
+    content: FileContent[MimeType.MessageRfc822.type],
+    cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     if (!cfg.hasStrategy(SplitStrategy.Attachment))
       return Seq(DocChunk(content, "email", 0, 1))
 
     val session = Session.getDefaultInstance(new Properties())
-    val msg = new MimeMessage(session, new ByteArrayInputStream(content.data))
+    val msg     = new MimeMessage(session, new ByteArrayInputStream(content.data))
 
     val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
 
@@ -36,13 +38,13 @@ object EmailAttachmentSplitter
     // Prefer plain text body, fall back to html or first non‑attachment part
     var bodyCaptured = false
 
-    def harvest(part: Part): Unit = {
+    def harvest(part: Part): Unit =
       if (part.isMimeType("multipart/*")) {
         val mp = part.getContent.asInstanceOf[Multipart]
-        (0 until mp.getCount).foreach { i => harvest(mp.getBodyPart(i)) }
+        (0 until mp.getCount).foreach(i => harvest(mp.getBodyPart(i)))
       } else {
         val disposition = Option(part.getDisposition).getOrElse("")
-        val ctype = part.getContentType.toLowerCase
+        val ctype       = part.getContentType.toLowerCase
 
         if (
           Part.ATTACHMENT.equalsIgnoreCase(
@@ -68,7 +70,6 @@ object EmailAttachmentSplitter
           bodyCaptured = true
         }
       }
-    }
 
     harvest(msg)
 

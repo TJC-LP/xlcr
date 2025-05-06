@@ -1,22 +1,29 @@
 package com.tjclp.xlcr
 package compression.models
 
-/** Information about a table detected in the grid
-  *
-  * @param topRow     The top row index of the table
-  * @param bottomRow  The bottom row index of the table
-  * @param leftCol    The leftmost column index of the table
-  * @param rightCol   The rightmost column index of the table
-  * @param anchorRows Set of row indices that are anchors within this table
-  * @param anchorCols Set of column indices that are anchors within this table
-  */
+/**
+ * Information about a table detected in the grid
+ *
+ * @param topRow
+ *   The top row index of the table
+ * @param bottomRow
+ *   The bottom row index of the table
+ * @param leftCol
+ *   The leftmost column index of the table
+ * @param rightCol
+ *   The rightmost column index of the table
+ * @param anchorRows
+ *   Set of row indices that are anchors within this table
+ * @param anchorCols
+ *   Set of column indices that are anchors within this table
+ */
 case class TableRegion(
-    topRow: Int,
-    bottomRow: Int,
-    leftCol: Int,
-    rightCol: Int,
-    anchorRows: Set[Int],
-    anchorCols: Set[Int]
+  topRow: Int,
+  bottomRow: Int,
+  leftCol: Int,
+  rightCol: Int,
+  anchorRows: Set[Int],
+  anchorCols: Set[Int]
 ) {
 
   /** Calculate width, ensuring non-negative result */
@@ -58,16 +65,21 @@ case class TableRegion(
       !(rightCol < other.leftCol || leftCol > other.rightCol ||
         bottomRow < other.topRow || topRow > other.bottomRow)
 
-  /** Sophisticated overlap check with support for directional exceptions
-    * @param other Region to check for overlap with
-    * @param exceptForward If true, don't count as overlap if this region fully contains other
-    * @param exceptBackward If true, don't count as overlap if other region fully contains this
-    * @return True if regions overlap under the given constraints
-    */
+  /**
+   * Sophisticated overlap check with support for directional exceptions
+   * @param other
+   *   Region to check for overlap with
+   * @param exceptForward
+   *   If true, don't count as overlap if this region fully contains other
+   * @param exceptBackward
+   *   If true, don't count as overlap if other region fully contains this
+   * @return
+   *   True if regions overlap under the given constraints
+   */
   def overlapsWith(
-      other: TableRegion,
-      exceptForward: Boolean = false,
-      exceptBackward: Boolean = false
+    other: TableRegion,
+    exceptForward: Boolean = false,
+    exceptBackward: Boolean = false
   ): Boolean = {
     // Skip if this fully contains other and we're excepting forward containment
     if (exceptForward && this.contains(other)) return false

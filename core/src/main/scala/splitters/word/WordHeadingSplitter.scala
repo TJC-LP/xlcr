@@ -2,26 +2,27 @@ package com.tjclp.xlcr
 package splitters
 package word
 
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import scala.jdk.CollectionConverters._
+
+import org.apache.poi.xwpf.usermodel.{ XWPFDocument, XWPFParagraph, XWPFTable }
+
 import models.FileContent
 import types.MimeType
-
-import org.apache.poi.xwpf.usermodel.{XWPFDocument, XWPFParagraph, XWPFTable}
-
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import scala.jdk.CollectionConverters._
 
 /** Splits a DOCX on Heading 1 paragraphs. */
 trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T] {
 
   override def split(
-      content: FileContent[T],
-      cfg: SplitConfig
+    content: FileContent[T],
+    cfg: SplitConfig
   ): Seq[DocChunk[T]] = {
 
     if (!cfg.hasStrategy(SplitStrategy.Heading))
       return Seq(DocChunk(content, "document", 0, 1))
 
-    val src = new XWPFDocument(new ByteArrayInputStream(content.data))
+    val src   = new XWPFDocument(new ByteArrayInputStream(content.data))
     val elems = src.getBodyElements.asScala.toList
 
     // identify indices of Heading1
@@ -36,7 +37,7 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T] {
     }
 
     val boundaries = headingIndices :+ elems.length // sentinel end
-    val total = headingIndices.length
+    val total      = headingIndices.length
 
     val chunks = boundaries
       .sliding(2)

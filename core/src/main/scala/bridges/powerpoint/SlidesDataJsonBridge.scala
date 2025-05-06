@@ -7,9 +7,10 @@ import parsers.powerpoint.SlidesDataJsonParser
 import renderers.powerpoint.SlidesDataJsonRenderer
 import types.MimeType.ApplicationJson
 
-/** SlidesDataJsonBridge can parse JSON -> SlidesData and render SlidesData -> JSON.
-  * It also supports merging thanks to MergeableSymmetricBridge.
-  */
+/**
+ * SlidesDataJsonBridge can parse JSON -> SlidesData and render SlidesData -> JSON. It also supports
+ * merging thanks to MergeableSymmetricBridge.
+ */
 object SlidesDataJsonBridge
     extends MergeableSymmetricBridge[SlidesData, ApplicationJson.type] {
 

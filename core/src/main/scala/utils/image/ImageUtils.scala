@@ -1,10 +1,10 @@
 package com.tjclp.xlcr
 package utils.image
 
-import org.slf4j.LoggerFactory
-
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
+
+import org.slf4j.LoggerFactory
 
 /**
  * Utility functions for image processing across both Aspose and non-Aspose implementations.

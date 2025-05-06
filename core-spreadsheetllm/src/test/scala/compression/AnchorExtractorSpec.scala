@@ -1,11 +1,11 @@
 package com.tjclp.xlcr
 package compression
 
-import compression.anchors.AnchorAnalyzer
-import compression.models.{CellInfo, SheetGrid}
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import compression.anchors.AnchorAnalyzer
+import compression.models.{ CellInfo, SheetGrid }
 
 class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
 
@@ -21,7 +21,6 @@ class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
       (2, 0) -> CellInfo(2, 0, "1", isNumeric = true),
       (2, 1) -> CellInfo(2, 1, "Item 1"),
       (2, 2) -> CellInfo(2, 2, "10.5", isNumeric = true),
-
       (3, 0) -> CellInfo(3, 0, "2", isNumeric = true),
       (3, 1) -> CellInfo(3, 1, "Item 2"),
       (3, 2) -> CellInfo(3, 2, "20.3", isNumeric = true)
@@ -42,8 +41,8 @@ class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
   "SheetGrid" should "preserve original coordinates when remapping" in {
     // Create a sparse grid with gaps
     val cells = Map(
-      (1, 0) -> CellInfo(1, 0, "A1"),
-      (1, 5) -> CellInfo(1, 5, "F1"), // Gap in columns
+      (1, 0)  -> CellInfo(1, 0, "A1"),
+      (1, 5)  -> CellInfo(1, 5, "F1"),   // Gap in columns
       (11, 0) -> CellInfo(11, 0, "A11"), // Gap in rows
       (11, 5) -> CellInfo(11, 5, "F11")
     )
@@ -84,8 +83,8 @@ class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
 
     // Should only have 2 cells in 1 row and 2 columns
     filteredGrid.cells.size shouldBe 2
-    filteredGrid.cells should contain key(1, 0)
-    filteredGrid.cells should contain key(1, 1)
+    (filteredGrid.cells should contain).key(1, 0)
+    (filteredGrid.cells should contain).key(1, 1)
     filteredGrid.cells should not contain key(2, 0)
     filteredGrid.cells should not contain key(2, 1)
   }
@@ -115,14 +114,14 @@ class AnchorExtractorSpec extends AnyFlatSpec with Matchers {
 
     // Verify that key rows are preserved
     // Row 1 is a header with bold text - definite anchor
-    extractedGrid.cells should contain key(1, 0)
-    
+    (extractedGrid.cells should contain).key(1, 0)
+
     // Row 2 is data
-    extractedGrid.cells should contain key(2, 1) 
-    
+    (extractedGrid.cells should contain).key(2, 1)
+
     // Row 11 is preserved even though it's far from other data
     // This is because our anchor detection identified it as an anchor row itself
     // due to its heterogeneous content (mix of number in col 0, text in col 1, and number in col 2)
-    extractedGrid.cells should contain key(11, 0)
+    (extractedGrid.cells should contain).key(11, 0)
   }
 }

@@ -2,35 +2,36 @@ package com.tjclp.xlcr
 package pipeline.spark
 package steps
 
+import scala.concurrent.duration.{ Duration => ScalaDuration }
+
+import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
+
 import models.FileContent
 import splitters._
 import types.MimeType
 
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
-
-import scala.concurrent.duration.{Duration => ScalaDuration}
-
-/** Document splitting step with comprehensive metrics and error handling.
-  * Splits documents into chunks according to the specified strategy.
-  */
+/**
+ * Document splitting step with comprehensive metrics and error handling. Splits documents into
+ * chunks according to the specified strategy.
+ */
 case class SplitStep(
-    rowTimeout: ScalaDuration =
-      scala.concurrent.duration.Duration(60, "seconds"),
-    // When provided this exact config wins.
-    config: SplitConfig = SplitConfig(strategy = Some(SplitStrategy.Auto)),
-    // 1.8 GiB gives ~15 % head-room for struct/array metadata
-    maxBytesPerRow: Long = 1800L * 1024 * 1024,
-    // Optional: cap number of chunks so we don’t hit JVM array limits
-    maxChunksPerRow: Int = 100000
+  rowTimeout: ScalaDuration =
+    scala.concurrent.duration.Duration(60, "seconds"),
+  // When provided this exact config wins.
+  config: SplitConfig = SplitConfig(strategy = Some(SplitStrategy.Auto)),
+  // 1.8 GiB gives ~15 % head-room for struct/array metadata
+  maxBytesPerRow: Long = 1800L * 1024 * 1024,
+  // Optional: cap number of chunks so we don’t hit JVM array limits
+  maxChunksPerRow: Int = 100000
 ) extends SparkStep {
 
   override val name: String =
     s"split${config.strategy.getOrElse(SplitStrategy.Auto).displayName.capitalize}"
 
   override val meta: Map[String, String] = super.meta ++ Map(
-    "strategy" -> config.strategy.map(_.displayName).getOrElse("auto"),
+    "strategy"  -> config.strategy.map(_.displayName).getOrElse("auto"),
     "recursive" -> config.recursive.toString,
-    "maxDepth" -> config.maxRecursionDepth.toString
+    "maxDepth"  -> config.maxRecursionDepth.toString
   )
 
   // ------------------------------------------------------------------
@@ -40,7 +41,7 @@ case class SplitStep(
   // only becomes available **after** the split operation.
   // ------------------------------------------------------------------
 
-  private def createSplitUdf = {
+  private def createSplitUdf =
     // We only need the content bytes & mime string here – the `sourceId` is
     // added to the lineage *after* exploding the chunks, so we can simply use
     // the two-argument wrapper.
@@ -54,14 +55,14 @@ case class SplitStep(
         val content = FileContent(bytes, mime)
 
         // Initialise variables that we capture for lineage (determined before action)
-        val splitterOpt = DocumentSplitter.forMime(mime)
+        val splitterOpt      = DocumentSplitter.forMime(mime)
         val splitterImplName = splitterOpt.map(_.getClass.getSimpleName)
 
         val effectiveStrategy = config.strategy match {
           case Some(SplitStrategy.Auto) =>
             Some(SplitConfig.defaultStrategyForMime(mime).displayName)
           case Some(strategy) => Some(strategy.displayName)
-          case None => Some(SplitConfig.defaultStrategyForMime(mime).displayName)
+          case None           => Some(SplitConfig.defaultStrategyForMime(mime).displayName)
         }
 
         val params: Option[Map[String, String]] = effectiveStrategy.map(s => Map("strategy" -> s))
@@ -98,10 +99,9 @@ case class SplitStep(
           }
         )
     }
-  }
 
   override def doTransform(
-      df: DataFrame
+    df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
 

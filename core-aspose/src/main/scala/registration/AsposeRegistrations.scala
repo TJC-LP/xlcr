@@ -1,16 +1,18 @@
 package com.tjclp.xlcr
 package registration
 
-import bridges.email.{EmailEmlToPdfAsposeBridge, OutlookMsgToPdfAsposeBridge}
+import bridges.email.{ EmailEmlToPdfAsposeBridge, OutlookMsgToPdfAsposeBridge }
 import bridges.excel._
 import bridges.html.HtmlToPdfAsposeBridge
-import bridges.image.{JpegToPdfAsposeBridge, PdfToJpegAsposeBridge, PdfToPngAsposeBridge, PngToPdfAsposeBridge}
-import bridges.powerpoint.{
-  PowerPointPptToPdfAsposeBridge,
-  PowerPointPptxToPdfAsposeBridge
+import bridges.image.{
+  JpegToPdfAsposeBridge,
+  PdfToJpegAsposeBridge,
+  PdfToPngAsposeBridge,
+  PngToPdfAsposeBridge
 }
-import bridges.word.{WordDocToPdfAsposeBridge, WordDocxToPdfAsposeBridge}
-import spi.{BridgeInfo, BridgeProvider, SplitterInfo, SplitterProvider}
+import bridges.powerpoint.{ PowerPointPptToPdfAsposeBridge, PowerPointPptxToPdfAsposeBridge }
+import bridges.word.{ WordDocToPdfAsposeBridge, WordDocxToPdfAsposeBridge }
+import spi.{ BridgeInfo, BridgeProvider, SplitterInfo, SplitterProvider }
 import splitters.archive._
 import splitters.email._
 import splitters.excel._
@@ -18,9 +20,10 @@ import splitters.pdf.PdfPageAsposeSplitter
 import splitters.powerpoint._
 import types.MimeType
 
-/** Provides the Aspose bridges and splitters for registration via ServiceLoader.
-  * These have HIGH priority and will override core implementations if Aspose is available.
-  */
+/**
+ * Provides the Aspose bridges and splitters for registration via ServiceLoader. These have HIGH
+ * priority and will override core implementations if Aspose is available.
+ */
 class AsposeRegistrations extends BridgeProvider with SplitterProvider {
 
   override def getBridges: Iterable[BridgeInfo[_ <: MimeType, _ <: MimeType]] =

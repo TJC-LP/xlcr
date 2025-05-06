@@ -3,18 +3,23 @@ package compression.models
 
 import scala.collection.mutable
 
-/** Represents a graph of formula dependencies
-  *
-  * @param relationships Map from cell coordinates to the cells it references
-  */
+/**
+ * Represents a graph of formula dependencies
+ *
+ * @param relationships
+ *   Map from cell coordinates to the cells it references
+ */
 case class FormulaGraph(
-    relationships: Map[(Int, Int), Set[(Int, Int)]]
+  relationships: Map[(Int, Int), Set[(Int, Int)]]
 ) {
   // Create the inverse mapping (cells referenced by other cells)
   lazy val inverseRelationships: Map[(Int, Int), Set[(Int, Int)]] = {
     val result = mutable.Map[(Int, Int), mutable.Set[(Int, Int)]]()
 
-    for ((source, targets) <- relationships; target <- targets) {
+    for {
+      (source, targets) <- relationships
+      target            <- targets
+    } {
       val sources = result.getOrElseUpdate(target, mutable.Set.empty)
       sources.add(source)
     }
@@ -34,15 +39,13 @@ case class FormulaGraph(
 
         // Add cells referenced by current cell
         val targets = relationships.getOrElse(current, Set.empty)
-        for (target <- targets if !visited.contains(target)) {
+        for (target <- targets if !visited.contains(target))
           toVisit.enqueue(target)
-        }
 
         // Add cells that reference current cell
         val sources = inverseRelationships.getOrElse(current, Set.empty)
-        for (source <- sources if !visited.contains(source)) {
+        for (source <- sources if !visited.contains(source))
           toVisit.enqueue(source)
-        }
       }
     }
 
@@ -51,8 +54,8 @@ case class FormulaGraph(
 
   /** Find all strongly connected components (clusters of cells that reference each other) */
   def findConnectedComponents(): List[Set[(Int, Int)]] = {
-    val allCells = relationships.keySet ++ inverseRelationships.keySet
-    val visited = mutable.Set[(Int, Int)]()
+    val allCells   = relationships.keySet ++ inverseRelationships.keySet
+    val visited    = mutable.Set[(Int, Int)]()
     val components = mutable.ListBuffer[Set[(Int, Int)]]()
 
     for (cell <- allCells if !visited.contains(cell)) {

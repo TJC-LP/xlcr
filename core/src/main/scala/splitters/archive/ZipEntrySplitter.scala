@@ -2,30 +2,32 @@ package com.tjclp.xlcr
 package splitters
 package archive
 
-import models.FileContent
-import types.{FileType, MimeType}
-import utils.PathFilter
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import java.util.zip.{ ZipEntry, ZipInputStream }
+
+import scala.collection.mutable.ListBuffer
 
 import org.slf4j.LoggerFactory
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.util.zip.{ZipEntry, ZipInputStream}
-import scala.collection.mutable.ListBuffer
+import models.FileContent
+import types.{ FileType, MimeType }
+import utils.PathFilter
 
-/** Splits a ZIP archive into its constituent files.
-  *
-  * Features:
-  * - Extracts files from ZIP archives
-  * - Filters out macOS metadata files and directories
-  * - Determines appropriate MIME types for extracted files
-  * - Preserves original file paths in metadata
-  */
+/**
+ * Splits a ZIP archive into its constituent files.
+ *
+ * Features:
+ *   - Extracts files from ZIP archives
+ *   - Filters out macOS metadata files and directories
+ *   - Determines appropriate MIME types for extracted files
+ *   - Preserves original file paths in metadata
+ */
 object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   override def split(
-      content: FileContent[MimeType.ApplicationZip.type],
-      cfg: SplitConfig
+    content: FileContent[MimeType.ApplicationZip.type],
+    cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     // If not requesting entry-level split, return the whole archive
@@ -48,12 +50,11 @@ object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
           logger.debug(s"Processing ZIP entry: $entryName")
 
           // Read the ZIP entry content
-          val baos = new ByteArrayOutputStream()
+          val baos   = new ByteArrayOutputStream()
           val buffer = new Array[Byte](8192)
-          var len = 0
-          while ({ len = zipInputStream.read(buffer); len > 0 }) {
+          var len    = 0
+          while ({ len = zipInputStream.read(buffer); len > 0 })
             baos.write(buffer, 0, len)
-          }
 
           // Determine the MIME type based on the file extension
           val ext = entryName.split("\\.").lastOption.getOrElse("").toLowerCase
@@ -74,7 +75,7 @@ object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
             0,
             Map(
               "path" -> entryName, // Store original path for nested structure preservation
-              "size" -> baos.size().toString, // Store size information
+              "size"            -> baos.size().toString, // Store size information
               "compressed_size" -> entry.getCompressedSize.toString
             )
           )
@@ -89,9 +90,8 @@ object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] {
     } catch {
       case e: Exception =>
         logger.error(s"Error processing ZIP archive: ${e.getMessage}", e)
-    } finally {
+    } finally
       zipInputStream.close()
-    }
 
     // If no valid entries were found, return the original archive
     if (chunks.isEmpty)

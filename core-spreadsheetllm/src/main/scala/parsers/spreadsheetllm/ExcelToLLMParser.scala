@@ -1,27 +1,28 @@
 package com.tjclp.xlcr
 package parsers.spreadsheetllm
 
+import java.nio.file.Paths
+
+import scala.util.Try
+
+import org.slf4j.{ Logger, LoggerFactory }
+
 import compression.CompressionPipeline
 import compression.models.CellInfo
 import compression.utils.SheetGridUtils
 import models.FileContent
 import models.excel.SheetsData
 import models.spreadsheetllm.CompressedWorkbook
-import parsers.{ParserConfig, SimpleParser}
-import types.MimeType
+import parsers.SimpleParser
+import types.MimeType // Import Try
 
-import org.slf4j.{Logger, LoggerFactory}
-
-import java.nio.file.Paths
-import scala.util.Try // Import Try
-
-/** Parser that converts Excel files to CompressedWorkbook models using
-  * the SpreadsheetLLM compression algorithms.
-  *
-  * This parser leverages the core Excel models and applies the SpreadsheetLLM
-  * compression pipeline for LLM-friendly output.
-  * Compatible with Scala 2.12.
-  */
+/**
+ * Parser that converts Excel files to CompressedWorkbook models using the SpreadsheetLLM
+ * compression algorithms.
+ *
+ * This parser leverages the core Excel models and applies the SpreadsheetLLM compression pipeline
+ * for LLM-friendly output. Compatible with Scala 2.12.
+ */
 trait ExcelToLLMParser[I <: MimeType]
     extends SimpleParser[I, CompressedWorkbook] {
   protected val logger: Logger = LoggerFactory.getLogger(getClass)
@@ -29,11 +30,14 @@ trait ExcelToLLMParser[I <: MimeType]
   /** Configuration for the compression pipeline */
   protected val config: SpreadsheetLLMConfig
 
-  /** Parse Excel file content into a CompressedWorkbook model.
-    *
-    * @param content The Excel file content
-    * @return The compressed workbook model
-    */
+  /**
+   * Parse Excel file content into a CompressedWorkbook model.
+   *
+   * @param content
+   *   The Excel file content
+   * @return
+   *   The compressed workbook model
+   */
   override def parse(content: FileContent[I]): CompressedWorkbook = {
     logger.info(
       s"Parsing Excel file with ${content.data.length} bytes using core Excel models"
@@ -61,14 +65,17 @@ trait ExcelToLLMParser[I <: MimeType]
     compressedWorkbook
   }
 
-  /** Convert SheetsData to the format expected by CompressionPipeline.
-    *
-    * @param sheetsData The Excel sheets data
-    * @return Map of sheet names to (cells, rowCount, colCount)
-    */
+  /**
+   * Convert SheetsData to the format expected by CompressionPipeline.
+   *
+   * @param sheetsData
+   *   The Excel sheets data
+   * @return
+   *   Map of sheet names to (cells, rowCount, colCount)
+   */
   private def convertSheetsDataToGrids(
-      sheetsData: SheetsData
-  ): Map[String, (Seq[CellInfo], Int, Int)] = {
+    sheetsData: SheetsData
+  ): Map[String, (Seq[CellInfo], Int, Int)] =
     sheetsData.sheets.map { sheetData =>
       val sheetName = sheetData.name
 
@@ -91,21 +98,22 @@ trait ExcelToLLMParser[I <: MimeType]
         logger.debug(s"Sheet $sheetName has ${contentCells.size} content cells")
         contentCells.take(10).foreach { cell =>
           logger.debug(f"Cell at (${cell.row},${cell.col}): '${cell.value
-            .take(30)}', isNumeric=${cell.isNumeric}, isDate=${cell.isDate}")
+              .take(30)}', isNumeric=${cell.isNumeric}, isDate=${cell.isDate}")
         }
       }
 
       (sheetName, (cells, sheetData.rowCount, sheetData.columnCount))
     }.toMap
-  }
 
-  /** Extract filename from the input path.
-    * Uses Try for safer file operations.
-    *
-    * @param inputPath The input file path
-    * @return The extracted filename
-    */
-  private def extractFileName(inputPath: String): String = {
+  /**
+   * Extract filename from the input path. Uses Try for safer file operations.
+   *
+   * @param inputPath
+   *   The input file path
+   * @return
+   *   The extracted filename
+   */
+  private def extractFileName(inputPath: String): String =
     // Use Try to safely extract filename
     Try {
       val path = Paths.get(inputPath)
@@ -120,39 +128,44 @@ trait ExcelToLLMParser[I <: MimeType]
         )
         "excel-file.xlsx" // Default filename if extraction fails or yields empty string
       }
-  }
 
   /** The underlying Excel parser to use */
   protected def excelParser: parsers.Parser[I, SheetsData]
 }
 
-/** Factory for creating Excel parsers that output CompressedWorkbook models.
-  * Compatible with Scala 2.12.
-  */
+/**
+ * Factory for creating Excel parsers that output CompressedWorkbook models. Compatible with Scala
+ * 2.12.
+ */
 object ExcelToLLMParser {
 
   import parsers.excel.SheetsDataExcelParser
 
   import org.slf4j.LoggerFactory // Import needed for logger in forXls
 
-  /** Create a parser for XLSX files (.xlsx).
-    *
-    * @param config Configuration for the SpreadsheetLLM compression. Defaults to default config.
-    * @return An XlsxToLLMParser instance.
-    */
+  /**
+   * Create a parser for XLSX files (.xlsx).
+   *
+   * @param config
+   *   Configuration for the SpreadsheetLLM compression. Defaults to default config.
+   * @return
+   *   An XlsxToLLMParser instance.
+   */
   def forXlsx(
-      config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()
-  ): XlsxToLLMParser = {
+    config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()
+  ): XlsxToLLMParser =
     new XlsxToLLMParser(config, new SheetsDataExcelParser())
-  }
 
-  /** Create a parser for XLS files (.xls).
-    *
-    * @param config Configuration for the SpreadsheetLLM compression. Defaults to default config.
-    * @return An XlsToLLMParser instance.
-    */
+  /**
+   * Create a parser for XLS files (.xls).
+   *
+   * @param config
+   *   Configuration for the SpreadsheetLLM compression. Defaults to default config.
+   * @return
+   *   An XlsToLLMParser instance.
+   */
   def forXls(
-      config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()
+    config: SpreadsheetLLMConfig = SpreadsheetLLMConfig()
   ): XlsToLLMParser = {
     val logger = LoggerFactory.getLogger(getClass)
     logger.warn(

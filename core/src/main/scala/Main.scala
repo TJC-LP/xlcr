@@ -1,11 +1,11 @@
 package com.tjclp.xlcr
 
-import splitters.SplitStrategy
-import types.{ FileType, MimeType }
+import java.nio.file.{ Files, Paths }
 
 import scopt.OParser
 
-import java.nio.file.{ Files, Paths }
+import splitters.SplitStrategy
+import types.{ FileType, MimeType }
 
 object Main {
   def main(args: Array[String]): Unit = {

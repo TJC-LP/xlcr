@@ -1,11 +1,11 @@
 package com.tjclp.xlcr
 package utils.excel
 
-import models.excel.ExcelReference
-import models.excel.ExcelReference.Col.ColOps
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import models.excel.ExcelReference
+import models.excel.ExcelReference.Col.ColOps
 
 class ExcelUtilsSpec extends AnyFlatSpec with Matchers {
 
@@ -45,13 +45,15 @@ class ExcelUtilsSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "throw an exception for negative column indices" in {
-    an[IllegalArgumentException] should be thrownBy ExcelUtils.columnToString(ExcelReference.Col(-1))
+    an[IllegalArgumentException] should be thrownBy ExcelUtils.columnToString(
+      ExcelReference.Col(-1)
+    )
   }
 
   it should "handle extremely large column indices" in {
     val maxColIndex = 16383 // Excel's maximum column index
-    val col = ExcelReference.Col(maxColIndex)
-    val str = ExcelUtils.columnToString(col)
+    val col         = ExcelReference.Col(maxColIndex)
+    val str         = ExcelUtils.columnToString(col)
     ExcelUtils.stringToColumn(str).value shouldBe maxColIndex
   }
 
@@ -90,16 +92,15 @@ class ExcelUtilsSpec extends AnyFlatSpec with Matchers {
 
   it should "handle invalid column strings appropriately" in {
     val invalidInputs = List(
-      "", // Empty string
-      "123", // Numbers
-      "A1", // Mixed with numbers
-      "XFDA", // Too long
+      "",       // Empty string
+      "123",    // Numbers
+      "A1",     // Mixed with numbers
+      "XFDA",   // Too long
       "ABC123", // Mixed format
-      "$A" // Special characters
+      "$A"      // Special characters
     )
 
-    for (invalid <- invalidInputs) {
+    for (invalid <- invalidInputs)
       an[IllegalArgumentException] should be thrownBy ExcelUtils.stringToColumn(invalid)
-    }
   }
 }

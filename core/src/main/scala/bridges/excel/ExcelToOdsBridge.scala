@@ -1,23 +1,24 @@
 package com.tjclp.xlcr
 package bridges.excel
 
-import bridges.SimpleBridge
-import models.FileContent
-import parsers.{Parser, SimpleParser}
-import renderers.{Renderer, SimpleRenderer}
-import types.MimeType.{
-  ApplicationVndOasisOpendocumentSpreadsheet,
-  ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
-}
+import java.io.ByteArrayOutputStream
 
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 import org.slf4j.LoggerFactory
 
-import java.io.ByteArrayOutputStream
+import bridges.SimpleBridge
+import models.FileContent
+import parsers.{ Parser, SimpleParser }
+import renderers.{ Renderer, SimpleRenderer }
+import types.MimeType.{
+  ApplicationVndOasisOpendocumentSpreadsheet,
+  ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
+}
 
-/** A bridge to convert Excel XLSX files to OpenDocument Spreadsheet (ODS) format
-  */
+/**
+ * A bridge to convert Excel XLSX files to OpenDocument Spreadsheet (ODS) format
+ */
 object ExcelToOdsBridge
     extends SimpleBridge[
       ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
@@ -25,38 +26,38 @@ object ExcelToOdsBridge
     ] {
   private val logger = LoggerFactory.getLogger(getClass)
 
-  override def inputParser
-      : Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
+  override def inputParser: Parser[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type, M] =
     ExcelToOdsParser
 
-  override def outputRenderer
-      : Renderer[M, ApplicationVndOasisOpendocumentSpreadsheet.type] =
+  override def outputRenderer: Renderer[M, ApplicationVndOasisOpendocumentSpreadsheet.type] =
     ExcelToOdsRenderer
 
-  /** Simple parser that just wraps Excel bytes in a FileContent for direct usage.
-    */
+  /**
+   * Simple parser that just wraps Excel bytes in a FileContent for direct usage.
+   */
   private object ExcelToOdsParser
       extends SimpleParser[
         ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type,
         M
       ] {
     override def parse(
-        input: FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]
+      input: FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type]
     ): M = {
       logger.info("Parsing Excel XLSX bytes for ODS conversion.")
       input
     }
   }
 
-  /** Renderer that performs the XLSX -> ODS conversion using Apache POI and ODFDOM
-    */
+  /**
+   * Renderer that performs the XLSX -> ODS conversion using Apache POI and ODFDOM
+   */
   private object ExcelToOdsRenderer
       extends SimpleRenderer[
         M,
         ApplicationVndOasisOpendocumentSpreadsheet.type
       ] {
     override def render(
-        model: M
+      model: M
     ): FileContent[ApplicationVndOasisOpendocumentSpreadsheet.type] = {
       try {
         logger.info("Converting Excel XLSX to ODS format.")
@@ -78,7 +79,7 @@ object ExcelToOdsBridge
           // For each sheet in the Excel workbook
           for (sheetIndex <- 0 until excelWorkbook.getNumberOfSheets) {
             val excelSheet = excelWorkbook.getSheetAt(sheetIndex)
-            val sheetName = excelSheet.getSheetName
+            val sheetName  = excelSheet.getSheetName
 
             // Create a sheet in the ODS document with the same name
             val odsSheet =
@@ -104,7 +105,7 @@ object ExcelToOdsBridge
               val cellIterator = excelRow.cellIterator()
               while (cellIterator.hasNext) {
                 val excelCell = cellIterator.next()
-                val colIndex = excelCell.getColumnIndex
+                val colIndex  = excelCell.getColumnIndex
 
                 // Create or get the cell in the ODS document
                 val odsCell = odsSheet.getCellByPosition(colIndex, rowIndex)
@@ -121,7 +122,7 @@ object ExcelToOdsBridge
                       org.apache.poi.ss.usermodel.DateUtil
                         .isCellDateFormatted(excelCell)
                     ) {
-                      val date = excelCell.getDateCellValue
+                      val date     = excelCell.getDateCellValue
                       val calendar = java.util.Calendar.getInstance()
                       calendar.setTime(date)
                       odsCell.setDateValue(calendar)
@@ -134,9 +135,9 @@ object ExcelToOdsBridge
 
                   case CellType.FORMULA =>
                     // For simplicity, we're getting the formula result rather than the formula itself
-                    try {
+                    try
                       odsCell.setStringValue(excelCell.toString)
-                    } catch {
+                    catch {
                       case _: Exception =>
                         odsCell.setStringValue("Formula")
                     }
@@ -168,10 +169,9 @@ object ExcelToOdsBridge
             odsBytes,
             ApplicationVndOasisOpendocumentSpreadsheet
           )
-        } finally {
+        } finally
           // Clean up the temporary file
           tempFile.delete()
-        }
       } catch {
         case ex: Exception =>
           logger.error("Error during Excel -> ODS conversion.", ex)

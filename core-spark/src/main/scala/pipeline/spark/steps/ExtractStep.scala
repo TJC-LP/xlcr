@@ -2,20 +2,19 @@ package com.tjclp.xlcr
 package pipeline.spark
 package steps
 
-import bridges.{Bridge, BridgeRegistry}
+import scala.concurrent.duration.{ Duration => ScalaDuration }
+
+import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
+
+import bridges.{ Bridge, BridgeRegistry }
 import models.FileContent
 import types.MimeType
 
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
-
-/** Binary‑to‑string extraction (e.g. text, XML) using BridgeRegistry. */
-import scala.concurrent.duration.{Duration => ScalaDuration}
-
 case class ExtractStep(
-    to: MimeType,
-    outCol: String,
-    rowTimeout: ScalaDuration =
-      scala.concurrent.duration.Duration(30, "seconds")
+  to: MimeType,
+  outCol: String,
+  rowTimeout: ScalaDuration =
+    scala.concurrent.duration.Duration(30, "seconds")
 ) extends SparkStep {
 
   override val name: String =
@@ -34,12 +33,12 @@ case class ExtractStep(
       BridgeRegistry
         .findBridge(inMime, to)
         .map { b =>
-          val bridge = b.asInstanceOf[Bridge[_, inMime.type, to.type]]
+          val bridge     = b.asInstanceOf[Bridge[_, inMime.type, to.type]]
           val bridgeImpl = bridge.getClass.getSimpleName
 
           val params = Map(
-            "fromMime" -> inMime.mimeType,
-            "toMime" -> to.mimeType,
+            "fromMime"     -> inMime.mimeType,
+            "toMime"       -> to.mimeType,
             "outputColumn" -> outCol
           )
 
@@ -61,7 +60,7 @@ case class ExtractStep(
   }
 
   override protected def doTransform(
-      df: DataFrame
+    df: DataFrame
   )(implicit spark: SparkSession): DataFrame = {
     import CoreSchema._
     // Apply extraction UDF and capture result in a StepResult

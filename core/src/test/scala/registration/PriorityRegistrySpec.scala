@@ -1,10 +1,10 @@
 package com.tjclp.xlcr
 package registration
 
-import types.{Priority, Prioritized}
-
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
+import types.{ Prioritized, Priority }
 
 class PriorityRegistrySpec extends AnyFlatSpec with Matchers {
 
@@ -65,7 +65,7 @@ class PriorityRegistrySpec extends AnyFlatSpec with Matchers {
     registry.get("key2").map(_.name) should be(Some("impl2"))
     registry.get("key3").map(_.name) should be(Some("impl3"))
 
-    registry.keys should contain allOf ("key1", "key2", "key3")
+    (registry.keys should contain).allOf("key1", "key2", "key3")
   }
 
   it should "return None for non-existent keys" in {

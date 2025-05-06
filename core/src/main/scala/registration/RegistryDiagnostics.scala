@@ -1,15 +1,16 @@
 package com.tjclp.xlcr
 package registration
 
+import org.slf4j.LoggerFactory
+
 import bridges.BridgeRegistry
 import splitters.SplitterRegistry
 import types.MimeType
 
-import org.slf4j.LoggerFactory
-
-/** Utility for diagnosing registration and selection issues in the bridge and splitter registries.
-  * This is especially useful for debugging which implementations are being selected and why.
-  */
+/**
+ * Utility for diagnosing registration and selection issues in the bridge and splitter registries.
+ * This is especially useful for debugging which implementations are being selected and why.
+ */
 object RegistryDiagnostics {
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -32,10 +33,10 @@ object RegistryDiagnostics {
   /** Log all registered splitters with their priorities */
   def logAllSplitters(): Unit = {
     val splitters = SplitterRegistry.listSplitters()
-    
+
     logger.info(s"--- Splitter Registry (${splitters.size} entries) ---")
     logger.info("Registered splitters by priority:")
-    
+
     splitters.groupBy(_._3).toSeq.sortBy(-_._1.value).foreach {
       case (priority, items) =>
         logger.info(s"  ${priority.toString}: ${items.size} splitters")
@@ -86,7 +87,7 @@ object RegistryDiagnostics {
   /** Log the registration status for a specific implementation class */
   def logImplementationStatus(implName: String): Unit = {
     logger.info(s"--- Implementation Status for '$implName' ---")
-    
+
     // Check bridge registry
     val matchingBridges = BridgeRegistry.listBridges().filter(_._3.contains(implName))
     if (matchingBridges.nonEmpty) {
@@ -109,7 +110,7 @@ object RegistryDiagnostics {
       logger.info(s"No splitters found matching '$implName'")
     }
   }
-  
+
   /** Initialize both registries to ensure they're loaded */
   def initAllRegistries(): Unit = {
     logger.info("Initializing all registries...")
