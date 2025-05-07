@@ -15,7 +15,7 @@ ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / scalaVersion            := scala212
 ThisBuild / crossScalaVersions      := Seq(scala212, scala213, scala3)
 ThisBuild / versionScheme           := Some("semver-spec")
-ThisBuild / version := "0.1.0-RC2"
+ThisBuild / version                 := "0.1.0-RC2"
 
 // Scalafix configuration
 ThisBuild / semanticdbEnabled := true
@@ -208,6 +208,19 @@ lazy val coreAspose = (project in file("core-aspose"))
           "-Yresolve-term-conflict:package"
         )
     }),
+    // --- ① Dottydoc offload: give it no sources ----------------------
+    Compile / doc / sources := {
+      if (scalaVersion.value.startsWith("3.")) Seq.empty // ⇒ empty jar
+      else (Compile / doc / sources).value
+    },
+
+    // --- ② Make sure the (empty) jar is still attached & published ---
+    Compile / packageDoc / publishArtifact := true,
+    Compile / doc / scalacOptions ++= Seq(
+      "-project",
+      name.value,                       // keep existing settings
+      "-Yresolve-term-conflict:package" // <- crucial for Aspose
+    ),
     libraryDependencies ++= Seq(
       "com.aspose"     % "aspose-cells"  % "25.4",
       ("com.aspose"    % "aspose-words"  % "25.4").classifier("jdk17"),
@@ -219,10 +232,6 @@ lazy val coreAspose = (project in file("core-aspose"))
     )
   )
 
-// ---------------------------------------------------------------------------
-// Spark composable pipeline module (Scala 2.12 / 2.13 only - not Scala 3 compatible)
-// ---------------------------------------------------------------------------
-
 lazy val coreSpark = (project in file("core-spark"))
   .dependsOn(core, coreAspose, coreSpreadsheetLLM)
   .settings(commonSettings)
@@ -232,7 +241,7 @@ lazy val coreSpark = (project in file("core-spark"))
     scalaVersion       := "2.12.18",
     crossScalaVersions := Seq(scala212, scala213, scala3),
     // ---------------------------------------------------------------------
-    // Spark does not ship native Scala-3 artefacts (yet).  Because Scala 3
+    // Spark does not ship native Scala-3 artifacts (yet).  Because Scala 3
     // remains binary-compatible with Scala 2.13, we can safely depend on the
     // 2.13 JARs when cross-building with Scala 3.  sbt exposes a helper
     // (`CrossVersion.for3Use2_13`) that performs this substitution for us.
