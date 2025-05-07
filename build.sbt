@@ -15,7 +15,7 @@ ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / scalaVersion            := scala212
 ThisBuild / crossScalaVersions      := Seq(scala212, scala213, scala3)
 ThisBuild / versionScheme           := Some("semver-spec")
-ThisBuild / version := "0.1.0-RC1"
+ThisBuild / version := "0.1.0-RC2"
 
 // Scalafix configuration
 ThisBuild / semanticdbEnabled := true
