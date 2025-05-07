@@ -15,7 +15,7 @@ ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / scalaVersion            := scala212
 ThisBuild / crossScalaVersions      := Seq(scala212, scala213, scala3)
 ThisBuild / versionScheme           := Some("semver-spec")
-ThisBuild / version                 := "0.1.0-RC3"
+ThisBuild / version                 := "0.1.0-RC4"
 
 // Scalafix configuration
 ThisBuild / semanticdbEnabled := true
@@ -217,8 +217,6 @@ lazy val coreAspose = (project in file("core-aspose"))
     // --- ② Make sure the (empty) jar is still attached & published ---
     Compile / packageDoc / publishArtifact := true,
     Compile / doc / scalacOptions ++= Seq(
-      "-project",
-      name.value,                       // keep existing settings
       "-Yresolve-term-conflict:package" // <- crucial for Aspose
     ),
     libraryDependencies ++= Seq(
