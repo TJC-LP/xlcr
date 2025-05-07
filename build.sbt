@@ -183,13 +183,6 @@ lazy val coreAspose = (project in file("core-aspose"))
     resolvers ++= Seq(
       "Aspose Java Repository".at("https://releases.aspose.com/java/repo/")
     ),
-    // WORKAROUND: Disable Scaladoc generation to avoid name conflicts in Aspose libraries
-    // There's a name clash in the Aspose slides library where both a package and an object
-    // with the same name "ms" exist under "com.aspose.slides", which causes Scaladoc to fail
-    // with: "package com.aspose.slides contains object and package with same name: ms"
-    Compile / doc / sources := Seq.empty,
-    // Don't add the Scaladoc jar to the publishing task
-    Compile / packageDoc / publishArtifact := false,
     // Add scala language features
     scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 12)) =>
