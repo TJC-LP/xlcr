@@ -18,8 +18,9 @@ object FileType {
   case object ExcelXlsx
       extends FileType(Extension.XLSX, MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
   case object ExcelXls  extends FileType(Extension.XLS, MimeType.ApplicationVndMsExcel)
-  case object ExcelXlsb extends FileType(Extension.XLSB, MimeType.ApplicationVndMsExcel)
-  case object ExcelXlsm extends FileType(Extension.XLSM, MimeType.ApplicationVndMsExcel)
+  case object ExcelXlsb extends FileType(Extension.XLSB, MimeType.ApplicationVndMsExcelSheetBinary)
+  case object ExcelXlsm
+      extends FileType(Extension.XLSM, MimeType.ApplicationVndMsExcelSheetMacroEnabled)
   case object ExcelOds
       extends FileType(Extension.ODS, MimeType.ApplicationVndOasisOpendocumentSpreadsheet)
 

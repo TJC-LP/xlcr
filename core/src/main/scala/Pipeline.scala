@@ -191,7 +191,7 @@ object Pipeline {
 
     // Decide on strategy (user override or default)
     val effStrategy: SplitStrategy =
-      strategy.getOrElse(defaultStrategyForMime(fileContent.mimeType))
+      strategy.getOrElse(SplitConfig.defaultStrategyForMime(fileContent.mimeType))
 
     // Create split config with recursive flag and image parameters
     val splitCfg = SplitConfig(
@@ -467,34 +467,6 @@ object Pipeline {
       mimeStr == "application/java-archive" || mimeStr == "application/x-java-archive" ||
       mimeStr == "application/jar"
   }
-
-  /** Default split strategy if the user hasn't specified one. */
-  private def defaultStrategyForMime(mime: MimeType): SplitStrategy =
-    mime match {
-      case MimeType.ApplicationPdf => SplitStrategy.Page
-
-      // Excel formats
-      case MimeType.ApplicationVndMsExcel |
-          MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet =>
-        SplitStrategy.Sheet
-
-      // PowerPoint formats
-      case MimeType.ApplicationVndMsPowerpoint |
-          MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation =>
-        SplitStrategy.Slide
-
-      // Archive / containers default to embedded entries
-      case MimeType.ApplicationZip | MimeType.ApplicationGzip |
-          MimeType.ApplicationSevenz | MimeType.ApplicationTar |
-          MimeType.ApplicationBzip2 | MimeType.ApplicationXz =>
-        SplitStrategy.Embedded
-
-      // Emails default to attachments
-      case MimeType.MessageRfc822 | MimeType.ApplicationVndMsOutlook =>
-        SplitStrategy.Attachment
-
-      case _ => SplitStrategy.Page // generic fallback
-    }
 
   /** Map a MIME type to a known file extension, if possible. */
   private def findExtensionForMime(mime: MimeType): Option[String] =
