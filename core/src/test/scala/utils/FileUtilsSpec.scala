@@ -22,8 +22,8 @@ class FileUtilsSpec extends AnyFlatSpec with Matchers {
     FileUtils.detectMimeType(jsonPath) shouldBe MimeType.ApplicationJson
     FileUtils.detectMimeType(xlsPath) shouldBe MimeType.ApplicationVndMsExcel
     FileUtils.detectMimeType(xlsxPath) shouldBe MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
-    FileUtils.detectMimeType(xlsmPath) shouldBe MimeType.ApplicationVndMsExcel
-    FileUtils.detectMimeType(xlsbPath) shouldBe MimeType.ApplicationVndMsExcel
+    FileUtils.detectMimeType(xlsmPath) shouldBe MimeType.ApplicationVndMsExcelSheetMacroEnabled
+    FileUtils.detectMimeType(xlsbPath) shouldBe MimeType.ApplicationVndMsExcelSheetBinary
     FileUtils.detectMimeType(unknownPath) shouldBe MimeType.TextPlain
   }
 
