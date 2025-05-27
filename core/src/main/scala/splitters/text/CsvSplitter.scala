@@ -28,9 +28,11 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
     if (cfg.hasStrategy(SplitStrategy.Row)) {
       // Split by individual rows
       splitByRows(content, cfg)
-    } else {
+    } else if (cfg.hasStrategy(SplitStrategy.Chunk)) {
       // Default behavior - group rows into chunks
       splitIntoChunks(content, cfg)
+    } else {
+      Seq(DocChunk(content, "csv", 0, 1))
     }
 
   /**
