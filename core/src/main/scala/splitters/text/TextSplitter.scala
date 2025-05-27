@@ -5,6 +5,8 @@ package text
 import models.FileContent
 import types.MimeType.TextPlain
 
+import com.tjclp.xlcr.splitters.SplitStrategy.Paragraph
+
 /**
  * Splitter for plain-text documents that supports two modes:
  *
@@ -26,13 +28,15 @@ object TextSplitter extends DocumentSplitter[TextPlain.type] {
     // but we check if another strategy was explicitly requested
     if (
       cfg.strategy
-        .exists(s => s != SplitStrategy.Chunk && s != SplitStrategy.Auto)
+        .exists(s => s == SplitStrategy.Chunk || s == SplitStrategy.Auto)
     ) {
       // Use character-based splitting with overlap for other strategies
       splitByCharactersWithOverlap(content, cfg)
-    } else {
-      // Default behavior (Chunk strategy) - use paragraph-aware splitting
+    } else if (cfg.hasStrategy(Paragraph)) {
+      // Use paragraph-aware splitting
       splitByParagraphs(content, cfg)
+    } else {
+      Seq(DocChunk(content, "text", 0, 1))
     }
 
   /**

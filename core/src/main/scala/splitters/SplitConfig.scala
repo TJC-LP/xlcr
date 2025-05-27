@@ -56,8 +56,15 @@ object SplitConfig {
    */
   def defaultStrategyForMime(mime: MimeType): SplitStrategy = mime match {
     // Text files
-    case MimeType("text", _, _) =>
+    case MimeType.TextPlain |
+        MimeType.TextMarkdown |
+        MimeType.TextHtml |
+        MimeType.TextJavascript |
+        MimeType.TextCss |
+        MimeType.TextXml =>
       SplitStrategy.Chunk
+
+    case MimeType.TextCsv => SplitStrategy.Row
 
     case MimeType.ApplicationPdf => SplitStrategy.Page
 
