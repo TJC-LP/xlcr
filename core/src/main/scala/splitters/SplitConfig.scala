@@ -61,10 +61,9 @@ object SplitConfig {
         MimeType.TextHtml |
         MimeType.TextJavascript |
         MimeType.TextCss |
-        MimeType.TextXml =>
+        MimeType.TextXml |
+        MimeType.TextCsv =>
       SplitStrategy.Chunk
-
-    case MimeType.TextCsv => SplitStrategy.Row
 
     case MimeType.ApplicationPdf => SplitStrategy.Page
 
