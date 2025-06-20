@@ -2,10 +2,10 @@ package com.tjclp.xlcr
 package splitters
 package text
 
+import com.tjclp.xlcr.splitters.SplitStrategy.Paragraph
+
 import models.FileContent
 import types.MimeType.TextPlain
-
-import com.tjclp.xlcr.splitters.SplitStrategy.Paragraph
 
 /**
  * Splitter for plain-text documents that supports two modes:
@@ -53,23 +53,23 @@ object TextSplitter extends DocumentSplitter[TextPlain.type] {
     val chunkSize = math.max(1, cfg.maxChars)
     // Limit overlap to prevent performance issues - at most 50% of chunk size
     val maxOverlap = chunkSize / 2
-    val overlap = math.max(0, cfg.overlap.min(maxOverlap))
-    
+    val overlap    = math.max(0, cfg.overlap.min(maxOverlap))
+
     // Calculate stride (how much we advance each iteration)
     // This ensures we always move forward
     val stride = math.max(1, chunkSize - overlap)
-    
+
     // Pre-calculate chunk boundaries
-    val starts = (0 until txt.length by stride).toVector
+    val starts    = (0 until txt.length by stride).toVector
     val numChunks = starts.length
-    
+
     // Build chunks using the pre-calculated boundaries
     val chunks = starts.zipWithIndex.map { case (start, idx) =>
-      val end = math.min(start + chunkSize, txt.length)
+      val end   = math.min(start + chunkSize, txt.length)
       val slice = txt.substring(start, end)
       val bytes = slice.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-      val fc = FileContent(bytes, TextPlain)
-      
+      val fc    = FileContent(bytes, TextPlain)
+
       DocChunk(
         fc,
         label = s"chars $start-${end - 1}",
@@ -77,7 +77,7 @@ object TextSplitter extends DocumentSplitter[TextPlain.type] {
         total = numChunks
       )
     }
-    
+
     chunks
   }
 
@@ -93,47 +93,47 @@ object TextSplitter extends DocumentSplitter[TextPlain.type] {
     if (txt.isEmpty) return Seq.empty
 
     // Find paragraph boundaries while preserving position information
-    val paragraphPattern = "\n\\s*\n".r
+    val paragraphPattern    = "\n\\s*\n".r
     val paragraphBoundaries = paragraphPattern.findAllMatchIn(txt).map(_.start).toVector
-    
+
     // Extract paragraphs with their positions
     val paragraphsWithPos = {
-      val starts = 0 +: paragraphBoundaries.map(b => {
+      val starts = 0 +: paragraphBoundaries.map { b =>
         // Find the end of the boundary (after whitespace)
         var end = b + 1
         while (end < txt.length && txt(end).isWhitespace) end += 1
         end
-      })
+      }
       val ends = paragraphBoundaries :+ txt.length
-      
+
       starts.zip(ends).map { case (start, end) =>
         val text = txt.substring(start, end).trim
         (text, start, end)
       }.filter(_._1.nonEmpty)
     }
-    
+
     if (paragraphsWithPos.isEmpty) return Seq.empty
 
     val chunkSize = math.max(1, cfg.maxChars)
     val builder   = Seq.newBuilder[DocChunk[TextPlain.type]]
 
-    var currentChunk = new StringBuilder()
+    var currentChunk         = new StringBuilder()
     var currentChunkStartPos = -1
-    var idx = 0
-    var startParaIdx = 0
-    var parasInCurrentChunk = Vector.empty[(String, Int, Int)]
+    var idx                  = 0
+    var startParaIdx         = 0
+    var parasInCurrentChunk  = Vector.empty[(String, Int, Int)]
 
     for (((paragraph, paraStart, paraEnd), paraIdx) <- paragraphsWithPos.zipWithIndex) {
       // If adding this paragraph would exceed the chunk size and we already have content,
       // finalize the current chunk and start a new one
       if (currentChunk.nonEmpty && currentChunk.length + paragraph.length > chunkSize) {
         val chunkText = currentChunk.toString()
-        val bytes = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-        val fc = FileContent(bytes, TextPlain)
+        val bytes     = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        val fc        = FileContent(bytes, TextPlain)
 
         // Use actual positions from tracking
         val charStart = currentChunkStartPos
-        val charEnd = parasInCurrentChunk.last._3 - 1
+        val charEnd   = parasInCurrentChunk.last._3 - 1
 
         builder += DocChunk(
           fc,
@@ -153,11 +153,11 @@ object TextSplitter extends DocumentSplitter[TextPlain.type] {
         // Flush any pending chunk first
         if (currentChunk.nonEmpty) {
           val chunkText = currentChunk.toString()
-          val bytes = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-          val fc = FileContent(bytes, TextPlain)
-          
+          val bytes     = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+          val fc        = FileContent(bytes, TextPlain)
+
           val charStart = currentChunkStartPos
-          val charEnd = parasInCurrentChunk.last._3 - 1
+          val charEnd   = parasInCurrentChunk.last._3 - 1
 
           builder += DocChunk(
             fc,
@@ -170,21 +170,22 @@ object TextSplitter extends DocumentSplitter[TextPlain.type] {
           currentChunkStartPos = -1
           parasInCurrentChunk = Vector.empty
         }
-        
+
         // Split the large paragraph
         var start = 0
         while (start < paragraph.length) {
-          val end = math.min(start + chunkSize, paragraph.length)
+          val end   = math.min(start + chunkSize, paragraph.length)
           val slice = paragraph.substring(start, end)
           val bytes = slice.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-          val fc = FileContent(bytes, TextPlain)
+          val fc    = FileContent(bytes, TextPlain)
 
           val absoluteStart = paraStart + start
-          val absoluteEnd = paraStart + end - 1
+          val absoluteEnd   = paraStart + end - 1
 
           builder += DocChunk(
             fc,
-            label = s"paragraph ${paraIdx + 1} section $start-${end - 1} (chars $absoluteStart-$absoluteEnd)",
+            label =
+              s"paragraph ${paraIdx + 1} section $start-${end - 1} (chars $absoluteStart-$absoluteEnd)",
             index = idx,
             total = 0
           )
@@ -207,15 +208,16 @@ object TextSplitter extends DocumentSplitter[TextPlain.type] {
     // Don't forget the last chunk if it's not empty
     if (currentChunk.nonEmpty) {
       val chunkText = currentChunk.toString()
-      val bytes = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
-      val fc = FileContent(bytes, TextPlain)
+      val bytes     = chunkText.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+      val fc        = FileContent(bytes, TextPlain)
 
       val charStart = currentChunkStartPos
-      val charEnd = parasInCurrentChunk.last._3 - 1
+      val charEnd   = parasInCurrentChunk.last._3 - 1
 
       builder += DocChunk(
         fc,
-        label = s"paragraphs ${startParaIdx + 1}-${paragraphsWithPos.length} (chars $charStart-$charEnd)",
+        label =
+          s"paragraphs ${startParaIdx + 1}-${paragraphsWithPos.length} (chars $charStart-$charEnd)",
         index = idx,
         total = 0
       )
