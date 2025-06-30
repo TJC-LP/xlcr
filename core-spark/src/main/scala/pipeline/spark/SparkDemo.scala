@@ -73,7 +73,7 @@ object SparkDemo {
 
   /** Simple pipeline: detect mime then split. */
   private def buildBasicPipeline(): SparkStep = {
-    val detect = DetectMime
+    val detect = DetectMime()
     val split  = SplitStep().withTimeout(Duration(60, "seconds"))
     SparkStepUtils.buildPipeline(detect, split)
   }
