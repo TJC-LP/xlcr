@@ -4,6 +4,8 @@ package steps
 
 import java.io.IOException
 
+import scala.concurrent.duration.{ Duration => ScalaDuration }
+
 import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
 import org.apache.tika.exception.TikaException
 import org.apache.tika.io.TikaInputStream
@@ -17,8 +19,13 @@ import org.xml.sax.SAXException
  * type and metadata from binary content.
  *
  * This is the Scala 3 version with correct lambda syntax.
+ *
+ * @param udfTimeout
+ *   Duration for UDF timeout per file. Default is 30 seconds.
  */
-object DetectMime extends SparkStep {
+case class DetectMime(
+  override val udfTimeout: ScalaDuration = ScalaDuration(30, "seconds")
+) extends SparkStep {
   override val name: String = "detectMime"
 
   // Wrap Tika detection in a UDF with timing and error handling
@@ -26,7 +33,7 @@ object DetectMime extends SparkStep {
 
   private val detectUdf = wrapUdf(
     name,
-    scala.concurrent.duration.Duration(30, "seconds")
+    udfTimeout
   ) { (bytes: Array[Byte]) => // Note the parentheses around lambda parameter for Scala 3
     // *Finding* phase: We already know we will use Tika's AutoDetectParser.
     val implName = "TikaAutoDetectParser"
@@ -79,6 +86,10 @@ object DetectMime extends SparkStep {
       )
     )
   }
+}
 
-  SparkPipelineRegistry.register(this)
+// Register a default instance for backward compatibility
+object DetectMime {
+  val default: DetectMime = DetectMime()
+  SparkPipelineRegistry.register(default)
 }

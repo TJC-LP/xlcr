@@ -31,6 +31,49 @@ Each **SparkStep** is serialisable and composable (`andThen`, `fanOut`, `withTim
 
 All steps self-register in `SparkPipelineRegistry`, so you can reference them in a DSL string.
 
+## Timeout Configuration
+
+Each step that uses UDFs can be configured with a custom timeout duration. This timeout applies **per row/file**, not to the entire DataFrame operation. When a timeout occurs, the error is captured in the lineage with the message "timeout", making it easy to identify and retry timed-out files.
+
+### Configuring Timeouts
+
+```scala
+import scala.concurrent.duration._
+
+// Configure timeout at step creation
+val detectMime = DetectMime(udfTimeout = Duration(60, "seconds"))
+val convertStep = ConvertStep(to = MimeType.ApplicationPdf, udfTimeout = Duration(120, "seconds"))
+val splitStep = SplitStep(udfTimeout = Duration(180, "seconds"))
+
+// Or use the factory method to override timeout on existing steps
+val slowDetect = SparkStep.withUdfTimeout(DetectMime.default, Duration(90, "seconds"))
+
+// Build pipeline with custom timeouts
+val pipeline = detectMime
+  .andThen(splitStep)
+  .andThen(convertStep)
+```
+
+### Identifying Timed-Out Files
+
+Files that timeout during processing can be easily identified and retried:
+
+```scala
+// Process documents
+val processed = pipeline(inputDf)
+
+// Find rows that timed out
+val timedOut = processed.filter(
+  array_contains(col("lineage.error"), "timeout")
+)
+
+// Retry with longer timeout
+val retryPipeline = pipeline.map(step => 
+  SparkStep.withUdfTimeout(step, Duration(5, "minutes"))
+)
+val retryResults = retryPipeline(timedOut)
+```
+
 ## Streaming example (binaryFile source)
 
 ```scala

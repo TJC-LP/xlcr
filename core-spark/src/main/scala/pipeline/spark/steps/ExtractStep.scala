@@ -13,7 +13,7 @@ import types.MimeType
 case class ExtractStep(
   to: MimeType,
   outCol: String,
-  rowTimeout: ScalaDuration =
+  override val udfTimeout: ScalaDuration =
     scala.concurrent.duration.Duration(30, "seconds")
 ) extends SparkStep {
 
@@ -24,7 +24,7 @@ case class ExtractStep(
 
   import UdfHelpers._
 
-  private val extractUdf = wrapUdf2(name, rowTimeout) {
+  private val extractUdf = wrapUdf2(name, udfTimeout) {
     (bytes: Array[Byte], mimeStr: String) =>
       val inMime =
         MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)

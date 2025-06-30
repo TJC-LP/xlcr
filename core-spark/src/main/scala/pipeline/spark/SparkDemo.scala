@@ -4,12 +4,9 @@ package pipeline.spark
 import java.nio.file.{ Files, Paths }
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-import scala.concurrent.duration.Duration
-
+import scala.concurrent.duration.{ Duration, DurationInt }
 import org.apache.spark.sql.functions.md5
 import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
-
 import pipeline.spark.steps._
 import pipeline.spark.steps.SparkStepUtils
 
@@ -73,8 +70,8 @@ object SparkDemo {
 
   /** Simple pipeline: detect mime then split. */
   private def buildBasicPipeline(): SparkStep = {
-    val detect = DetectMime
-    val split  = SplitStep().withTimeout(Duration(60, "seconds"))
+    val detect = DetectMime()
+    val split  = SparkStep.withUdfTimeout(SplitStep(), 120.seconds)
     SparkStepUtils.buildPipeline(detect, split)
   }
 

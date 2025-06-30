@@ -15,7 +15,7 @@ import types.MimeType
  * chunks according to the specified strategy.
  */
 case class SplitStep(
-  rowTimeout: ScalaDuration =
+  override val udfTimeout: ScalaDuration =
     scala.concurrent.duration.Duration(60, "seconds"),
   // When provided this exact config wins.
   config: SplitConfig = SplitConfig(strategy = Some(SplitStrategy.Auto)),
@@ -46,7 +46,7 @@ case class SplitStep(
     // added to the lineage *after* exploding the chunks, so we can simply use
     // the two-argument wrapper.
 
-    UdfHelpers.wrapUdf2(name, rowTimeout) {
+    UdfHelpers.wrapUdf2(name, udfTimeout) {
       (bytes: Array[Byte], mimeStr: String) =>
         val mime =
           MimeType
