@@ -20,7 +20,7 @@ import org.xml.sax.SAXException
  *
  * This is the Scala 3 version with correct lambda syntax.
  * 
- * @param timeout Duration for UDF timeout per file. Default is 30 seconds.
+ * @param udfTimeout Duration for UDF timeout per file. Default is 30 seconds.
  */
 case class DetectMime(
   override val udfTimeout: ScalaDuration = ScalaDuration(30, "seconds")
