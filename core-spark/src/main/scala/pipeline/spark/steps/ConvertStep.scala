@@ -12,7 +12,7 @@ import types.MimeType
 
 case class ConvertStep(
   to: MimeType,
-  rowTimeout: ScalaDuration =
+  override val udfTimeout: ScalaDuration =
     scala.concurrent.duration.Duration(30, "seconds"),
   config: Option[BridgeConfig] = None
 ) extends SparkStep {
@@ -22,7 +22,7 @@ case class ConvertStep(
 
   // Wrap conversion logic in a UDF that captures timing and errors
   private def createConvertUdf =
-    UdfHelpers.wrapUdf2(name, rowTimeout) {
+    UdfHelpers.wrapUdf2(name, udfTimeout) {
       (bytes: Array[Byte], mimeStr: String) =>
         val inMime =
           MimeType.fromStringNoParams(mimeStr, MimeType.ApplicationOctet)

@@ -31,6 +31,20 @@ trait SparkStep extends Serializable { self =>
   ): DataFrame
 
   /* --------------------------------------------------------------------- */
+  /* Optional configuration for UDF-based steps                            */
+  /* --------------------------------------------------------------------- */
+
+  /**
+   * Timeout duration for UDF operations. This timeout applies per row/file,
+   * not to the entire DataFrame operation. Steps that use UDFs should pass
+   * this value to wrapUdf/wrapUdf2. Default is 30 seconds.
+   * 
+   * When a timeout occurs, the error will be captured in the lineage with
+   * message "timeout", allowing for easy filtering of timed-out rows.
+   */
+  def udfTimeout: ScalaDuration = ScalaDuration(30, "seconds")
+
+  /* --------------------------------------------------------------------- */
   /* Public façade                                                         */
   /* --------------------------------------------------------------------- */
 
@@ -110,4 +124,28 @@ trait SparkStep extends Serializable { self =>
   /* --------------------------------------------------------------------- */
   /* Helpers                                                               */
   /* --------------------------------------------------------------------- */
+}
+
+object SparkStep {
+  /**
+   * Creates a new SparkStep that wraps an existing step with a custom UDF timeout.
+   * This is useful for overriding the default UDF timeout without modifying the step itself.
+   * 
+   * Note: This is different from the instance method `withTimeout` which sets a timeout
+   * for the entire step transformation. This method specifically configures the timeout
+   * for individual UDF operations within the step.
+   * 
+   * Example:
+   * ```scala
+   * val slowStep = SparkStep.withUdfTimeout(DetectMime.default, Duration(120, "seconds"))
+   * ```
+   */
+  def withUdfTimeout(step: SparkStep, timeout: ScalaDuration): SparkStep = new SparkStep {
+    override val name: String = step.name
+    override val meta: Map[String, String] = step.meta
+    override val udfTimeout: ScalaDuration = timeout
+    
+    protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = 
+      step.doTransform(df)
+  }
 }
