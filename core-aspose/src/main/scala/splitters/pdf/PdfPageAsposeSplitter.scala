@@ -29,34 +29,71 @@ object PdfPageAsposeSplitter
     if (!cfg.hasStrategy(SplitStrategy.Page))
       return Seq(DocChunk(content, "document", 0, 1))
 
+    var pdfDocument: AsposePdfDocument = null
     try {
       // Load PDF document
-      val pdfDocument = new AsposePdfDocument(
+      pdfDocument = new AsposePdfDocument(
         new ByteArrayInputStream(content.data)
       )
       val pageCount = pdfDocument.getPages.size
 
       logger.info(s"Splitting PDF into $pageCount pages")
 
-      // Extract each page as a separate PDF
-      (1 to pageCount).map { pageIndex =>
-        // Create a new PDF with just this page
-        val newDocument = new AsposePdfDocument()
+      // Determine which pages to extract based on configuration
+      val pagesToExtract = cfg.pageRange match {
+        case Some(range) =>
+          // Ensure range is within bounds (Aspose uses 1-based indexing)
+          range.filter(i => i >= 0 && i < pageCount).map(_ + 1)
+        case None =>
+          1 to pageCount
+      }
 
-        // Add the current page to the new document
-        newDocument.getPages.add(pdfDocument.getPages.get_Item(pageIndex))
+      logger.debug(s"Extracting pages: ${pagesToExtract.mkString(", ")}")
 
-        // Save to byte array
-        val outputStream = new ByteArrayOutputStream()
-        newDocument.save(outputStream)
+      // Extract specified pages
+      pagesToExtract.map { pageIndex =>
+        var newDocument: AsposePdfDocument = null
+        try {
+          // Create a new PDF with just this page
+          newDocument = new AsposePdfDocument()
+          
+          // Add the current page to the new document
+          val page = pdfDocument.getPages.get_Item(pageIndex)
+          newDocument.getPages.add(page)
 
-        val fc = FileContent(outputStream.toByteArray, MimeType.ApplicationPdf)
-        DocChunk(fc, s"Page $pageIndex", pageIndex - 1, pageCount)
+          // Save to byte array
+          val outputStream = new ByteArrayOutputStream()
+          try {
+            newDocument.save(outputStream)
+            val fc = FileContent(outputStream.toByteArray, MimeType.ApplicationPdf)
+            DocChunk(fc, s"Page $pageIndex", pageIndex - 1, pageCount)
+          } finally {
+            outputStream.close()
+          }
+        } finally {
+          if (newDocument != null) {
+            try {
+              newDocument.close()
+            } catch {
+              case e: Exception =>
+                logger.warn(s"Error closing document for page $pageIndex: ${e.getMessage}")
+            }
+          }
+        }
       }
     } catch {
       case e: Exception =>
         logger.error(s"Error splitting PDF: ${e.getMessage}", e)
         Seq(DocChunk(content, "document", 0, 1))
+    } finally {
+      if (pdfDocument != null) {
+        try {
+          pdfDocument.close()
+        } catch {
+          case e: Exception =>
+            logger.warn(s"Error closing original PDF document: ${e.getMessage}")
+        }
+      }
     }
   }
 }

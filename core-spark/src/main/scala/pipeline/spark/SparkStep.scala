@@ -7,6 +7,7 @@ import scala.concurrent.duration.{ Duration => ScalaDuration }
 
 import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
 import zio.{ Duration => ZDuration, Runtime, ZIO }
+import pipeline.spark.steps._
 
 /**
  * Unified Spark pipeline step with ZIO-powered execution and license-aware UDFs.
@@ -141,12 +142,21 @@ object SparkStep {
    * val slowStep = SparkStep.withUdfTimeout(DetectMime.default, Duration(120, "seconds"))
    * ```
    */
-  def withUdfTimeout(step: SparkStep, timeout: ScalaDuration): SparkStep = new SparkStep {
-    override val name: String              = step.name
-    override val meta: Map[String, String] = step.meta
-    override val udfTimeout: ScalaDuration = timeout
+  def withUdfTimeout(step: SparkStep, timeout: ScalaDuration): SparkStep =
+    step match {
+      // For case classes that have a copy method with udfTimeout parameter
+      case s: SplitStep   => s.copy(udfTimeout = timeout)
+      case s: DetectMime  => s.copy(udfTimeout = timeout)
+      case s: ConvertStep => s.copy(udfTimeout = timeout)
+      case s: ExtractStep => s.copy(udfTimeout = timeout)
+      // For other steps, create a wrapper (though this won't work properly if they create UDFs in constructors)
+      case _ => new SparkStep {
+          override val name: String              = step.name
+          override val meta: Map[String, String] = step.meta + ("udfTimeout" -> timeout.toString)
+          override val udfTimeout: ScalaDuration = timeout
 
-    protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame =
-      step.doTransform(df)
-  }
+          protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame =
+            step.doTransform(df)
+        }
+    }
 }

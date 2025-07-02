@@ -71,7 +71,14 @@ object SparkDemo {
   /** Simple pipeline: detect mime then split. */
   private def buildBasicPipeline(): SparkStep = {
     val detect = DetectMime()
-    val split  = SparkStep.withUdfTimeout(SplitStep(), 120.seconds)
+    // Example: Limit PDF splitting to first 10 pages to prevent memory issues
+    val split = SplitStep.withPageLimit(10, udfTimeout = 120.seconds)
+    
+    // Alternative approaches:
+    // - Extract pages 5-15: SplitStep.withPageRange(5, 15, udfTimeout = 120.seconds)
+    // - Auto strategy with page limit: SplitStep.auto(pageLimit = Some(20))
+    // - Standard split with timeout: SparkStep.withUdfTimeout(SplitStep(), 120.seconds)
+    
     SparkStepUtils.buildPipeline(detect, split)
   }
 

@@ -173,3 +173,66 @@ case class SplitStep(
       .drop(Chunks, Chunk, LineageEntry, ResultLineage, Result)
   }
 }
+
+object SplitStep {
+  /**
+   * Creates a SplitStep that limits PDF splitting to the first N pages.
+   * Useful for preventing memory issues with very large PDFs.
+   * 
+   * @param limit Maximum number of pages to extract
+   * @param udfTimeout Timeout for the splitting operation
+   * @return Configured SplitStep instance
+   */
+  def withPageLimit(
+    limit: Int,
+    udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+  ): SplitStep = 
+    SplitStep(
+      udfTimeout = udfTimeout,
+      config = SplitConfig(
+        strategy = Some(SplitStrategy.Page),
+        pageRange = Some(0 until limit)
+      )
+    )
+  
+  /**
+   * Creates a SplitStep that extracts a specific range of pages from PDFs.
+   * 
+   * @param start Start page (0-based)
+   * @param end End page (exclusive, 0-based)
+   * @param udfTimeout Timeout for the splitting operation
+   * @return Configured SplitStep instance
+   */
+  def withPageRange(
+    start: Int,
+    end: Int,
+    udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+  ): SplitStep = 
+    SplitStep(
+      udfTimeout = udfTimeout,
+      config = SplitConfig(
+        strategy = Some(SplitStrategy.Page),
+        pageRange = Some(start until end)
+      )
+    )
+  
+  /**
+   * Creates a SplitStep with auto strategy and optional page limit for PDFs.
+   * When the auto strategy encounters a PDF, it will apply the page limit.
+   * 
+   * @param pageLimit Optional maximum number of pages to extract from PDFs
+   * @param udfTimeout Timeout for the splitting operation
+   * @return Configured SplitStep instance
+   */
+  def auto(
+    pageLimit: Option[Int] = None,
+    udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+  ): SplitStep = 
+    SplitStep(
+      udfTimeout = udfTimeout,
+      config = SplitConfig(
+        strategy = Some(SplitStrategy.Auto),
+        pageRange = pageLimit.map(limit => 0 until limit)
+      )
+    )
+}

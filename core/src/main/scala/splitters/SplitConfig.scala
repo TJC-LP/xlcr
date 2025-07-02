@@ -25,7 +25,12 @@ case class SplitConfig(
 
   // PowerPoint slide extraction settings
   useCloneForSlides: Boolean = true, // Use clone method instead of remove for slide extraction
-  preserveSlideNotes: Boolean = true // Preserve slide notes during extraction
+  preserveSlideNotes: Boolean = true, // Preserve slide notes during extraction
+  
+  // PDF page extraction settings
+  pageRange: Option[Range] = None,      // Optional page range to extract (e.g., 1 to 10)
+  skipBlankPages: Boolean = false,      // Whether to skip blank pages during extraction
+  blankPageThreshold: Double = 0.01     // Threshold for considering a page blank (0.0-1.0)
 ) {
 
   /** Helper method to check if a strategy is set to a specific value */

@@ -54,6 +54,37 @@ val pipeline = detectMime
   .andThen(convertStep)
 ```
 
+## Page Limiting for PDF Splitting
+
+To prevent memory issues with very large PDFs, you can limit the number of pages extracted during splitting:
+
+```scala
+import scala.concurrent.duration._
+
+// Limit to first 10 pages of PDFs
+val splitFirst10 = SplitStep.withPageLimit(10)
+
+// Extract specific page range (0-based)
+val splitMiddlePages = SplitStep.withPageRange(10, 20)  // Pages 11-20
+
+// Auto strategy with page limit (applies to PDFs when encountered)
+val autoSplitLimited = SplitStep.auto(pageLimit = Some(50))
+
+// Combine with timeout configuration
+val splitWithTimeout = SplitStep.withPageLimit(20, udfTimeout = 120.seconds)
+
+// Example pipeline for large PDF processing
+val pipeline = DetectMime()
+  .andThen(SplitStep.withPageLimit(100, udfTimeout = 180.seconds))
+  .andThen(ConvertStep(MimeType.ImagePng))
+  .andThen(ExtractText())
+```
+
+This is especially useful when:
+- Processing very large PDFs that might cause memory issues
+- You only need to process a sample of pages for analysis
+- Building pipelines that need to handle documents of varying sizes reliably
+
 ### Identifying Timed-Out Files
 
 Files that timeout during processing can be easily identified and retried:

@@ -34,8 +34,19 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
       val total = original.getNumberOfPages
       logger.info(s"Splitting PDF into $total pages")
 
-      // Extract each page as a single-page PDF
-      (0 until total).map { idx =>
+      // Determine which pages to extract based on configuration
+      val pagesToExtract = cfg.pageRange match {
+        case Some(range) =>
+          // Ensure range is within bounds (PDFBox uses 0-based indexing)
+          range.filter(i => i >= 0 && i < total)
+        case None =>
+          0 until total
+      }
+
+      logger.debug(s"Extracting pages: ${pagesToExtract.mkString(", ")}")
+
+      // Extract specified pages as single-page PDFs
+      pagesToExtract.map { idx =>
         // Create a new document with only one page
         val chunkDoc = new PDDocument()
         try {
@@ -49,7 +60,7 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
           // Create a FileContent with the new document
           val fc = FileContent(baos.toByteArray, MimeType.ApplicationPdf)
 
-          // Create a DocChunk with the page information
+          // Create a DocChunk with the page information (1-based display)
           DocChunk(fc, s"Page ${idx + 1}", idx, total)
         } finally chunkDoc.close()
       }
