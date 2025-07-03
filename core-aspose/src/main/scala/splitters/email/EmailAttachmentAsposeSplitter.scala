@@ -65,6 +65,14 @@ object EmailAttachmentAsposeSplitter
 
     // Finalize chunks with correct total count
     val total = chunks.size
-    chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
+    val allChunks = chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
+    
+    // Apply chunk range filtering if specified
+    cfg.chunkRange match {
+      case Some(range) =>
+        range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
+      case None =>
+        allChunks
+    }
   }
 }

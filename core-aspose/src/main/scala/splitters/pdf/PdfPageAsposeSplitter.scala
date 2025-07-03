@@ -40,7 +40,7 @@ object PdfPageAsposeSplitter
       logger.info(s"Splitting PDF into $pageCount pages")
 
       // Determine which pages to extract based on configuration
-      val pagesToExtract = cfg.pageRange match {
+      val pagesToExtract = cfg.chunkRange match {
         case Some(range) =>
           // Ensure range is within bounds (Aspose uses 1-based indexing)
           range.filter(i => i >= 0 && i < pageCount).map(_ + 1)

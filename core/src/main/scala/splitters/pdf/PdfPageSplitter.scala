@@ -35,7 +35,7 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] {
       logger.info(s"Splitting PDF into $total pages")
 
       // Determine which pages to extract based on configuration
-      val pagesToExtract = cfg.pageRange match {
+      val pagesToExtract = cfg.chunkRange match {
         case Some(range) =>
           // Ensure range is within bounds (PDFBox uses 0-based indexing)
           range.filter(i => i >= 0 && i < total)

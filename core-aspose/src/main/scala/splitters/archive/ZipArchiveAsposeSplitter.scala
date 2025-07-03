@@ -54,8 +54,16 @@ object ZipArchiveAsposeSplitter
       val total = chunks.size
 
       // Reindex chunks to have sequential indices without gaps from skipped metadata files
-      chunks.zipWithIndex.map { case (chunk, newIndex) =>
+      val allChunks = chunks.zipWithIndex.map { case (chunk, newIndex) =>
         chunk.copy(index = newIndex, total = total)
+      }
+      
+      // Apply chunk range filtering if specified
+      cfg.chunkRange match {
+        case Some(range) =>
+          range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
+        case None =>
+          allChunks
       }
     } finally
       cleanupExtractSession(sessionId)

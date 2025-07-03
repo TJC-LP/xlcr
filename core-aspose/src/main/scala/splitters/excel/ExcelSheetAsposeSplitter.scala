@@ -50,7 +50,16 @@ object ExcelSheetAsposeSplitter {
     val sheets = srcWb.getWorksheets
     val total  = sheets.getCount
 
-    (0 until total).map { idx =>
+    // Determine which sheets to extract based on configuration
+    val sheetsToExtract = cfg.chunkRange match {
+      case Some(range) =>
+        // Filter to valid sheet indices
+        range.filter(i => i >= 0 && i < total)
+      case None =>
+        0 until total
+    }
+
+    sheetsToExtract.map { idx =>
       val srcSheet = sheets.get(idx)
 
       // Create a fresh workbook with *no* sheets, then copy the target one

@@ -40,8 +40,18 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
         val slides = src.getSlides.asScala.toList
         val total  = slides.size
 
+        // Determine which slides to extract based on configuration
+        val slidesToExtract = cfg.chunkRange match {
+          case Some(range) =>
+            // Filter to valid slide indices
+            range.filter(i => i >= 0 && i < total)
+          case None =>
+            0 until total
+        }
+
         // Process each slide - we'll use a separate temporary file for each destination
-        val chunks = slides.zipWithIndex.flatMap { case (originalSlide, idx) =>
+        val chunks = slidesToExtract.flatMap { idx =>
+          val originalSlide = slides(idx)
           try {
             // Get slide title before attempting content import
             val title = Option(originalSlide.getTitle)

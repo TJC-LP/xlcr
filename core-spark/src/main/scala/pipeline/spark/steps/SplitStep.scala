@@ -176,63 +176,84 @@ case class SplitStep(
 
 object SplitStep {
   /**
-   * Creates a SplitStep that limits PDF splitting to the first N pages.
-   * Useful for preventing memory issues with very large PDFs.
+   * Creates a SplitStep that limits splitting to the first N chunks.
+   * Works universally for pages (PDF), sheets (Excel), slides (PowerPoint), etc.
    * 
-   * @param limit Maximum number of pages to extract
+   * @param limit Maximum number of chunks to extract
+   * @param strategy Optional split strategy (defaults to Auto)
    * @param udfTimeout Timeout for the splitting operation
    * @return Configured SplitStep instance
    */
-  def withPageLimit(
+  def withChunkLimit(
     limit: Int,
+    strategy: Option[SplitStrategy] = None,
     udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
   ): SplitStep = 
     SplitStep(
       udfTimeout = udfTimeout,
       config = SplitConfig(
-        strategy = Some(SplitStrategy.Page),
-        pageRange = Some(0 until limit)
+        strategy = strategy.orElse(Some(SplitStrategy.Auto)),
+        chunkRange = Some(0 until limit)
       )
     )
   
   /**
-   * Creates a SplitStep that extracts a specific range of pages from PDFs.
+   * Creates a SplitStep that extracts a specific range of chunks.
+   * Works universally for any document type.
    * 
-   * @param start Start page (0-based)
-   * @param end End page (exclusive, 0-based)
+   * @param start Start chunk index (0-based)
+   * @param end End chunk index (exclusive, 0-based)
+   * @param strategy Optional split strategy (defaults to Auto)
    * @param udfTimeout Timeout for the splitting operation
    * @return Configured SplitStep instance
    */
-  def withPageRange(
+  def withChunkRange(
     start: Int,
     end: Int,
+    strategy: Option[SplitStrategy] = None,
     udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
   ): SplitStep = 
     SplitStep(
       udfTimeout = udfTimeout,
       config = SplitConfig(
-        strategy = Some(SplitStrategy.Page),
-        pageRange = Some(start until end)
+        strategy = strategy.orElse(Some(SplitStrategy.Auto)),
+        chunkRange = Some(start until end)
       )
     )
   
   /**
-   * Creates a SplitStep with auto strategy and optional page limit for PDFs.
-   * When the auto strategy encounters a PDF, it will apply the page limit.
+   * Creates a SplitStep with auto strategy and optional chunk limit.
    * 
-   * @param pageLimit Optional maximum number of pages to extract from PDFs
+   * @param chunkLimit Optional maximum number of chunks to extract
    * @param udfTimeout Timeout for the splitting operation
    * @return Configured SplitStep instance
    */
   def auto(
-    pageLimit: Option[Int] = None,
+    chunkLimit: Option[Int] = None,
     udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
   ): SplitStep = 
     SplitStep(
       udfTimeout = udfTimeout,
       config = SplitConfig(
         strategy = Some(SplitStrategy.Auto),
-        pageRange = pageLimit.map(limit => 0 until limit)
+        chunkRange = chunkLimit.map(limit => 0 until limit)
       )
     )
+  
+  // Backward compatibility - deprecated methods
+  
+  @deprecated("Use withChunkLimit instead", "0.2.0")
+  def withPageLimit(
+    limit: Int,
+    udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+  ): SplitStep = 
+    withChunkLimit(limit, Some(SplitStrategy.Page), udfTimeout)
+  
+  @deprecated("Use withChunkRange instead", "0.2.0")
+  def withPageRange(
+    start: Int,
+    end: Int,
+    udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
+  ): SplitStep = 
+    withChunkRange(start, end, Some(SplitStrategy.Page), udfTimeout)
 }

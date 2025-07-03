@@ -169,7 +169,15 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
     val total  = result.size
 
     // Update total in each chunk
-    result.map(chunk => chunk.copy(total = total))
+    val allChunks = result.map(chunk => chunk.copy(total = total))
+    
+    // Apply chunk range filtering if specified
+    cfg.chunkRange match {
+      case Some(range) =>
+        range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
+      case None =>
+        allChunks
+    }
   }
 
   /**
@@ -200,7 +208,18 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
     val newline     = '\n'.toByte
 
     val total = nonEmptyRowsWithInfo.size
-    nonEmptyRowsWithInfo.zipWithIndex.map { case ((row, originalIdx), idx) =>
+    
+    // Determine which rows to extract based on configuration
+    val rowsToExtract = cfg.chunkRange match {
+      case Some(range) =>
+        // Filter to valid row indices
+        range.filter(i => i >= 0 && i < total).toVector
+      case None =>
+        (0 until total).toVector
+    }
+    
+    rowsToExtract.map { idx =>
+      val (row, originalIdx) = nonEmptyRowsWithInfo(idx)
       // Compute row number (add 2 for header and 0-index)
       val originalRowNum = originalIdx + 2
 

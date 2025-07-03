@@ -45,7 +45,16 @@ object BasePowerPointSlideAsposeSplitter {
     try {
       val total = srcPres.getSlides.size()
 
-      (0 until total).map { idx =>
+      // Determine which slides to extract based on configuration
+      val slidesToExtract = cfg.chunkRange match {
+        case Some(range) =>
+          // Filter to valid slide indices
+          range.filter(i => i >= 0 && i < total)
+        case None =>
+          0 until total
+      }
+
+      slidesToExtract.map { idx =>
         val outBaos = new ByteArrayOutputStream()
 
         if (cfg.useCloneForSlides) {

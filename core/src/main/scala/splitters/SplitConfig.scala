@@ -27,14 +27,18 @@ case class SplitConfig(
   useCloneForSlides: Boolean = true, // Use clone method instead of remove for slide extraction
   preserveSlideNotes: Boolean = true, // Preserve slide notes during extraction
   
-  // PDF page extraction settings
-  pageRange: Option[Range] = None,      // Optional page range to extract (e.g., 1 to 10)
+  // Universal chunk extraction settings
+  chunkRange: Option[Range] = None,     // Universal range for any chunk type (pages, sheets, slides, etc.)
   skipBlankPages: Boolean = false,      // Whether to skip blank pages during extraction
   blankPageThreshold: Double = 0.01     // Threshold for considering a page blank (0.0-1.0)
 ) {
 
   /** Helper method to check if a strategy is set to a specific value */
   def hasStrategy(s: SplitStrategy): Boolean = strategy.contains(s)
+  
+  /** Backward compatibility - deprecated in favor of chunkRange */
+  @deprecated("Use chunkRange instead", "0.2.0")
+  def pageRange: Option[Range] = chunkRange
 }
 
 object SplitConfig {

@@ -35,7 +35,17 @@ trait ExcelSheetSplitterTrait[M <: MimeType] {
       val sheetNames = (0 until total).map(tempWb.getSheetName)
       tempWb.close()
 
-      sheetNames.zipWithIndex.map { case (name, idx) =>
+      // Determine which sheets to extract based on configuration
+      val sheetsToExtract = cfg.chunkRange match {
+        case Some(range) =>
+          // Filter to valid sheet indices
+          range.filter(i => i >= 0 && i < total)
+        case None =>
+          0 until total
+      }
+
+      sheetsToExtract.map { idx =>
+        val name = sheetNames(idx)
         val wb  = WorkbookFactory.create(new ByteArrayInputStream(content.data))
         val cnt = wb.getNumberOfSheets
         (cnt - 1 to 0 by -1).foreach(i => if (i != idx) wb.removeSheetAt(i))

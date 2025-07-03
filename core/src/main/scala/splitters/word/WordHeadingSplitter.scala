@@ -39,10 +39,18 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T] {
     val boundaries = headingIndices :+ elems.length // sentinel end
     val total      = headingIndices.length
 
-    val chunks = boundaries
-      .sliding(2)
-      .zipWithIndex
-      .map { case (List(start, end), sectionIdx) =>
+    // Determine which sections to extract based on configuration
+    val sectionsToExtract = cfg.chunkRange match {
+      case Some(range) =>
+        // Filter to valid section indices
+        range.filter(i => i >= 0 && i < total).toVector
+      case None =>
+        (0 until total).toVector
+    }
+
+    val chunks = sectionsToExtract.map { sectionIdx =>
+        val start = boundaries(sectionIdx)
+        val end = boundaries(sectionIdx + 1)
         val dest = new XWPFDocument()
 
         elems.slice(start, end).foreach {
@@ -66,8 +74,7 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T] {
 
         val fc = FileContent.fromBytes[T](baos.toByteArray)
         DocChunk(fc, label, sectionIdx, total)
-      }
-      .toSeq
+    }
 
     src.close()
     chunks

@@ -65,6 +65,14 @@ object OutlookMsgSplitter
       chunks += DocChunk(FileContent(bytes, mime), name, idx, totalChunks)
     }
     // Return sorted chunks
-    chunks.toSeq.sortBy(_.index)
+    val allChunks = chunks.toSeq.sortBy(_.index)
+    
+    // Apply chunk range filtering if specified
+    cfg.chunkRange match {
+      case Some(range) =>
+        range.filter(i => i >= 0 && i < totalChunks).map(allChunks(_)).toSeq
+      case None =>
+        allChunks
+    }
   }
 }

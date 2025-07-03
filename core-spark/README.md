@@ -54,35 +54,43 @@ val pipeline = detectMime
   .andThen(convertStep)
 ```
 
-## Page Limiting for PDF Splitting
+## Universal Chunk Limiting
 
-To prevent memory issues with very large PDFs, you can limit the number of pages extracted during splitting:
+You can limit the number of chunks extracted during splitting for any document type:
 
 ```scala
 import scala.concurrent.duration._
 
-// Limit to first 10 pages of PDFs
-val splitFirst10 = SplitStep.withPageLimit(10)
+// Limit to first 10 chunks (pages for PDFs, sheets for Excel, slides for PowerPoint, etc.)
+val splitFirst10 = SplitStep.withChunkLimit(10)
 
-// Extract specific page range (0-based)
-val splitMiddlePages = SplitStep.withPageRange(10, 20)  // Pages 11-20
+// Extract specific chunk range (0-based)
+val splitMiddleChunks = SplitStep.withChunkRange(10, 20)  // Chunks 11-20
 
-// Auto strategy with page limit (applies to PDFs when encountered)
-val autoSplitLimited = SplitStep.auto(pageLimit = Some(50))
+// Auto strategy with chunk limit (applies to any document type)
+val autoSplitLimited = SplitStep.auto(chunkLimit = Some(50))
 
-// Combine with timeout configuration
-val splitWithTimeout = SplitStep.withPageLimit(20, udfTimeout = 120.seconds)
+// Combine with timeout configuration and specific strategy
+val splitWithTimeout = SplitStep.withChunkLimit(20, Some(SplitStrategy.Sheet), udfTimeout = 120.seconds)
 
-// Example pipeline for large PDF processing
+// Example pipeline for processing large documents
 val pipeline = DetectMime()
-  .andThen(SplitStep.withPageLimit(100, udfTimeout = 180.seconds))
+  .andThen(SplitStep.withChunkLimit(100, udfTimeout = 180.seconds))
   .andThen(ConvertStep(MimeType.ImagePng))
   .andThen(ExtractText())
 ```
 
+This universal approach works for:
+- **PDFs**: Limits the number of pages extracted
+- **Excel**: Limits the number of sheets extracted
+- **PowerPoint**: Limits the number of slides extracted
+- **Archives**: Limits the number of entries extracted
+- **Emails**: Limits the number of attachments extracted
+- **Any future splitter**: Will respect the chunk range automatically
+
 This is especially useful when:
-- Processing very large PDFs that might cause memory issues
-- You only need to process a sample of pages for analysis
+- Processing very large documents that might cause memory issues
+- You only need to process a sample of chunks for analysis
 - Building pipelines that need to handle documents of varying sizes reliably
 
 ### Identifying Timed-Out Files
