@@ -11,6 +11,7 @@ Core Module (`core/run`):
 - Tika-based text and XML extraction from various formats
 - SVG to PNG conversion support
 - Document splitting (pages, sheets, slides, archive entries, etc.)
+- Configurable failure handling for robust document processing
 - ZIP and other archive format extraction with recursive support
 - Extensible bridge architecture for format conversions
 - Diff/merge support for compatible formats
