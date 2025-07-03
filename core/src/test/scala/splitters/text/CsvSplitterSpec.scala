@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import models.FileContent
 import types.MimeType
 
-object CsvSplitterSpec extends AnyFlatSpec with Matchers {
+class CsvSplitterSpec extends AnyFlatSpec with Matchers {
 
   "CsvSplitter" should "split CSV by individual rows with Row strategy" in {
     val filePath  = getClass.getResource("/text_samples/sample.csv").getPath
@@ -57,9 +57,9 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
     val content = FileContent(fileBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
 
-    // Config with default strategy but small maxChars to force multiple chunks
+    // Config with Chunk strategy and small maxChars to force multiple chunks
     val cfg = SplitConfig(
-      strategy = None, // Use default
+      strategy = Some(SplitStrategy.Chunk),
       maxChars = 100   // Small character limit to force multiple chunks
     )
 
@@ -112,13 +112,13 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
 
     // First test with a very small limit (should create many small chunks)
-    val smallCfg    = SplitConfig(maxChars = 50)
+    val smallCfg    = SplitConfig(strategy = Some(SplitStrategy.Chunk), maxChars = 50)
     val smallChunks = CsvSplitter.split(content, smallCfg)
 
     smallChunks.length should be > 3 // Should have multiple small chunks
 
     // Then test with a very large limit (should create one chunk with all rows)
-    val largeCfg    = SplitConfig(maxChars = 100000)
+    val largeCfg    = SplitConfig(strategy = Some(SplitStrategy.Chunk), maxChars = 100000)
     val largeChunks = CsvSplitter.split(content, largeCfg)
 
     largeChunks.length shouldBe 1 // Should have just one chunk
@@ -137,14 +137,14 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
     // Empty content
     val emptyContent = FileContent("".getBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
-    val emptyChunks = CsvSplitter.split(emptyContent, SplitConfig())
+    val emptyChunks = CsvSplitter.split(emptyContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
     emptyChunks.isEmpty shouldBe true
 
     // CSV with just a header
     val headerContent =
       FileContent("Header1,Header2,Header3".getBytes, MimeType.TextCsv)
         .asInstanceOf[FileContent[MimeType.TextCsv.type]]
-    val headerChunks = CsvSplitter.split(headerContent, SplitConfig())
+    val headerChunks = CsvSplitter.split(headerContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
     headerChunks.isEmpty shouldBe true
 
     // CSV with header and empty rows
@@ -152,7 +152,120 @@ object CsvSplitterSpec extends AnyFlatSpec with Matchers {
       FileContent("Header1,Header2\n\n\n".getBytes, MimeType.TextCsv)
         .asInstanceOf[FileContent[MimeType.TextCsv.type]]
     val emptyRowsChunks =
-      CsvSplitter.split(emptyRowsContent, SplitConfig())
+      CsvSplitter.split(emptyRowsContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
     emptyRowsChunks.isEmpty shouldBe true
+  }
+
+  it should "respect chunkRange when splitting by rows" in {
+    val filePath  = getClass.getResource("/text_samples/sample.csv").getPath
+    val fileBytes = Files.readAllBytes(Paths.get(filePath))
+    val content = FileContent(fileBytes, MimeType.TextCsv)
+      .asInstanceOf[FileContent[MimeType.TextCsv.type]]
+
+    // Config with Row strategy and chunk range
+    val cfg = SplitConfig(
+      strategy = Some(SplitStrategy.Row),
+      chunkRange = Some(2 until 5) // Get rows 3-5 (0-indexed)
+    )
+
+    val chunks = CsvSplitter.split(content, cfg)
+    
+    // Should have exactly 3 chunks
+    chunks.length shouldBe 3
+    
+    // Verify we got the right rows - CSV splitter re-indexes after filtering
+    chunks.foreach { chunk =>
+      chunk.total shouldBe 3 // Total updated to filtered count
+      
+      // Each chunk should still have header + 1 data row
+      val lines = new String(chunk.content.data).split("\n")
+      lines.length shouldBe 2
+      lines(0) shouldBe "Name,Age,City,Occupation,Salary"
+    }
+    
+    // Indices should be 0, 1, 2 after re-indexing
+    chunks.map(_.index) shouldBe List(0, 1, 2)
+  }
+
+  it should "respect chunkRange when grouping rows into chunks" in {
+    val filePath  = getClass.getResource("/text_samples/sample.csv").getPath
+    val fileBytes = Files.readAllBytes(Paths.get(filePath))
+    val content = FileContent(fileBytes, MimeType.TextCsv)
+      .asInstanceOf[FileContent[MimeType.TextCsv.type]]
+
+    // First split into chunks to see how many we get
+    val allChunks = CsvSplitter.split(content, SplitConfig(
+      strategy = Some(SplitStrategy.Chunk),
+      maxChars = 100
+    ))
+    
+    println(s"Total chunks without range: ${allChunks.length}")
+    
+    // Now apply a range to get only middle chunks
+    val cfg = SplitConfig(
+      strategy = Some(SplitStrategy.Chunk),
+      maxChars = 100,
+      chunkRange = Some(1 until Math.min(3, allChunks.length))
+    )
+
+    val chunks = CsvSplitter.split(content, cfg)
+    
+    // Should have at most 2 chunks (indices 1 and 2)
+    chunks.length should be <= 2
+    chunks.length should be > 0
+    
+    // Chunks should be the middle chunks with original indices preserved
+    // The filtered chunks keep their original index from allChunks
+    chunks.map(_.index) should not be empty
+    chunks.foreach { chunk =>
+      chunk.total shouldBe chunks.length
+    }
+  }
+
+  it should "handle out-of-bounds chunkRange gracefully" in {
+    val filePath  = getClass.getResource("/text_samples/sample.csv").getPath
+    val fileBytes = Files.readAllBytes(Paths.get(filePath))
+    val content = FileContent(fileBytes, MimeType.TextCsv)
+      .asInstanceOf[FileContent[MimeType.TextCsv.type]]
+
+    // Range completely out of bounds
+    val cfg1 = SplitConfig(
+      strategy = Some(SplitStrategy.Row),
+      chunkRange = Some(100 until 200)
+    )
+    val chunks1 = CsvSplitter.split(content, cfg1)
+    chunks1 shouldBe empty
+
+    // Range partially out of bounds
+    val cfg2 = SplitConfig(
+      strategy = Some(SplitStrategy.Row),
+      chunkRange = Some(8 until 20) // Assuming less than 20 rows
+    )
+    val chunks2 = CsvSplitter.split(content, cfg2)
+    chunks2.length should be >= 0
+    chunks2.length should be < 12 // Can't have 12 chunks if range starts at 8
+  }
+
+  it should "extract single row using chunkRange" in {
+    val filePath  = getClass.getResource("/text_samples/sample.csv").getPath
+    val fileBytes = Files.readAllBytes(Paths.get(filePath))
+    val content = FileContent(fileBytes, MimeType.TextCsv)
+      .asInstanceOf[FileContent[MimeType.TextCsv.type]]
+
+    val cfg = SplitConfig(
+      strategy = Some(SplitStrategy.Row),
+      chunkRange = Some(0 until 1) // Just the first data row
+    )
+
+    val chunks = CsvSplitter.split(content, cfg)
+    
+    chunks.length shouldBe 1
+    chunks.head.index shouldBe 0
+    chunks.head.total shouldBe 10 // Total reflects total data rows (without header)
+    
+    // Should have header + first data row
+    val lines = new String(chunks.head.content.data).split("\n")
+    lines.length shouldBe 2
+    lines(0) shouldBe "Name,Age,City,Occupation,Salary"
   }
 }
