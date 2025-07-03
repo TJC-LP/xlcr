@@ -10,7 +10,7 @@ import scala.util.Try
 import com.aspose.zip.Archive
 
 import models.FileContent
-import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy }
+import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException }
 import types.{ FileType, MimeType }
 
 /**
@@ -18,9 +18,10 @@ import types.{ FileType, MimeType }
  * Supports recursive extraction of nested archives with zipbomb protection.
  */
 object ZipArchiveAsposeSplitter
-    extends HighPrioritySplitter[MimeType.ApplicationZip.type] {
+    extends HighPrioritySplitter[MimeType.ApplicationZip.type] 
+    with SplitFailureHandler {
 
-  private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
+  override protected val logger = org.slf4j.LoggerFactory.getLogger(getClass)
   // Track total extracted size for zipbomb protection
   private val extractedSizeMap = new java.util.concurrent.ConcurrentHashMap[
     java.util.UUID,
@@ -31,42 +32,53 @@ object ZipArchiveAsposeSplitter
     content: FileContent[MimeType.ApplicationZip.type],
     cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
-    // Version-independent implementation with early returns handled for both Scala 2 and 3
+    // Check for valid strategy
+    if (!cfg.hasStrategy(SplitStrategy.Embedded)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.map(_.displayName).getOrElse("none"),
+        Seq("embedded")
+      )
+    }
 
-    // If not requesting embedded split, return the original
-    if (!cfg.hasStrategy(SplitStrategy.Embedded))
-      return Seq(DocChunk(content, "zip archive", 0, 1))
+    // Wrap main logic with failure handling
+    withFailureHandling(content, cfg) {
+      // Initialize zipbomb protection
+      val sessionId = initExtractSession()
 
-    // Initialize zipbomb protection
-    val sessionId = initExtractSession()
+      try {
+        // Track the initial content
+        trackExtractedSize(sessionId, content.data.length, cfg.maxTotalSize)
 
-    try {
-      // Track the initial content
-      trackExtractedSize(sessionId, content.data.length, cfg.maxTotalSize)
+        // Extract the entries
+        val chunks = extractEntries(content, cfg, sessionId)
 
-      // Extract the entries
-      val chunks = extractEntries(content, cfg, sessionId)
+        // Check if archive is empty
+        if (chunks.isEmpty) {
+          throw new EmptyDocumentException(
+            content.mimeType.mimeType,
+            "ZIP archive contains no valid entries"
+          )
+        }
 
-      // Finalize chunks with correct total count
-      if (chunks.isEmpty)
-        return Seq(DocChunk(content, "zip archive", 0, 1))
+        val total = chunks.size
 
-      val total = chunks.size
-
-      // Reindex chunks to have sequential indices without gaps from skipped metadata files
-      val allChunks = chunks.zipWithIndex.map { case (chunk, newIndex) =>
-        chunk.copy(index = newIndex, total = total)
-      }
-      
-      // Apply chunk range filtering if specified
-      cfg.chunkRange match {
-        case Some(range) =>
-          range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
-        case None =>
-          allChunks
-      }
-    } finally
-      cleanupExtractSession(sessionId)
+        // Reindex chunks to have sequential indices without gaps from skipped metadata files
+        val allChunks = chunks.zipWithIndex.map { case (chunk, newIndex) =>
+          chunk.copy(index = newIndex, total = total)
+        }
+        
+        // Apply chunk range filtering if specified
+        cfg.chunkRange match {
+          case Some(range) =>
+            range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
+          case None =>
+            allChunks
+        }
+      } finally
+        cleanupExtractSession(sessionId)
+    }
   }
 
   /**
@@ -191,6 +203,7 @@ object ZipArchiveAsposeSplitter
     } catch {
       case e: Exception =>
         logger.error(s"Error extracting ZIP archive: ${e.getMessage}", e)
+        throw e // Re-throw to be handled by withFailureHandling
     } finally
       Try(input.close())
 

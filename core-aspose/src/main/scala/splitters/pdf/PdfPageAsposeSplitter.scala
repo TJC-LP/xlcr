@@ -18,80 +18,86 @@ import types.MimeType
  * (e.g., to PNG or JPEG) is now handled by Pipeline via the bridge system.
  */
 object PdfPageAsposeSplitter
-    extends HighPrioritySplitter[MimeType.ApplicationPdf.type] {
-  private val logger = LoggerFactory.getLogger(getClass)
+    extends HighPrioritySplitter[MimeType.ApplicationPdf.type] 
+    with SplitFailureHandler {
+  override protected val logger = LoggerFactory.getLogger(getClass)
 
   override def split(
     content: FileContent[MimeType.ApplicationPdf.type],
     cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
-
-    if (!cfg.hasStrategy(SplitStrategy.Page))
-      return Seq(DocChunk(content, "document", 0, 1))
-
-    var pdfDocument: AsposePdfDocument = null
-    try {
-      // Load PDF document
-      pdfDocument = new AsposePdfDocument(
-        new ByteArrayInputStream(content.data)
+    // Check for valid strategy
+    if (!cfg.hasStrategy(SplitStrategy.Page)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.map(_.displayName).getOrElse("none"),
+        Seq("page")
       )
-      val pageCount = pdfDocument.getPages.size
+    }
 
-      logger.info(s"Splitting PDF into $pageCount pages")
+    // Wrap main logic with failure handling
+    withFailureHandling(content, cfg) {
+      var pdfDocument: AsposePdfDocument = null
+      try {
+        // Load PDF document
+        pdfDocument = new AsposePdfDocument(
+          new ByteArrayInputStream(content.data)
+        )
+        val pageCount = pdfDocument.getPages.size
 
-      // Determine which pages to extract based on configuration
-      val pagesToExtract = cfg.chunkRange match {
-        case Some(range) =>
-          // Ensure range is within bounds (Aspose uses 1-based indexing)
-          range.filter(i => i >= 0 && i < pageCount).map(_ + 1)
-        case None =>
-          1 to pageCount
-      }
+        logger.info(s"Splitting PDF into $pageCount pages")
 
-      logger.debug(s"Extracting pages: ${pagesToExtract.mkString(", ")}")
+        // Determine which pages to extract based on configuration
+        val pagesToExtract = cfg.chunkRange match {
+          case Some(range) =>
+            // Ensure range is within bounds (Aspose uses 1-based indexing)
+            range.filter(i => i >= 0 && i < pageCount).map(_ + 1)
+          case None =>
+            1 to pageCount
+        }
 
-      // Extract specified pages
-      pagesToExtract.map { pageIndex =>
-        var newDocument: AsposePdfDocument = null
-        try {
-          // Create a new PDF with just this page
-          newDocument = new AsposePdfDocument()
-          
-          // Add the current page to the new document
-          val page = pdfDocument.getPages.get_Item(pageIndex)
-          newDocument.getPages.add(page)
+        logger.debug(s"Extracting pages: ${pagesToExtract.mkString(", ")}")
 
-          // Save to byte array
-          val outputStream = new ByteArrayOutputStream()
+        // Extract specified pages
+        pagesToExtract.map { pageIndex =>
+          var newDocument: AsposePdfDocument = null
           try {
-            newDocument.save(outputStream)
-            val fc = FileContent(outputStream.toByteArray, MimeType.ApplicationPdf)
-            DocChunk(fc, s"Page $pageIndex", pageIndex - 1, pageCount)
-          } finally {
-            outputStream.close()
-          }
-        } finally {
-          if (newDocument != null) {
+            // Create a new PDF with just this page
+            newDocument = new AsposePdfDocument()
+            
+            // Add the current page to the new document
+            val page = pdfDocument.getPages.get_Item(pageIndex)
+            newDocument.getPages.add(page)
+
+            // Save to byte array
+            val outputStream = new ByteArrayOutputStream()
             try {
-              newDocument.close()
-            } catch {
-              case e: Exception =>
-                logger.warn(s"Error closing document for page $pageIndex: ${e.getMessage}")
+              newDocument.save(outputStream)
+              val fc = FileContent(outputStream.toByteArray, MimeType.ApplicationPdf)
+              DocChunk(fc, s"Page $pageIndex", pageIndex - 1, pageCount)
+            } finally {
+              outputStream.close()
+            }
+          } finally {
+            if (newDocument != null) {
+              try {
+                newDocument.close()
+              } catch {
+                case e: Exception =>
+                  logger.warn(s"Error closing document for page $pageIndex: ${e.getMessage}")
+              }
             }
           }
         }
-      }
-    } catch {
-      case e: Exception =>
-        logger.error(s"Error splitting PDF: ${e.getMessage}", e)
-        Seq(DocChunk(content, "document", 0, 1))
-    } finally {
-      if (pdfDocument != null) {
-        try {
-          pdfDocument.close()
-        } catch {
-          case e: Exception =>
-            logger.warn(s"Error closing original PDF document: ${e.getMessage}")
+      } finally {
+        if (pdfDocument != null) {
+          try {
+            pdfDocument.close()
+          } catch {
+            case e: Exception =>
+              logger.warn(s"Error closing original PDF document: ${e.getMessage}")
+          }
         }
       }
     }

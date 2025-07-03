@@ -5,7 +5,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import compat.aspose.AsposeWorkbook
 import models.FileContent
-import splitters.{ DocChunk, SplitConfig, SplitStrategy }
+import splitters.{ DocChunk, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException }
 import types.MimeType
 
 /**
@@ -13,13 +13,13 @@ import types.MimeType
  *
  * Up until now we implemented splitting by **removing** all worksheets except the target one and
  * then saving the mutated workbook. That approach breaks on workbooks where the remaining sheet is
- * *hidden* (Aspose throws “A workbook must contain at least a visible worksheet”).
+ * *hidden* (Aspose throws "A workbook must contain at least a visible worksheet").
  *
  * The new implementation creates a *fresh* `Workbook` for every slice and copies the target
  * worksheet into it – guaranteeing that the resulting file always contains exactly one *visible*
  * worksheet regardless of the source visibility state.
  */
-object ExcelSheetAsposeSplitter {
+object ExcelSheetAsposeSplitter extends SplitFailureHandler {
 
   /**
    * Perform the actual sheet-level split.
@@ -40,51 +40,67 @@ object ExcelSheetAsposeSplitter {
     outputMimeType: M
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    // Only run when sheet-level splitting has been requested
-    if (!cfg.hasStrategy(SplitStrategy.Sheet))
-      return Seq(DocChunk(content, "workbook", 0, 1))
-
-    // Load the source workbook once – copying sheets is cheap, parsing XLSX
-    // multiple times is not.
-    val srcWb  = new AsposeWorkbook(new ByteArrayInputStream(content.data))
-    val sheets = srcWb.getWorksheets
-    val total  = sheets.getCount
-
-    // Determine which sheets to extract based on configuration
-    val sheetsToExtract = cfg.chunkRange match {
-      case Some(range) =>
-        // Filter to valid sheet indices
-        range.filter(i => i >= 0 && i < total)
-      case None =>
-        0 until total
+    // Check for valid strategy
+    if (!cfg.hasStrategy(SplitStrategy.Sheet)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.map(_.displayName).getOrElse("none"),
+        Seq("sheet")
+      )
     }
 
-    sheetsToExtract.map { idx =>
-      val srcSheet = sheets.get(idx)
+    // Wrap main logic with failure handling
+    withFailureHandling(content, cfg) {
+      // Load the source workbook once – copying sheets is cheap, parsing XLSX
+      // multiple times is not.
+      val srcWb  = new AsposeWorkbook(new ByteArrayInputStream(content.data))
+      val sheets = srcWb.getWorksheets
+      val total  = sheets.getCount
 
-      // Create a fresh workbook with *no* sheets, then copy the target one
-      val destWb     = new AsposeWorkbook()
-      val destSheets = destWb.getWorksheets
-      // Remove the default empty sheet Aspose creates
-      destSheets.removeAt(0)
+      if (total == 0) {
+        throw new EmptyDocumentException(
+          content.mimeType.mimeType,
+          "Workbook contains no sheets"
+        )
+      }
 
-      // Create a fresh empty sheet and copy the source contents into it
-      val newIdx    = destSheets.add()
-      val destSheet = destSheets.get(newIdx)
+      // Determine which sheets to extract based on configuration
+      val sheetsToExtract = cfg.chunkRange match {
+        case Some(range) =>
+          // Filter to valid sheet indices
+          range.filter(i => i >= 0 && i < total)
+        case None =>
+          0 until total
+      }
 
-      destSheet.copy(srcSheet)
+      sheetsToExtract.map { idx =>
+        val srcSheet = sheets.get(idx)
 
-      // Preserve name & ensure visibility
-      destSheet.setName(srcSheet.getName)
-      destSheet.setVisible(true)
+        // Create a fresh workbook with *no* sheets, then copy the target one
+        val destWb     = new AsposeWorkbook()
+        val destSheets = destWb.getWorksheets
+        // Remove the default empty sheet Aspose creates
+        destSheets.removeAt(0)
 
-      // Persist to bytes
-      val baos = new ByteArrayOutputStream()
-      destWb.save(baos, fileFormatType)
+        // Create a fresh empty sheet and copy the source contents into it
+        val newIdx    = destSheets.add()
+        val destSheet = destSheets.get(newIdx)
 
-      val fc = FileContent(baos.toByteArray, outputMimeType)
+        destSheet.copy(srcSheet)
 
-      DocChunk(fc, srcSheet.getName, idx, total)
+        // Preserve name & ensure visibility
+        destSheet.setName(srcSheet.getName)
+        destSheet.setVisible(true)
+
+        // Persist to bytes
+        val baos = new ByteArrayOutputStream()
+        destWb.save(baos, fileFormatType)
+
+        val fc = FileContent(baos.toByteArray, outputMimeType)
+
+        DocChunk(fc, srcSheet.getName, idx, total)
+      }
     }
   }
 }

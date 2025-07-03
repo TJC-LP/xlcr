@@ -24,8 +24,8 @@ trait DocumentSplitter[I <: MimeType] extends Prioritized {
  * Registry + façade for DocumentSplitters. Uses ServiceLoader to discover SplitterProvider
  * implementations.
  */
-object DocumentSplitter {
-  private val logger = LoggerFactory.getLogger(getClass)
+object DocumentSplitter extends SplitFailureHandler {
+  override protected val logger = LoggerFactory.getLogger(getClass)
 
   /**
    * Explicitly trigger the lazy initialization of the registry.
@@ -116,12 +116,22 @@ object DocumentSplitter {
         splitter => splitter.split(content, configToUse)
       )
       .getOrElse {
-        logger.warn(
-          s"No specific splitter found for ${content.mimeType}, returning original content as a single chunk."
+        // Handle missing splitter based on failure mode
+        val error = s"No splitter found for MIME type ${content.mimeType.mimeType}"
+        logger.warn(error)
+        
+        handleSplitFailure(
+          configToUse.failureMode,
+          content,
+          error,
+          new SplitException(
+            error,
+            mimeType = content.mimeType.mimeType,
+            strategy = configToUse.strategy.map(_.displayName),
+            context = configToUse.failureContext
+          ),
+          configToUse.failureContext
         )
-        Seq(
-          DocChunk(content, "document", 0, 1)
-        ) // Return original if no splitter found
       }
   }
 

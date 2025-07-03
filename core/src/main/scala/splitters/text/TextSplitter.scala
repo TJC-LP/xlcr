@@ -5,6 +5,7 @@ package text
 import com.tjclp.xlcr.splitters.SplitStrategy.Paragraph
 
 import models.FileContent
+import types.MimeType
 import types.MimeType.TextPlain
 
 /**
@@ -18,26 +19,43 @@ import types.MimeType.TextPlain
  * (\`SplitConfig.maxChars\`) with optional overlap (\`SplitConfig.overlap\`). Only used when
  * explicitly requested.
  */
-object TextSplitter extends DocumentSplitter[TextPlain.type] {
+object TextSplitter extends DocumentSplitter[TextPlain.type] 
+    with SplitFailureHandler {
 
   override def split(
     content: FileContent[TextPlain.type],
     cfg: SplitConfig
-  ): Seq[DocChunk[TextPlain.type]] =
-    // Note: Chunk is the default strategy for text files (set in DocumentSplitter),
-    // but we check if another strategy was explicitly requested
-    if (
-      cfg.strategy
-        .exists(s => s == SplitStrategy.Chunk || s == SplitStrategy.Auto)
-    ) {
-      // Use character-based splitting with overlap for other strategies
-      splitByCharactersWithOverlap(content, cfg)
-    } else if (cfg.hasStrategy(Paragraph)) {
-      // Use paragraph-aware splitting
-      splitByParagraphs(content, cfg)
-    } else {
-      Seq(DocChunk(content, "text", 0, 1))
+  ): Seq[DocChunk[_ <: MimeType]] = {
+    // Check for valid strategies
+    val validStrategies = Seq(SplitStrategy.Chunk, SplitStrategy.Auto, SplitStrategy.Paragraph)
+    
+    if (cfg.strategy.isDefined && !validStrategies.contains(cfg.strategy.get)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.get.displayName,
+        validStrategies.map(_.displayName)
+      )
     }
+    
+    // Wrap existing logic with failure handling
+    withFailureHandling(content, cfg) {
+      // Note: Chunk is the default strategy for text files (set in DocumentSplitter),
+      // but we check if another strategy was explicitly requested
+      if (
+        cfg.strategy
+          .exists(s => s == SplitStrategy.Chunk || s == SplitStrategy.Auto)
+      ) {
+        // Use character-based splitting with overlap for other strategies
+        splitByCharactersWithOverlap(content, cfg)
+      } else if (cfg.hasStrategy(Paragraph)) {
+        // Use paragraph-aware splitting
+        splitByParagraphs(content, cfg)
+      } else {
+        Seq(DocChunk(content, "text", 0, 1))
+      }
+    }
+  }
 
   /**
    * Splits text into fixed-size character windows with optional overlap. This approach is simpler
