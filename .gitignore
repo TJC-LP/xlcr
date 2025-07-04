@@ -45,6 +45,7 @@ build/
 
 ### Scala ###
 .bsp/
+.scala-build/
 
 ### Env ###
 .env
