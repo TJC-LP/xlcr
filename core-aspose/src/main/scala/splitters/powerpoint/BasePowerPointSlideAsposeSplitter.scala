@@ -4,15 +4,18 @@ package splitters.powerpoint
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import com.aspose.slides.Presentation
+import org.slf4j.LoggerFactory
 
 import models.FileContent
-import splitters.{ DocChunk, SplitConfig, SplitStrategy }
+import splitters.{ DocChunk, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException }
 import types.MimeType
 
 /**
  * Base implementation for PowerPoint slide splitters. Used by both PPT and PPTX splitters.
  */
-object BasePowerPointSlideAsposeSplitter {
+object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
+  
+  override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   /**
    * Split a PowerPoint presentation into single slides
@@ -35,26 +38,42 @@ object BasePowerPointSlideAsposeSplitter {
     outputMimeType: M
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    // Only run when the caller requested slide‑level splitting.
-    if (!cfg.hasStrategy(SplitStrategy.Slide))
-      return Seq(DocChunk(content, "presentation", 0, 1))
+    // Check for valid strategy
+    if (!cfg.hasStrategy(SplitStrategy.Slide)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.map(_.displayName).getOrElse("none"),
+        Seq("slide")
+      )
+    }
+    
+    // Wrap main logic with failure handling
+    withFailureHandling(content, cfg) {
+      // Load the source presentation once so we can access slide metadata.
+      val srcPres = new Presentation(new ByteArrayInputStream(content.data))
 
-    // Load the source presentation once so we can access slide metadata.
-    val srcPres = new Presentation(new ByteArrayInputStream(content.data))
+      try {
+        val total = srcPres.getSlides.size()
+        
+        // Check if presentation is empty
+        if (total == 0) {
+          throw new EmptyDocumentException(
+            content.mimeType.toString,
+            "Presentation contains no slides"
+          )
+        }
 
-    try {
-      val total = srcPres.getSlides.size()
+        // Determine which slides to extract based on configuration
+        val slidesToExtract = cfg.chunkRange match {
+          case Some(range) =>
+            // Filter to valid slide indices
+            range.filter(i => i >= 0 && i < total)
+          case None =>
+            0 until total
+        }
 
-      // Determine which slides to extract based on configuration
-      val slidesToExtract = cfg.chunkRange match {
-        case Some(range) =>
-          // Filter to valid slide indices
-          range.filter(i => i >= 0 && i < total)
-        case None =>
-          0 until total
-      }
-
-      slidesToExtract.map { idx =>
+        slidesToExtract.map { idx =>
         val outBaos = new ByteArrayOutputStream()
 
         if (cfg.useCloneForSlides) {
@@ -113,6 +132,7 @@ object BasePowerPointSlideAsposeSplitter {
         val fc = FileContent(outBaos.toByteArray, outputMimeType)
         DocChunk(fc, title, idx, total)
       }
-    } finally srcPres.dispose()
+      } finally srcPres.dispose()
+    }
   }
 }

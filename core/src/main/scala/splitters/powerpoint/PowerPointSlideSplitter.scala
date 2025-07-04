@@ -8,25 +8,38 @@ import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 import org.apache.poi.xslf.usermodel.XMLSlideShow
+import org.slf4j.LoggerFactory
 
 import models.FileContent
 import types.MimeType
 
-trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
+trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] 
+    with SplitFailureHandler {
+  
+  override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   override def split(
     content: FileContent[T],
     cfg: SplitConfig
   ): Seq[DocChunk[T]] = {
 
-    if (!cfg.hasStrategy(SplitStrategy.Slide))
-      return Seq(DocChunk(content, "presentation", 0, 1))
+    // Check for valid strategy
+    if (!cfg.hasStrategy(SplitStrategy.Slide)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.map(_.displayName).getOrElse("none"),
+        Seq("slide")
+      ).asInstanceOf[Seq[DocChunk[T]]]
+    }
+    
+    // Wrap main logic with failure handling
+    withFailureHandling(content, cfg) {
+      // To avoid ZipEntry issues, write the content to a temporary file first
+      val tempFile = File.createTempFile("presentation", ".pptx")
+      tempFile.deleteOnExit()
 
-    // To avoid ZipEntry issues, write the content to a temporary file first
-    val tempFile = File.createTempFile("presentation", ".pptx")
-    tempFile.deleteOnExit()
-
-    try {
+      try {
       // Write the content to the temporary file
       val fos = new FileOutputStream(tempFile)
       fos.write(content.data)
@@ -39,6 +52,14 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
       try {
         val slides = src.getSlides.asScala.toList
         val total  = slides.size
+        
+        if (total == 0) {
+          src.close()
+          throw new EmptyDocumentException(
+            content.mimeType.toString,
+            "Presentation contains no slides"
+          )
+        }
 
         // Determine which slides to extract based on configuration
         val slidesToExtract = cfg.chunkRange match {
@@ -90,16 +111,17 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
               Try(destFile.delete())
           } catch {
             case ex: Exception =>
-              println(s"Error processing slide ${idx + 1}: ${ex.getMessage}")
-              ex.printStackTrace() // Added for debugging
+              logger.error(s"Error processing slide ${idx + 1}: ${ex.getMessage}", ex)
               None
           }
         }
 
         if (chunks.isEmpty) {
-          // If all slide imports failed, return the original content
-          println("All slide imports failed - returning original content")
-          Seq(DocChunk(content, "presentation (failed to split)", 0, 1))
+          // If all slide imports failed, throw exception
+          throw new CorruptedDocumentException(
+            content.mimeType.toString,
+            "Failed to extract any slides from presentation"
+          )
         } else {
           chunks
         }
@@ -109,5 +131,6 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T] {
     } finally
       // Clean up the main temp file
       Try(tempFile.delete())
+    }.asInstanceOf[Seq[DocChunk[T]]]
   }
 }

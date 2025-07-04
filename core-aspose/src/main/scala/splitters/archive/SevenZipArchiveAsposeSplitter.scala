@@ -10,16 +10,17 @@ import scala.util.Try
 import com.aspose.zip.SevenZipArchive
 
 import models.FileContent
-import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy }
+import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException, CorruptedDocumentException }
 import types.{ FileType, MimeType }
 
 /**
  * 7-Zip archive splitter using Aspose.ZIP library. Extracts all entries from a 7z archive file.
  * Supports recursive extraction of nested archives with zipbomb protection.
  */
-object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.ApplicationSevenz.type] {
+object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.ApplicationSevenz.type] 
+    with SplitFailureHandler {
 
-  private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
+  override protected val logger = org.slf4j.LoggerFactory.getLogger(getClass)
 
   /**
    * Cleans a path for display by:
@@ -78,32 +79,45 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
     cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    // If not requesting embedded split, return the original
-    if (!cfg.hasStrategy(SplitStrategy.Embedded))
-      return Seq(DocChunk(content, "7z archive", 0, 1))
+    // Check for valid strategy
+    if (!cfg.hasStrategy(SplitStrategy.Embedded)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.map(_.displayName).getOrElse("none"),
+        Seq("embedded")
+      )
+    }
 
-    // Initialize zipbomb protection
-    val sessionId = initExtractSession()
+    // Wrap main logic with failure handling
+    withFailureHandling(content, cfg) {
+      // Initialize zipbomb protection
+      val sessionId = initExtractSession()
 
-    try {
-      // Track the initial content
-      trackExtractedSize(sessionId, content.data.length, cfg.maxTotalSize)
+      try {
+        // Track the initial content
+        trackExtractedSize(sessionId, content.data.length, cfg.maxTotalSize)
 
-      // Extract the entries
-      val chunks = extractEntries(content, cfg, sessionId)
+        // Extract the entries
+        val chunks = extractEntries(content, cfg, sessionId)
 
-      // Finalize chunks with correct total count
-      if (chunks.isEmpty)
-        return Seq(DocChunk(content, "7z archive", 0, 1))
+        // Check if archive is empty
+        if (chunks.isEmpty) {
+          throw new EmptyDocumentException(
+            content.mimeType.toString,
+            "7z archive contains no extractable entries"
+          )
+        }
 
-      val total = chunks.size
+        val total = chunks.size
 
-      // Reindex chunks to have sequential indices without gaps from skipped metadata files
-      chunks.zipWithIndex.map { case (chunk, newIndex) =>
-        chunk.copy(index = newIndex, total = total)
-      }.toSeq
-    } finally
-      cleanupExtractSession(sessionId)
+        // Reindex chunks to have sequential indices without gaps from skipped metadata files
+        chunks.zipWithIndex.map { case (chunk, newIndex) =>
+          chunk.copy(index = newIndex, total = total)
+        }.toSeq
+      } finally
+        cleanupExtractSession(sessionId)
+    }
   }
 
   /**
@@ -202,6 +216,10 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
     } catch {
       case e: Exception =>
         logger.error(s"Error extracting 7z archive: ${e.getMessage}", e)
+        throw new CorruptedDocumentException(
+          content.mimeType.toString,
+          s"Failed to extract 7z archive: ${e.getMessage}"
+        )
     } finally
       Try(input.close())
 

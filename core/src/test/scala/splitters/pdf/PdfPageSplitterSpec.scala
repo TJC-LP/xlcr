@@ -124,7 +124,7 @@ class PdfPageSplitterSpec extends AnyFlatSpec with Matchers {
     chunks.map(_.label) shouldBe List("Page 2", "Page 3")
   }
 
-  it should "return empty when range is completely out of bounds" in {
+  it should "return single chunk when range is completely out of bounds" in {
     val pdfBytes = createTestPdf(3)
     val fc = FileContent(pdfBytes, MimeType.ApplicationPdf)
     
@@ -134,7 +134,12 @@ class PdfPageSplitterSpec extends AnyFlatSpec with Matchers {
     )
     val chunks = DocumentSplitter.split(fc, config)
     
-    chunks shouldBe empty
+    // Should return single chunk with error due to failure handling
+    chunks.length shouldBe 1
+    chunks.head.label shouldBe "document"
+    chunks.head.total shouldBe 1
+    // Original content should be preserved
+    chunks.head.content.data shouldBe pdfBytes
   }
 
   it should "handle empty PDFs gracefully" in {
@@ -150,7 +155,12 @@ class PdfPageSplitterSpec extends AnyFlatSpec with Matchers {
     val config = SplitConfig(strategy = Some(SplitStrategy.Page))
     val chunks = DocumentSplitter.split(fc, config)
     
-    chunks shouldBe empty
+    // Should return single chunk with error due to failure handling
+    chunks.length shouldBe 1
+    chunks.head.label shouldBe "document"
+    chunks.head.total shouldBe 1
+    // Original content should be preserved
+    chunks.head.content.data shouldBe emptyPdf
   }
 
   it should "maintain correct total count with chunkRange" in {

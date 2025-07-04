@@ -7,28 +7,58 @@ import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
 import com.aspose.email.MailMessage
+import org.slf4j.LoggerFactory
 
 import models.FileContent
-import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy }
+import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException, CorruptedDocumentException }
 import types.{ FileType, MimeType }
 
 /**
  * Splits a Microsoft Outlook .msg file into body + attachments using Aspose.Email.
  */
 object OutlookMsgAsposeSplitter
-    extends HighPrioritySplitter[MimeType.ApplicationVndMsOutlook.type] {
+    extends HighPrioritySplitter[MimeType.ApplicationVndMsOutlook.type] 
+    with SplitFailureHandler {
+  
+  override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   override def split(
     content: FileContent[MimeType.ApplicationVndMsOutlook.type],
     cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    if (!cfg.hasStrategy(SplitStrategy.Attachment))
-      return Seq(DocChunk(content, "msg", 0, 1))
-
-    // Load the .msg file using Aspose.Email
-    val msg    = MailMessage.load(new ByteArrayInputStream(content.data))
-    val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
+    // Check for valid strategy
+    if (!cfg.hasStrategy(SplitStrategy.Attachment)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.map(_.displayName).getOrElse("none"),
+        Seq("attachment")
+      )
+    }
+    
+    // Wrap main logic with failure handling
+    withFailureHandling(content, cfg) {
+      // Load the .msg file using Aspose.Email
+      val msg = try {
+        MailMessage.load(new ByteArrayInputStream(content.data))
+      } catch {
+        case e: Exception =>
+          throw new CorruptedDocumentException(
+            content.mimeType.toString,
+            s"Failed to load MSG file: ${e.getMessage}"
+          )
+      }
+      
+      // Check if message was loaded properly
+      if (msg == null) {
+        throw new CorruptedDocumentException(
+          content.mimeType.toString,
+          "Failed to load MSG file: MailMessage.load returned null"
+        )
+      }
+      
+      val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
 
     // Add function to create and append chunks to our list
     def addChunk(bytes: Array[Byte], mime: MimeType, label: String): Unit =
@@ -59,21 +89,25 @@ object OutlookMsgAsposeSplitter
       addChunk(bytes, mime, name)
     }
 
-    // If no chunks were created, return original email
-    if (chunks.isEmpty) {
-      return Seq(DocChunk(content, "msg", 0, 1))
-    }
+      // If no chunks were created, throw exception
+      if (chunks.isEmpty) {
+        throw new EmptyDocumentException(
+          content.mimeType.mimeType,
+          "MSG file contains no body or attachments"
+        )
+      }
 
-    // Finalize chunks with correct total count
-    val total = chunks.size
-    val allChunks = chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
-    
-    // Apply chunk range filtering if specified
-    cfg.chunkRange match {
-      case Some(range) =>
-        range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
-      case None =>
-        allChunks
+      // Finalize chunks with correct total count
+      val total = chunks.size
+      val allChunks = chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
+      
+      // Apply chunk range filtering if specified
+      cfg.chunkRange match {
+        case Some(range) =>
+          range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
+        case None =>
+          allChunks
+      }
     }
   }
 }

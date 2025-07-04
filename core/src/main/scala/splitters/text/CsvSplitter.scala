@@ -2,6 +2,8 @@ package com.tjclp.xlcr
 package splitters
 package text
 
+import org.slf4j.LoggerFactory
+
 import models.FileContent
 import types.MimeType
 
@@ -18,22 +20,41 @@ import types.MimeType
  *
  * Each chunk preserves the header and maintains complete rows for context integrity.
  */
-object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
+object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] 
+    with SplitFailureHandler {
+  
+  override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   override def split(
     content: FileContent[MimeType.TextCsv.type],
     cfg: SplitConfig
-  ): Seq[DocChunk[_ <: MimeType]] =
-    // Check if the strategy is explicitly set to Row
-    if (cfg.hasStrategy(SplitStrategy.Row)) {
-      // Split by individual rows
-      splitByRows(content, cfg)
-    } else if (cfg.hasStrategy(SplitStrategy.Chunk)) {
-      // Default behavior - group rows into chunks
-      splitIntoChunks(content, cfg)
-    } else {
-      Seq(DocChunk(content, "csv", 0, 1))
+  ): Seq[DocChunk[_ <: MimeType]] = {
+    // Check for valid strategies
+    val validStrategies = Seq(SplitStrategy.Row, SplitStrategy.Chunk, SplitStrategy.Auto)
+    
+    if (cfg.strategy.isDefined && !validStrategies.contains(cfg.strategy.get)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.get.displayName,
+        validStrategies.map(_.displayName)
+      )
     }
+    
+    // Wrap existing logic with failure handling
+    withFailureHandling(content, cfg) {
+      // Check if the strategy is explicitly set to Row
+      if (cfg.hasStrategy(SplitStrategy.Row)) {
+        // Split by individual rows
+        splitByRows(content, cfg)
+      } else if (cfg.hasStrategy(SplitStrategy.Chunk) || cfg.hasStrategy(SplitStrategy.Auto)) {
+        // Default behavior - group rows into chunks
+        splitIntoChunks(content, cfg)
+      } else {
+        Seq(DocChunk(content, "csv", 0, 1))
+      }
+    }
+  }
 
   /**
    * Default implementation: groups rows into chunks based on character count, keeping header in
@@ -50,11 +71,15 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
     val charset = java.nio.charset.StandardCharsets.UTF_8
     val csv     = new String(content.data, charset)
     val lines   = csv.split("\r?\n", -1).toVector
-    if (lines.isEmpty) return Seq.empty
+    if (lines.isEmpty) {
+      throw new EmptyDocumentException(content.mimeType.mimeType, "CSV file is empty")
+    }
 
     val header = lines.head
     val rows   = lines.tail.filter(_.trim.nonEmpty)
-    if (rows.isEmpty) return Seq.empty
+    if (rows.isEmpty) {
+      throw new EmptyDocumentException(content.mimeType.mimeType, "CSV file contains only header or empty rows")
+    }
 
     // Use a reasonable default for max chars per chunk
     val maxCharsPerChunk = if (cfg.maxChars > 0) cfg.maxChars else 4000
@@ -194,7 +219,9 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
   ): Seq[DocChunk[_ <: MimeType]] = {
     val csv   = new String(content.data, java.nio.charset.StandardCharsets.UTF_8)
     val lines = csv.split("\r?\n", -1).toVector
-    if (lines.isEmpty) return Seq.empty
+    if (lines.isEmpty) {
+      throw new EmptyDocumentException(content.mimeType.mimeType, "CSV file is empty")
+    }
 
     val header = lines.head
     val rows   = lines.tail
@@ -202,6 +229,10 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] {
     // Track original row numbers while filtering empty rows in a single pass
     val nonEmptyRowsWithInfo = rows.zipWithIndex
       .filter { case (row, _) => row.trim.nonEmpty }
+    
+    if (nonEmptyRowsWithInfo.isEmpty) {
+      throw new EmptyDocumentException(content.mimeType.mimeType, "CSV file contains only header or empty rows")
+    }
 
     // Pre-allocate the header bytes since they're reused for every chunk
     val headerBytes = header.getBytes(java.nio.charset.StandardCharsets.UTF_8)

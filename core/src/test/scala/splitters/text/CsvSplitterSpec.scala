@@ -134,26 +134,30 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "handle empty CSV files gracefully" in {
-    // Empty content
+    // Empty content - now returns preserved chunk with failure handling
     val emptyContent = FileContent("".getBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
     val emptyChunks = CsvSplitter.split(emptyContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
-    emptyChunks.isEmpty shouldBe true
+    emptyChunks.size shouldBe 1
+    emptyChunks.head.label shouldBe "document"
+    emptyChunks.head.content.data shouldBe emptyContent.data
 
-    // CSV with just a header
+    // CSV with just a header - also returns preserved chunk
     val headerContent =
       FileContent("Header1,Header2,Header3".getBytes, MimeType.TextCsv)
         .asInstanceOf[FileContent[MimeType.TextCsv.type]]
     val headerChunks = CsvSplitter.split(headerContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
-    headerChunks.isEmpty shouldBe true
+    headerChunks.size shouldBe 1
+    headerChunks.head.label shouldBe "document"
 
-    // CSV with header and empty rows
+    // CSV with header and empty rows - also returns preserved chunk
     val emptyRowsContent =
       FileContent("Header1,Header2\n\n\n".getBytes, MimeType.TextCsv)
         .asInstanceOf[FileContent[MimeType.TextCsv.type]]
     val emptyRowsChunks =
       CsvSplitter.split(emptyRowsContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
-    emptyRowsChunks.isEmpty shouldBe true
+    emptyRowsChunks.size shouldBe 1
+    emptyRowsChunks.head.label shouldBe "document"
   }
 
   it should "respect chunkRange when splitting by rows" in {
@@ -173,9 +177,10 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     // Should have exactly 3 chunks
     chunks.length shouldBe 3
     
-    // Verify we got the right rows - CSV splitter re-indexes after filtering
+    // Verify we got the right rows - preserving original indices and total
+    val originalTotal = 10 // Total rows in sample.csv
     chunks.foreach { chunk =>
-      chunk.total shouldBe 3 // Total updated to filtered count
+      chunk.total shouldBe originalTotal // Original total preserved
       
       // Each chunk should still have header + 1 data row
       val lines = new String(chunk.content.data).split("\n")
@@ -183,8 +188,8 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
       lines(0) shouldBe "Name,Age,City,Occupation,Salary"
     }
     
-    // Indices should be 0, 1, 2 after re-indexing
-    chunks.map(_.index) shouldBe List(0, 1, 2)
+    // Original indices should be preserved (2, 3, 4)
+    chunks.map(_.index) shouldBe List(2, 3, 4)
   }
 
   it should "respect chunkRange when grouping rows into chunks" in {
@@ -218,7 +223,14 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     // The filtered chunks keep their original index from allChunks
     chunks.map(_.index) should not be empty
     chunks.foreach { chunk =>
-      chunk.total shouldBe chunks.length
+      chunk.total shouldBe allChunks.length // Original total preserved
+    }
+    
+    // Verify we got chunks with indices 1 and possibly 2 (depending on total chunks)
+    if (allChunks.length >= 3) {
+      chunks.map(_.index) shouldBe List(1, 2)
+    } else if (allChunks.length == 2) {
+      chunks.map(_.index) shouldBe List(1)
     }
   }
 

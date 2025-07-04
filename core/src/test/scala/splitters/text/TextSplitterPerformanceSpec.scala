@@ -313,7 +313,7 @@ Another small paragraph"""
 
       // Should return entire content as single chunk
       chunks.length shouldBe 1
-      chunks.head.label shouldBe "text"
+      chunks.head.label shouldBe "document" // Changed from "text" - failure handler returns "document"
       new String(chunks.head.content.data) shouldBe "Test content for invalid strategy"
     }
   }

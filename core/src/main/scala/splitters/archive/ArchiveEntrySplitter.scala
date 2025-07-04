@@ -26,10 +26,11 @@ import utils.PathFilter
  * Supports recursive extraction of archives within archives. Includes zipbomb protection to prevent
  * excessive resource usage.
  */
-class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
+object ArchiveEntrySplitter extends DocumentSplitter[MimeType] 
+    with SplitFailureHandler {
   override def priority: Priority = LOW // TODO: Make recursion work properly
 
-  private val logger = LoggerFactory.getLogger(getClass)
+  override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   /**
    * Cleans a path for display by delegating to PathFilter utility
@@ -98,52 +99,63 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
     cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
 
-    // If not handling this MIME type or not requesting split, return the original
-    if (
-      !supportedMimeTypes
-        .contains(content.mimeType) || !cfg.hasStrategy(SplitStrategy.Embedded)
-    )
+    // If not handling this MIME type, return the original
+    if (!supportedMimeTypes.contains(content.mimeType)) {
       return Seq(DocChunk(content, "archive", 0, 1))
+    }
+    
+    // Check for valid strategy
+    if (!cfg.hasStrategy(SplitStrategy.Embedded)) {
+      return handleInvalidStrategy(
+        content,
+        cfg,
+        cfg.strategy.map(_.displayName).getOrElse("none"),
+        Seq("embedded")
+      )
+    }
 
-    // Initialize zipbomb protection
-    val sessionId = initExtractSession()
+    // Wrap main logic with failure handling
+    withFailureHandling(content, cfg) {
+      // Initialize zipbomb protection
+      val sessionId = initExtractSession()
 
-    try {
-      // Track the initial content size
-      trackExtractedSize(sessionId, content.data.length, cfg.maxTotalSize)
+      try {
+        // Track the initial content size
+        trackExtractedSize(sessionId, content.data.length, cfg.maxTotalSize)
 
-      // Handle the archive based on its type
-      val chunks = content.mimeType match {
-        case MimeType.ApplicationZip => splitZip(content, cfg, sessionId)
-        case MimeType.ApplicationGzip =>
-          splitSingleEntryCompressed(
-            content,
-            cfg,
-            CompressorStreamFactory.GZIP,
-            sessionId
-          )
-        case MimeType.ApplicationBzip2 =>
-          splitSingleEntryCompressed(
-            content,
-            cfg,
-            CompressorStreamFactory.BZIP2,
-            sessionId
-          )
-        case MimeType.ApplicationXz =>
-          splitSingleEntryCompressed(
-            content,
-            cfg,
-            CompressorStreamFactory.XZ,
-            sessionId
-          )
-        case MimeType.ApplicationSevenz =>
-          splitZip(content, cfg, sessionId) // Fallback to zip handling for 7z
-        case _ => Seq(DocChunk(content, "archive", 0, 1))
-      }
+        // Handle the archive based on its type
+        val chunks = content.mimeType match {
+          case MimeType.ApplicationZip => splitZip(content, cfg, sessionId)
+          case MimeType.ApplicationGzip =>
+            splitSingleEntryCompressed(
+              content,
+              cfg,
+              CompressorStreamFactory.GZIP,
+              sessionId
+            )
+          case MimeType.ApplicationBzip2 =>
+            splitSingleEntryCompressed(
+              content,
+              cfg,
+              CompressorStreamFactory.BZIP2,
+              sessionId
+            )
+          case MimeType.ApplicationXz =>
+            splitSingleEntryCompressed(
+              content,
+              cfg,
+              CompressorStreamFactory.XZ,
+              sessionId
+            )
+          case MimeType.ApplicationSevenz =>
+            splitZip(content, cfg, sessionId) // Fallback to zip handling for 7z
+          case _ => Seq(DocChunk(content, "archive", 0, 1))
+        }
 
-      chunks
-    } finally
-      cleanupExtractSession(sessionId)
+        chunks
+      } finally
+        cleanupExtractSession(sessionId)
+    }
   }
 
   /**
@@ -297,13 +309,21 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
       }
     } catch {
       case e: Exception =>
-        // Log the error but continue with an empty result
-        logger.error(s"Error reading ZIP: ${e.getMessage}", e)
+        // Re-throw to be handled by withFailureHandling
+        throw new CorruptedDocumentException(
+          content.mimeType.mimeType,
+          s"Failed to read ZIP archive: ${e.getMessage}",
+          e
+        )
     }
 
     // Finalize chunks with correct total count
-    if (chunks.isEmpty)
-      return Seq(DocChunk(content, "archive", 0, 1))
+    if (chunks.isEmpty) {
+      throw new EmptyDocumentException(
+        content.mimeType.mimeType,
+        "ZIP archive contains no valid entries"
+      )
+    }
 
     val total = chunks.size
 
@@ -407,12 +427,12 @@ class ArchiveEntrySplitter extends DocumentSplitter[MimeType] {
       )
     } catch {
       case e: Exception =>
-        // Log the error and return the original content
-        logger.error(
-          s"Error decompressing ${compressorName}: ${e.getMessage}",
+        // Re-throw to be handled by withFailureHandling
+        throw new CorruptedDocumentException(
+          content.mimeType.mimeType,
+          s"Failed to decompress ${compressorName}: ${e.getMessage}",
           e
         )
-        Seq(DocChunk(content, "archive", 0, 1))
     }
   }
 }
