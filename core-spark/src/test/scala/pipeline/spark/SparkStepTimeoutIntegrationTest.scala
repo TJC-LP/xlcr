@@ -19,13 +19,22 @@ class SparkStepTimeoutIntegrationTest extends AnyFunSuite with Matchers {
       .getOrCreate()
 
     try {
+      import org.apache.spark.sql.Row
+      import org.apache.spark.sql.types._
       import spark.implicits._
-
+      
       // Create a test DataFrame with some binary content
-      val testData = Seq(
-        ("test1.pdf", Array[Byte](1, 2, 3, 4, 5)),
-        ("test2.pdf", Array[Byte](6, 7, 8, 9, 10))
-      ).toDF("path", "content")
+      val schema = StructType(Seq(
+        StructField("path", StringType, false),
+        StructField("content", BinaryType, false)
+      ))
+      
+      val rows = Seq(
+        Row("test1.pdf", Array[Byte](1, 2, 3, 4, 5)),
+        Row("test2.pdf", Array[Byte](6, 7, 8, 9, 10))
+      )
+      
+      val testData = spark.createDataFrame(spark.sparkContext.parallelize(rows), schema)
 
       // Ensure core schema
       val coreData = CoreSchema.ensure(testData
