@@ -158,7 +158,10 @@ object Pipeline {
     maxImageHeight: Int = 2000,
     maxImageSizeBytes: Long = 1024 * 1024 * 5,
     imageDpi: Int = 300,
-    jpegQuality: Float = 0.85f
+    jpegQuality: Float = 0.85f,
+    failureMode: Option[SplitFailureMode] = None,
+    failureContext: Map[String, String] = Map.empty,
+    chunkRange: Option[Range] = None
   ): Unit = {
 
     logger.info(
@@ -202,7 +205,10 @@ object Pipeline {
       maxImageHeight = maxImageHeight,
       maxImageSizeBytes = maxImageSizeBytes,
       imageDpi = imageDpi,
-      jpegQuality = jpegQuality
+      jpegQuality = jpegQuality,
+      failureMode = failureMode.getOrElse(SplitFailureMode.PreserveAsChunk),
+      failureContext = failureContext,
+      chunkRange = chunkRange
     )
 
     // Start with current depth = 0
