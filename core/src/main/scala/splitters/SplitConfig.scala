@@ -24,51 +24,60 @@ case class SplitConfig(
   maxFileCount: Long = 1000L,
 
   // PowerPoint slide extraction settings
-  useCloneForSlides: Boolean = true, // Use clone method instead of remove for slide extraction
+  useCloneForSlides: Boolean = true,  // Use clone method instead of remove for slide extraction
   preserveSlideNotes: Boolean = true, // Preserve slide notes during extraction
-  
+
   // Universal chunk extraction settings
-  chunkRange: Option[Range] = None,     // Universal range for any chunk type (pages, sheets, slides, etc.)
-  skipBlankPages: Boolean = false,      // Whether to skip blank pages during extraction
-  blankPageThreshold: Double = 0.01,    // Threshold for considering a page blank (0.0-1.0)
-  
+  chunkRange: Option[Range] =
+    None, // Universal range for any chunk type (pages, sheets, slides, etc.)
+  skipBlankPages: Boolean = false,   // Whether to skip blank pages during extraction
+  blankPageThreshold: Double = 0.01, // Threshold for considering a page blank (0.0-1.0)
+
   // Failure handling configuration
-  failureMode: SplitFailureMode = SplitFailureMode.PreserveAsChunk, // How to handle splitting failures
+  failureMode: SplitFailureMode =
+    SplitFailureMode.PreserveAsChunk,             // How to handle splitting failures
   failureContext: Map[String, String] = Map.empty // Additional context for failure handling
 ) {
 
   /** Helper method to check if a strategy is set to a specific value */
   def hasStrategy(s: SplitStrategy): Boolean = strategy.contains(s)
-  
+
   /** Backward compatibility - deprecated in favor of chunkRange */
   @deprecated("Use chunkRange instead", "0.2.0")
   def pageRange: Option[Range] = chunkRange
-  
+
   /**
    * Create a copy of this config with a specific failure mode.
-   * 
-   * @param mode The failure mode to use
-   * @return A new SplitConfig with the updated failure mode
+   *
+   * @param mode
+   *   The failure mode to use
+   * @return
+   *   A new SplitConfig with the updated failure mode
    */
-  def withFailureMode(mode: SplitFailureMode): SplitConfig = 
+  def withFailureMode(mode: SplitFailureMode): SplitConfig =
     copy(failureMode = mode)
-    
+
   /**
-   * Add context information for failure handling.
-   * This context will be included in error messages and metadata.
-   * 
-   * @param key The context key
-   * @param value The context value
-   * @return A new SplitConfig with the added context
+   * Add context information for failure handling. This context will be included in error messages
+   * and metadata.
+   *
+   * @param key
+   *   The context key
+   * @param value
+   *   The context value
+   * @return
+   *   A new SplitConfig with the added context
    */
   def withFailureContext(key: String, value: String): SplitConfig =
     copy(failureContext = failureContext + (key -> value))
-    
+
   /**
    * Add multiple context entries for failure handling.
-   * 
-   * @param context Map of context key-value pairs
-   * @return A new SplitConfig with the added context
+   *
+   * @param context
+   *   Map of context key-value pairs
+   * @return
+   *   A new SplitConfig with the added context
    */
   def withFailureContext(context: Map[String, String]): SplitConfig =
     copy(failureContext = failureContext ++ context)

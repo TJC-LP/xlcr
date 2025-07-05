@@ -13,9 +13,9 @@ import models.FileContent
 import types.MimeType
 
 /** Splits a DOCX on Heading 1 paragraphs. */
-trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T] 
+trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
     with SplitFailureHandler {
-  
+
   override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   override def split(
@@ -32,7 +32,7 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
         Seq("heading")
       ).asInstanceOf[Seq[DocChunk[T]]]
     }
-    
+
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
       val src   = new XWPFDocument(new ByteArrayInputStream(content.data))
@@ -66,31 +66,31 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
       }
 
       val chunks = sectionsToExtract.map { sectionIdx =>
-          val start = boundaries(sectionIdx)
-          val end = boundaries(sectionIdx + 1)
-          val dest = new XWPFDocument()
+        val start = boundaries(sectionIdx)
+        val end   = boundaries(sectionIdx + 1)
+        val dest  = new XWPFDocument()
 
-          elems.slice(start, end).foreach {
-            case p: XWPFParagraph =>
-              val dp = dest.createParagraph()
-              Option(p.getStyle).foreach(dp.setStyle)
-              val dr = dp.createRun()
-              dr.setText(p.getText)
-            case _: XWPFTable => // simplistic: skip tables for now
-            case _            => // ignore others
-          }
+        elems.slice(start, end).foreach {
+          case p: XWPFParagraph =>
+            val dp = dest.createParagraph()
+            Option(p.getStyle).foreach(dp.setStyle)
+            val dr = dp.createRun()
+            dr.setText(p.getText)
+          case _: XWPFTable => // simplistic: skip tables for now
+          case _            => // ignore others
+        }
 
-          val baos = new ByteArrayOutputStream()
-          dest.write(baos)
-          dest.close()
+        val baos = new ByteArrayOutputStream()
+        dest.write(baos)
+        dest.close()
 
-          val labelParagraph = elems(start).asInstanceOf[XWPFParagraph]
-          val label = Option(labelParagraph.getText)
-            .filter(_.nonEmpty)
-            .getOrElse(s"Section ${sectionIdx + 1}")
+        val labelParagraph = elems(start).asInstanceOf[XWPFParagraph]
+        val label = Option(labelParagraph.getText)
+          .filter(_.nonEmpty)
+          .getOrElse(s"Section ${sectionIdx + 1}")
 
-          val fc = FileContent.fromBytes[T](baos.toByteArray)
-          DocChunk(fc, label, sectionIdx, total)
+        val fc = FileContent.fromBytes[T](baos.toByteArray)
+        DocChunk(fc, label, sectionIdx, total)
       }
 
       src.close()

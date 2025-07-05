@@ -18,7 +18,7 @@ import types.MimeType
  * (e.g., to PNG or JPEG) is now handled by Pipeline via the bridge system.
  */
 object PdfPageAsposeSplitter
-    extends HighPrioritySplitter[MimeType.ApplicationPdf.type] 
+    extends HighPrioritySplitter[MimeType.ApplicationPdf.type]
     with SplitFailureHandler {
   override protected val logger = LoggerFactory.getLogger(getClass)
 
@@ -65,7 +65,7 @@ object PdfPageAsposeSplitter
           try {
             // Create a new PDF with just this page
             newDocument = new AsposePdfDocument()
-            
+
             // Add the current page to the new document
             val page = pdfDocument.getPages.get_Item(pageIndex)
             newDocument.getPages.add(page)
@@ -76,30 +76,27 @@ object PdfPageAsposeSplitter
               newDocument.save(outputStream)
               val fc = FileContent(outputStream.toByteArray, MimeType.ApplicationPdf)
               DocChunk(fc, s"Page $pageIndex", pageIndex - 1, pageCount)
-            } finally {
+            } finally
               outputStream.close()
-            }
-          } finally {
+          } finally
             if (newDocument != null) {
-              try {
+              try
                 newDocument.close()
-              } catch {
+              catch {
                 case e: Exception =>
                   logger.warn(s"Error closing document for page $pageIndex: ${e.getMessage}")
               }
             }
-          }
         }
-      } finally {
+      } finally
         if (pdfDocument != null) {
-          try {
+          try
             pdfDocument.close()
-          } catch {
+          catch {
             case e: Exception =>
               logger.warn(s"Error closing original PDF document: ${e.getMessage}")
           }
         }
-      }
     }
   }
 }

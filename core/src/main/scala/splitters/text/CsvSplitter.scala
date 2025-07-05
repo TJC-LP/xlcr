@@ -20,9 +20,9 @@ import types.MimeType
  *
  * Each chunk preserves the header and maintains complete rows for context integrity.
  */
-object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type] 
+object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type]
     with SplitFailureHandler {
-  
+
   override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   override def split(
@@ -31,7 +31,7 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type]
   ): Seq[DocChunk[_ <: MimeType]] = {
     // Check for valid strategies
     val validStrategies = Seq(SplitStrategy.Row, SplitStrategy.Chunk, SplitStrategy.Auto)
-    
+
     if (cfg.strategy.isDefined && !validStrategies.contains(cfg.strategy.get)) {
       return handleInvalidStrategy(
         content,
@@ -40,7 +40,7 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type]
         validStrategies.map(_.displayName)
       )
     }
-    
+
     // Wrap existing logic with failure handling
     withFailureHandling(content, cfg) {
       // Check if the strategy is explicitly set to Row
@@ -78,7 +78,10 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type]
     val header = lines.head
     val rows   = lines.tail.filter(_.trim.nonEmpty)
     if (rows.isEmpty) {
-      throw new EmptyDocumentException(content.mimeType.mimeType, "CSV file contains only header or empty rows")
+      throw new EmptyDocumentException(
+        content.mimeType.mimeType,
+        "CSV file contains only header or empty rows"
+      )
     }
 
     // Use a reasonable default for max chars per chunk
@@ -195,7 +198,7 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type]
 
     // Update total in each chunk
     val allChunks = result.map(chunk => chunk.copy(total = total))
-    
+
     // Apply chunk range filtering if specified
     cfg.chunkRange match {
       case Some(range) =>
@@ -229,9 +232,12 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type]
     // Track original row numbers while filtering empty rows in a single pass
     val nonEmptyRowsWithInfo = rows.zipWithIndex
       .filter { case (row, _) => row.trim.nonEmpty }
-    
+
     if (nonEmptyRowsWithInfo.isEmpty) {
-      throw new EmptyDocumentException(content.mimeType.mimeType, "CSV file contains only header or empty rows")
+      throw new EmptyDocumentException(
+        content.mimeType.mimeType,
+        "CSV file contains only header or empty rows"
+      )
     }
 
     // Pre-allocate the header bytes since they're reused for every chunk
@@ -239,7 +245,7 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type]
     val newline     = '\n'.toByte
 
     val total = nonEmptyRowsWithInfo.size
-    
+
     // Determine which rows to extract based on configuration
     val rowsToExtract = cfg.chunkRange match {
       case Some(range) =>
@@ -248,7 +254,7 @@ object CsvSplitter extends DocumentSplitter[MimeType.TextCsv.type]
       case None =>
         (0 until total).toVector
     }
-    
+
     rowsToExtract.map { idx =>
       val (row, originalIdx) = nonEmptyRowsWithInfo(idx)
       // Compute row number (add 2 for header and 0-index)

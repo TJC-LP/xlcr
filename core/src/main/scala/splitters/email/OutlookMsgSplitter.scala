@@ -13,9 +13,9 @@ import types.{ FileType, MimeType }
  * EmailAttachmentSplitter but using POI‑HSMF to read the MSG container directly.
  */
 object OutlookMsgSplitter
-    extends DocumentSplitter[MimeType.ApplicationVndMsOutlook.type] 
+    extends DocumentSplitter[MimeType.ApplicationVndMsOutlook.type]
     with SplitFailureHandler {
-  
+
   override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   override def split(
@@ -32,7 +32,7 @@ object OutlookMsgSplitter
         Seq("attachment")
       )
     }
-    
+
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
       val msg = new MAPIMessage(new java.io.ByteArrayInputStream(content.data))
@@ -45,7 +45,7 @@ object OutlookMsgSplitter
         .map(_.toIndexedSeq)
         .getOrElse(IndexedSeq.empty)
       val totalChunks = (if (hasBody) 1 else 0) + atts.size
-      
+
       // Check if message has any content
       if (totalChunks == 0) {
         throw new EmptyDocumentException(
@@ -87,7 +87,7 @@ object OutlookMsgSplitter
       }
       // Return sorted chunks
       val allChunks = chunks.toSeq.sortBy(_.index)
-      
+
       // Apply chunk range filtering if specified
       cfg.chunkRange match {
         case Some(range) =>

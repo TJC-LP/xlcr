@@ -9,14 +9,21 @@ import scala.jdk.CollectionConverters._
 import com.aspose.email.MailMessage
 
 import models.FileContent
-import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException }
+import splitters.{
+  DocChunk,
+  EmptyDocumentException,
+  HighPrioritySplitter,
+  SplitConfig,
+  SplitFailureHandler,
+  SplitStrategy
+}
 import types.{ FileType, MimeType }
 
 /**
  * Splits an .eml (RFC-822) email into a body chunk + one chunk per attachment using Aspose.Email.
  */
 object EmailAttachmentAsposeSplitter
-    extends HighPrioritySplitter[MimeType.MessageRfc822.type] 
+    extends HighPrioritySplitter[MimeType.MessageRfc822.type]
     with SplitFailureHandler {
 
   override def split(
@@ -62,8 +69,9 @@ object EmailAttachmentAsposeSplitter
         val bytes = contentStream.toByteArray
 
         // Determine MIME type from file extension
-        val ext  = name.split("\\.").lastOption.getOrElse("").toLowerCase
-        val mime = FileType.fromExtension(ext).map(_.getMimeType).getOrElse(MimeType.ApplicationOctet)
+        val ext = name.split("\\.").lastOption.getOrElse("").toLowerCase
+        val mime =
+          FileType.fromExtension(ext).map(_.getMimeType).getOrElse(MimeType.ApplicationOctet)
 
         addChunk(bytes, mime, name)
       }
@@ -77,9 +85,9 @@ object EmailAttachmentAsposeSplitter
       }
 
       // Finalize chunks with correct total count
-      val total = chunks.size
+      val total     = chunks.size
       val allChunks = chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
-      
+
       // Apply chunk range filtering if specified
       cfg.chunkRange match {
         case Some(range) =>

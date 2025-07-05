@@ -16,10 +16,10 @@ import types.MimeType
  * This implementation extracts each page of a PDF into a separate one-page PDF document. Unlike
  * previous implementations, it is format-agnostic; any format conversion (e.g., to PNG or JPEG) is
  * now handled by Pipeline via the bridge system.
- * 
+ *
  * Now includes configurable failure handling via SplitFailureHandler trait.
  */
-object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type] 
+object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type]
     with SplitFailureHandler {
   override protected val logger = LoggerFactory.getLogger(getClass)
 
@@ -31,7 +31,7 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type]
     // Check strategy compatibility
     if (!cfg.hasStrategy(SplitStrategy.Page)) {
       return handleInvalidStrategy(
-        content, 
+        content,
         cfg,
         cfg.strategy.map(_.displayName).getOrElse("none"),
         Seq("page")
@@ -47,22 +47,23 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type]
           "PDF file is empty"
         )
       }
-      
+
       // Load the PDF document
-      val original = try {
-        PDDocument.load(content.data)
-      } catch {
-        case e: java.io.IOException =>
-          throw new CorruptedDocumentException(
-            content.mimeType.mimeType,
-            s"Failed to load PDF: ${e.getMessage}",
-            e
-          )
-      }
-      
+      val original =
+        try
+          PDDocument.load(content.data)
+        catch {
+          case e: java.io.IOException =>
+            throw new CorruptedDocumentException(
+              content.mimeType.mimeType,
+              s"Failed to load PDF: ${e.getMessage}",
+              e
+            )
+        }
+
       try {
         val total = original.getNumberOfPages
-        
+
         // Check if PDF has pages
         if (total == 0) {
           throw new EmptyDocumentException(
@@ -70,7 +71,7 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type]
             "PDF contains no pages"
           )
         }
-        
+
         logger.info(s"Splitting PDF into $total pages")
 
         // Determine which pages to extract based on configuration
@@ -80,7 +81,7 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type]
             val validPages = range.filter(i => i >= 0 && i < total)
             if (validPages.isEmpty) {
               throw new IllegalArgumentException(
-                s"Requested page range ${range.start}-${range.end} is outside document bounds (0-${total-1})"
+                s"Requested page range ${range.start}-${range.end} is outside document bounds (0-${total - 1})"
               )
             }
             validPages
@@ -108,9 +109,9 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type]
 
             // Create a DocChunk with the page information (1-based display)
             DocChunk(
-              fc, 
-              s"Page ${idx + 1}", 
-              idx, 
+              fc,
+              s"Page ${idx + 1}",
+              idx,
               total,
               attrs = Map("source_page" -> (idx + 1).toString)
             )
@@ -123,13 +124,11 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type]
                 s"Failed to extract page ${idx + 1}: ${e.getMessage}",
                 e
               )
-          } finally {
+          } finally
             chunkDoc.close()
-          }
         }
-      } finally {
+      } finally
         original.close()
-      }
     }
   }
 }
