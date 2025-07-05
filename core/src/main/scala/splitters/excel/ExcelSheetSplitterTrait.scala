@@ -16,7 +16,7 @@ import types.MimeType
  * objects for different Excel MIME types.
  */
 trait ExcelSheetSplitterTrait[M <: MimeType] extends SplitFailureHandler {
-  
+
   override protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -27,7 +27,7 @@ trait ExcelSheetSplitterTrait[M <: MimeType] extends SplitFailureHandler {
     cfg: SplitConfig,
     mimeType: M
   ): Seq[DocChunk[M]] = {
-    
+
     // Check for valid strategy
     if (!cfg.hasStrategy(SplitStrategy.Sheet)) {
       return handleInvalidStrategy(
@@ -37,15 +37,15 @@ trait ExcelSheetSplitterTrait[M <: MimeType] extends SplitFailureHandler {
         Seq("sheet")
       ).asInstanceOf[Seq[DocChunk[M]]]
     }
-    
+
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
       try {
         ZipSecureFile.setMaxFileCount(cfg.maxFileCount)
 
-        val tempWb     = WorkbookFactory.create(new ByteArrayInputStream(content.data))
-        val total      = tempWb.getNumberOfSheets
-        
+        val tempWb = WorkbookFactory.create(new ByteArrayInputStream(content.data))
+        val total  = tempWb.getNumberOfSheets
+
         if (total == 0) {
           tempWb.close()
           throw new EmptyDocumentException(
@@ -53,7 +53,7 @@ trait ExcelSheetSplitterTrait[M <: MimeType] extends SplitFailureHandler {
             "Workbook contains no sheets"
           )
         }
-        
+
         val sheetNames = (0 until total).map(tempWb.getSheetName)
         tempWb.close()
 
@@ -68,8 +68,8 @@ trait ExcelSheetSplitterTrait[M <: MimeType] extends SplitFailureHandler {
 
         sheetsToExtract.map { idx =>
           val name = sheetNames(idx)
-          val wb  = WorkbookFactory.create(new ByteArrayInputStream(content.data))
-          val cnt = wb.getNumberOfSheets
+          val wb   = WorkbookFactory.create(new ByteArrayInputStream(content.data))
+          val cnt  = wb.getNumberOfSheets
           (cnt - 1 to 0 by -1).foreach(i => if (i != idx) wb.removeSheetAt(i))
 
           val baos = new ByteArrayOutputStream()

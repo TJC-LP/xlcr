@@ -17,7 +17,7 @@ import types.MimeType
  * Splits an .eml (RFC‑822) email into a body chunk + one chunk per attachment.
  */
 object EmailAttachmentSplitter
-    extends DocumentSplitter[MimeType.MessageRfc822.type] 
+    extends DocumentSplitter[MimeType.MessageRfc822.type]
     with SplitFailureHandler {
 
   override def split(
@@ -90,9 +90,9 @@ object EmailAttachmentSplitter
           "Email contains no body or attachments"
         )
       } else {
-        val total = chunks.size
+        val total     = chunks.size
         val allChunks = chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
-        
+
         // Apply chunk range filtering if specified
         cfg.chunkRange match {
           case Some(range) =>

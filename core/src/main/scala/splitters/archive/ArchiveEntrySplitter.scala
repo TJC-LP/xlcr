@@ -26,7 +26,7 @@ import utils.PathFilter
  * Supports recursive extraction of archives within archives. Includes zipbomb protection to prevent
  * excessive resource usage.
  */
-object ArchiveEntrySplitter extends DocumentSplitter[MimeType] 
+object ArchiveEntrySplitter extends DocumentSplitter[MimeType]
     with SplitFailureHandler {
   override def priority: Priority = LOW // TODO: Make recursion work properly
 
@@ -103,7 +103,7 @@ object ArchiveEntrySplitter extends DocumentSplitter[MimeType]
     if (!supportedMimeTypes.contains(content.mimeType)) {
       return Seq(DocChunk(content, "archive", 0, 1))
     }
-    
+
     // Check for valid strategy
     if (!cfg.hasStrategy(SplitStrategy.Embedded)) {
       return handleInvalidStrategy(

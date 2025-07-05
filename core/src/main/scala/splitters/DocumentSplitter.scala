@@ -119,7 +119,7 @@ object DocumentSplitter extends SplitFailureHandler {
         // Handle missing splitter based on failure mode
         val error = s"No splitter found for MIME type ${content.mimeType.mimeType}"
         logger.warn(error)
-        
+
         handleSplitFailure(
           configToUse.failureMode,
           content,

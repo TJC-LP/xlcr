@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package pipeline.spark
 
 import org.apache.spark.sql.functions.md5
-import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
 /**
  * Convenience helpers for turning the output of `spark.read.binaryFiles` into a DataFrame that

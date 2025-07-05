@@ -19,7 +19,7 @@ import types.MimeType.TextPlain
  * (\`SplitConfig.maxChars\`) with optional overlap (\`SplitConfig.overlap\`). Only used when
  * explicitly requested.
  */
-object TextSplitter extends DocumentSplitter[TextPlain.type] 
+object TextSplitter extends DocumentSplitter[TextPlain.type]
     with SplitFailureHandler {
 
   override def split(
@@ -28,7 +28,7 @@ object TextSplitter extends DocumentSplitter[TextPlain.type]
   ): Seq[DocChunk[_ <: MimeType]] = {
     // Check for valid strategies
     val validStrategies = Seq(SplitStrategy.Chunk, SplitStrategy.Auto, SplitStrategy.Paragraph)
-    
+
     if (cfg.strategy.isDefined && !validStrategies.contains(cfg.strategy.get)) {
       return handleInvalidStrategy(
         content,
@@ -37,7 +37,7 @@ object TextSplitter extends DocumentSplitter[TextPlain.type]
         validStrategies.map(_.displayName)
       )
     }
-    
+
     // Wrap existing logic with failure handling
     withFailureHandling(content, cfg) {
       // Note: Chunk is the default strategy for text files (set in DocumentSplitter),

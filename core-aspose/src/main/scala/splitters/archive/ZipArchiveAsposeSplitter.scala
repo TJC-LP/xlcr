@@ -10,7 +10,14 @@ import scala.util.Try
 import com.aspose.zip.Archive
 
 import models.FileContent
-import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException }
+import splitters.{
+  DocChunk,
+  EmptyDocumentException,
+  HighPrioritySplitter,
+  SplitConfig,
+  SplitFailureHandler,
+  SplitStrategy
+}
 import types.{ FileType, MimeType }
 
 /**
@@ -18,7 +25,7 @@ import types.{ FileType, MimeType }
  * Supports recursive extraction of nested archives with zipbomb protection.
  */
 object ZipArchiveAsposeSplitter
-    extends HighPrioritySplitter[MimeType.ApplicationZip.type] 
+    extends HighPrioritySplitter[MimeType.ApplicationZip.type]
     with SplitFailureHandler {
 
   override protected val logger = org.slf4j.LoggerFactory.getLogger(getClass)
@@ -68,7 +75,7 @@ object ZipArchiveAsposeSplitter
         val allChunks = chunks.zipWithIndex.map { case (chunk, newIndex) =>
           chunk.copy(index = newIndex, total = total)
         }
-        
+
         // Apply chunk range filtering if specified
         cfg.chunkRange match {
           case Some(range) =>

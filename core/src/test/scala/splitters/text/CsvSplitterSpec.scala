@@ -60,7 +60,7 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     // Config with Chunk strategy and small maxChars to force multiple chunks
     val cfg = SplitConfig(
       strategy = Some(SplitStrategy.Chunk),
-      maxChars = 100   // Small character limit to force multiple chunks
+      maxChars = 100 // Small character limit to force multiple chunks
     )
 
     val splitter = CsvSplitter
@@ -137,7 +137,8 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     // Empty content - now returns preserved chunk with failure handling
     val emptyContent = FileContent("".getBytes, MimeType.TextCsv)
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
-    val emptyChunks = CsvSplitter.split(emptyContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
+    val emptyChunks =
+      CsvSplitter.split(emptyContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
     emptyChunks.size shouldBe 1
     emptyChunks.head.label shouldBe "document"
     emptyChunks.head.content.data shouldBe emptyContent.data
@@ -146,7 +147,8 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     val headerContent =
       FileContent("Header1,Header2,Header3".getBytes, MimeType.TextCsv)
         .asInstanceOf[FileContent[MimeType.TextCsv.type]]
-    val headerChunks = CsvSplitter.split(headerContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
+    val headerChunks =
+      CsvSplitter.split(headerContent, SplitConfig(strategy = Some(SplitStrategy.Chunk)))
     headerChunks.size shouldBe 1
     headerChunks.head.label shouldBe "document"
 
@@ -173,21 +175,21 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     )
 
     val chunks = CsvSplitter.split(content, cfg)
-    
+
     // Should have exactly 3 chunks
     chunks.length shouldBe 3
-    
+
     // Verify we got the right rows - preserving original indices and total
     val originalTotal = 10 // Total rows in sample.csv
     chunks.foreach { chunk =>
       chunk.total shouldBe originalTotal // Original total preserved
-      
+
       // Each chunk should still have header + 1 data row
       val lines = new String(chunk.content.data).split("\n")
       lines.length shouldBe 2
       lines(0) shouldBe "Name,Age,City,Occupation,Salary"
     }
-    
+
     // Original indices should be preserved (2, 3, 4)
     chunks.map(_.index) shouldBe List(2, 3, 4)
   }
@@ -199,13 +201,16 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
       .asInstanceOf[FileContent[MimeType.TextCsv.type]]
 
     // First split into chunks to see how many we get
-    val allChunks = CsvSplitter.split(content, SplitConfig(
-      strategy = Some(SplitStrategy.Chunk),
-      maxChars = 100
-    ))
-    
+    val allChunks = CsvSplitter.split(
+      content,
+      SplitConfig(
+        strategy = Some(SplitStrategy.Chunk),
+        maxChars = 100
+      )
+    )
+
     println(s"Total chunks without range: ${allChunks.length}")
-    
+
     // Now apply a range to get only middle chunks
     val cfg = SplitConfig(
       strategy = Some(SplitStrategy.Chunk),
@@ -214,18 +219,18 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     )
 
     val chunks = CsvSplitter.split(content, cfg)
-    
+
     // Should have at most 2 chunks (indices 1 and 2)
     chunks.length should be <= 2
     chunks.length should be > 0
-    
+
     // Chunks should be the middle chunks with original indices preserved
     // The filtered chunks keep their original index from allChunks
     chunks.map(_.index) should not be empty
     chunks.foreach { chunk =>
       chunk.total shouldBe allChunks.length // Original total preserved
     }
-    
+
     // Verify we got chunks with indices 1 and possibly 2 (depending on total chunks)
     if (allChunks.length >= 3) {
       chunks.map(_.index) shouldBe List(1, 2)
@@ -270,11 +275,11 @@ class CsvSplitterSpec extends AnyFlatSpec with Matchers {
     )
 
     val chunks = CsvSplitter.split(content, cfg)
-    
+
     chunks.length shouldBe 1
     chunks.head.index shouldBe 0
     chunks.head.total shouldBe 10 // Total reflects total data rows (without header)
-    
+
     // Should have header + first data row
     val lines = new String(chunks.head.content.data).split("\n")
     lines.length shouldBe 2

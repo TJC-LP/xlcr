@@ -5,7 +5,13 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import compat.aspose.AsposeWorkbook
 import models.FileContent
-import splitters.{ DocChunk, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException }
+import splitters.{
+  DocChunk,
+  EmptyDocumentException,
+  SplitConfig,
+  SplitFailureHandler,
+  SplitStrategy
+}
 import types.MimeType
 
 /**

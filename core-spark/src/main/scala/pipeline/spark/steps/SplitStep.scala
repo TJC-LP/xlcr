@@ -4,7 +4,7 @@ package steps
 
 import scala.concurrent.duration.{ Duration => ScalaDuration }
 
-import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
 import models.FileContent
 import splitters._
@@ -175,20 +175,25 @@ case class SplitStep(
 }
 
 object SplitStep {
+
   /**
-   * Creates a SplitStep that limits splitting to the first N chunks.
-   * Works universally for pages (PDF), sheets (Excel), slides (PowerPoint), etc.
-   * 
-   * @param limit Maximum number of chunks to extract
-   * @param strategy Optional split strategy (defaults to Auto)
-   * @param udfTimeout Timeout for the splitting operation
-   * @return Configured SplitStep instance
+   * Creates a SplitStep that limits splitting to the first N chunks. Works universally for pages
+   * (PDF), sheets (Excel), slides (PowerPoint), etc.
+   *
+   * @param limit
+   *   Maximum number of chunks to extract
+   * @param strategy
+   *   Optional split strategy (defaults to Auto)
+   * @param udfTimeout
+   *   Timeout for the splitting operation
+   * @return
+   *   Configured SplitStep instance
    */
   def withChunkLimit(
     limit: Int,
     strategy: Option[SplitStrategy] = None,
     udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
-  ): SplitStep = 
+  ): SplitStep =
     SplitStep(
       udfTimeout = udfTimeout,
       config = SplitConfig(
@@ -196,23 +201,28 @@ object SplitStep {
         chunkRange = Some(0 until limit)
       )
     )
-  
+
   /**
-   * Creates a SplitStep that extracts a specific range of chunks.
-   * Works universally for any document type.
-   * 
-   * @param start Start chunk index (0-based)
-   * @param end End chunk index (exclusive, 0-based)
-   * @param strategy Optional split strategy (defaults to Auto)
-   * @param udfTimeout Timeout for the splitting operation
-   * @return Configured SplitStep instance
+   * Creates a SplitStep that extracts a specific range of chunks. Works universally for any
+   * document type.
+   *
+   * @param start
+   *   Start chunk index (0-based)
+   * @param end
+   *   End chunk index (exclusive, 0-based)
+   * @param strategy
+   *   Optional split strategy (defaults to Auto)
+   * @param udfTimeout
+   *   Timeout for the splitting operation
+   * @return
+   *   Configured SplitStep instance
    */
   def withChunkRange(
     start: Int,
     end: Int,
     strategy: Option[SplitStrategy] = None,
     udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
-  ): SplitStep = 
+  ): SplitStep =
     SplitStep(
       udfTimeout = udfTimeout,
       config = SplitConfig(
@@ -220,18 +230,21 @@ object SplitStep {
         chunkRange = Some(start until end)
       )
     )
-  
+
   /**
    * Creates a SplitStep with auto strategy and optional chunk limit.
-   * 
-   * @param chunkLimit Optional maximum number of chunks to extract
-   * @param udfTimeout Timeout for the splitting operation
-   * @return Configured SplitStep instance
+   *
+   * @param chunkLimit
+   *   Optional maximum number of chunks to extract
+   * @param udfTimeout
+   *   Timeout for the splitting operation
+   * @return
+   *   Configured SplitStep instance
    */
   def auto(
     chunkLimit: Option[Int] = None,
     udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
-  ): SplitStep = 
+  ): SplitStep =
     SplitStep(
       udfTimeout = udfTimeout,
       config = SplitConfig(
@@ -239,21 +252,21 @@ object SplitStep {
         chunkRange = chunkLimit.map(limit => 0 until limit)
       )
     )
-  
+
   // Backward compatibility - deprecated methods
-  
+
   @deprecated("Use withChunkLimit instead", "0.2.0")
   def withPageLimit(
     limit: Int,
     udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
-  ): SplitStep = 
+  ): SplitStep =
     withChunkLimit(limit, Some(SplitStrategy.Page), udfTimeout)
-  
+
   @deprecated("Use withChunkRange instead", "0.2.0")
   def withPageRange(
     start: Int,
     end: Int,
     udfTimeout: ScalaDuration = scala.concurrent.duration.Duration(60, "seconds")
-  ): SplitStep = 
+  ): SplitStep =
     withChunkRange(start, end, Some(SplitStrategy.Page), udfTimeout)
 }

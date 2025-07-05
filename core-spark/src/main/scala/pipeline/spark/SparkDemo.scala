@@ -4,9 +4,12 @@ package pipeline.spark
 import java.nio.file.{ Files, Paths }
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import scala.concurrent.duration.{ Duration, DurationInt }
+
+import scala.concurrent.duration.DurationInt
+
 import org.apache.spark.sql.functions.md5
-import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+
 import pipeline.spark.steps._
 import pipeline.spark.steps.SparkStepUtils
 
@@ -73,12 +76,12 @@ object SparkDemo {
     val detect = DetectMime()
     // Example: Limit splitting to first 10 chunks (works for any document type)
     val split = SplitStep.withChunkLimit(10, udfTimeout = 120.seconds)
-    
+
     // Alternative approaches:
     // - Extract chunks 5-15: SplitStep.withChunkRange(5, 15, udfTimeout = 120.seconds)
     // - Auto strategy with chunk limit: SplitStep.auto(chunkLimit = Some(20))
     // - Standard split with timeout: SparkStep.withUdfTimeout(SplitStep(), 120.seconds)
-    
+
     SparkStepUtils.buildPipeline(detect, split)
   }
 

@@ -4,7 +4,7 @@ package steps
 
 import scala.concurrent.duration.{ Duration => ScalaDuration }
 
-import org.apache.spark.sql.{ functions => F, Column, DataFrame, SparkSession }
+import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 import bridges.{ Bridge, BridgeConfig, BridgeRegistry }
 import models.FileContent

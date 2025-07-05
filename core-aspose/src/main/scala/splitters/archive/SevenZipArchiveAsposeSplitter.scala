@@ -10,14 +10,22 @@ import scala.util.Try
 import com.aspose.zip.SevenZipArchive
 
 import models.FileContent
-import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig, SplitStrategy, SplitFailureHandler, EmptyDocumentException, CorruptedDocumentException }
+import splitters.{
+  CorruptedDocumentException,
+  DocChunk,
+  EmptyDocumentException,
+  HighPrioritySplitter,
+  SplitConfig,
+  SplitFailureHandler,
+  SplitStrategy
+}
 import types.{ FileType, MimeType }
 
 /**
  * 7-Zip archive splitter using Aspose.ZIP library. Extracts all entries from a 7z archive file.
  * Supports recursive extraction of nested archives with zipbomb protection.
  */
-object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.ApplicationSevenz.type] 
+object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.ApplicationSevenz.type]
     with SplitFailureHandler {
 
   override protected val logger = org.slf4j.LoggerFactory.getLogger(getClass)

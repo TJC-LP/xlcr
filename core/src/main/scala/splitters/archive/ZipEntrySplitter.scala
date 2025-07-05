@@ -22,7 +22,7 @@ import utils.PathFilter
  *   - Determines appropriate MIME types for extracted files
  *   - Preserves original file paths in metadata
  */
-object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type] 
+object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type]
     with SplitFailureHandler {
   override protected val logger = LoggerFactory.getLogger(getClass)
 
@@ -96,9 +96,8 @@ object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type]
           zipInputStream.closeEntry()
           entry = zipInputStream.getNextEntry()
         }
-      } finally {
+      } finally
         zipInputStream.close()
-      }
 
       // If no valid entries were found, throw an exception
       if (chunks.isEmpty) {
@@ -109,9 +108,9 @@ object ZipEntrySplitter extends DocumentSplitter[MimeType.ApplicationZip.type]
       }
 
       // Update total count and return
-      val total = chunks.size
+      val total     = chunks.size
       val allChunks = chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
-      
+
       // Apply chunk range filtering if specified
       cfg.chunkRange match {
         case Some(range) =>

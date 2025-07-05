@@ -13,7 +13,7 @@ import types.MimeType
 object OdsSheetSplitter
     extends DocumentSplitter[
       MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
-    ] 
+    ]
     with SplitFailureHandler {
 
   override protected val logger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(getClass)
@@ -38,7 +38,7 @@ object OdsSheetSplitter
     if (!supported.contains(content.mimeType)) {
       return Seq(DocChunk(content, "workbook", 0, 1))
     }
-    
+
     // Check for valid strategy
     if (!cfg.hasStrategy(SplitStrategy.Sheet)) {
       return handleInvalidStrategy(
@@ -48,16 +48,16 @@ object OdsSheetSplitter
         Seq("sheet")
       ).asInstanceOf[Seq[DocChunk[MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type]]]
     }
-    
+
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
       // Load the ODS document
       val tempDoc = OdfSpreadsheetDocument.loadDocument(
         new ByteArrayInputStream(content.data)
       )
-      val sheets     = tempDoc.getTableList(false)
-      val total      = sheets.size()
-      
+      val sheets = tempDoc.getTableList(false)
+      val total  = sheets.size()
+
       if (total == 0) {
         tempDoc.close()
         throw new EmptyDocumentException(
@@ -65,7 +65,7 @@ object OdsSheetSplitter
           "ODS spreadsheet contains no sheets"
         )
       }
-      
+
       val sheetNames = (0 until total).map(idx => sheets.get(idx).getTableName)
 
       tempDoc.close()
