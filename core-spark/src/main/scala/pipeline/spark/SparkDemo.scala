@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 import scala.concurrent.duration.DurationInt
 
 import org.apache.spark.sql.functions.md5
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
 
 import pipeline.spark.steps._
 import pipeline.spark.steps.SparkStepUtils

@@ -5,7 +5,7 @@ import java.util.concurrent.TimeoutException
 
 import scala.concurrent.duration.{ Duration => ScalaDuration }
 
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
 import zio.{ Duration => ZDuration, Runtime, ZIO }
 
 import pipeline.spark.steps._

@@ -2,7 +2,7 @@ package com.tjclp.xlcr
 package pipeline.spark
 
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Column, DataFrame, functions => F}
+import org.apache.spark.sql.{ functions => F, Column, DataFrame }
 
 /**
  * Central place that defines the **core contract** that every row in the Spark pipeline must

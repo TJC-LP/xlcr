@@ -6,7 +6,7 @@ import java.io.IOException
 
 import scala.concurrent.duration.{ Duration => ScalaDuration }
 
-import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
 import org.apache.tika.exception.TikaException
 import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{ Metadata => TikaMetadata }

@@ -7,7 +7,7 @@ import scala.concurrent.duration.{ Duration => ScalaDuration }
 import scala.reflect.runtime.universe.TypeTag
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.{Column, DataFrame, functions => F}
+import org.apache.spark.sql.{ functions => F, Column, DataFrame }
 
 /**
  * Utilities for wrapping arbitrary JVM functions into Spark UDFs that return a StepResult[T]
