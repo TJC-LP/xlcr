@@ -169,7 +169,7 @@ class PipelineSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach wit
 
   "Pipeline error handling" should "provide meaningful error messages" in {
     // Test various error scenarios
-    val invalidPath = "/invalid\0path/file.txt" // Null character in path
+    val invalidPath = "/invalid\u0000path/file.txt" // Null character in path
 
     Try {
       Pipeline.run(invalidPath, testOutputFile.toString)
