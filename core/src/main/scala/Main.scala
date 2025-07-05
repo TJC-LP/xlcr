@@ -1,273 +1,47 @@
 package com.tjclp.xlcr
 
-import java.nio.file.{ Files, Paths }
-
 import scopt.OParser
 
-import splitters.SplitStrategy
-import types.{ FileType, MimeType }
+import cli.{ AbstractMain, CommonCLI }
+import cli.CommonCLI.BaseConfig
 
-object Main {
-  def main(args: Array[String]): Unit = {
-    case class ExtendedConfig(
-      input: String = "",
-      output: String = "",
-      diffMode: Boolean = false,
-      splitMode: Boolean = false,
-      splitStrategy: Option[String] = None,
-      outputType: Option[String] = None,
-      outputFormat: Option[String] = None,
-      maxImageWidth: Int = 2000,
-      maxImageHeight: Int = 2000,
-      maxImageSizeBytes: Long = 1024 * 1024 * 5, // 5MB default
-      imageDpi: Int = 300,
-      jpegQuality: Float = 0.85f,
-      recursiveExtraction: Boolean = false,
-      maxRecursionDepth: Int = 5,
-      mappings: Seq[String] =
-        Seq.empty // strings like "xlsx=json" or "application/pdf=application/xml"
-    )
+/**
+ * Main entry point for the core XLCR application. Extends AbstractMain to leverage common CLI
+ * parsing and execution logic.
+ */
+object Main extends AbstractMain[BaseConfig] {
 
-    // The registries (BridgeRegistry, DocumentSplitter) will now initialize lazily
-    // when first accessed within Pipeline.run or Pipeline.split.
-    // No explicit init() call is needed here.
-    val builder = OParser.builder[ExtendedConfig]
-    val parser = {
-      import builder._
-      OParser.sequence(
-        programName("xlcr"),
-        head("xlcr", "1.0"),
-        opt[String]('i', "input")
-          .required()
-          .valueName("<fileOrDir>")
-          .action((x, c) => c.copy(input = x))
-          .text("Path to input file or directory"),
-        opt[String]('o', "output")
-          .required()
-          .valueName("<fileOrDir>")
-          .action((x, c) => c.copy(output = x))
-          .text("Path to output file or directory"),
-        opt[Boolean]('d', "diff")
-          .action((x, c) => c.copy(diffMode = x))
-          .text("enable diff mode to merge with existing output file"),
-        opt[Unit]("split")
-          .action((_, c) => c.copy(splitMode = true))
-          .text("Enable split mode (file-to-directory split)"),
-        opt[String]("strategy")
-          .action((x, c) => c.copy(splitStrategy = Some(x)))
-          .text(
-            "Split strategy (used with --split): page (PDF), sheet (Excel), slide (PowerPoint), " +
-              "attachment (emails), embedded (archives), heading (Word), paragraph, row, column, sentence"
-          ),
-        opt[String]("type")
-          .action((x, c) => c.copy(outputType = Some(x)))
-          .text(
-            "Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
-              "or extension (pdf). Used with --split only."
-          ),
-        // PDF to image conversion options
-        opt[String]("format")
-          .action((x, c) => c.copy(outputFormat = Some(x)))
-          .text(
-            "Output format for PDF page splitting: pdf (default), png, or jpg"
-          ),
-        opt[Int]("max-width")
-          .action((x, c) => c.copy(maxImageWidth = x))
-          .text("Maximum width in pixels for image output (default: 2000)"),
-        opt[Int]("max-height")
-          .action((x, c) => c.copy(maxImageHeight = x))
-          .text("Maximum height in pixels for image output (default: 2000)"),
-        opt[Long]("max-size")
-          .action((x, c) => c.copy(maxImageSizeBytes = x))
-          .text("Maximum size in bytes for image output (default: 5MB)"),
-        opt[Int]("dpi")
-          .action((x, c) => c.copy(imageDpi = x))
-          .text("DPI for PDF rendering (default: 300)"),
-        opt[Double]("quality")
-          .action((x, c) => c.copy(jpegQuality = x.toFloat))
-          .text("JPEG quality (0.0-1.0, default: 0.85)"),
-        // Recursive extraction options
-        opt[Unit]("recursive")
-          .action((_, c) => c.copy(recursiveExtraction = true))
-          .text("Enable recursive extraction of archives (ZIP within ZIP)"),
-        opt[Int]("max-recursion-depth")
-          .action((x, c) => c.copy(maxRecursionDepth = x))
-          .text("Maximum recursion depth for nested archives (default: 5)"),
-        opt[Seq[String]]("mapping")
-          .valueName("mimeOrExt1=mimeOrExt2,...")
-          .action((xs, c) => c.copy(mappings = xs))
-          .text(
-            "Either MIME or extension to MIME/extension mapping, e.g. 'pdf=xml' or 'application/vnd.ms-excel=application/json'"
-          )
-      )
-    }
+  override protected def programName: String     = "xlcr"
+  override protected def programVersion: String  = "1.0"
+  override protected def emptyConfig: BaseConfig = BaseConfig()
 
-    OParser.parse(parser, args, ExtendedConfig()) match {
-      case Some(config) =>
-        // Parse the mapping strings into a Map[MimeType, MimeType]
-        val mimeMap: Map[MimeType, MimeType] = config.mappings.flatMap { pair =>
-          val parts = pair.split("=", 2)
-          if (parts.length == 2) {
-            val inStr  = parts(0).trim
-            val outStr = parts(1).trim
-
-            (parseMimeOrExtension(inStr), parseMimeOrExtension(outStr)) match {
-              case (Some(inMime), Some(outMime)) =>
-                Some(inMime -> outMime)
-              case _ =>
-                System.err.println(s"Warning: could not parse mapping '$pair'")
-                None
-            }
-          } else {
-            System.err.println(s"Warning: invalid mapping format '$pair'")
-            None
-          }
-        }.toMap
-
-        val inputPath  = Paths.get(config.input)
-        val outputPath = Paths.get(config.output)
-
-        // Branch logic based on split vs convert modes
-        if (config.splitMode) {
-          // Split mode: expect input to be a single file and output to be a directory
-          if (Files.isDirectory(inputPath)) {
-            System.err.println(
-              "Split mode expects --input to be a file, not a directory."
-            )
-            sys.exit(1)
-          }
-
-          // Ensure output directory exists or can be created
-          if (!Files.exists(outputPath)) {
-            try Files.createDirectories(outputPath)
-            catch {
-              case ex: Exception =>
-                System.err.println(
-                  s"Failed to create output directory: ${ex.getMessage}"
-                )
-                sys.exit(1)
-            }
-          } else if (!Files.isDirectory(outputPath)) {
-            System.err.println(
-              "--output must be a directory when using --split mode."
-            )
-            sys.exit(1)
-          }
-
-          // Parse optional strategy
-          val splitStrategyOpt =
-            config.splitStrategy.flatMap(SplitStrategy.fromString)
-
-          // Handle output type - combine --type and --format options
-          // The format option is kept for backward compatibility
-          val outputMimeOpt =
-            if (config.outputType.isDefined) {
-              // If explicit type is set, use it
-              config.outputType.flatMap(parseMimeOrExtension)
-            } else if (config.outputFormat.isDefined) {
-              // Otherwise, if format is set, use it for backward compatibility
-              config.outputFormat.flatMap { fmt =>
-                fmt.toLowerCase match {
-                  case "png"          => Some(types.MimeType.ImagePng)
-                  case "jpg" | "jpeg" => Some(types.MimeType.ImageJpeg)
-                  case "pdf"          => Some(types.MimeType.ApplicationPdf)
-                  case _              => None
-                }
-              }
-            } else {
-              None
-            }
-
-          Pipeline.split(
-            inputPath = config.input,
-            outputDir = config.output,
-            strategy = splitStrategyOpt,
-            outputType = outputMimeOpt,
-            recursive = config.recursiveExtraction,
-            maxRecursionDepth = config.maxRecursionDepth,
-            maxImageWidth = config.maxImageWidth,
-            maxImageHeight = config.maxImageHeight,
-            maxImageSizeBytes = config.maxImageSizeBytes,
-            imageDpi = config.imageDpi,
-            jpegQuality = config.jpegQuality
-          )
-
-        } else {
-          // Conversion mode (existing behavior)
-          // Check if input path is a directory
-          if (Files.isDirectory(inputPath)) {
-            // Directory-based approach
-            if (mimeMap.nonEmpty) {
-              DirectoryPipeline.runDirectoryToDirectory(
-                inputDir = config.input,
-                outputDir = config.output,
-                mimeMappings = mimeMap,
-                diffMode = config.diffMode
-              )
-            } else {
-              System.err.println(
-                "No mime mappings provided for directory-based operation."
-              )
-              sys.exit(1)
-            }
-          } else {
-            // Single file conversion
-            // Determine if we need to create a bridge configuration
-            val bridgeConfig = {
-              val inputMime = utils.FileUtils.detectMimeType(Paths.get(config.input))
-              val outputMime =
-                utils.FileUtils.detectMimeTypeFromExtension(Paths.get(config.output), strict = true)
-
-              (inputMime, outputMime) match {
-                // Check if this is a PDF -> Image conversion
-                case (MimeType.ApplicationPdf, MimeType.ImagePng | MimeType.ImageJpeg) =>
-                  Some(bridges.image.ImageRenderConfig(
-                    maxBytes = config.maxImageSizeBytes,
-                    maxWidthPx = config.maxImageWidth,
-                    maxHeightPx = config.maxImageHeight,
-                    initialDpi = config.imageDpi,
-                    initialQuality = config.jpegQuality,
-                    autoTune = true
-                  ))
-                // Add other bridge configurations here as needed
-                case _ => None
-              }
-            }
-
-            Pipeline.run(
-              inputPath = config.input,
-              outputPath = config.output,
-              diffMode = config.diffMode,
-              config = bridgeConfig
-            )
-          }
-        }
-
-      case _ =>
-        // arguments are bad, error message will have been displayed
-        sys.exit(1)
-    }
-  }
+  // Getter methods to extract fields from BaseConfig
+  override protected def getInput(config: BaseConfig): String                 = config.input
+  override protected def getOutput(config: BaseConfig): String                = config.output
+  override protected def getDiffMode(config: BaseConfig): Boolean             = config.diffMode
+  override protected def getSplitMode(config: BaseConfig): Boolean            = config.splitMode
+  override protected def getSplitStrategy(config: BaseConfig): Option[String] = config.splitStrategy
+  override protected def getOutputType(config: BaseConfig): Option[String]    = config.outputType
+  override protected def getMappings(config: BaseConfig): Seq[String]         = config.mappings
+  override protected def getFailureMode(config: BaseConfig): Option[String]   = config.failureMode
+  override protected def getChunkRange(config: BaseConfig): Option[String]    = config.chunkRange
 
   /**
-   * Attempt to interpret a string as either a known MIME type or a known file extension.
+   * Builds all CLI options using CommonCLI utilities
    */
-  private def parseMimeOrExtension(str: String): Option[MimeType] = {
-    // First try direct MIME type parse
-    val parsedMime = MimeType.fromString(str)
+  override protected def buildAllOptions: OParser[_, BaseConfig] =
+    CommonCLI.baseParser(programName, programVersion)
 
-    if (parsedMime.isDefined) {
-      parsedMime
-    } else {
-      // Attempt to interpret it as an extension
-      // remove any leading dot, e.g. ".xlsx" -> "xlsx"
-      val ext =
-        if (str.startsWith(".")) str.substring(1).toLowerCase
-        else str.toLowerCase
-
-      // See if there's a matching FileType
-      val maybeFt = FileType.fromExtension(ext)
-      maybeFt.map(_.getMimeType)
+  /**
+   * Override executeDiff to provide core-specific diff functionality
+   */
+  override protected def executeDiff(config: BaseConfig): Unit =
+    config.diffMode match {
+      case false =>
+        logger.error("Diff mode not enabled")
+        sys.exit(1)
+      case true =>
+        logger.error("Diff mode not yet implemented")
+        sys.exit(1)
     }
-  }
 }

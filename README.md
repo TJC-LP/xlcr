@@ -23,6 +23,7 @@ Aspose Module (`coreAspose/run`):
 - Enhanced ZIP archive extraction using Aspose.ZIP with recursive capabilities and zipbomb protection
 - Professional-grade document splitting
 - Requires valid Aspose license(s) for production use
+- Shares the same CLI interface as core module for consistency
 
 SpreadsheetLLM Module (`coreSpreadsheetLLM/run`):
 - Compress Excel spreadsheets into LLM-friendly JSON format
