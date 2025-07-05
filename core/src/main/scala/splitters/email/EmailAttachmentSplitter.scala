@@ -50,8 +50,14 @@ object EmailAttachmentSplitter
 
       def harvest(part: Part): Unit =
         if (part.isMimeType("multipart/*")) {
-          val mp = part.getContent.asInstanceOf[Multipart]
-          (0 until mp.getCount).foreach(i => harvest(mp.getBodyPart(i)))
+          part.getContent match {
+            case mp: Multipart =>
+              (0 until mp.getCount).foreach(i => harvest(mp.getBodyPart(i)))
+            case _ =>
+              // Sometimes getContent returns the stream instead of Multipart
+              // In this case, skip processing this part
+              logger.warn(s"Expected Multipart but got ${part.getContent.getClass} for content type ${part.getContentType}")
+          }
         } else {
           val disposition = Option(part.getDisposition).getOrElse("")
           val ctype       = part.getContentType.toLowerCase
