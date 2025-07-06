@@ -37,6 +37,7 @@ package object aspose {
   type AsposePdfResolution = com.aspose.pdf.devices.Resolution
   type AsposePdfJpegDevice = com.aspose.pdf.devices.JpegDevice
   type AsposePdfPngDevice  = com.aspose.pdf.devices.PngDevice
+  type AsposePdfOptimizedMemoryStream = com.aspose.pdf.OptimizedMemoryStream
 
   object AsposePdfJpegDevice {
     def apply(resolution: AsposePdfResolution, quality: Int): AsposePdfJpegDevice =
