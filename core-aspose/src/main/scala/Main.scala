@@ -15,7 +15,7 @@ import utils.aspose.AsposeLicense.Product
 object Main extends AbstractMain[AsposeConfig] {
 
   override protected def programName: String       = "xlcr-aspose"
-  override protected def programVersion: String    = "1.1"
+  override protected def programVersion: String    = "0.1.0-RC9"
   override protected def emptyConfig: AsposeConfig = AsposeConfig()
 
   // Getter methods to extract fields from AsposeConfig
