@@ -40,7 +40,7 @@ object PdfPageAsposeSplitter
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
-      var pdfDocument: AsposePdfDocument = null
+      var pdfDocument: AsposePdfDocument         = null
       var optimizedStream: OptimizedMemoryStream = null
       try {
         // Load PDF document using OptimizedMemoryStream for better memory handling

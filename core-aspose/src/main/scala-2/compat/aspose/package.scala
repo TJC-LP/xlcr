@@ -33,10 +33,10 @@ package object aspose {
   }
 
   // PDF
-  type AsposePdfDocument   = com.aspose.pdf.Document
-  type AsposePdfResolution = com.aspose.pdf.devices.Resolution
-  type AsposePdfJpegDevice = com.aspose.pdf.devices.JpegDevice
-  type AsposePdfPngDevice  = com.aspose.pdf.devices.PngDevice
+  type AsposePdfDocument              = com.aspose.pdf.Document
+  type AsposePdfResolution            = com.aspose.pdf.devices.Resolution
+  type AsposePdfJpegDevice            = com.aspose.pdf.devices.JpegDevice
+  type AsposePdfPngDevice             = com.aspose.pdf.devices.PngDevice
   type AsposePdfOptimizedMemoryStream = com.aspose.pdf.OptimizedMemoryStream
 
   object AsposePdfJpegDevice {
