@@ -63,6 +63,12 @@ object AsposeBridge {
     def createDocument(stream: java.io.InputStream): com.aspose.pdf.Document =
       new com.aspose.pdf.Document(stream)
 
+    def createDocument(stream: com.aspose.pdf.OptimizedMemoryStream): com.aspose.pdf.Document =
+      new com.aspose.pdf.Document(stream)
+
+    def createOptimizedMemoryStream(): com.aspose.pdf.OptimizedMemoryStream =
+      new com.aspose.pdf.OptimizedMemoryStream()
+
     def createResolution(dpi: Int): com.aspose.pdf.devices.Resolution =
       new com.aspose.pdf.devices.Resolution(dpi)
 

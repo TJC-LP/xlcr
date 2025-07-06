@@ -2,9 +2,11 @@ package com.tjclp.xlcr
 package splitters
 package pdf
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import java.io.ByteArrayOutputStream
 
 import org.slf4j.LoggerFactory
+
+import com.aspose.pdf.OptimizedMemoryStream
 
 import compat.aspose.AsposePdfDocument
 import models.FileContent
@@ -38,12 +40,13 @@ object PdfPageAsposeSplitter
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
-      var pdfDocument: AsposePdfDocument = null
+      var pdfDocument: AsposePdfDocument         = null
+      var optimizedStream: OptimizedMemoryStream = null
       try {
-        // Load PDF document
-        pdfDocument = new AsposePdfDocument(
-          new ByteArrayInputStream(content.data)
-        )
+        // Load PDF document using OptimizedMemoryStream for better memory handling
+        optimizedStream = new OptimizedMemoryStream()
+        optimizedStream.write(content.data, 0, content.data.length)
+        pdfDocument = new AsposePdfDocument(optimizedStream)
         val pageCount = pdfDocument.getPages.size
 
         logger.info(s"Splitting PDF into $pageCount pages")
@@ -88,7 +91,7 @@ object PdfPageAsposeSplitter
               }
             }
         }
-      } finally
+      } finally {
         if (pdfDocument != null) {
           try
             pdfDocument.close()
@@ -97,6 +100,15 @@ object PdfPageAsposeSplitter
               logger.warn(s"Error closing original PDF document: ${e.getMessage}")
           }
         }
+        if (optimizedStream != null) {
+          try
+            optimizedStream.close()
+          catch {
+            case e: Exception =>
+              logger.warn(s"Error closing optimized memory stream: ${e.getMessage}")
+          }
+        }
+      }
     }
   }
 }
