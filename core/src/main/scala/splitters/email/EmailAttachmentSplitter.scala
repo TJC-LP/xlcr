@@ -56,7 +56,9 @@ object EmailAttachmentSplitter
             case _ =>
               // Sometimes getContent returns the stream instead of Multipart
               // In this case, skip processing this part
-              logger.warn(s"Expected Multipart but got ${part.getContent.getClass} for content type ${part.getContentType}")
+              logger.warn(
+                s"Expected Multipart but got ${part.getContent.getClass} for content type ${part.getContentType}"
+              )
           }
         } else {
           val disposition = Option(part.getDisposition).getOrElse("")
