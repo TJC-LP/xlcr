@@ -213,6 +213,10 @@ lazy val coreAspose = (project in file("core-aspose"))
       if (scalaVersion.value.startsWith("3.")) Seq.empty // ⇒ empty jar
       else (Compile / doc / sources).value
     },
+    Test / doc / sources := {
+      if (scalaVersion.value.startsWith("3.")) Seq.empty // ⇒ empty jar for tests too
+      else (Test / doc / sources).value
+    },
 
     // --- ② Make sure the (empty) jar is still attached & published ---
     Compile / packageDoc / publishArtifact := true,
