@@ -88,6 +88,19 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
             val srcPresForSlide = new Presentation(new ByteArrayInputStream(content.data))
 
             try {
+              // Copy slide size from source presentation to preserve dimensions
+              val srcSlideSize = srcPresForSlide.getSlideSize
+              val srcWidth = srcSlideSize.getSize.getWidth
+              val srcHeight = srcSlideSize.getSize.getHeight
+              
+              logger.debug(s"Source presentation dimensions: ${srcWidth}x${srcHeight}")
+              
+              newPres.getSlideSize.setSize(
+                srcWidth.toFloat,
+                srcHeight.toFloat,
+                com.aspose.slides.SlideSizeScaleType.DoNotScale
+              )
+              
               // Remove the automatically created blank slide so the cloned slide becomes index 0.
               newPres.getSlides.removeAt(0)
 
