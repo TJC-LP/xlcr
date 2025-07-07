@@ -1,0 +1,64 @@
+package com.tjclp.xlcr
+package splitters.word
+
+import org.slf4j.LoggerFactory
+
+import models.FileContent
+import splitters._
+import types.MimeType
+
+/**
+ * Router splitter for DOC files using Aspose that dispatches to the appropriate implementation
+ * based on the splitting strategy. Has HIGH priority to override POI-based router.
+ */
+object WordDocRouterAsposeSplitter extends DocumentSplitter[MimeType.ApplicationMsWord.type]
+    with SplitFailureHandler {
+
+  override protected val logger         = LoggerFactory.getLogger(getClass)
+  override def priority: types.Priority = types.Priority.HIGH
+
+  override def split(
+    content: FileContent[MimeType.ApplicationMsWord.type],
+    cfg: SplitConfig
+  ): Seq[DocChunk[_ <: MimeType]] = {
+
+    // Determine which strategy to use
+    val strategy = cfg.strategy match {
+      case Some(SplitStrategy.Auto) | None =>
+        // Default strategy for Word documents is Page
+        Some(SplitStrategy.Page)
+      case other => other
+    }
+
+    // Dispatch to appropriate splitter based on strategy
+    strategy match {
+      case Some(SplitStrategy.Page) =>
+        logger.debug("Routing DOC to Aspose page splitter")
+        WordDocPageAsposeSplitter.split(content, cfg.copy(strategy = Some(SplitStrategy.Page)))
+
+      case Some(SplitStrategy.Heading) =>
+        logger.debug("Routing DOC to Aspose heading splitter")
+        WordDocHeadingAsposeSplitter.split(
+          content,
+          cfg.copy(strategy = Some(SplitStrategy.Heading))
+        )
+
+      case Some(other) =>
+        handleInvalidStrategy(
+          content,
+          cfg,
+          other.displayName,
+          Seq("page", "heading")
+        )
+
+      case None =>
+        // This shouldn't happen due to the normalization above, but handle it anyway
+        handleInvalidStrategy(
+          content,
+          cfg,
+          "none",
+          Seq("page", "heading")
+        )
+    }
+  }
+}

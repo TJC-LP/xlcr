@@ -12,7 +12,7 @@ import splitters.excel.{ ExcelXlsSheetSplitter, ExcelXlsxSheetSplitter, OdsSheet
 import splitters.pdf.PdfPageSplitter
 import splitters.powerpoint.{ PowerPointPptSlideSplitter, PowerPointPptxSlideSplitter }
 import splitters.text.{ CsvSplitter, TextSplitter }
-import splitters.word.{ WordDocHeadingSplitter, WordDocxHeadingSplitter }
+import splitters.word.{ WordDocRouterSplitter, WordDocxRouterSplitter }
 import types.MimeType
 
 /**
@@ -120,11 +120,11 @@ class CoreRegistrations extends BridgeProvider with SplitterProvider {
     // Word
     SplitterInfo(
       MimeType.ApplicationMsWord,
-      WordDocHeadingSplitter
+      WordDocRouterSplitter
     ),
     SplitterInfo(
       MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
-      WordDocxHeadingSplitter
+      WordDocxRouterSplitter
     ),
     // Email
     SplitterInfo(MimeType.MessageRfc822, EmailAttachmentSplitter),

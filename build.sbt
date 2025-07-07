@@ -424,6 +424,11 @@ ThisBuild / githubWorkflowScalaVersions := Seq(scala212, scala213, scala3)
 ThisBuild / githubWorkflowTargetBranches := Seq("main", "feat/*")
 ThisBuild / githubWorkflowTargetTags     := Seq("v*")
 
+// Add environment variables for the workflow
+ThisBuild / githubWorkflowEnv := Map(
+  "ASPOSE_TOTAL_LICENSE_B64" -> "${{ secrets.ASPOSE_TOTAL_LICENSE_B64 }}"
+)
+
 // Add quality gates to the workflow
 ThisBuild / githubWorkflowBuildPreamble ++= Seq(
   WorkflowStep.Sbt(List("scalafmtCheckAll"), name = Some("Check Formatting"))

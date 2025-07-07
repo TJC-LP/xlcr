@@ -18,6 +18,7 @@ import splitters.email._
 import splitters.excel._
 import splitters.pdf.PdfPageAsposeSplitter
 import splitters.powerpoint._
+import splitters.word.{ WordDocRouterAsposeSplitter, WordDocxRouterAsposeSplitter }
 import types.MimeType
 
 /**
@@ -152,6 +153,12 @@ class AsposeRegistrations extends BridgeProvider with SplitterProvider {
     SplitterInfo(MimeType.ApplicationZip, ZipArchiveAsposeSplitter),
     SplitterInfo(MimeType.ApplicationSevenz, SevenZipArchiveAsposeSplitter),
     // PDF Splitters
-    SplitterInfo(MimeType.ApplicationPdf, PdfPageAsposeSplitter)
+    SplitterInfo(MimeType.ApplicationPdf, PdfPageAsposeSplitter),
+    // Word Splitters
+    SplitterInfo(MimeType.ApplicationMsWord, WordDocRouterAsposeSplitter),
+    SplitterInfo(
+      MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
+      WordDocxRouterAsposeSplitter
+    )
   )
 }

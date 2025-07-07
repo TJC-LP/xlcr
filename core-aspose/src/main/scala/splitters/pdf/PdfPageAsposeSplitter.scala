@@ -4,9 +4,8 @@ package pdf
 
 import java.io.ByteArrayOutputStream
 
-import org.slf4j.LoggerFactory
-
 import com.aspose.pdf.OptimizedMemoryStream
+import org.slf4j.LoggerFactory
 
 import compat.aspose.AsposePdfDocument
 import models.FileContent

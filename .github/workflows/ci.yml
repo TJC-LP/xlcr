@@ -15,7 +15,7 @@ on:
     tags: [v*]
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  ASPOSE_TOTAL_LICENSE_B64: ${{ secrets.ASPOSE_TOTAL_LICENSE_B64 }}
 
 jobs:
   build:

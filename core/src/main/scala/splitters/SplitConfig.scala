@@ -118,6 +118,11 @@ object SplitConfig {
 
     case MimeType.ApplicationPdf => SplitStrategy.Page
 
+    // Word
+    case MimeType.ApplicationMsWord |
+        MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument =>
+      SplitStrategy.Page
+
     // Excel
     case MimeType.ApplicationVndMsExcel |
         MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet |
