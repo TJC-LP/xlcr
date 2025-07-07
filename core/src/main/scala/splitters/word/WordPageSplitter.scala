@@ -1,13 +1,15 @@
 package com.tjclp.xlcr
 package splitters.word
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import org.apache.poi.hwpf.HWPFDocument
-import org.apache.poi.xwpf.usermodel.{XWPFDocument, XWPFParagraph}
-import org.apache.poi.openxml4j.opc.OPCPackage
-import org.slf4j.LoggerFactory
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
 import scala.jdk.CollectionConverters._
 import scala.util.Using
+
+import org.apache.poi.hwpf.HWPFDocument
+import org.apache.poi.openxml4j.opc.OPCPackage
+import org.apache.poi.xwpf.usermodel.{ XWPFDocument, XWPFParagraph }
+import org.slf4j.LoggerFactory
 
 import models.FileContent
 import splitters._
@@ -15,12 +17,12 @@ import types.MimeType
 
 trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandler {
   override protected val logger = LoggerFactory.getLogger(getClass)
-  
+
   override def split(
     content: FileContent[MimeType],
     cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
-    
+
     // Check strategy compatibility
     if (!cfg.hasStrategy(SplitStrategy.Page)) {
       return handleInvalidStrategy(
@@ -30,7 +32,7 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
         Seq("page")
       )
     }
-    
+
     // Wrap main splitting logic with failure handling
     withFailureHandling(content, cfg) {
       // Validate content is not empty
@@ -40,7 +42,7 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
           "Word file is empty"
         )
       }
-      
+
       val chunks = content.mimeType match {
         case MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument =>
           splitDocxDocument(content.data, cfg)
@@ -49,28 +51,28 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
         case _ =>
           throw new IllegalArgumentException(s"Unsupported MIME type: ${content.mimeType}")
       }
-      
+
       chunks
     }
   }
-  
-  private def splitDocxDocument(data: Array[Byte], cfg: SplitConfig): Seq[DocChunk[_ <: MimeType]] = {
+
+  private def splitDocxDocument(data: Array[Byte], cfg: SplitConfig): Seq[DocChunk[_ <: MimeType]] =
     Using(new ByteArrayInputStream(data)) { bis =>
       Using(new XWPFDocument(OPCPackage.open(bis))) { doc =>
         val paragraphs = doc.getParagraphs.asScala.toList
-        
+
         if (paragraphs.isEmpty) {
           throw new EmptyDocumentException(
             MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument.mimeType,
             "DOCX contains no paragraphs"
           )
         }
-        
+
         // Group paragraphs by page breaks
         val pages = groupParagraphsByPageBreaks(paragraphs)
-        
+
         logger.info(s"Splitting DOCX into ${pages.length} pages")
-        
+
         // Determine which pages to extract based on configuration
         val pagesToExtract = cfg.chunkRange match {
           case Some(range) =>
@@ -84,23 +86,23 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
           case None =>
             0 until pages.length
         }
-        
+
         // Create chunks from selected pages
         pagesToExtract.map { idx =>
           val pageParagraphs = pages(idx)
-          val pageDoc = new XWPFDocument()
-          
+          val pageDoc        = new XWPFDocument()
+
           // Copy paragraphs to new document
           pageParagraphs.foreach { para =>
             val newPara = pageDoc.createParagraph()
             copyParagraphContent(para, newPara)
           }
-          
+
           // Convert to bytes
           val baos = new ByteArrayOutputStream()
           pageDoc.write(baos)
           pageDoc.close()
-          
+
           val pageData = baos.toByteArray
           DocChunk(
             FileContent(
@@ -114,17 +116,17 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
         }
       }.get
     }.get
-  }
-  
-  private def groupParagraphsByPageBreaks(paragraphs: List[XWPFParagraph]): List[List[XWPFParagraph]] = {
+
+  private def groupParagraphsByPageBreaks(paragraphs: List[XWPFParagraph])
+    : List[List[XWPFParagraph]] = {
     if (paragraphs.isEmpty) return List.empty
-    
-    val pages = scala.collection.mutable.ListBuffer[List[XWPFParagraph]]()
+
+    val pages       = scala.collection.mutable.ListBuffer[List[XWPFParagraph]]()
     val currentPage = scala.collection.mutable.ListBuffer[XWPFParagraph]()
-    
+
     paragraphs.foreach { para =>
       currentPage += para
-      
+
       // Check if paragraph contains a page break
       if (hasPageBreak(para)) {
         if (currentPage.nonEmpty) {
@@ -133,42 +135,42 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
         }
       }
     }
-    
+
     // Add remaining paragraphs as last page
     if (currentPage.nonEmpty) {
       pages += currentPage.toList
     }
-    
+
     // If no page breaks were found, treat entire document as one page
     if (pages.isEmpty && paragraphs.nonEmpty) {
       pages += paragraphs
     }
-    
+
     pages.toList
   }
-  
-  private def hasPageBreak(paragraph: XWPFParagraph): Boolean = {
+
+  private def hasPageBreak(paragraph: XWPFParagraph): Boolean =
     paragraph.getRuns.asScala.exists { run =>
       // Check for explicit page breaks
       val hasExplicitBreak = run.getCTR != null && (
         (run.getCTR.getBrList != null && !run.getCTR.getBrList.isEmpty) ||
-        (run.getCTR.getLastRenderedPageBreakList != null && !run.getCTR.getLastRenderedPageBreakList.isEmpty)
+          (run.getCTR.getLastRenderedPageBreakList != null && !run.getCTR
+            .getLastRenderedPageBreakList.isEmpty)
       )
       hasExplicitBreak
     }
-  }
-  
+
   private def copyParagraphContent(source: XWPFParagraph, target: XWPFParagraph): Unit = {
     // Copy paragraph properties
     if (source.getCTP != null && source.getCTP.getPPr != null) {
       target.getCTP.setPPr(source.getCTP.getPPr)
     }
-    
+
     // Copy runs
     source.getRuns.asScala.foreach { run =>
       val newRun = target.createRun()
       newRun.setText(run.text())
-      
+
       // Copy basic formatting
       Option(run.getFontFamily).foreach(newRun.setFontFamily)
       Option(run.getFontSizeAsDouble).foreach(size => newRun.setFontSize(size))
@@ -178,26 +180,26 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
       Option(run.getColor).foreach(newRun.setColor)
     }
   }
-  
-  private def splitDocDocument(data: Array[Byte], cfg: SplitConfig): Seq[DocChunk[_ <: MimeType]] = {
+
+  private def splitDocDocument(data: Array[Byte], cfg: SplitConfig): Seq[DocChunk[_ <: MimeType]] =
     Using(new ByteArrayInputStream(data)) { bis =>
       Using(new HWPFDocument(bis)) { doc =>
         val range = doc.getRange
-        val text = range.text()
-        
+        val text  = range.text()
+
         if (text.isEmpty) {
           throw new EmptyDocumentException(
             MimeType.ApplicationMsWord.mimeType,
             "DOC contains no text"
           )
         }
-        
+
         // Split by page breaks (form feed character)
         val pageBreak = "\u000C"
-        val pages = text.split(pageBreak).toList.filter(_.nonEmpty)
-        
+        val pages     = text.split(pageBreak).toList.filter(_.nonEmpty)
+
         logger.info(s"Splitting DOC into ${pages.length} pages")
-        
+
         // Determine which pages to extract based on configuration
         val pagesToExtract = cfg.chunkRange match {
           case Some(range) =>
@@ -211,7 +213,7 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
           case None =>
             0 until pages.length
         }
-        
+
         // Create chunks from selected pages
         pagesToExtract.map { idx =>
           val pageText = pages(idx)
@@ -229,5 +231,4 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
         }
       }.get
     }.get
-  }
 }

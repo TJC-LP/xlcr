@@ -1,10 +1,12 @@
 package com.tjclp.xlcr
 package splitters.word
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import scala.util.Using
+
 import com.aspose.words._
 import org.slf4j.LoggerFactory
-import scala.util.Using
 
 import models.FileContent
 import splitters._
@@ -12,12 +14,12 @@ import types.MimeType
 
 trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailureHandler {
   override protected val logger = LoggerFactory.getLogger(getClass)
-  
+
   override def split(
     content: FileContent[MimeType],
     cfg: SplitConfig
   ): Seq[DocChunk[_ <: MimeType]] = {
-    
+
     // Check strategy compatibility
     if (!cfg.hasStrategy(SplitStrategy.Page)) {
       return handleInvalidStrategy(
@@ -27,7 +29,7 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
         Seq("page")
       )
     }
-    
+
     // Wrap main splitting logic with failure handling
     withFailureHandling(content, cfg) {
       // Validate content is not empty
@@ -37,31 +39,34 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
           "Word file is empty"
         )
       }
-      
+
       Using(new ByteArrayInputStream(content.data)) { bis =>
         val document = new Document(bis)
         try {
           val chunks = splitDocumentByPages(document, cfg, content.mimeType)
           chunks
-        } finally {
+        } finally
           document.cleanup()
-        }
       }.get
     }
   }
-  
-  private def splitDocumentByPages(doc: Document, cfg: SplitConfig, mimeType: MimeType): Seq[DocChunk[_ <: MimeType]] = {
+
+  private def splitDocumentByPages(
+    doc: Document,
+    cfg: SplitConfig,
+    mimeType: MimeType
+  ): Seq[DocChunk[_ <: MimeType]] = {
     val pageCount = doc.getPageCount
-    
+
     if (pageCount == 0) {
       throw new EmptyDocumentException(
         mimeType.mimeType,
         "Word document contains no pages"
       )
     }
-    
+
     logger.info(s"Splitting Word document into $pageCount pages")
-    
+
     // Determine which pages to extract based on configuration
     val pagesToExtract = cfg.chunkRange match {
       case Some(range) =>
@@ -75,16 +80,16 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
       case None =>
         0 until pageCount
     }
-    
+
     // Extract pages
     pagesToExtract.map { pageIndex =>
       // Extract single page using Aspose's extractPages method
       val pageDoc = doc.extractPages(pageIndex, 1)
-      
+
       // Convert to bytes
       val baos = new ByteArrayOutputStream()
       val saveOptions = mimeType match {
-        case MimeType.ApplicationMsWord => 
+        case MimeType.ApplicationMsWord =>
           val options = new DocSaveOptions()
           options.setSaveFormat(SaveFormat.DOC)
           options
@@ -95,10 +100,10 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
         case _ =>
           new OoxmlSaveOptions() // Default to DOCX
       }
-      
+
       pageDoc.save(baos, saveOptions)
       pageDoc.cleanup()
-      
+
       val pageData = baos.toByteArray
       DocChunk(
         FileContent(
