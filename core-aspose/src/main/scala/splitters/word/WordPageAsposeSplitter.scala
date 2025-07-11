@@ -2,18 +2,16 @@ package com.tjclp.xlcr
 package splitters.word
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
-
 import scala.util.Using
-
-import com.aspose.words._
-import org.slf4j.LoggerFactory
-
+import com.aspose.words.{ DocSaveOptions, Document, OoxmlSaveOptions, SaveFormat }
+import org.slf4j.{ Logger, LoggerFactory }
 import models.FileContent
 import splitters._
 import types.MimeType
+import utils.aspose.AsposeLicense
 
 trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailureHandler {
-  override protected val logger = LoggerFactory.getLogger(getClass)
+  override protected val logger: Logger = LoggerFactory.getLogger(getClass)
 
   override def split(
     content: FileContent[MimeType],
@@ -33,7 +31,7 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
     // Wrap main splitting logic with failure handling
     withFailureHandling(content, cfg) {
       // Initialize Aspose license on executor
-      utils.aspose.AsposeLicense.initializeIfNeeded()
+      AsposeLicense.initializeIfNeeded()
 
       // Validate content is not empty
       if (content.data.isEmpty) {

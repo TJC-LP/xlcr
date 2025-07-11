@@ -13,6 +13,7 @@ import splitters.{
   SplitStrategy
 }
 import types.MimeType
+import utils.aspose.AsposeLicense
 
 /**
  * Common helper used by the Aspose-based Excel sheet splitters.
@@ -47,7 +48,7 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     // Initialize Aspose license on executor
-    utils.aspose.AsposeLicense.initializeIfNeeded()
+    AsposeLicense.initializeIfNeeded()
 
     // Check for valid strategy
     if (!cfg.hasStrategy(SplitStrategy.Sheet)) {

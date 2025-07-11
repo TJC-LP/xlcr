@@ -5,12 +5,23 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.util.Using
 
-import com.aspose.words._
+import com.aspose.words.{
+  DocSaveOptions,
+  Document,
+  Node,
+  NodeType,
+  OoxmlSaveOptions,
+  Paragraph,
+  SaveFormat,
+  SaveOptions,
+  Section
+}
 import org.slf4j.LoggerFactory
 
 import models.FileContent
 import splitters._
 import types.MimeType
+import utils.aspose.AsposeLicense
 
 /**
  * Splits Word documents by Heading 1 style using Aspose.Words. This provides more accurate heading
@@ -37,7 +48,7 @@ trait WordHeadingAsposeSplitter extends DocumentSplitter[MimeType] with SplitFai
     // Wrap main splitting logic with failure handling
     withFailureHandling(content, cfg) {
       // Initialize Aspose license on executor
-      utils.aspose.AsposeLicense.initializeIfNeeded()
+      AsposeLicense.initializeIfNeeded()
 
       // Validate content is not empty
       if (content.data.isEmpty) {
