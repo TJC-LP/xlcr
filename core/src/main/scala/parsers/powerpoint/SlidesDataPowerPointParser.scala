@@ -5,7 +5,7 @@ import java.awt.{ Color, Rectangle }
 import java.io.ByteArrayInputStream
 
 import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.util.{ Try, Using }
 
 import org.apache.poi.sl.usermodel.ColorStyle
 import org.apache.poi.sl.usermodel.PaintStyle.SolidPaint
@@ -15,7 +15,6 @@ import models.FileContent
 import models.powerpoint._
 import parsers.SimpleParser
 import types.MimeType.ApplicationVndMsPowerpoint
-import scala.util.Using
 
 /**
  * SlidesDataPowerPointParser parses PowerPoint presentations (PPTX) into SlidesData, including

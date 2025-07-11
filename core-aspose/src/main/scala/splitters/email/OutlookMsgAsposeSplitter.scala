@@ -89,7 +89,7 @@ object OutlookMsgAsposeSplitter
         // Process all attachments
         for (attachment <- msg.getAttachments.asScala) {
           val name = Option(attachment.getName).getOrElse(s"attachment_${chunks.length}")
-          
+
           Using.resource(new ByteArrayOutputStream()) { contentStream =>
             attachment.save(contentStream)
             val bytes = contentStream.toByteArray

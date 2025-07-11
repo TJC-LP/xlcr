@@ -58,7 +58,7 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
   override protected def renderPage(
     pdfBytes: Array[Byte],
     cfg: ImageRenderConfig
-  ): Array[Byte] = {
+  ): Array[Byte] =
     Using.resource(PDDocument.load(pdfBytes)) { document =>
       val renderer = new PDFRenderer(document)
 
@@ -76,7 +76,6 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
         renderPng(image)
       }
     }
-  }
 
   /**
    * Scale down an image if it exceeds max dimensions.
@@ -114,12 +113,12 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
     quality: Float
   ): Array[Byte] = {
     val baos = new ByteArrayOutputStream()
-    
+
     Using.Manager { use =>
       val outputStream = use(new MemoryCacheImageOutputStream(baos))
-      val jpegWriter = ImageIO.getImageWritersByFormatName("jpeg").next()
+      val jpegWriter   = ImageIO.getImageWritersByFormatName("jpeg").next()
       use(autoCloseable(jpegWriter.dispose()))
-      
+
       jpegWriter.setOutput(outputStream)
 
       val params = jpegWriter.getDefaultWriteParam

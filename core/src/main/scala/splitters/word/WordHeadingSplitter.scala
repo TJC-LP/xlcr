@@ -35,7 +35,7 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
-      val src   = new XWPFDocument(new ByteArrayInputStream(content.data))
+      val src = new XWPFDocument(new ByteArrayInputStream(content.data))
       try {
         val elems = src.getBodyElements.asScala.toList
 
@@ -70,27 +70,26 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
           val end   = boundaries(sectionIdx + 1)
           val dest  = new XWPFDocument()
 
-          val chunkData = try {
-            elems.slice(start, end).foreach {
-              case p: XWPFParagraph =>
-                val dp = dest.createParagraph()
-                Option(p.getStyle).foreach(dp.setStyle)
-                val dr = dp.createRun()
-                dr.setText(p.getText)
-              case _: XWPFTable => // simplistic: skip tables for now
-              case _            => // ignore others
-            }
-
-            val baos = new ByteArrayOutputStream()
+          val chunkData =
             try {
-              dest.write(baos)
-              baos.toByteArray
-            } finally {
-              baos.close()
-            }
-          } finally {
-            dest.close()
-          }
+              elems.slice(start, end).foreach {
+                case p: XWPFParagraph =>
+                  val dp = dest.createParagraph()
+                  Option(p.getStyle).foreach(dp.setStyle)
+                  val dr = dp.createRun()
+                  dr.setText(p.getText)
+                case _: XWPFTable => // simplistic: skip tables for now
+                case _            => // ignore others
+              }
+
+              val baos = new ByteArrayOutputStream()
+              try {
+                dest.write(baos)
+                baos.toByteArray
+              } finally
+                baos.close()
+            } finally
+              dest.close()
 
           val labelParagraph = elems(start).asInstanceOf[XWPFParagraph]
           val label = Option(labelParagraph.getText)
@@ -102,9 +101,8 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
         }
 
         chunks
-      } finally {
+      } finally
         src.close()
-      }
     }.asInstanceOf[Seq[DocChunk[T]]]
   }
 }

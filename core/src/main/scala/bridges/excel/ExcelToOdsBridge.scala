@@ -10,7 +10,6 @@ import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 import org.slf4j.LoggerFactory
 
 import utils.resource.ResourceWrappers._
-
 import bridges.SimpleBridge
 import models.FileContent
 import parsers.{ Parser, SimpleParser }
@@ -67,21 +66,21 @@ object ExcelToOdsBridge
         logger.info("Converting Excel XLSX to ODS format.")
 
         // Create a temporary file to store the Excel content
-        val tempFile = java.io.File.createTempFile("excel-", ".xlsx")
+        val tempFile         = java.io.File.createTempFile("excel-", ".xlsx")
         val tempFileResource = autoCloseable(tempFile.delete())
-        
+
         val result = Using.Manager { use =>
           // Register temp file cleanup
           use(tempFileResource)
-          
+
           // Write the Excel data to the temporary file
           val fos = use(new java.io.FileOutputStream(tempFile))
           fos.write(model.data)
           fos.close() // Close early so WorkbookFactory can read it
-          
+
           // Create an ODS document
           val odsDocument = use(OdfSpreadsheetDocument.newSpreadsheetDocument())
-          
+
           // Load the Excel workbook
           val excelWorkbook = use(WorkbookFactory.create(tempFile))
 

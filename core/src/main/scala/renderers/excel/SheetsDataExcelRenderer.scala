@@ -4,13 +4,12 @@ package renderers.excel
 import java.io.ByteArrayOutputStream
 
 import scala.collection.compat._
-import scala.util.Try
+import scala.util.{ Try, Using }
 
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.ss.util.CellRangeAddress
 import org.apache.poi.xssf.usermodel._
 
-import scala.util.Using
 import models.FileContent
 import models.excel._
 import renderers.RendererConfig

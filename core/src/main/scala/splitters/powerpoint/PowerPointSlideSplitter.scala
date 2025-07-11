@@ -41,12 +41,12 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
         val tempFile = File.createTempFile("presentation", ".pptx")
         tempFile.deleteOnExit()
         use(autoCloseable(Try(tempFile.delete())))
-        
+
         // Write the content to the temporary file
         val fos = use(new FileOutputStream(tempFile))
         fos.write(content.data)
         fos.close() // Close early so XMLSlideShow can read it
-        
+
         // Open the presentation from the file instead of from a stream
         // This avoids the "Cannot retrieve data from Zip Entry" issue
         val src = use(new XMLSlideShow(new FileInputStream(tempFile)))
@@ -61,55 +61,55 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
           )
         }
 
-          // Determine which slides to extract based on configuration
-          val slidesToExtract = cfg.chunkRange match {
-            case Some(range) =>
-              // Filter to valid slide indices
-              range.filter(i => i >= 0 && i < total)
-            case None =>
-              0 until total
-          }
+        // Determine which slides to extract based on configuration
+        val slidesToExtract = cfg.chunkRange match {
+          case Some(range) =>
+            // Filter to valid slide indices
+            range.filter(i => i >= 0 && i < total)
+          case None =>
+            0 until total
+        }
 
-          // Process each slide - we'll use a separate temporary file for each destination
-          val chunks = slidesToExtract.flatMap { idx =>
-            val originalSlide = slides(idx)
-            try {
-              // Get slide title before attempting content import
-              val title = Option(originalSlide.getTitle)
-                .filter(_.nonEmpty)
-                .getOrElse(s"Slide ${idx + 1}")
+        // Process each slide - we'll use a separate temporary file for each destination
+        val chunks = slidesToExtract.flatMap { idx =>
+          val originalSlide = slides(idx)
+          try {
+            // Get slide title before attempting content import
+            val title = Option(originalSlide.getTitle)
+              .filter(_.nonEmpty)
+              .getOrElse(s"Slide ${idx + 1}")
 
-              val slideResult = Using.Manager { slideUse =>
-                // Create temp file for destination slideshow
-                val destFile = File.createTempFile(s"slide_${idx + 1}", ".pptx")
-                destFile.deleteOnExit()
-                slideUse(autoCloseable(Try(destFile.delete())))
-                
-                // Create a new presentation for this slide
-                val dest = slideUse(new XMLSlideShow())
-                
-                // Import the content from the original slide
-                dest.createSlide().importContent(originalSlide)
-                
-                // Write to the temp file
-                val destFos = slideUse(new FileOutputStream(destFile))
-                dest.write(destFos)
-                destFos.close() // Close to allow reading
-                
-                // Read the file back into a byte array
-                val destBytes = java.nio.file.Files.readAllBytes(destFile.toPath)
-                
-                // Create file content and chunk
-                val fc = FileContent(destBytes, content.mimeType)
-                Some(DocChunk(fc, title, idx, total))
-              }
-              slideResult.get
-            } catch {
-              case ex: Exception =>
-                logger.error(s"Error processing slide ${idx + 1}: ${ex.getMessage}", ex)
-                None
+            val slideResult = Using.Manager { slideUse =>
+              // Create temp file for destination slideshow
+              val destFile = File.createTempFile(s"slide_${idx + 1}", ".pptx")
+              destFile.deleteOnExit()
+              slideUse(autoCloseable(Try(destFile.delete())))
+
+              // Create a new presentation for this slide
+              val dest = slideUse(new XMLSlideShow())
+
+              // Import the content from the original slide
+              dest.createSlide().importContent(originalSlide)
+
+              // Write to the temp file
+              val destFos = slideUse(new FileOutputStream(destFile))
+              dest.write(destFos)
+              destFos.close() // Close to allow reading
+
+              // Read the file back into a byte array
+              val destBytes = java.nio.file.Files.readAllBytes(destFile.toPath)
+
+              // Create file content and chunk
+              val fc = FileContent(destBytes, content.mimeType)
+              Some(DocChunk(fc, title, idx, total))
             }
+            slideResult.get
+          } catch {
+            case ex: Exception =>
+              logger.error(s"Error processing slide ${idx + 1}: ${ex.getMessage}", ex)
+              None
           }
+        }
 
         if (chunks.isEmpty) {
           // If all slide imports failed, throw exception

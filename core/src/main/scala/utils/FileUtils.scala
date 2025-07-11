@@ -5,9 +5,7 @@ import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.{ Files, Path, StandardOpenOption }
 
-import scala.util.{ Failure, Success, Try }
-
-import scala.util.Using
+import scala.util.{ Failure, Success, Try, Using }
 
 import org.apache.tika.config.TikaConfig
 import org.apache.tika.io.TikaInputStream

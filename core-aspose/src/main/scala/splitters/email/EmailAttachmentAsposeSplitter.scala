@@ -45,7 +45,7 @@ object EmailAttachmentAsposeSplitter
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
       val msg = MailMessage.load(new ByteArrayInputStream(content.data))
-      
+
       Using.resource(msg) { _ =>
         val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
 
@@ -67,7 +67,7 @@ object EmailAttachmentAsposeSplitter
         // Process all attachments
         for (attachment <- msg.getAttachments.asScala) {
           val name = Option(attachment.getName).getOrElse(s"attachment_${chunks.length}")
-          
+
           Using.resource(new ByteArrayOutputStream()) { contentStream =>
             attachment.save(contentStream)
             val bytes = contentStream.toByteArray

@@ -69,9 +69,9 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
       // multiple times is not.
       Using.Manager { use =>
         val srcInputStream = use(new ByteArrayInputStream(content.data))
-        val srcWb = new AsposeWorkbook(srcInputStream)
+        val srcWb          = new AsposeWorkbook(srcInputStream)
         use(new DisposableWrapper(srcWb))
-        
+
         val sheets = srcWb.getWorksheets
         val total  = sheets.getCount
 
@@ -98,7 +98,7 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
           Using.Manager { destUse =>
             val destWb = new AsposeWorkbook()
             destUse(new DisposableWrapper(destWb))
-            
+
             val destSheets = destWb.getWorksheets
             // Remove the default empty sheet Aspose creates
             destSheets.removeAt(0)

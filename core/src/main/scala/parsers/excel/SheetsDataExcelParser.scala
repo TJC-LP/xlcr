@@ -3,11 +3,10 @@ package parsers.excel
 
 import java.io.ByteArrayInputStream
 
-import scala.util.Try
+import scala.util.{ Try, Using }
 
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
-import scala.util.Using
 import models.FileContent
 import models.excel.{ SheetData, SheetsData }
 import parsers.ParserConfig

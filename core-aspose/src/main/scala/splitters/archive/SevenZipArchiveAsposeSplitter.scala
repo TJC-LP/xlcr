@@ -102,7 +102,7 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
     withFailureHandling(content, cfg) {
       // Initialize Aspose license on executor
       utils.aspose.AsposeLicense.initializeIfNeeded()
-      
+
       // Initialize zipbomb protection
       val sessionId = initExtractSession()
 
@@ -144,7 +144,7 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
 
     Using.Manager { use =>
       val input = use(new ByteArrayInputStream(content.data))
-      
+
       // Use Aspose.ZIP to extract 7z archive entries
       val sevenZipArchive = new SevenZipArchive(input)
       use(new CloseableWrapper(sevenZipArchive))

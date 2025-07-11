@@ -2,9 +2,12 @@ package com.tjclp.xlcr
 package splitters.word
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
 import scala.util.Using
+
 import com.aspose.words.{ DocSaveOptions, Document, OoxmlSaveOptions, SaveFormat }
 import org.slf4j.{ Logger, LoggerFactory }
+
 import models.FileContent
 import splitters._
 import types.MimeType
@@ -43,7 +46,7 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
       }
 
       Using.Manager { use =>
-        val bis = use(new ByteArrayInputStream(content.data))
+        val bis      = use(new ByteArrayInputStream(content.data))
         val document = new Document(bis)
         use(new CleanupWrapper(document))
         splitDocumentByPages(document, cfg, content.mimeType)
@@ -103,7 +106,7 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
 
       val pageData = Using.Manager { use =>
         val pageDocWrapper = use(new CleanupWrapper(pageDoc))
-        val outputStream = use(baos)
+        val outputStream   = use(baos)
         pageDocWrapper.resource.save(outputStream, saveOptions)
         outputStream.toByteArray
       }.get

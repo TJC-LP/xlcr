@@ -14,7 +14,6 @@ import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType.ApplicationPdf
 import types.{ MimeType, Priority }
 import utils.aspose.AsposeLicense
-import utils.resource.ResourceWrappers._
 
 /**
  * Common implementation for Image to PDF conversion using Aspose.PDF. This trait provides the core
@@ -72,7 +71,7 @@ trait ImageToPdfAsposeBridgeImpl[I <: MimeType]
    */
   private def convertImageToPdf(
     inputStream: ByteArrayInputStream
-  ): ByteArrayOutputStream = {
+  ): ByteArrayOutputStream =
     // Create a new PDF document
     Using.resource(new Document()) { pdfDoc =>
       // Add a page
@@ -98,5 +97,4 @@ trait ImageToPdfAsposeBridgeImpl[I <: MimeType]
       pdfDoc.save(pdfOutput)
       pdfOutput
     }
-  }
 }

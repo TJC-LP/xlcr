@@ -75,16 +75,15 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
      * Load the email message from bytes. This method can be overridden by specific implementations
      * if needed.
      */
-    private def loadEmail(data: Array[Byte]): MailMessage = {
+    private def loadEmail(data: Array[Byte]): MailMessage =
       Using.resource(new ByteArrayInputStream(data)) { inputStream =>
         MailMessage.load(inputStream)
       }
-    }
 
     /**
      * Convert MailMessage to MHTML bytes.
      */
-    private def convertEmailToMhtml(message: MailMessage): Array[Byte] = {
+    private def convertEmailToMhtml(message: MailMessage): Array[Byte] =
       Using.resource(new ByteArrayOutputStream()) { mhtStream =>
         // Create MHTML save options
         val mhtOptions = new MhtSaveOptions()
@@ -95,15 +94,14 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
         message.save(mhtStream, mhtOptions)
         mhtStream.toByteArray
       }
-    }
 
     /**
      * Convert MHTML bytes to PDF bytes using Aspose.Words.
      */
-    private def convertMhtmlToPdf(mhtBytes: Array[Byte]): Array[Byte] = {
+    private def convertMhtmlToPdf(mhtBytes: Array[Byte]): Array[Byte] =
       Using.Manager { use =>
         val docStream = use(new ByteArrayInputStream(mhtBytes))
-        
+
         // Configure load options for MHTML
         val loadOpts = new LoadOptions()
         loadOpts.setLoadFormat(LoadFormat.MHTML)
@@ -111,12 +109,11 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
         // Load MHTML into Aspose.Words
         val asposeDoc = new Document(docStream, loadOpts)
         use(new CleanupWrapper(asposeDoc))
-        
+
         // Convert to PDF
         val pdfStream = use(new ByteArrayOutputStream())
         asposeDoc.save(pdfStream, SaveFormat.PDF)
         pdfStream.toByteArray
       }.get
-    }
   }
 }

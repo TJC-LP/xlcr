@@ -49,10 +49,10 @@ trait ExcelToPdfAsposeBridgeImpl[I <: MimeType]
 
         // Load workbook from bytes
         val pdfBytes = Using.Manager { use =>
-          val bais = use(new ByteArrayInputStream(model.data))
+          val bais     = use(new ByteArrayInputStream(model.data))
           val workbook = new Workbook(bais)
           use(new DisposableWrapper(workbook))
-          
+
           // Optional page setup across all worksheets
           val worksheets = workbook.getWorksheets
           for (i <- 0 until worksheets.getCount) {

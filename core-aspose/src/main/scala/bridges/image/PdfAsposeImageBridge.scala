@@ -61,7 +61,7 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
   protected def renderPage(
     pdfBytes: Array[Byte],
     cfg: ImageRenderConfig
-  ): Array[Byte] = {
+  ): Array[Byte] =
     Using.Manager { use =>
       // Load the document from bytes
       val document = new Document(pdfBytes)
@@ -112,7 +112,6 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
       // Return the image bytes
       baos.toByteArray
     }.get
-  }
 
   // Now using the shared ImageUtils implementation for optimal dimension calculation
 }

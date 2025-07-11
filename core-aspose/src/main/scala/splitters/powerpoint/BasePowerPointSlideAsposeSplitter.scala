@@ -64,10 +64,10 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
     withFailureHandling(content, cfg) {
       // Load the source presentation once so we can access slide metadata.
       val srcInputStream = new ByteArrayInputStream(content.data)
-      val srcPres = new Presentation(srcInputStream)
+      val srcPres        = new Presentation(srcInputStream)
       Using.resource(new DisposableWrapper(srcPres)) { wrapper =>
         val srcPres = wrapper.resource
-        val total = srcPres.getSlides.size()
+        val total   = srcPres.getSlides.size()
 
         // Check if presentation is empty
         if (total == 0) {
@@ -140,9 +140,9 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
             // ---------- legacy destructive branch ----------
             Using.Manager { use =>
               val outBaos = use(new ByteArrayOutputStream())
-              val pres = new Presentation(new ByteArrayInputStream(content.data))
+              val pres    = new Presentation(new ByteArrayInputStream(content.data))
               use(new DisposableWrapper(pres))
-              
+
               var i = pres.getSlides.size() - 1
               while (i >= 0) {
                 if (i != idx) pres.getSlides.removeAt(i)

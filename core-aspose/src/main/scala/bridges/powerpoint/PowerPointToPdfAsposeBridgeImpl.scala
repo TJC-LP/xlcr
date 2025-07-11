@@ -46,11 +46,11 @@ trait PowerPointToPdfAsposeBridgeImpl[I <: MimeType]
         )
 
         val pdfBytes = Using.Manager { use =>
-          val inputStream = use(new ByteArrayInputStream(model.data))
+          val inputStream  = use(new ByteArrayInputStream(model.data))
           val presentation = new Presentation(inputStream)
           use(new DisposableWrapper(presentation))
           val pdfOutput = use(new ByteArrayOutputStream())
-          
+
           presentation.save(pdfOutput, SaveFormat.Pdf)
           pdfOutput.toByteArray
         }.get

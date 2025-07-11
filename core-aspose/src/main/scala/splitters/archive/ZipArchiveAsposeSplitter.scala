@@ -54,7 +54,7 @@ object ZipArchiveAsposeSplitter
     withFailureHandling(content, cfg) {
       // Initialize Aspose license on executor
       utils.aspose.AsposeLicense.initializeIfNeeded()
-      
+
       // Initialize zipbomb protection
       val sessionId = initExtractSession()
 
@@ -122,11 +122,11 @@ object ZipArchiveAsposeSplitter
 
     Using.Manager { use =>
       val input = use(new ByteArrayInputStream(content.data))
-      
+
       // Use Aspose.ZIP to extract ZIP archive entries
       val zipArchive = new Archive(input)
       use(new CloseableWrapper(zipArchive))
-      
+
       val entries = zipArchive.getEntries.asScala
 
       // Check for potential zipbomb by calculating compression ratio
