@@ -5,7 +5,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.util.Using
 
 import com.aspose.zip.Archive
 
@@ -19,6 +19,7 @@ import splitters.{
   SplitStrategy
 }
 import types.{ FileType, MimeType }
+import utils.resource.ResourceWrappers._
 
 /**
  * ZIP archive splitter using Aspose.ZIP library. Extracts all entries from a ZIP archive file.
@@ -51,10 +52,13 @@ object ZipArchiveAsposeSplitter
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
+      // Initialize Aspose license on executor
+      utils.aspose.AsposeLicense.initializeIfNeeded()
+      
       // Initialize zipbomb protection
       val sessionId = initExtractSession()
 
-      try {
+      Using.resource(autoCloseable(cleanupExtractSession(sessionId))) { _ =>
         // Track the initial content
         trackExtractedSize(sessionId, content.data.length, cfg.maxTotalSize)
 
@@ -83,8 +87,7 @@ object ZipArchiveAsposeSplitter
           case None =>
             allChunks
         }
-      } finally
-        cleanupExtractSession(sessionId)
+      }
     }
   }
 
@@ -116,12 +119,15 @@ object ZipArchiveAsposeSplitter
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
-    val input  = new ByteArrayInputStream(content.data)
 
-    try {
+    Using.Manager { use =>
+      val input = use(new ByteArrayInputStream(content.data))
+      
       // Use Aspose.ZIP to extract ZIP archive entries
       val zipArchive = new Archive(input)
-      val entries    = zipArchive.getEntries.asScala
+      use(new CloseableWrapper(zipArchive))
+      
+      val entries = zipArchive.getEntries.asScala
 
       // Check for potential zipbomb by calculating compression ratio
       val totalCompressed   = entries.map(_.getCompressedSize).sum
@@ -165,10 +171,10 @@ object ZipArchiveAsposeSplitter
           }
 
           // Extract the entry data
-          val outputStream = new ByteArrayOutputStream()
-          entry.extract(outputStream)
-          val entryData = outputStream.toByteArray
-          outputStream.close()
+          val entryData = Using.resource(new ByteArrayOutputStream()) { outputStream =>
+            entry.extract(outputStream)
+            outputStream.toByteArray
+          }
 
           // Calculate compression ratio for zipbomb detection
           val compressedSize   = entry.getCompressedSize
@@ -205,14 +211,11 @@ object ZipArchiveAsposeSplitter
           )
         }
       }
-
-      zipArchive.close()
-    } catch {
+    }.recover {
       case e: Exception =>
         logger.error(s"Error extracting ZIP archive: ${e.getMessage}", e)
         throw e // Re-throw to be handled by withFailureHandling
-    } finally
-      Try(input.close())
+    }.get
 
     chunks.toSeq
   }

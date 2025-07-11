@@ -5,7 +5,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-import scala.util.Try
+import scala.util.Using
 
 import com.aspose.zip.SevenZipArchive
 
@@ -20,6 +20,7 @@ import splitters.{
   SplitStrategy
 }
 import types.{ FileType, MimeType }
+import utils.resource.ResourceWrappers._
 
 /**
  * 7-Zip archive splitter using Aspose.ZIP library. Extracts all entries from a 7z archive file.
@@ -99,10 +100,13 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
+      // Initialize Aspose license on executor
+      utils.aspose.AsposeLicense.initializeIfNeeded()
+      
       // Initialize zipbomb protection
       val sessionId = initExtractSession()
 
-      try {
+      Using.resource(autoCloseable(cleanupExtractSession(sessionId))) { _ =>
         // Track the initial content
         trackExtractedSize(sessionId, content.data.length, cfg.maxTotalSize)
 
@@ -123,8 +127,7 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
         chunks.zipWithIndex.map { case (chunk, newIndex) =>
           chunk.copy(index = newIndex, total = total)
         }.toSeq
-      } finally
-        cleanupExtractSession(sessionId)
+      }
     }
   }
 
@@ -138,12 +141,14 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
   ): Seq[DocChunk[_ <: MimeType]] = {
 
     val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
-    val input  = new ByteArrayInputStream(content.data)
 
-    try {
+    Using.Manager { use =>
+      val input = use(new ByteArrayInputStream(content.data))
+      
       // Use Aspose.ZIP to extract 7z archive entries
       val sevenZipArchive = new SevenZipArchive(input)
-      val entries         = sevenZipArchive.getEntries.asScala
+      use(new CloseableWrapper(sevenZipArchive))
+      val entries = sevenZipArchive.getEntries.asScala
 
       // Calculate total sizes for zipbomb detection
       val totalCompressed   = entries.map(_.getCompressedSize).sum
@@ -179,10 +184,10 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
           }
 
           // Extract the entry data
-          val outputStream = new ByteArrayOutputStream()
-          entry.extract(outputStream)
-          val entryData = outputStream.toByteArray
-          outputStream.close()
+          val entryData = Using.resource(new ByteArrayOutputStream()) { outputStream =>
+            entry.extract(outputStream)
+            outputStream.toByteArray
+          }
 
           // Calculate compression ratio for zipbomb detection
           val compressedSize   = entry.getCompressedSize
@@ -220,16 +225,14 @@ object SevenZipArchiveAsposeSplitter extends HighPrioritySplitter[MimeType.Appli
         }
       }
 
-      sevenZipArchive.close()
-    } catch {
+    }.recover {
       case e: Exception =>
         logger.error(s"Error extracting 7z archive: ${e.getMessage}", e)
         throw new CorruptedDocumentException(
           content.mimeType.toString,
           s"Failed to extract 7z archive: ${e.getMessage}"
         )
-    } finally
-      Try(input.close())
+    }.get
 
     chunks.toSeq
   }
