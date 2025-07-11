@@ -9,6 +9,7 @@ import models.FileContent
 import splitters._
 import types.MimeType
 import utils.aspose.AsposeLicense
+import utils.resource.ResourceWrappers._
 
 trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailureHandler {
   override protected val logger: Logger = LoggerFactory.getLogger(getClass)
@@ -41,13 +42,11 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
         )
       }
 
-      Using(new ByteArrayInputStream(content.data)) { bis =>
+      Using.Manager { use =>
+        val bis = use(new ByteArrayInputStream(content.data))
         val document = new Document(bis)
-        try {
-          val chunks = splitDocumentByPages(document, cfg, content.mimeType)
-          chunks
-        } finally
-          document.cleanup()
+        use(new CleanupWrapper(document))
+        splitDocumentByPages(document, cfg, content.mimeType)
       }.get
     }
   }
@@ -102,13 +101,12 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
           new OoxmlSaveOptions() // Default to DOCX
       }
 
-      val pageData = try {
-        pageDoc.save(baos, saveOptions)
-        baos.toByteArray
-      } finally {
-        pageDoc.cleanup()
-        baos.close()
-      }
+      val pageData = Using.Manager { use =>
+        val pageDocWrapper = use(new CleanupWrapper(pageDoc))
+        val outputStream = use(baos)
+        pageDocWrapper.resource.save(outputStream, saveOptions)
+        outputStream.toByteArray
+      }.get
 
       DocChunk(
         FileContent(

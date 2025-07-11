@@ -3,6 +3,8 @@ package splitters.excel
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import compat.aspose.AsposeWorkbook
 import models.FileContent
 import splitters.{
@@ -14,6 +16,7 @@ import splitters.{
 }
 import types.MimeType
 import utils.aspose.AsposeLicense
+import utils.resource.ResourceWrappers._
 
 /**
  * Common helper used by the Aspose-based Excel sheet splitters.
@@ -64,14 +67,11 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
     withFailureHandling(content, cfg) {
       // Load the source workbook once – copying sheets is cheap, parsing XLSX
       // multiple times is not.
-      val srcInputStream = new ByteArrayInputStream(content.data)
-      val srcWb = try {
-        new AsposeWorkbook(srcInputStream)
-      } finally {
-        srcInputStream.close()
-      }
-      
-      try {
+      Using.Manager { use =>
+        val srcInputStream = use(new ByteArrayInputStream(content.data))
+        val srcWb = new AsposeWorkbook(srcInputStream)
+        use(new DisposableWrapper(srcWb))
+        
         val sheets = srcWb.getWorksheets
         val total  = sheets.getCount
 
@@ -95,8 +95,10 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
           val srcSheet = sheets.get(idx)
 
           // Create a fresh workbook with *no* sheets, then copy the target one
-          val destWb     = new AsposeWorkbook()
-          try {
+          Using.Manager { destUse =>
+            val destWb = new AsposeWorkbook()
+            destUse(new DisposableWrapper(destWb))
+            
             val destSheets = destWb.getWorksheets
             // Remove the default empty sheet Aspose creates
             destSheets.removeAt(0)
@@ -112,21 +114,13 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
             destSheet.setVisible(true)
 
             // Persist to bytes
-            val baos = new ByteArrayOutputStream()
-            try {
-              destWb.save(baos, fileFormatType)
-              val fc = FileContent(baos.toByteArray, outputMimeType)
-              DocChunk(fc, srcSheet.getName, idx, total)
-            } finally {
-              baos.close()
-            }
-          } finally {
-            destWb.dispose()
-          }
+            val baos = destUse(new ByteArrayOutputStream())
+            destWb.save(baos, fileFormatType)
+            val fc = FileContent(baos.toByteArray, outputMimeType)
+            DocChunk(fc, srcSheet.getName, idx, total)
+          }.get
         }
-      } finally {
-        srcWb.dispose()
-      }
+      }.get
     }
   }
 }

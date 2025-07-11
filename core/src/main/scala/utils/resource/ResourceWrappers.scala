@@ -1,6 +1,8 @@
 package com.tjclp.xlcr
 package utils.resource
 
+import scala.language.reflectiveCalls
+
 /**
  * Provides implicit conversions to make various resource types compatible with scala.util.Using.
  * This allows us to use the Using pattern with resources that don't implement AutoCloseable,
@@ -26,7 +28,7 @@ object ResourceWrappers {
   /**
    * Wrapper for Apache POI Workbook objects which already have close() but don't implement AutoCloseable.
    */
-  implicit class WorkbookWrapper[T <: { def close(): Unit }](val resource: T) extends AutoCloseable {
+  implicit class CloseableWrapper[T <: { def close(): Unit }](val resource: T) extends AutoCloseable {
     override def close(): Unit = resource.close()
   }
 
@@ -35,16 +37,12 @@ object ResourceWrappers {
    * Usage: resource.withCleanup(r => r.customCleanupMethod())
    */
   implicit class CustomCleanupWrapper[T](val resource: T) extends AnyVal {
-    def withCleanup(cleanup: T => Unit): AutoCloseable = new AutoCloseable {
-      override def close(): Unit = cleanup(resource)
-    }
+    def withCleanup(cleanup: T => Unit): AutoCloseable = () => cleanup(resource)
   }
 
   /**
    * Helper to create an AutoCloseable from a cleanup function.
    * Useful for temporary files or other resources that need custom cleanup.
    */
-  def autoCloseable(cleanup: => Unit): AutoCloseable = new AutoCloseable {
-    override def close(): Unit = cleanup
-  }
+  def autoCloseable(cleanup: => Unit): AutoCloseable = () => cleanup
 }
