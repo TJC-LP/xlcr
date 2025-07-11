@@ -11,6 +11,7 @@ import models.FileContent
 import models.excel.{ SheetData, SheetsData }
 import parsers.ParserConfig
 import types.MimeType
+import utils.resource.ResourceWrappers._
 
 /**
  * SheetsDataExcelParser parses Excel files (XLSX) into SheetsData.
@@ -31,8 +32,10 @@ class SheetsDataExcelParser
     config: Option[ParserConfig] = None
   ): SheetsData =
     Try {
-      Using.resource(new ByteArrayInputStream(input.data)) { bais =>
-        val workbook  = WorkbookFactory.create(bais)
+      Using.Manager { use =>
+        val bais     = use(new ByteArrayInputStream(input.data))
+        val workbook = WorkbookFactory.create(bais)
+        use(new CloseableWrapper(workbook))
         val evaluator = workbook.getCreationHelper.createFormulaEvaluator()
 
         // Apply config if provided and it's an ExcelParserConfig
@@ -47,9 +50,8 @@ class SheetsDataExcelParser
           val sheet = workbook.getSheetAt(idx)
           SheetData.fromSheet(sheet, evaluator)
         }
-        workbook.close()
         SheetsData(sheets.toList)
-      }
+      }.get
     }.recover { case ex: Exception =>
       throw ParserError(
         s"Failed to parse Excel to SheetsData: ${ex.getMessage}",

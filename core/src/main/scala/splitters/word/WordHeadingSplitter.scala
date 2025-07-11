@@ -5,12 +5,14 @@ package word
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.jdk.CollectionConverters._
+import scala.util.Using
 
 import org.apache.poi.xwpf.usermodel.{ XWPFDocument, XWPFParagraph, XWPFTable }
 import org.slf4j.LoggerFactory
 
 import models.FileContent
 import types.MimeType
+import utils.resource.ResourceWrappers._
 
 /** Splits a DOCX on Heading 1 paragraphs. */
 trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
@@ -35,8 +37,10 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
-      val src = new XWPFDocument(new ByteArrayInputStream(content.data))
-      try {
+      Using.Manager { use =>
+        val src = new XWPFDocument(new ByteArrayInputStream(content.data))
+        use(new CloseableWrapper(src))
+
         val elems = src.getBodyElements.asScala.toList
 
         // identify indices of Heading1
@@ -68,28 +72,25 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
         val chunks = sectionsToExtract.map { sectionIdx =>
           val start = boundaries(sectionIdx)
           val end   = boundaries(sectionIdx + 1)
-          val dest  = new XWPFDocument()
 
-          val chunkData =
-            try {
-              elems.slice(start, end).foreach {
-                case p: XWPFParagraph =>
-                  val dp = dest.createParagraph()
-                  Option(p.getStyle).foreach(dp.setStyle)
-                  val dr = dp.createRun()
-                  dr.setText(p.getText)
-                case _: XWPFTable => // simplistic: skip tables for now
-                case _            => // ignore others
-              }
+          val chunkData = Using.Manager { chunkUse =>
+            val dest = new XWPFDocument()
+            chunkUse(new CloseableWrapper(dest))
 
-              val baos = new ByteArrayOutputStream()
-              try {
-                dest.write(baos)
-                baos.toByteArray
-              } finally
-                baos.close()
-            } finally
-              dest.close()
+            elems.slice(start, end).foreach {
+              case p: XWPFParagraph =>
+                val dp = dest.createParagraph()
+                Option(p.getStyle).foreach(dp.setStyle)
+                val dr = dp.createRun()
+                dr.setText(p.getText)
+              case _: XWPFTable => // simplistic: skip tables for now
+              case _            => // ignore others
+            }
+
+            val baos = chunkUse(new ByteArrayOutputStream())
+            dest.write(baos)
+            baos.toByteArray
+          }.get
 
           val labelParagraph = elems(start).asInstanceOf[XWPFParagraph]
           val label = Option(labelParagraph.getText)
@@ -101,8 +102,7 @@ trait WordHeadingSplitter[T <: MimeType] extends DocumentSplitter[T]
         }
 
         chunks
-      } finally
-        src.close()
+      }.get
     }.asInstanceOf[Seq[DocChunk[T]]]
   }
 }

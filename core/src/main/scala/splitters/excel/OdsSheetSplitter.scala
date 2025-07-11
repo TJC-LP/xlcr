@@ -5,10 +5,13 @@ package excel
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import java.util.logging.Level
 
+import scala.util.Using
+
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 
 import models.FileContent
 import types.MimeType
+import utils.resource.ResourceWrappers._
 
 object OdsSheetSplitter
     extends DocumentSplitter[
@@ -51,24 +54,24 @@ object OdsSheetSplitter
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
-      // Load the ODS document
-      val tempDoc = OdfSpreadsheetDocument.loadDocument(
-        new ByteArrayInputStream(content.data)
-      )
-      val sheets = tempDoc.getTableList(false)
-      val total  = sheets.size()
+      // Load the ODS document to get sheet information
+      val (total, sheetNames) = {
+        val tempDoc = OdfSpreadsheetDocument.loadDocument(new ByteArrayInputStream(content.data))
+        Using.resource(new CloseableWrapper(tempDoc)) { _ =>
+          val sheets = tempDoc.getTableList(false)
+          val total  = sheets.size()
 
-      if (total == 0) {
-        tempDoc.close()
-        throw new EmptyDocumentException(
-          content.mimeType.mimeType,
-          "ODS spreadsheet contains no sheets"
-        )
+          if (total == 0) {
+            throw new EmptyDocumentException(
+              content.mimeType.mimeType,
+              "ODS spreadsheet contains no sheets"
+            )
+          }
+
+          val sheetNames = (0 until total).map(idx => sheets.get(idx).getTableName)
+          (total, sheetNames)
+        }
       }
-
-      val sheetNames = (0 until total).map(idx => sheets.get(idx).getTableName)
-
-      tempDoc.close()
 
       // Determine which sheets to extract based on configuration
       val sheetsToExtract = cfg.chunkRange match {
@@ -82,27 +85,27 @@ object OdsSheetSplitter
       // Create a new document for each sheet
       sheetsToExtract.map { idx =>
         val name = sheetNames(idx)
-        // Create a new document with only this sheet
-        val doc = OdfSpreadsheetDocument.loadDocument(
-          new ByteArrayInputStream(content.data)
-        )
-        val allSheets = doc.getTableList(false)
+        Using.Manager { use =>
+          // Create a new document with only this sheet
+          val doc = OdfSpreadsheetDocument.loadDocument(new ByteArrayInputStream(content.data))
+          use(new CloseableWrapper(doc))
+          val allSheets = doc.getTableList(false)
 
-        // Keep only the target sheet
-        val sheetsToRemove = (0 until allSheets.size()).filter(_ != idx)
-        sheetsToRemove.sorted.reverse.foreach { i =>
-          // Get the sheet and remove it
-          val sheetToRemove = allSheets.get(i)
-          sheetToRemove.remove()
-        }
+          // Keep only the target sheet
+          val sheetsToRemove = (0 until allSheets.size()).filter(_ != idx)
+          sheetsToRemove.sorted.reverse.foreach { i =>
+            // Get the sheet and remove it
+            val sheetToRemove = allSheets.get(i)
+            sheetToRemove.remove()
+          }
 
-        // Save to byte array
-        val baos = new ByteArrayOutputStream()
-        doc.save(baos)
-        doc.close()
+          // Save to byte array
+          val baos = use(new ByteArrayOutputStream())
+          doc.save(baos)
 
-        val fc = FileContent(baos.toByteArray, content.mimeType)
-        DocChunk(fc, name, idx, total)
+          val fc = FileContent(baos.toByteArray, content.mimeType)
+          DocChunk(fc, name, idx, total)
+        }.get
       }
     }.asInstanceOf[Seq[DocChunk[MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type]]]
   }

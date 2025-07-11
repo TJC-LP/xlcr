@@ -15,6 +15,7 @@ import models.FileContent
 import models.powerpoint._
 import parsers.SimpleParser
 import types.MimeType.ApplicationVndMsPowerpoint
+import utils.resource.ResourceWrappers._
 
 /**
  * SlidesDataPowerPointParser parses PowerPoint presentations (PPTX) into SlidesData, including
@@ -26,8 +27,10 @@ object SlidesDataPowerPointParser
     input: FileContent[ApplicationVndMsPowerpoint.type]
   ): SlidesData =
     Try {
-      Using.resource(new ByteArrayInputStream(input.data)) { bais =>
-        val ppt = new XMLSlideShow(bais)
+      Using.Manager { use =>
+        val bais = use(new ByteArrayInputStream(input.data))
+        val ppt  = new XMLSlideShow(bais)
+        use(new CloseableWrapper(ppt))
         val slides = ppt.getSlides.asScala.zipWithIndex.map {
           case (slide, idx) =>
             val title = Option(slide.getTitle)
@@ -81,9 +84,8 @@ object SlidesDataPowerPointParser
             )
         }.toList
 
-        ppt.close()
         SlidesData(slides)
-      }
+      }.get
     }.recover { case ex: Exception =>
       throw ParserError(
         s"Failed to parse PowerPoint to SlidesData: ${ex.getMessage}",

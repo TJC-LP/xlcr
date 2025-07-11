@@ -4,12 +4,15 @@ package excel
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import org.apache.poi.openxml4j.util.ZipSecureFile
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.slf4j.LoggerFactory
 
 import models.FileContent
 import types.MimeType
+import utils.resource.ResourceWrappers._
 
 /**
  * Trait providing common Excel sheet splitting functionality. Can be mixed into specific splitter
@@ -43,19 +46,22 @@ trait ExcelSheetSplitterTrait[M <: MimeType] extends SplitFailureHandler {
       try {
         ZipSecureFile.setMaxFileCount(cfg.maxFileCount)
 
-        val tempWb = WorkbookFactory.create(new ByteArrayInputStream(content.data))
-        val total  = tempWb.getNumberOfSheets
+        val (total, sheetNames) = {
+          val tempWb = WorkbookFactory.create(new ByteArrayInputStream(content.data))
+          Using.resource(new CloseableWrapper(tempWb)) { _ =>
+            val total = tempWb.getNumberOfSheets
 
-        if (total == 0) {
-          tempWb.close()
-          throw new EmptyDocumentException(
-            content.mimeType.toString,
-            "Workbook contains no sheets"
-          )
+            if (total == 0) {
+              throw new EmptyDocumentException(
+                content.mimeType.toString,
+                "Workbook contains no sheets"
+              )
+            }
+
+            val sheetNames = (0 until total).map(tempWb.getSheetName)
+            (total, sheetNames)
+          }
         }
-
-        val sheetNames = (0 until total).map(tempWb.getSheetName)
-        tempWb.close()
 
         // Determine which sheets to extract based on configuration
         val sheetsToExtract = cfg.chunkRange match {
@@ -68,16 +74,19 @@ trait ExcelSheetSplitterTrait[M <: MimeType] extends SplitFailureHandler {
 
         sheetsToExtract.map { idx =>
           val name = sheetNames(idx)
-          val wb   = WorkbookFactory.create(new ByteArrayInputStream(content.data))
-          val cnt  = wb.getNumberOfSheets
-          (cnt - 1 to 0 by -1).foreach(i => if (i != idx) wb.removeSheetAt(i))
+          Using.Manager { use =>
+            val bais = use(new ByteArrayInputStream(content.data))
+            val wb   = WorkbookFactory.create(bais)
+            use(new CloseableWrapper(wb))
+            val cnt = wb.getNumberOfSheets
+            (cnt - 1 to 0 by -1).foreach(i => if (i != idx) wb.removeSheetAt(i))
 
-          val baos = new ByteArrayOutputStream()
-          wb.write(baos)
-          wb.close()
+            val baos = use(new ByteArrayOutputStream())
+            wb.write(baos)
 
-          val fc = FileContent(baos.toByteArray, mimeType)
-          DocChunk(fc, name, idx, total)
+            val fc = FileContent(baos.toByteArray, mimeType)
+            DocChunk(fc, name, idx, total)
+          }.get
         }
       } finally ZipSecureFile.setMaxFileCount(1000L) // Revert back to default setting
     }.asInstanceOf[Seq[DocChunk[M]]]

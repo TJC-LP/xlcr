@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import models.FileContent
 import splitters._
 import types.MimeType
+import utils.resource.ResourceWrappers._
 
 trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandler {
   override protected val logger = LoggerFactory.getLogger(getClass)
@@ -57,40 +58,47 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
   }
 
   private def splitDocxDocument(data: Array[Byte], cfg: SplitConfig): Seq[DocChunk[_ <: MimeType]] =
-    Using(new ByteArrayInputStream(data)) { bis =>
-      Using(new XWPFDocument(OPCPackage.open(bis))) { doc =>
-        val paragraphs = doc.getParagraphs.asScala.toList
+    Using.Manager { use =>
+      val bis = use(new ByteArrayInputStream(data))
+      val pkg = OPCPackage.open(bis)
+      use(new CloseableWrapper(pkg))
+      val doc = new XWPFDocument(pkg)
+      use(new CloseableWrapper(doc))
 
-        if (paragraphs.isEmpty) {
-          throw new EmptyDocumentException(
-            MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument.mimeType,
-            "DOCX contains no paragraphs"
-          )
-        }
+      val paragraphs = doc.getParagraphs.asScala.toList
 
-        // Group paragraphs by page breaks
-        val pages = groupParagraphsByPageBreaks(paragraphs)
+      if (paragraphs.isEmpty) {
+        throw new EmptyDocumentException(
+          MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument.mimeType,
+          "DOCX contains no paragraphs"
+        )
+      }
 
-        logger.info(s"Splitting DOCX into ${pages.length} pages")
+      // Group paragraphs by page breaks
+      val pages = groupParagraphsByPageBreaks(paragraphs)
 
-        // Determine which pages to extract based on configuration
-        val pagesToExtract = cfg.chunkRange match {
-          case Some(range) =>
-            val validPages = range.filter(i => i >= 0 && i < pages.length)
-            if (validPages.isEmpty) {
-              throw new IllegalArgumentException(
-                s"Requested page range ${range.start}-${range.end} is outside document bounds (0-${pages.length - 1})"
-              )
-            }
-            validPages
-          case None =>
-            0 until pages.length
-        }
+      logger.info(s"Splitting DOCX into ${pages.length} pages")
 
-        // Create chunks from selected pages
-        pagesToExtract.map { idx =>
-          val pageParagraphs = pages(idx)
-          val pageDoc        = new XWPFDocument()
+      // Determine which pages to extract based on configuration
+      val pagesToExtract = cfg.chunkRange match {
+        case Some(range) =>
+          val validPages = range.filter(i => i >= 0 && i < pages.length)
+          if (validPages.isEmpty) {
+            throw new IllegalArgumentException(
+              s"Requested page range ${range.start}-${range.end} is outside document bounds (0-${pages.length - 1})"
+            )
+          }
+          validPages
+        case None =>
+          0 until pages.length
+      }
+
+      // Create chunks from selected pages
+      pagesToExtract.map { idx =>
+        val pageParagraphs = pages(idx)
+        Using.Manager { pageUse =>
+          val pageDoc = new XWPFDocument()
+          pageUse(new CloseableWrapper(pageDoc))
 
           // Copy paragraphs to new document
           pageParagraphs.foreach { para =>
@@ -99,9 +107,8 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
           }
 
           // Convert to bytes
-          val baos = new ByteArrayOutputStream()
+          val baos = pageUse(new ByteArrayOutputStream())
           pageDoc.write(baos)
-          pageDoc.close()
 
           val pageData = baos.toByteArray
           DocChunk(
@@ -113,8 +120,8 @@ trait WordPageSplitter extends DocumentSplitter[MimeType] with SplitFailureHandl
             index = idx,
             total = pages.length
           )
-        }
-      }.get
+        }.get
+      }
     }.get
 
   private def groupParagraphsByPageBreaks(paragraphs: List[XWPFParagraph])

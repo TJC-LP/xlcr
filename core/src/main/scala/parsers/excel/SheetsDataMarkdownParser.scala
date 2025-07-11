@@ -4,6 +4,7 @@ package parsers.excel
 import java.nio.charset.StandardCharsets
 
 import scala.collection.mutable
+import scala.util.Using
 
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
@@ -11,6 +12,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import models.FileContent
 import models.excel.{ SheetData, SheetsData }
 import types.MimeType.TextMarkdown
+import utils.resource.ResourceWrappers._
 
 class SheetsDataMarkdownParser
     extends SheetsDataSimpleParser[TextMarkdown.type] {
@@ -20,9 +22,10 @@ class SheetsDataMarkdownParser
   override def parse(input: FileContent[TextMarkdown.type]): SheetsData = {
     val markdownString = new String(input.data, StandardCharsets.UTF_8)
     val workbook       = parseMarkdownToWorkbook(markdownString)
-    val (sheets, _)    = workbookToSheetsData(workbook)
-    workbook.close()
-    SheetsData(sheets)
+    Using.resource(new CloseableWrapper(workbook)) { _ =>
+      val (sheets, _) = workbookToSheetsData(workbook)
+      SheetsData(sheets)
+    }
   }
 
   private def parseMarkdownToWorkbook(md: String): XSSFWorkbook = {

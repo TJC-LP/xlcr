@@ -37,6 +37,10 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
       val result = Using.Manager { use =>
+        // IMPORTANT: XMLSlideShow requires file-based access to avoid ZipEntry issues.
+        // The POI library has known limitations when working with PowerPoint files from
+        // input streams, particularly when importing content between presentations.
+        // Using temporary files ensures stable access to the underlying ZIP structure.
         // To avoid ZipEntry issues, write the content to a temporary file first
         val tempFile = File.createTempFile("presentation", ".pptx")
         tempFile.deleteOnExit()
