@@ -69,7 +69,12 @@ object EmailAttachmentSplitter
               disposition
             ) || disposition == "inline" && ctype.startsWith("image/")
           ) {
-            val bytes = part.getInputStream.readAllBytes()
+            val inputStream = part.getInputStream
+            val bytes = try {
+              inputStream.readAllBytes()
+            } finally {
+              inputStream.close()
+            }
             val mime =
               MimeType.fromString(ctype.split(";")(0), MimeType.ApplicationOctet)
             val name =
@@ -79,7 +84,12 @@ object EmailAttachmentSplitter
             !bodyCaptured && (part
               .isMimeType("text/plain") || part.isMimeType("text/html"))
           ) {
-            val bytes = part.getInputStream.readAllBytes()
+            val inputStream = part.getInputStream
+            val bytes = try {
+              inputStream.readAllBytes()
+            } finally {
+              inputStream.close()
+            }
             val mime =
               if (part.isMimeType("text/html")) MimeType.TextHtml
               else MimeType.TextPlain

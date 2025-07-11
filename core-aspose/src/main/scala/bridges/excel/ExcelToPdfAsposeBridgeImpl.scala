@@ -45,30 +45,39 @@ trait ExcelToPdfAsposeBridgeImpl[I <: MimeType]
         )
 
         // Load workbook from bytes
-        val bais     = new ByteArrayInputStream(model.data)
-        val workbook = new Workbook(bais)
-        bais.close()
+        val bais = new ByteArrayInputStream(model.data)
+        val pdfBytes = try {
+          val workbook = new Workbook(bais)
+          try {
+            // Optional page setup across all worksheets
+            val worksheets = workbook.getWorksheets
+            for (i <- 0 until worksheets.getCount) {
+              val sheet     = worksheets.get(i)
+              val pageSetup = sheet.getPageSetup
+              // Example: landscape orientation, A4 paper size
+              pageSetup.setOrientation(PageOrientationType.LANDSCAPE)
+              pageSetup.setPaperSize(PaperSizeType.PAPER_A_4)
+            }
+            // Optionally define a print area, if desired:
+            // pageSetup.setPrintArea("A1:F50")
 
-        // Optional page setup across all worksheets
-        val worksheets = workbook.getWorksheets
-        for (i <- 0 until worksheets.getCount) {
-          val sheet     = worksheets.get(i)
-          val pageSetup = sheet.getPageSetup
-          // Example: landscape orientation, A4 paper size
-          pageSetup.setOrientation(PageOrientationType.LANDSCAPE)
-          pageSetup.setPaperSize(PaperSizeType.PAPER_A_4)
+            // Create PDF save options (you can adjust if needed)
+            val pdfOptions = new PdfSaveOptions()
+
+            // Perform save to PDF in-memory
+            val pdfOutput = new ByteArrayOutputStream()
+            try {
+              workbook.save(pdfOutput, pdfOptions)
+              pdfOutput.toByteArray
+            } finally {
+              pdfOutput.close()
+            }
+          } finally {
+            workbook.dispose()
+          }
+        } finally {
+          bais.close()
         }
-        // Optionally define a print area, if desired:
-        // pageSetup.setPrintArea("A1:F50")
-
-        // Create PDF save options (you can adjust if needed)
-        val pdfOptions = new PdfSaveOptions()
-
-        // Perform save to PDF in-memory
-        val pdfOutput = new ByteArrayOutputStream()
-        workbook.save(pdfOutput, pdfOptions)
-        val pdfBytes = pdfOutput.toByteArray
-        pdfOutput.close()
 
         logger.info(
           s"Successfully converted Excel to PDF; output size = ${pdfBytes.length} bytes."

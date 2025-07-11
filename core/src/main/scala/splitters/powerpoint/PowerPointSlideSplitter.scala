@@ -42,8 +42,11 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
       try {
         // Write the content to the temporary file
         val fos = new FileOutputStream(tempFile)
-        fos.write(content.data)
-        fos.close()
+        try {
+          fos.write(content.data)
+        } finally {
+          fos.close()
+        }
 
         // Open the presentation from the file instead of from a stream
         // This avoids the "Cannot retrieve data from Zip Entry" issue
@@ -93,8 +96,11 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
 
                   // Write to the temp file
                   val destFos = new FileOutputStream(destFile)
-                  dest.write(destFos)
-                  destFos.close()
+                  try {
+                    dest.write(destFos)
+                  } finally {
+                    destFos.close()
+                  }
 
                   // Read the file back into a byte array
                   val destBytes =

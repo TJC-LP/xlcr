@@ -43,12 +43,17 @@ trait HtmlToPdfAsposeBridgeImpl
 
         // Load the HTML document from bytes
         val inputStream = new ByteArrayInputStream(model.data)
-
-        // Use common implementation for PDF conversion
-        val pdfOutput = convertHtmlToPdf(inputStream)
-
-        val pdfBytes = pdfOutput.toByteArray
-        pdfOutput.close()
+        val pdfBytes = try {
+          // Use common implementation for PDF conversion
+          val pdfOutput = convertHtmlToPdf(inputStream)
+          try {
+            pdfOutput.toByteArray
+          } finally {
+            pdfOutput.close()
+          }
+        } finally {
+          inputStream.close()
+        }
 
         logger.info(
           s"Successfully converted HTML to PDF, output size = ${pdfBytes.length} bytes."
@@ -80,10 +85,13 @@ trait HtmlToPdfAsposeBridgeImpl
 
     // Load the HTML document
     val asposeDoc = new Document(inputStream, loadOptions)
-    val pdfOutput = new ByteArrayOutputStream()
-
-    // Save as PDF
-    asposeDoc.save(pdfOutput, SaveFormat.PDF)
-    pdfOutput
+    try {
+      val pdfOutput = new ByteArrayOutputStream()
+      // Save as PDF
+      asposeDoc.save(pdfOutput, SaveFormat.PDF)
+      pdfOutput
+    } finally {
+      asposeDoc.cleanup()
+    }
   }
 }

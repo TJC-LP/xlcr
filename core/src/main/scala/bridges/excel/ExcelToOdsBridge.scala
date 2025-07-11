@@ -67,8 +67,11 @@ object ExcelToOdsBridge
         try {
           // Write the Excel data to the temporary file
           val fos = new java.io.FileOutputStream(tempFile)
-          fos.write(model.data)
-          fos.close()
+          try {
+            fos.write(model.data)
+          } finally {
+            fos.close()
+          }
 
           // Create an ODS document
           val odsDocument = OdfSpreadsheetDocument.newSpreadsheetDocument()

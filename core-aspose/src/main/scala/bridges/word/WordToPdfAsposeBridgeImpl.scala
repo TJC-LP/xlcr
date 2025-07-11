@@ -41,12 +41,17 @@ trait WordToPdfAsposeBridgeImpl[I <: MimeType]
 
         // Load the Word document from bytes
         val inputStream = new ByteArrayInputStream(model.data)
-
-        // Use common implementation for PDF conversion
-        val pdfOutput = convertDocToPdf(inputStream)
-
-        val pdfBytes = pdfOutput.toByteArray
-        pdfOutput.close()
+        val pdfBytes = try {
+          // Use common implementation for PDF conversion
+          val pdfOutput = convertDocToPdf(inputStream)
+          try {
+            pdfOutput.toByteArray
+          } finally {
+            pdfOutput.close()
+          }
+        } finally {
+          inputStream.close()
+        }
 
         logger.info(
           s"Successfully converted Word to PDF, output size = ${pdfBytes.length} bytes."

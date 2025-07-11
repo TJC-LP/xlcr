@@ -45,12 +45,15 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
 
         // Load the email message from bytes
         val mailMessage = loadEmail(model.data)
+        val pdfBytes = try {
+          // Convert email to MHTML format (intermediate step)
+          val mhtBytes = convertEmailToMhtml(mailMessage)
 
-        // Convert email to MHTML format (intermediate step)
-        val mhtBytes = convertEmailToMhtml(mailMessage)
-
-        // Convert MHTML to PDF
-        val pdfBytes = convertMhtmlToPdf(mhtBytes)
+          // Convert MHTML to PDF
+          convertMhtmlToPdf(mhtBytes)
+        } finally {
+          mailMessage.dispose()
+        }
 
         logger.info(
           s"Successfully converted Email to PDF, output size = ${pdfBytes.length} bytes."
@@ -72,8 +75,14 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
      * Load the email message from bytes. This method can be overridden by specific implementations
      * if needed.
      */
-    private def loadEmail(data: Array[Byte]): MailMessage =
-      MailMessage.load(new ByteArrayInputStream(data))
+    private def loadEmail(data: Array[Byte]): MailMessage = {
+      val inputStream = new ByteArrayInputStream(data)
+      try {
+        MailMessage.load(inputStream)
+      } finally {
+        inputStream.close()
+      }
+    }
 
     /**
      * Convert MailMessage to MHTML bytes.
@@ -99,22 +108,28 @@ trait EmailToPdfAsposeBridgeImpl[I <: MimeType]
      */
     private def convertMhtmlToPdf(mhtBytes: Array[Byte]): Array[Byte] = {
       val docStream = new ByteArrayInputStream(mhtBytes)
+      try {
+        // Configure load options for MHTML
+        val loadOpts = new LoadOptions()
+        loadOpts.setLoadFormat(LoadFormat.MHTML)
 
-      // Configure load options for MHTML
-      val loadOpts = new LoadOptions()
-      loadOpts.setLoadFormat(LoadFormat.MHTML)
-
-      // Load MHTML into Aspose.Words
-      val asposeDoc = new Document(docStream, loadOpts)
-      docStream.close()
-
-      // Convert to PDF
-      val pdfStream = new ByteArrayOutputStream()
-      asposeDoc.save(pdfStream, SaveFormat.PDF)
-      val pdfBytes = pdfStream.toByteArray
-      pdfStream.close()
-
-      pdfBytes
+        // Load MHTML into Aspose.Words
+        val asposeDoc = new Document(docStream, loadOpts)
+        try {
+          // Convert to PDF
+          val pdfStream = new ByteArrayOutputStream()
+          try {
+            asposeDoc.save(pdfStream, SaveFormat.PDF)
+            pdfStream.toByteArray
+          } finally {
+            pdfStream.close()
+          }
+        } finally {
+          asposeDoc.cleanup()
+        }
+      } finally {
+        docStream.close()
+      }
     }
   }
 }

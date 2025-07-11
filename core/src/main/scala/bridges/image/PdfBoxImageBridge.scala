@@ -115,17 +115,22 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
   ): Array[Byte] = {
     val baos         = new ByteArrayOutputStream()
     val outputStream = new MemoryCacheImageOutputStream(baos)
+    try {
+      val jpegWriter = ImageIO.getImageWritersByFormatName("jpeg").next()
+      try {
+        jpegWriter.setOutput(outputStream)
 
-    val jpegWriter = ImageIO.getImageWritersByFormatName("jpeg").next()
-    jpegWriter.setOutput(outputStream)
+        val params = jpegWriter.getDefaultWriteParam
+        params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
+        params.setCompressionQuality(quality)
 
-    val params = jpegWriter.getDefaultWriteParam
-    params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
-    params.setCompressionQuality(quality)
-
-    jpegWriter.write(null, new IIOImage(image, null, null), params)
-    jpegWriter.dispose()
-    outputStream.close()
+        jpegWriter.write(null, new IIOImage(image, null, null), params)
+      } finally {
+        jpegWriter.dispose()
+      }
+    } finally {
+      outputStream.close()
+    }
 
     baos.toByteArray
   }

@@ -102,10 +102,14 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
           new OoxmlSaveOptions() // Default to DOCX
       }
 
-      pageDoc.save(baos, saveOptions)
-      pageDoc.cleanup()
+      val pageData = try {
+        pageDoc.save(baos, saveOptions)
+        baos.toByteArray
+      } finally {
+        pageDoc.cleanup()
+        baos.close()
+      }
 
-      val pageData = baos.toByteArray
       DocChunk(
         FileContent(
           pageData,

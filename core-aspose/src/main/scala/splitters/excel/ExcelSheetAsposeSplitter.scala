@@ -64,52 +64,68 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
     withFailureHandling(content, cfg) {
       // Load the source workbook once – copying sheets is cheap, parsing XLSX
       // multiple times is not.
-      val srcWb  = new AsposeWorkbook(new ByteArrayInputStream(content.data))
-      val sheets = srcWb.getWorksheets
-      val total  = sheets.getCount
-
-      if (total == 0) {
-        throw new EmptyDocumentException(
-          content.mimeType.mimeType,
-          "Workbook contains no sheets"
-        )
+      val srcInputStream = new ByteArrayInputStream(content.data)
+      val srcWb = try {
+        new AsposeWorkbook(srcInputStream)
+      } finally {
+        srcInputStream.close()
       }
+      
+      try {
+        val sheets = srcWb.getWorksheets
+        val total  = sheets.getCount
 
-      // Determine which sheets to extract based on configuration
-      val sheetsToExtract = cfg.chunkRange match {
-        case Some(range) =>
-          // Filter to valid sheet indices
-          range.filter(i => i >= 0 && i < total)
-        case None =>
-          0 until total
-      }
+        if (total == 0) {
+          throw new EmptyDocumentException(
+            content.mimeType.mimeType,
+            "Workbook contains no sheets"
+          )
+        }
 
-      sheetsToExtract.map { idx =>
-        val srcSheet = sheets.get(idx)
+        // Determine which sheets to extract based on configuration
+        val sheetsToExtract = cfg.chunkRange match {
+          case Some(range) =>
+            // Filter to valid sheet indices
+            range.filter(i => i >= 0 && i < total)
+          case None =>
+            0 until total
+        }
 
-        // Create a fresh workbook with *no* sheets, then copy the target one
-        val destWb     = new AsposeWorkbook()
-        val destSheets = destWb.getWorksheets
-        // Remove the default empty sheet Aspose creates
-        destSheets.removeAt(0)
+        sheetsToExtract.map { idx =>
+          val srcSheet = sheets.get(idx)
 
-        // Create a fresh empty sheet and copy the source contents into it
-        val newIdx    = destSheets.add()
-        val destSheet = destSheets.get(newIdx)
+          // Create a fresh workbook with *no* sheets, then copy the target one
+          val destWb     = new AsposeWorkbook()
+          try {
+            val destSheets = destWb.getWorksheets
+            // Remove the default empty sheet Aspose creates
+            destSheets.removeAt(0)
 
-        destSheet.copy(srcSheet)
+            // Create a fresh empty sheet and copy the source contents into it
+            val newIdx    = destSheets.add()
+            val destSheet = destSheets.get(newIdx)
 
-        // Preserve name & ensure visibility
-        destSheet.setName(srcSheet.getName)
-        destSheet.setVisible(true)
+            destSheet.copy(srcSheet)
 
-        // Persist to bytes
-        val baos = new ByteArrayOutputStream()
-        destWb.save(baos, fileFormatType)
+            // Preserve name & ensure visibility
+            destSheet.setName(srcSheet.getName)
+            destSheet.setVisible(true)
 
-        val fc = FileContent(baos.toByteArray, outputMimeType)
-
-        DocChunk(fc, srcSheet.getName, idx, total)
+            // Persist to bytes
+            val baos = new ByteArrayOutputStream()
+            try {
+              destWb.save(baos, fileFormatType)
+              val fc = FileContent(baos.toByteArray, outputMimeType)
+              DocChunk(fc, srcSheet.getName, idx, total)
+            } finally {
+              baos.close()
+            }
+          } finally {
+            destWb.dispose()
+          }
+        }
+      } finally {
+        srcWb.dispose()
       }
     }
   }
