@@ -4,6 +4,8 @@ package word
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import com.aspose.words.{ Document, SaveFormat }
 import org.slf4j.LoggerFactory
 
@@ -12,6 +14,7 @@ import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType.ApplicationPdf
 import types.{ MimeType, Priority }
 import utils.aspose.AsposeLicense
+import utils.resource.ResourceWrappers._
 
 /**
  * Common implementation for WordToPdfAsposeBridge that works with both Scala 2 and Scala 3. This
@@ -40,17 +43,11 @@ trait WordToPdfAsposeBridgeImpl[I <: MimeType]
         logger.info("Rendering WordDocModel to PDF using Aspose.Words.")
 
         // Load the Word document from bytes
-        val inputStream = new ByteArrayInputStream(model.data)
-        val pdfBytes = try {
+        val pdfBytes = Using.resource(new ByteArrayInputStream(model.data)) { inputStream =>
           // Use common implementation for PDF conversion
-          val pdfOutput = convertDocToPdf(inputStream)
-          try {
+          Using.resource(convertDocToPdf(inputStream)) { pdfOutput =>
             pdfOutput.toByteArray
-          } finally {
-            pdfOutput.close()
           }
-        } finally {
-          inputStream.close()
         }
 
         logger.info(
@@ -77,8 +74,10 @@ trait WordToPdfAsposeBridgeImpl[I <: MimeType]
     inputStream: ByteArrayInputStream
   ): ByteArrayOutputStream = {
     val asposeDoc = new Document(inputStream)
-    val pdfOutput = new ByteArrayOutputStream()
-    asposeDoc.save(pdfOutput, SaveFormat.PDF)
-    pdfOutput
+    Using.resource(new CleanupWrapper(asposeDoc)) { wrapper =>
+      val pdfOutput = new ByteArrayOutputStream()
+      wrapper.resource.save(pdfOutput, SaveFormat.PDF)
+      pdfOutput
+    }
   }
 }

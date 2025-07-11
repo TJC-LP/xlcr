@@ -7,6 +7,7 @@ import javax.imageio.stream.MemoryCacheImageOutputStream
 import javax.imageio.{ IIOImage, ImageIO, ImageWriteParam }
 
 import scala.reflect.ClassTag
+import scala.util.Using
 
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.{ ImageType, PDFRenderer }
@@ -16,6 +17,7 @@ import renderers.RendererConfig
 import types.MimeType
 import types.MimeType.{ ApplicationPdf, ImageJpeg }
 import utils.image.ImageUtils
+import utils.resource.ResourceWrappers._
 
 /**
  * Base implementation for PDFBox-based PDF to image conversion.
@@ -57,8 +59,7 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
     pdfBytes: Array[Byte],
     cfg: ImageRenderConfig
   ): Array[Byte] = {
-    val document = PDDocument.load(pdfBytes)
-    try {
+    Using.resource(PDDocument.load(pdfBytes)) { document =>
       val renderer = new PDFRenderer(document)
 
       // First render at the requested DPI
@@ -74,8 +75,7 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
       } else {
         renderPng(image)
       }
-    } finally
-      document.close()
+    }
   }
 
   /**
@@ -113,24 +113,21 @@ abstract class PdfBoxImageBridge[O <: MimeType](implicit
     image: BufferedImage,
     quality: Float
   ): Array[Byte] = {
-    val baos         = new ByteArrayOutputStream()
-    val outputStream = new MemoryCacheImageOutputStream(baos)
-    try {
+    val baos = new ByteArrayOutputStream()
+    
+    Using.Manager { use =>
+      val outputStream = use(new MemoryCacheImageOutputStream(baos))
       val jpegWriter = ImageIO.getImageWritersByFormatName("jpeg").next()
-      try {
-        jpegWriter.setOutput(outputStream)
+      use(autoCloseable(jpegWriter.dispose()))
+      
+      jpegWriter.setOutput(outputStream)
 
-        val params = jpegWriter.getDefaultWriteParam
-        params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
-        params.setCompressionQuality(quality)
+      val params = jpegWriter.getDefaultWriteParam
+      params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
+      params.setCompressionQuality(quality)
 
-        jpegWriter.write(null, new IIOImage(image, null, null), params)
-      } finally {
-        jpegWriter.dispose()
-      }
-    } finally {
-      outputStream.close()
-    }
+      jpegWriter.write(null, new IIOImage(image, null, null), params)
+    }.get
 
     baos.toByteArray
   }
