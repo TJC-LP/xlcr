@@ -3,10 +3,13 @@ package bridges.excel
 
 import java.io.ByteArrayOutputStream
 
+import scala.util.Using
+
 import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 import org.slf4j.LoggerFactory
 
+import utils.resource.ResourceWrappers._
 import bridges.SimpleBridge
 import models.FileContent
 import parsers.{ Parser, SimpleParser }
@@ -63,18 +66,23 @@ object ExcelToOdsBridge
         logger.info("Converting Excel XLSX to ODS format.")
 
         // Create a temporary file to store the Excel content
-        val tempFile = java.io.File.createTempFile("excel-", ".xlsx")
-        try {
+        val tempFile         = java.io.File.createTempFile("excel-", ".xlsx")
+        val tempFileResource = autoCloseable(tempFile.delete())
+
+        val result = Using.Manager { use =>
+          // Register temp file cleanup
+          use(tempFileResource)
+
           // Write the Excel data to the temporary file
-          val fos = new java.io.FileOutputStream(tempFile)
+          val fos = use(new java.io.FileOutputStream(tempFile))
           fos.write(model.data)
-          fos.close()
+          fos.close() // Close early so WorkbookFactory can read it
 
           // Create an ODS document
-          val odsDocument = OdfSpreadsheetDocument.newSpreadsheetDocument()
+          val odsDocument = use(OdfSpreadsheetDocument.newSpreadsheetDocument())
 
           // Load the Excel workbook
-          val excelWorkbook = WorkbookFactory.create(tempFile)
+          val excelWorkbook = use(WorkbookFactory.create(tempFile))
 
           // For each sheet in the Excel workbook
           for (sheetIndex <- 0 until excelWorkbook.getNumberOfSheets) {
@@ -154,13 +162,9 @@ object ExcelToOdsBridge
           }
 
           // Save the ODS document to a byte array
-          val odsOutput = new ByteArrayOutputStream()
+          val odsOutput = use(new ByteArrayOutputStream())
           odsDocument.save(odsOutput)
-          odsDocument.close()
-          excelWorkbook.close()
-
           val odsBytes = odsOutput.toByteArray
-          odsOutput.close()
 
           logger.info(
             s"Successfully converted Excel to ODS; output size = ${odsBytes.length} bytes."
@@ -169,9 +173,8 @@ object ExcelToOdsBridge
             odsBytes,
             ApplicationVndOasisOpendocumentSpreadsheet
           )
-        } finally
-          // Clean up the temporary file
-          tempFile.delete()
+        }
+        result.get
       } catch {
         case ex: Exception =>
           logger.error("Error during Excel -> ODS conversion.", ex)

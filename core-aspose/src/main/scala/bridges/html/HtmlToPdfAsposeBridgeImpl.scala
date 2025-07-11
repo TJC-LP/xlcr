@@ -4,6 +4,8 @@ package html
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import com.aspose.words.{ Document, LoadFormat, LoadOptions, SaveFormat }
 import org.slf4j.LoggerFactory
 
@@ -12,6 +14,7 @@ import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType.{ ApplicationPdf, TextHtml }
 import types.Priority
 import utils.aspose.AsposeLicense
+import utils.resource.ResourceWrappers._
 
 /**
  * Common implementation for HtmlToPdfAsposeBridge that works with both Scala 2 and Scala 3. This
@@ -42,13 +45,12 @@ trait HtmlToPdfAsposeBridgeImpl
         logger.info("Rendering HTML to PDF using Aspose.Words.")
 
         // Load the HTML document from bytes
-        val inputStream = new ByteArrayInputStream(model.data)
-
-        // Use common implementation for PDF conversion
-        val pdfOutput = convertHtmlToPdf(inputStream)
-
-        val pdfBytes = pdfOutput.toByteArray
-        pdfOutput.close()
+        val pdfBytes = Using.resource(new ByteArrayInputStream(model.data)) { inputStream =>
+          // Use common implementation for PDF conversion
+          Using.resource(convertHtmlToPdf(inputStream)) { pdfOutput =>
+            pdfOutput.toByteArray
+          }
+        }
 
         logger.info(
           s"Successfully converted HTML to PDF, output size = ${pdfBytes.length} bytes."
@@ -80,10 +82,11 @@ trait HtmlToPdfAsposeBridgeImpl
 
     // Load the HTML document
     val asposeDoc = new Document(inputStream, loadOptions)
-    val pdfOutput = new ByteArrayOutputStream()
-
-    // Save as PDF
-    asposeDoc.save(pdfOutput, SaveFormat.PDF)
-    pdfOutput
+    Using.resource(new CleanupWrapper(asposeDoc)) { wrapper =>
+      val pdfOutput = new ByteArrayOutputStream()
+      // Save as PDF
+      wrapper.resource.save(pdfOutput, SaveFormat.PDF)
+      pdfOutput
+    }
   }
 }

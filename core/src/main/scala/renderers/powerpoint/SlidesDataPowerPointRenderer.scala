@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{ Files, Paths }
 import java.util.Base64
 
-import scala.util.Try
+import scala.util.{ Try, Using }
 
 import org.apache.poi.common.usermodel.fonts.FontGroup
 import org.apache.poi.sl.usermodel.PictureData.PictureType
@@ -18,6 +18,7 @@ import models.FileContent
 import models.powerpoint._
 import renderers.SimpleRenderer
 import types.MimeType.{ ApplicationVndMsPowerpoint, ImageSvgXml }
+import utils.resource.ResourceWrappers._
 
 /**
  * SlidesDataPowerPointRenderer converts a SlidesData model into a PowerPoint PPTX file, now
@@ -30,61 +31,60 @@ class SlidesDataPowerPointRenderer
 
   override def render(
     model: SlidesData
-  ): FileContent[ApplicationVndMsPowerpoint.type] = {
-    val ppt = new XMLSlideShow()
+  ): FileContent[ApplicationVndMsPowerpoint.type] =
+    Using.Manager { use =>
+      val ppt = new XMLSlideShow()
+      use(new CloseableWrapper(ppt))
 
-    // For each slide in SlidesData:
-    model.slides.foreach { slideData =>
-      val pptSlide: XSLFSlide = ppt.createSlide()
+      // For each slide in SlidesData:
+      model.slides.foreach { slideData =>
+        val pptSlide: XSLFSlide = ppt.createSlide()
 
-      // Slide background color
-      slideData.backgroundColor.foreach { hexColor =>
-        val color = parseColor(hexColor)
-        pptSlide.getBackground.setFillColor(color)
-      }
+        // Slide background color
+        slideData.backgroundColor.foreach { hexColor =>
+          val color = parseColor(hexColor)
+          pptSlide.getBackground.setFillColor(color)
+        }
 
-      // For each element, create shapes
-      slideData.elements.foreach { element =>
-        val anchorRect = element.position
-          .map { pos =>
-            new Rectangle(
-              pos.x.toInt,
-              pos.y.toInt,
-              pos.width.toInt,
-              pos.height.toInt
-            )
+        // For each element, create shapes
+        slideData.elements.foreach { element =>
+          val anchorRect = element.position
+            .map { pos =>
+              new Rectangle(
+                pos.x.toInt,
+                pos.y.toInt,
+                pos.width.toInt,
+                pos.height.toInt
+              )
+            }
+            .getOrElse(new Rectangle(50, 50, 300, 50))
+
+          element.elementType.toLowerCase match {
+            case "text" =>
+              handleTextElement(pptSlide, element, anchorRect)
+
+            case "image" =>
+              handleImageElement(ppt, pptSlide, element, anchorRect)
+
+            case "shape" =>
+              handleShapeElement(pptSlide, element, anchorRect)
+
+            case _ =>
+              // Unknown element type, ignore or log
+              ()
           }
-          .getOrElse(new Rectangle(50, 50, 300, 50))
-
-        element.elementType.toLowerCase match {
-          case "text" =>
-            handleTextElement(pptSlide, element, anchorRect)
-
-          case "image" =>
-            handleImageElement(ppt, pptSlide, element, anchorRect)
-
-          case "shape" =>
-            handleShapeElement(pptSlide, element, anchorRect)
-
-          case _ =>
-            // Unknown element type, ignore or log
-            ()
         }
       }
-    }
 
-    // Write the slideshow to bytes
-    val outputStream = new ByteArrayOutputStream()
-    ppt.write(outputStream)
-    ppt.close()
+      // Write the slideshow to bytes
+      val outputStream = use(new ByteArrayOutputStream())
+      ppt.write(outputStream)
 
-    val pptBytes = outputStream.toByteArray
-    outputStream.close()
-    FileContent[ApplicationVndMsPowerpoint.type](
-      pptBytes,
-      ApplicationVndMsPowerpoint
-    )
-  }
+      FileContent[ApplicationVndMsPowerpoint.type](
+        outputStream.toByteArray,
+        ApplicationVndMsPowerpoint
+      )
+    }.get
 
   private def handleTextElement(
     pptSlide: XSLFSlide,

@@ -4,7 +4,7 @@ package utils
 import java.io.FileOutputStream
 import java.nio.file.Path
 
-import com.tjclp.xlcr.compat.Using
+import scala.util.Using
 
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.ss.util.CellReference

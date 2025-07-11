@@ -4,6 +4,8 @@ package image
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import com.aspose.pdf.{ Document, Image => PdfImage, MarginInfo, PageSize }
 import org.slf4j.LoggerFactory
 
@@ -41,11 +43,11 @@ trait ImageToPdfAsposeBridgeImpl[I <: MimeType]
         logger.info(s"Rendering ${model.mimeType} image to PDF using Aspose.PDF.")
 
         // Convert image to PDF
-        val inputStream = new ByteArrayInputStream(model.data)
-        val pdfOutput   = convertImageToPdf(inputStream)
-
-        val pdfBytes = pdfOutput.toByteArray
-        pdfOutput.close()
+        val pdfBytes = Using.resource(new ByteArrayInputStream(model.data)) { inputStream =>
+          Using.resource(convertImageToPdf(inputStream)) { pdfOutput =>
+            pdfOutput.toByteArray
+          }
+        }
 
         logger.info(
           s"Successfully converted image to PDF, output size = ${pdfBytes.length} bytes."
@@ -69,32 +71,30 @@ trait ImageToPdfAsposeBridgeImpl[I <: MimeType]
    */
   private def convertImageToPdf(
     inputStream: ByteArrayInputStream
-  ): ByteArrayOutputStream = {
+  ): ByteArrayOutputStream =
     // Create a new PDF document
-    val pdfDoc = new Document()
+    Using.resource(new Document()) { pdfDoc =>
+      // Add a page
+      val page = pdfDoc.getPages.add()
 
-    // Add a page
-    val page = pdfDoc.getPages.add()
+      // Create an image object
+      val img = new PdfImage()
+      img.setImageStream(inputStream)
 
-    // Create an image object
-    val img = new PdfImage()
-    img.setImageStream(inputStream)
+      // Set zero margins for full-page image
+      page.getPageInfo.setMargin(new MarginInfo(0, 0, 0, 0))
 
-    // Set zero margins for full-page image
-    page.getPageInfo.setMargin(new MarginInfo(0, 0, 0, 0))
+      // Check if image is landscape and adjust page orientation if needed
+      // We'll use A4 in landscape mode for all images to simplify the implementation
+      // Aspose will automatically scale the image to fit the page
+      page.setPageSize(PageSize.getA4.getHeight(), PageSize.getA4.getWidth())
 
-    // Check if image is landscape and adjust page orientation if needed
-    // We'll use A4 in landscape mode for all images to simplify the implementation
-    // Aspose will automatically scale the image to fit the page
-    page.setPageSize(PageSize.getA4.getHeight(), PageSize.getA4.getWidth())
+      // Add the image to the page
+      page.getParagraphs.add(img)
 
-    // Add the image to the page
-    page.getParagraphs.add(img)
-
-    // Save to output stream
-    val pdfOutput = new ByteArrayOutputStream()
-    pdfDoc.save(pdfOutput)
-
-    pdfOutput
-  }
+      // Save to output stream
+      val pdfOutput = new ByteArrayOutputStream()
+      pdfDoc.save(pdfOutput)
+      pdfOutput
+    }
 }

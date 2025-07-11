@@ -3,7 +3,7 @@ package bridges.image
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success, Try, Using }
 
 import org.apache.batik.transcoder.image.PNGTranscoder
 import org.apache.batik.transcoder.{ TranscoderException, TranscoderInput, TranscoderOutput }
@@ -41,25 +41,23 @@ object SvgToPngBridge extends SimpleBridge[ImageSvgXml.type, ImagePng.type] {
   private object PngRenderer extends SimpleRenderer[M, ImagePng.type] {
     override def render(model: M): FileContent[ImagePng.type] =
       Try {
-        val transcoder = new PNGTranscoder()
+        Using.Manager { use =>
+          val transcoder = new PNGTranscoder()
 
-        // Input SVG
-        val inStream        = new ByteArrayInputStream(model.data)
-        val transcoderInput = new TranscoderInput(inStream)
+          // Input SVG
+          val inStream        = use(new ByteArrayInputStream(model.data))
+          val transcoderInput = new TranscoderInput(inStream)
 
-        // Output PNG
-        val outStream        = new ByteArrayOutputStream()
-        val transcoderOutput = new TranscoderOutput(outStream)
+          // Output PNG
+          val outStream        = use(new ByteArrayOutputStream())
+          val transcoderOutput = new TranscoderOutput(outStream)
 
-        // Transcode
-        transcoder.transcode(transcoderInput, transcoderOutput)
+          // Transcode
+          transcoder.transcode(transcoderInput, transcoderOutput)
 
-        // Retrieve bytes
-        val pngBytes = outStream.toByteArray
-        inStream.close()
-        outStream.close()
-
-        FileContent[ImagePng.type](pngBytes, ImagePng)
+          // Retrieve bytes
+          FileContent[ImagePng.type](outStream.toByteArray, ImagePng)
+        }.get
       } match {
         case Failure(ex: TranscoderException) =>
           throw RendererError(

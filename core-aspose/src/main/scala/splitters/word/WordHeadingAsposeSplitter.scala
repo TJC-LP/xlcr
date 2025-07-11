@@ -5,23 +5,15 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.util.Using
 
-import com.aspose.words.{
-  DocSaveOptions,
-  Document,
-  Node,
-  NodeType,
-  OoxmlSaveOptions,
-  Paragraph,
-  SaveFormat,
-  SaveOptions,
-  Section
-}
+import com.tjclp.xlcr.utils.aspose.AsposeLicense
+import com.tjclp.xlcr.utils.resource.ResourceWrappers._
+
+import com.aspose.words._
 import org.slf4j.LoggerFactory
 
 import models.FileContent
 import splitters._
 import types.MimeType
-import utils.aspose.AsposeLicense
 
 /**
  * Splits Word documents by Heading 1 style using Aspose.Words. This provides more accurate heading
@@ -58,13 +50,12 @@ trait WordHeadingAsposeSplitter extends DocumentSplitter[MimeType] with SplitFai
         )
       }
 
-      Using(new ByteArrayInputStream(content.data)) { bis =>
+      Using.Manager { use =>
+        val bis      = use(new ByteArrayInputStream(content.data))
         val document = new Document(bis)
-        try {
-          val chunks = splitDocumentByHeadings(document, cfg, content.mimeType)
-          chunks
-        } finally
-          document.cleanup()
+        use(new CleanupWrapper(document))
+        val chunks = splitDocumentByHeadings(document, cfg, content.mimeType)
+        chunks
       }.get
     }
   }
@@ -124,50 +115,54 @@ trait WordHeadingAsposeSplitter extends DocumentSplitter[MimeType] with SplitFai
 
     // Add preamble section if there's content before first heading
     if (hasContentBeforeFirstHeading) {
-      val preambleDoc = doc.deepClone().asInstanceOf[Document]
+      val preambleChunk = Using.Manager { use =>
+        val preambleDoc = doc.deepClone().asInstanceOf[Document]
+        use(new CleanupWrapper(preambleDoc))
 
-      // Remove everything from first heading onwards
-      var currentHeadingCount = 0
-      val nodesToRemove       = scala.collection.mutable.ArrayBuffer[Node]()
-      var foundFirstHeading   = false
+        // Remove everything from first heading onwards
+        var currentHeadingCount = 0
+        val nodesToRemove       = scala.collection.mutable.ArrayBuffer[Node]()
+        var foundFirstHeading   = false
 
-      for (sectionIdx <- 0 until preambleDoc.getSections.getCount) {
-        val section = preambleDoc.getSections.get(sectionIdx).asInstanceOf[Section]
-        val body    = section.getBody
+        for (sectionIdx <- 0 until preambleDoc.getSections.getCount) {
+          val section = preambleDoc.getSections.get(sectionIdx).asInstanceOf[Section]
+          val body    = section.getBody
 
-        for (nodeIdx <- 0 until body.getChildNodes(NodeType.ANY, false).getCount) {
-          val node = body.getChildNodes(NodeType.ANY, false).get(nodeIdx)
+          for (nodeIdx <- 0 until body.getChildNodes(NodeType.ANY, false).getCount) {
+            val node = body.getChildNodes(NodeType.ANY, false).get(nodeIdx)
 
-          node match {
-            case para: Paragraph
-                if para.getParagraphFormat != null &&
-                  para.getParagraphFormat.getStyleName != null &&
-                  para.getParagraphFormat.getStyleName.startsWith("Heading 1") =>
-              foundFirstHeading = true
-              nodesToRemove += node
-
-            case _ =>
-              if (foundFirstHeading) {
+            node match {
+              case para: Paragraph
+                  if para.getParagraphFormat != null &&
+                    para.getParagraphFormat.getStyleName != null &&
+                    para.getParagraphFormat.getStyleName.startsWith("Heading 1") =>
+                foundFirstHeading = true
                 nodesToRemove += node
-              }
+
+              case _ =>
+                if (foundFirstHeading) {
+                  nodesToRemove += node
+                }
+            }
           }
         }
-      }
 
-      nodesToRemove.foreach(_.remove())
+        nodesToRemove.foreach(_.remove())
 
-      // Save preamble if it has content
-      val baos        = new ByteArrayOutputStream()
-      val saveOptions = createSaveOptions(mimeType)
-      preambleDoc.save(baos, saveOptions)
-      preambleDoc.cleanup()
+        // Save preamble if it has content
+        val baos        = use(new ByteArrayOutputStream())
+        val saveOptions = createSaveOptions(mimeType)
+        preambleDoc.save(baos, saveOptions)
 
-      sections += DocChunk(
-        FileContent(baos.toByteArray, mimeType),
-        label = "Preamble",
-        index = chunkIndex,
-        total = allHeadings.length + 1
-      )
+        DocChunk(
+          FileContent(baos.toByteArray, mimeType),
+          label = "Preamble",
+          index = chunkIndex,
+          total = allHeadings.length + 1
+        )
+      }.get
+
+      sections += preambleChunk
       chunkIndex += 1
     }
 
@@ -179,79 +174,83 @@ trait WordHeadingAsposeSplitter extends DocumentSplitter[MimeType] with SplitFai
       if (headingText.isEmpty) {
         logger.debug(s"Skipping empty heading at index $idx")
       } else {
-        // Clone the entire document for each section
-        val sectionDoc = doc.deepClone().asInstanceOf[Document]
+        val sectionChunk = Using.Manager { use =>
+          // Clone the entire document for each section
+          val sectionDoc = doc.deepClone().asInstanceOf[Document]
+          use(new CleanupWrapper(sectionDoc))
 
-        // Track which heading indices to keep
-        val currentHeadingIdx = headingIdx
-        val nextHeadingIdx    = if (idx + 1 < allHeadings.length) allHeadings(idx + 1)._2 else -1
+          // Track which heading indices to keep
+          val currentHeadingIdx = headingIdx
+          val nextHeadingIdx    = if (idx + 1 < allHeadings.length) allHeadings(idx + 1)._2 else -1
 
-        logger.debug(
-          s"Processing chunk for heading '$headingText': keeping headings $currentHeadingIdx to ${if (nextHeadingIdx == -1) "end"
-            else (nextHeadingIdx - 1).toString}"
-        )
+          logger.debug(
+            s"Processing chunk for heading '$headingText': keeping headings $currentHeadingIdx to ${if (nextHeadingIdx == -1) "end"
+              else (nextHeadingIdx - 1).toString}"
+          )
 
-        // Remove content outside our range
-        var currentHeadingCount = 0
-        var inTargetSection     = false
-        val nodesToRemove       = scala.collection.mutable.ArrayBuffer[Node]()
+          // Remove content outside our range
+          var currentHeadingCount = 0
+          var inTargetSection     = false
+          val nodesToRemove       = scala.collection.mutable.ArrayBuffer[Node]()
 
-        for (sectionIdx <- 0 until sectionDoc.getSections.getCount) {
-          val section = sectionDoc.getSections.get(sectionIdx).asInstanceOf[Section]
-          val body    = section.getBody
+          for (sectionIdx <- 0 until sectionDoc.getSections.getCount) {
+            val section = sectionDoc.getSections.get(sectionIdx).asInstanceOf[Section]
+            val body    = section.getBody
 
-          // Process all body-level nodes
-          for (nodeIdx <- 0 until body.getChildNodes(NodeType.ANY, false).getCount) {
-            val node = body.getChildNodes(NodeType.ANY, false).get(nodeIdx)
+            // Process all body-level nodes
+            for (nodeIdx <- 0 until body.getChildNodes(NodeType.ANY, false).getCount) {
+              val node = body.getChildNodes(NodeType.ANY, false).get(nodeIdx)
 
-            node match {
-              case para: Paragraph
-                  if para.getParagraphFormat != null &&
-                    para.getParagraphFormat.getStyleName != null &&
-                    para.getParagraphFormat.getStyleName.startsWith("Heading 1") =>
-                // This is a heading
-                if (currentHeadingCount == currentHeadingIdx) {
-                  inTargetSection = true
-                } else if (nextHeadingIdx != -1 && currentHeadingCount == nextHeadingIdx) {
-                  inTargetSection = false
-                }
+              node match {
+                case para: Paragraph
+                    if para.getParagraphFormat != null &&
+                      para.getParagraphFormat.getStyleName != null &&
+                      para.getParagraphFormat.getStyleName.startsWith("Heading 1") =>
+                  // This is a heading
+                  if (currentHeadingCount == currentHeadingIdx) {
+                    inTargetSection = true
+                  } else if (nextHeadingIdx != -1 && currentHeadingCount == nextHeadingIdx) {
+                    inTargetSection = false
+                  }
 
-                // Remove heading if it's not in our target range
-                if (
-                  currentHeadingCount < currentHeadingIdx ||
-                  (nextHeadingIdx != -1 && currentHeadingCount >= nextHeadingIdx)
-                ) {
-                  nodesToRemove += node
-                }
+                  // Remove heading if it's not in our target range
+                  if (
+                    currentHeadingCount < currentHeadingIdx ||
+                    (nextHeadingIdx != -1 && currentHeadingCount >= nextHeadingIdx)
+                  ) {
+                    nodesToRemove += node
+                  }
 
-                currentHeadingCount += 1
+                  currentHeadingCount += 1
 
-              case _ =>
-                // Non-heading node - remove if not in target section
-                if (!inTargetSection) {
-                  nodesToRemove += node
-                }
+                case _ =>
+                  // Non-heading node - remove if not in target section
+                  if (!inTargetSection) {
+                    nodesToRemove += node
+                  }
+              }
             }
           }
-        }
 
-        // Remove the marked nodes
-        logger.debug(s"Removing ${nodesToRemove.size} nodes for heading '$headingText'")
-        nodesToRemove.foreach(_.remove())
+          // Remove the marked nodes
+          logger.debug(s"Removing ${nodesToRemove.size} nodes for heading '$headingText'")
+          nodesToRemove.foreach(_.remove())
 
-        // Convert to bytes
-        val baos        = new ByteArrayOutputStream()
-        val saveOptions = createSaveOptions(mimeType)
-        sectionDoc.save(baos, saveOptions)
-        sectionDoc.cleanup()
+          // Convert to bytes
+          val baos        = use(new ByteArrayOutputStream())
+          val saveOptions = createSaveOptions(mimeType)
+          sectionDoc.save(baos, saveOptions)
 
-        val chunkData = baos.toByteArray
-        sections += DocChunk(
-          FileContent(chunkData, mimeType),
-          label = headingText,
-          index = chunkIndex,
-          total = allHeadings.length + (if (hasContentBeforeFirstHeading) 1 else 0)
-        )
+          val chunkData = baos.toByteArray
+          DocChunk(
+            FileContent(chunkData, mimeType),
+            label = headingText,
+            index = chunkIndex,
+            total = allHeadings.length + (if (hasContentBeforeFirstHeading) 1 else 0)
+          )
+        }.get
+
+        sections += sectionChunk
         chunkIndex += 1
       }
     }

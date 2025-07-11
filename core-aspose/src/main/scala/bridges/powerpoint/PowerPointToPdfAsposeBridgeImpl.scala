@@ -4,6 +4,8 @@ package powerpoint
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import com.aspose.slides.{ Presentation, SaveFormat }
 import org.slf4j.LoggerFactory
 
@@ -12,6 +14,7 @@ import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType
 import types.MimeType.ApplicationPdf
 import utils.aspose.AsposeLicense
+import utils.resource.ResourceWrappers._
 
 /**
  * Common implementation for PowerPoint to PDF bridges that works with both Scala 2 and Scala 3.
@@ -42,16 +45,15 @@ trait PowerPointToPdfAsposeBridgeImpl[I <: MimeType]
           s"Rendering ${model.mimeType.getClass.getSimpleName} to PDF using Aspose.Slides."
         )
 
-        val inputStream  = new ByteArrayInputStream(model.data)
-        val presentation = new Presentation(inputStream)
-        inputStream.close()
+        val pdfBytes = Using.Manager { use =>
+          val inputStream  = use(new ByteArrayInputStream(model.data))
+          val presentation = new Presentation(inputStream)
+          use(new DisposableWrapper(presentation))
+          val pdfOutput = use(new ByteArrayOutputStream())
 
-        val pdfOutput = new ByteArrayOutputStream()
-        presentation.save(pdfOutput, SaveFormat.Pdf)
-        presentation.dispose()
-
-        val pdfBytes = pdfOutput.toByteArray
-        pdfOutput.close()
+          presentation.save(pdfOutput, SaveFormat.Pdf)
+          pdfOutput.toByteArray
+        }.get
 
         logger.info(
           s"Successfully converted PowerPoint to PDF, output size = ${pdfBytes.length} bytes."

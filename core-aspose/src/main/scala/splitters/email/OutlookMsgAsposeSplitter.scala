@@ -5,6 +5,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
+import scala.util.Using
 
 import com.aspose.email.MailMessage
 import org.slf4j.LoggerFactory
@@ -67,56 +68,60 @@ object OutlookMsgAsposeSplitter
         )
       }
 
-      val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
+      Using.resource(msg) { _ =>
+        val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
 
-      // Add function to create and append chunks to our list
-      def addChunk(bytes: Array[Byte], mime: MimeType, label: String): Unit =
-        chunks += DocChunk(FileContent(bytes, mime), label, chunks.length, 0)
+        // Add function to create and append chunks to our list
+        def addChunk(bytes: Array[Byte], mime: MimeType, label: String): Unit =
+          chunks += DocChunk(FileContent(bytes, mime), label, chunks.length, 0)
 
-      // Extract mail body - prefer HTML if available
-      if (msg.getHtmlBody != null && msg.getHtmlBody.nonEmpty) {
-        val htmlBytes = msg.getHtmlBody.getBytes("UTF-8")
-        val subject   = Option(msg.getSubject).getOrElse("email_body")
-        addChunk(htmlBytes, MimeType.TextHtml, subject)
-      } else if (msg.getBody != null && msg.getBody.nonEmpty) {
-        val textBytes = msg.getBody.getBytes("UTF-8")
-        val subject   = Option(msg.getSubject).getOrElse("email_body")
-        addChunk(textBytes, MimeType.TextPlain, subject)
-      }
+        // Extract mail body - prefer HTML if available
+        if (msg.getHtmlBody != null && msg.getHtmlBody.nonEmpty) {
+          val htmlBytes = msg.getHtmlBody.getBytes("UTF-8")
+          val subject   = Option(msg.getSubject).getOrElse("email_body")
+          addChunk(htmlBytes, MimeType.TextHtml, subject)
+        } else if (msg.getBody != null && msg.getBody.nonEmpty) {
+          val textBytes = msg.getBody.getBytes("UTF-8")
+          val subject   = Option(msg.getSubject).getOrElse("email_body")
+          addChunk(textBytes, MimeType.TextPlain, subject)
+        }
 
-      // Process all attachments
-      for (attachment <- msg.getAttachments.asScala) {
-        val name          = Option(attachment.getName).getOrElse(s"attachment_${chunks.length}")
-        val contentStream = new ByteArrayOutputStream()
-        attachment.save(contentStream)
-        val bytes = contentStream.toByteArray
+        // Process all attachments
+        for (attachment <- msg.getAttachments.asScala) {
+          val name = Option(attachment.getName).getOrElse(s"attachment_${chunks.length}")
 
-        // Determine MIME type from file extension
-        val ext = name.split("\\.").lastOption.getOrElse("").toLowerCase
-        val mime =
-          FileType.fromExtension(ext).map(_.getMimeType).getOrElse(MimeType.ApplicationOctet)
+          Using.resource(new ByteArrayOutputStream()) { contentStream =>
+            attachment.save(contentStream)
+            val bytes = contentStream.toByteArray
 
-        addChunk(bytes, mime, name)
-      }
+            // Determine MIME type from file extension
+            val ext = name.split("\\.").lastOption.getOrElse("").toLowerCase
+            val mime =
+              FileType.fromExtension(ext).map(_.getMimeType).getOrElse(MimeType.ApplicationOctet)
 
-      // If no chunks were created, throw exception
-      if (chunks.isEmpty) {
-        throw new EmptyDocumentException(
-          content.mimeType.mimeType,
-          "MSG file contains no body or attachments"
-        )
-      }
+            addChunk(bytes, mime, name)
+          }
+        }
 
-      // Finalize chunks with correct total count
-      val total     = chunks.size
-      val allChunks = chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
+        // If no chunks were created, throw exception
+        if (chunks.isEmpty) {
+          throw new EmptyDocumentException(
+            content.mimeType.mimeType,
+            "MSG file contains no body or attachments"
+          )
+        }
 
-      // Apply chunk range filtering if specified
-      cfg.chunkRange match {
-        case Some(range) =>
-          range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
-        case None =>
-          allChunks
+        // Finalize chunks with correct total count
+        val total     = chunks.size
+        val allChunks = chunks.map(c => c.copy(total = total)).toSeq.sortBy(_.index)
+
+        // Apply chunk range filtering if specified
+        cfg.chunkRange match {
+          case Some(range) =>
+            range.filter(i => i >= 0 && i < total).map(allChunks(_)).toSeq
+          case None =>
+            allChunks
+        }
       }
     }
   }

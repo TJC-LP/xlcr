@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream
 import java.util.Properties
 
 import scala.collection.mutable.ListBuffer
+import scala.util.Using
 
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.{ Multipart, Part, Session }
@@ -69,7 +70,7 @@ object EmailAttachmentSplitter
               disposition
             ) || disposition == "inline" && ctype.startsWith("image/")
           ) {
-            val bytes = part.getInputStream.readAllBytes()
+            val bytes = Using.resource(part.getInputStream)(_.readAllBytes())
             val mime =
               MimeType.fromString(ctype.split(";")(0), MimeType.ApplicationOctet)
             val name =
@@ -79,7 +80,7 @@ object EmailAttachmentSplitter
             !bodyCaptured && (part
               .isMimeType("text/plain") || part.isMimeType("text/html"))
           ) {
-            val bytes = part.getInputStream.readAllBytes()
+            val bytes = Using.resource(part.getInputStream)(_.readAllBytes())
             val mime =
               if (part.isMimeType("text/html")) MimeType.TextHtml
               else MimeType.TextPlain

@@ -3,6 +3,8 @@ package splitters.excel
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import compat.aspose.AsposeWorkbook
 import models.FileContent
 import splitters.{
@@ -14,6 +16,7 @@ import splitters.{
 }
 import types.MimeType
 import utils.aspose.AsposeLicense
+import utils.resource.ResourceWrappers._
 
 /**
  * Common helper used by the Aspose-based Excel sheet splitters.
@@ -64,53 +67,60 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
     withFailureHandling(content, cfg) {
       // Load the source workbook once – copying sheets is cheap, parsing XLSX
       // multiple times is not.
-      val srcWb  = new AsposeWorkbook(new ByteArrayInputStream(content.data))
-      val sheets = srcWb.getWorksheets
-      val total  = sheets.getCount
+      Using.Manager { use =>
+        val srcInputStream = use(new ByteArrayInputStream(content.data))
+        val srcWb          = new AsposeWorkbook(srcInputStream)
+        use(new DisposableWrapper(srcWb))
 
-      if (total == 0) {
-        throw new EmptyDocumentException(
-          content.mimeType.mimeType,
-          "Workbook contains no sheets"
-        )
-      }
+        val sheets = srcWb.getWorksheets
+        val total  = sheets.getCount
 
-      // Determine which sheets to extract based on configuration
-      val sheetsToExtract = cfg.chunkRange match {
-        case Some(range) =>
-          // Filter to valid sheet indices
-          range.filter(i => i >= 0 && i < total)
-        case None =>
-          0 until total
-      }
+        if (total == 0) {
+          throw new EmptyDocumentException(
+            content.mimeType.mimeType,
+            "Workbook contains no sheets"
+          )
+        }
 
-      sheetsToExtract.map { idx =>
-        val srcSheet = sheets.get(idx)
+        // Determine which sheets to extract based on configuration
+        val sheetsToExtract = cfg.chunkRange match {
+          case Some(range) =>
+            // Filter to valid sheet indices
+            range.filter(i => i >= 0 && i < total)
+          case None =>
+            0 until total
+        }
 
-        // Create a fresh workbook with *no* sheets, then copy the target one
-        val destWb     = new AsposeWorkbook()
-        val destSheets = destWb.getWorksheets
-        // Remove the default empty sheet Aspose creates
-        destSheets.removeAt(0)
+        sheetsToExtract.map { idx =>
+          val srcSheet = sheets.get(idx)
 
-        // Create a fresh empty sheet and copy the source contents into it
-        val newIdx    = destSheets.add()
-        val destSheet = destSheets.get(newIdx)
+          // Create a fresh workbook with *no* sheets, then copy the target one
+          Using.Manager { destUse =>
+            val destWb = new AsposeWorkbook()
+            destUse(new DisposableWrapper(destWb))
 
-        destSheet.copy(srcSheet)
+            val destSheets = destWb.getWorksheets
+            // Remove the default empty sheet Aspose creates
+            destSheets.removeAt(0)
 
-        // Preserve name & ensure visibility
-        destSheet.setName(srcSheet.getName)
-        destSheet.setVisible(true)
+            // Create a fresh empty sheet and copy the source contents into it
+            val newIdx    = destSheets.add()
+            val destSheet = destSheets.get(newIdx)
 
-        // Persist to bytes
-        val baos = new ByteArrayOutputStream()
-        destWb.save(baos, fileFormatType)
+            destSheet.copy(srcSheet)
 
-        val fc = FileContent(baos.toByteArray, outputMimeType)
+            // Preserve name & ensure visibility
+            destSheet.setName(srcSheet.getName)
+            destSheet.setVisible(true)
 
-        DocChunk(fc, srcSheet.getName, idx, total)
-      }
+            // Persist to bytes
+            val baos = destUse(new ByteArrayOutputStream())
+            destWb.save(baos, fileFormatType)
+            val fc = FileContent(baos.toByteArray, outputMimeType)
+            DocChunk(fc, srcSheet.getName, idx, total)
+          }.get
+        }
+      }.get
     }
   }
 }

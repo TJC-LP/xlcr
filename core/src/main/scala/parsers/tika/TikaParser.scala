@@ -3,9 +3,7 @@ package parsers.tika
 
 import java.io.ByteArrayInputStream
 
-import scala.util.Try
-
-import com.tjclp.xlcr.compat.Using
+import scala.util.{ Try, Using }
 
 import org.apache.tika.metadata.Metadata
 import org.apache.tika.parser.{ AutoDetectParser, ParseContext }

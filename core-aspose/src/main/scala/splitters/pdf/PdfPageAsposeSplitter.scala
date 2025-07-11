@@ -4,12 +4,15 @@ package pdf
 
 import java.io.ByteArrayOutputStream
 
+import scala.util.Using
+
 import com.aspose.pdf.OptimizedMemoryStream
 import org.slf4j.LoggerFactory
 
 import compat.aspose.AsposePdfDocument
 import models.FileContent
 import types.MimeType
+import utils.resource.ResourceWrappers._
 
 /**
  * Aspose implementation for splitting PDF files by page.
@@ -42,13 +45,13 @@ object PdfPageAsposeSplitter
       // Initialize Aspose license on executor
       utils.aspose.AsposeLicense.initializeIfNeeded()
 
-      var pdfDocument: AsposePdfDocument         = null
-      var optimizedStream: OptimizedMemoryStream = null
-      try {
+      Using.Manager { use =>
         // Load PDF document using OptimizedMemoryStream for better memory handling
-        optimizedStream = new OptimizedMemoryStream()
+        val optimizedStream = new OptimizedMemoryStream()
+        use(new CloseableWrapper(optimizedStream)) // Use WorkbookWrapper for close() method
         optimizedStream.write(content.data, 0, content.data.length)
-        pdfDocument = new AsposePdfDocument(optimizedStream)
+        val pdfDocument = new AsposePdfDocument(optimizedStream)
+        use(new CloseableWrapper(pdfDocument)) // Use WorkbookWrapper for close() method
         val pageCount = pdfDocument.getPages.size
 
         logger.info(s"Splitting PDF into $pageCount pages")
@@ -66,51 +69,23 @@ object PdfPageAsposeSplitter
 
         // Extract specified pages
         pagesToExtract.map { pageIndex =>
-          var newDocument: AsposePdfDocument = null
-          try {
+          Using.Manager { pageUse =>
             // Create a new PDF with just this page
-            newDocument = new AsposePdfDocument()
+            val newDocument = new AsposePdfDocument()
+            pageUse(new CloseableWrapper(newDocument))
 
             // Add the current page to the new document
             val page = pdfDocument.getPages.get_Item(pageIndex)
             newDocument.getPages.add(page)
 
             // Save to byte array
-            val outputStream = new ByteArrayOutputStream()
-            try {
-              newDocument.save(outputStream)
-              val fc = FileContent(outputStream.toByteArray, MimeType.ApplicationPdf)
-              DocChunk(fc, s"Page $pageIndex", pageIndex - 1, pageCount)
-            } finally
-              outputStream.close()
-          } finally
-            if (newDocument != null) {
-              try
-                newDocument.close()
-              catch {
-                case e: Exception =>
-                  logger.warn(s"Error closing document for page $pageIndex: ${e.getMessage}")
-              }
-            }
+            val outputStream = pageUse(new ByteArrayOutputStream())
+            newDocument.save(outputStream)
+            val fc = FileContent(outputStream.toByteArray, MimeType.ApplicationPdf)
+            DocChunk(fc, s"Page $pageIndex", pageIndex - 1, pageCount)
+          }.get
         }
-      } finally {
-        if (pdfDocument != null) {
-          try
-            pdfDocument.close()
-          catch {
-            case e: Exception =>
-              logger.warn(s"Error closing original PDF document: ${e.getMessage}")
-          }
-        }
-        if (optimizedStream != null) {
-          try
-            optimizedStream.close()
-          catch {
-            case e: Exception =>
-              logger.warn(s"Error closing optimized memory stream: ${e.getMessage}")
-          }
-        }
-      }
+      }.get
     }
   }
 }

@@ -3,6 +3,8 @@ package splitters.powerpoint
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import com.aspose.slides.Presentation
 import org.slf4j.LoggerFactory
 
@@ -15,6 +17,7 @@ import splitters.{
   SplitStrategy
 }
 import types.MimeType
+import utils.resource.ResourceWrappers._
 
 /**
  * Base implementation for PowerPoint slide splitters. Used by both PPT and PPTX splitters.
@@ -60,10 +63,11 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
       // Load the source presentation once so we can access slide metadata.
-      val srcPres = new Presentation(new ByteArrayInputStream(content.data))
-
-      try {
-        val total = srcPres.getSlides.size()
+      val srcInputStream = new ByteArrayInputStream(content.data)
+      val srcPres        = new Presentation(srcInputStream)
+      Using.resource(new DisposableWrapper(srcPres)) { wrapper =>
+        val srcPres = wrapper.resource
+        val total   = srcPres.getSlides.size()
 
         // Check if presentation is empty
         if (total == 0) {
@@ -83,14 +87,15 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
         }
 
         slidesToExtract.map { idx =>
-          val outBaos = new ByteArrayOutputStream()
-
-          if (cfg.useCloneForSlides) {
+          val slideBytes = if (cfg.useCloneForSlides) {
             // ---------- preferred clone‑based branch ----------
-            val newPres         = new Presentation()
-            val srcPresForSlide = new Presentation(new ByteArrayInputStream(content.data))
+            Using.Manager { use =>
+              val outBaos = use(new ByteArrayOutputStream())
+              val newPres = new Presentation()
+              use(new DisposableWrapper(newPres))
+              val srcPresForSlide = new Presentation(new ByteArrayInputStream(content.data))
+              use(new DisposableWrapper(srcPresForSlide))
 
-            try {
               // Copy slide size from source presentation to preserve dimensions
               val srcSlideSize = srcPresForSlide.getSlideSize
               val srcWidth     = srcSlideSize.getSize.getWidth
@@ -128,22 +133,24 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
               }
 
               newPres.save(outBaos, saveFormat)
-            } finally {
-              srcPresForSlide.dispose()
-              newPres.dispose()
-            }
+              outBaos.toByteArray
+            }.get
 
           } else {
             // ---------- legacy destructive branch ----------
-            val pres = new Presentation(new ByteArrayInputStream(content.data))
-            try {
+            Using.Manager { use =>
+              val outBaos = use(new ByteArrayOutputStream())
+              val pres    = new Presentation(new ByteArrayInputStream(content.data))
+              use(new DisposableWrapper(pres))
+
               var i = pres.getSlides.size() - 1
               while (i >= 0) {
                 if (i != idx) pres.getSlides.removeAt(i)
                 i -= 1
               }
               pres.save(outBaos, saveFormat)
-            } finally pres.dispose()
+              outBaos.toByteArray
+            }.get
           }
 
           // Determine slide title safely
@@ -151,10 +158,10 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
             .filter(_.nonEmpty)
             .getOrElse(s"Slide ${idx + 1}")
 
-          val fc = FileContent(outBaos.toByteArray, outputMimeType)
+          val fc = FileContent(slideBytes, outputMimeType)
           DocChunk(fc, title, idx, total)
         }
-      } finally srcPres.dispose()
+      }
     }
   }
 }

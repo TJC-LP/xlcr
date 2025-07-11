@@ -4,17 +4,17 @@ package renderers.excel
 import java.io.ByteArrayOutputStream
 
 import scala.collection.compat._
-import scala.util.Try
+import scala.util.{ Try, Using }
 
 import org.apache.poi.ss.usermodel._
 import org.apache.poi.ss.util.CellRangeAddress
 import org.apache.poi.xssf.usermodel._
 
-import compat.Using
 import models.FileContent
 import models.excel._
 import renderers.RendererConfig
 import types.MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
+import utils.resource.ResourceWrappers._
 
 /**
  * Renders SheetsData back to Excel format (XLSX)
@@ -30,34 +30,35 @@ class SheetsDataExcelRenderer
     config: Option[RendererConfig] = None
   ): FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type] =
     Try {
-      val workbook = new XSSFWorkbook()
+      Using.Manager { use =>
+        val workbook = new XSSFWorkbook()
+        use(new CloseableWrapper(workbook))
 
-      // Extract renderer config if available
-      val rendererConfig = config
-        .collect { case c: ExcelRendererConfig =>
-          c
+        // Extract renderer config if available
+        val rendererConfig = config
+          .collect { case c: ExcelRendererConfig =>
+            c
+          }
+          .getOrElse(ExcelRendererConfig())
+
+        // Create sheets and populate data
+        model.sheets.foreach { sheetData =>
+          val sheet = workbook.createSheet(sheetData.name)
+          renderSheet(sheet, sheetData, workbook, rendererConfig)
         }
-        .getOrElse(ExcelRendererConfig())
 
-      // Create sheets and populate data
-      model.sheets.foreach { sheetData =>
-        val sheet = workbook.createSheet(sheetData.name)
-        renderSheet(sheet, sheetData, workbook, rendererConfig)
-      }
-
-      // Write workbook to bytes
-      val output = new ByteArrayOutputStream()
-      Using.resource(output) { out =>
         // Set calculation mode based on config
         workbook.setForceFormulaRecalculation(rendererConfig.calculateOnSave)
 
-        workbook.write(out)
-        workbook.close()
+        // Write workbook to bytes
+        val output = use(new ByteArrayOutputStream())
+        workbook.write(output)
+
         FileContent[ApplicationVndOpenXmlFormatsSpreadsheetmlSheet.type](
-          out.toByteArray,
+          output.toByteArray,
           ApplicationVndOpenXmlFormatsSpreadsheetmlSheet
         )
-      }
+      }.get
     }.recover { case ex =>
       throw new RendererError(
         s"Failed to render SheetsData to Excel: ${ex.getMessage}",

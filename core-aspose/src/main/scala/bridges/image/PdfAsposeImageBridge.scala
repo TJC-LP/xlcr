@@ -4,6 +4,7 @@ package bridges.image
 import java.io.ByteArrayOutputStream
 
 import scala.reflect.ClassTag
+import scala.util.Using
 
 import com.aspose.pdf.Document
 import com.aspose.pdf.devices.{ JpegDevice, PngDevice, Resolution }
@@ -15,6 +16,7 @@ import types.MimeType.{ ApplicationPdf, ImageJpeg }
 import types.Priority.LOW
 import types.{ MimeType, Priority }
 import utils.image.ImageUtils
+import utils.resource.ResourceWrappers._
 
 /**
  * Base implementation for Aspose-based PDF to image conversion.
@@ -59,12 +61,14 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
   protected def renderPage(
     pdfBytes: Array[Byte],
     cfg: ImageRenderConfig
-  ): Array[Byte] = {
-    // Load the document from bytes
-    val document = new Document(pdfBytes)
-    try {
+  ): Array[Byte] =
+    Using.Manager { use =>
+      // Load the document from bytes
+      val document = new Document(pdfBytes)
+      use(new CloseableWrapper(document))
+
       // Create an output stream for the image data
-      val baos = new ByteArrayOutputStream()
+      val baos = use(new ByteArrayOutputStream())
 
       // Get the page to render (Aspose uses 1-based indexing)
       val pageNumber = cfg.pageIdx + 1
@@ -86,36 +90,28 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
       // Configure resolution
       val resolution = new Resolution(cfg.initialDpi)
 
-      // Use a try-finally block to ensure resources are properly cleaned up
-      try {
-        if (targetMime == ImageJpeg) {
-          // Create JPEG device with quality setting and dimensions
-          val jpegDevice = new JpegDevice(
-            width,
-            height,
-            resolution,
-            (cfg.initialQuality * 100).toInt // Aspose uses 0-100 scale as integer
-          )
+      if (targetMime == ImageJpeg) {
+        // Create JPEG device with quality setting and dimensions
+        val jpegDevice = new JpegDevice(
+          width,
+          height,
+          resolution,
+          (cfg.initialQuality * 100).toInt // Aspose uses 0-100 scale as integer
+        )
 
-          // Process the page to the output stream
-          jpegDevice.process(page, baos)
-        } else {
-          // Create PNG device with dimensions
-          val pngDevice = new PngDevice(width, height, resolution)
+        // Process the page to the output stream
+        jpegDevice.process(page, baos)
+      } else {
+        // Create PNG device with dimensions
+        val pngDevice = new PngDevice(width, height, resolution)
 
-          // Process the page to the output stream
-          pngDevice.process(page, baos)
-        }
+        // Process the page to the output stream
+        pngDevice.process(page, baos)
+      }
 
-        // Return the image bytes
-        baos.toByteArray
-      } finally
-        // Close the output stream
-        baos.close()
-    } finally
-      // Close the document to release resources
-      document.close()
-  }
+      // Return the image bytes
+      baos.toByteArray
+    }.get
 
   // Now using the shared ImageUtils implementation for optimal dimension calculation
 }

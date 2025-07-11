@@ -3,7 +3,7 @@ package renderers.excel
 
 import java.io.ByteArrayInputStream
 
-import com.tjclp.xlcr.compat.Using
+import scala.util.Using
 
 import org.apache.poi.ss.usermodel.{ BorderStyle, CellType, FillPatternType }
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
