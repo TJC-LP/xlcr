@@ -4,6 +4,8 @@ package image
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
+import scala.util.Using
+
 import com.aspose.pdf.{ Document, Image => PdfImage, MarginInfo, PageSize }
 import org.slf4j.LoggerFactory
 
@@ -12,6 +14,7 @@ import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType.ApplicationPdf
 import types.{ MimeType, Priority }
 import utils.aspose.AsposeLicense
+import utils.resource.ResourceWrappers._
 
 /**
  * Common implementation for Image to PDF conversion using Aspose.PDF. This trait provides the core
@@ -41,16 +44,10 @@ trait ImageToPdfAsposeBridgeImpl[I <: MimeType]
         logger.info(s"Rendering ${model.mimeType} image to PDF using Aspose.PDF.")
 
         // Convert image to PDF
-        val inputStream = new ByteArrayInputStream(model.data)
-        val pdfBytes = try {
-          val pdfOutput = convertImageToPdf(inputStream)
-          try {
+        val pdfBytes = Using.resource(new ByteArrayInputStream(model.data)) { inputStream =>
+          Using.resource(convertImageToPdf(inputStream)) { pdfOutput =>
             pdfOutput.toByteArray
-          } finally {
-            pdfOutput.close()
           }
-        } finally {
-          inputStream.close()
         }
 
         logger.info(
@@ -77,8 +74,7 @@ trait ImageToPdfAsposeBridgeImpl[I <: MimeType]
     inputStream: ByteArrayInputStream
   ): ByteArrayOutputStream = {
     // Create a new PDF document
-    val pdfDoc = new Document()
-    try {
+    Using.resource(new Document()) { pdfDoc =>
       // Add a page
       val page = pdfDoc.getPages.add()
 
@@ -101,8 +97,6 @@ trait ImageToPdfAsposeBridgeImpl[I <: MimeType]
       val pdfOutput = new ByteArrayOutputStream()
       pdfDoc.save(pdfOutput)
       pdfOutput
-    } finally {
-      pdfDoc.close()
     }
   }
 }
