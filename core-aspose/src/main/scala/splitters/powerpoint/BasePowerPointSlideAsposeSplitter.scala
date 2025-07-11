@@ -43,7 +43,7 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
     saveFormat: Int,
     outputMimeType: M
   ): Seq[DocChunk[_ <: MimeType]] = {
-    
+
     // Initialize Aspose license on executor
     utils.aspose.AsposeLicense.initializeIfNeeded()
 
