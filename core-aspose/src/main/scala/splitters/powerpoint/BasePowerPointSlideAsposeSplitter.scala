@@ -44,6 +44,9 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
     outputMimeType: M
   ): Seq[DocChunk[_ <: MimeType]] = {
 
+    // Initialize Aspose license on executor
+    utils.aspose.AsposeLicense.initializeIfNeeded()
+
     // Check for valid strategy
     if (!cfg.hasStrategy(SplitStrategy.Slide)) {
       return handleInvalidStrategy(
