@@ -85,18 +85,20 @@ lazy val commonSettings = Seq(
     // We explicitly add the version-specific directories here.
     val base = baseDirectory.value / "src" / "main"
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, _)) => Seq(base / "scala-2") // Add src/main/scala-2
-      case Some((3, _)) => Seq(base / "scala-3") // Add src/main/scala-3
-      case _            => Seq.empty             // No extra directories for other versions
+      case Some((2, 12)) => Seq(base / "scala-2", base / "scala-2.12")
+      case Some((2, 13)) => Seq(base / "scala-2", base / "scala-2.13")
+      case Some((3, _))  => Seq(base / "scala-3")
+      case _             => Seq.empty
     }
   },
   // Similarly for test sources if you use version-specific tests
   Test / unmanagedSourceDirectories ++= {
     val base = baseDirectory.value / "src" / "test"
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, _)) => Seq(base / "scala-2") // Add src/test/scala-2
-      case Some((3, _)) => Seq(base / "scala-3") // Add src/test/scala-3
-      case _            => Seq.empty
+      case Some((2, 12)) => Seq(base / "scala-2", base / "scala-2.12")
+      case Some((2, 13)) => Seq(base / "scala-2", base / "scala-2.13")
+      case Some((3, _))  => Seq(base / "scala-3")
+      case _             => Seq.empty
     }
   }
 )
@@ -117,7 +119,11 @@ lazy val core = (project in file("core"))
       "com.github.scopt"  %% "scopt"           % "4.1.0",
       "io.circe"          %% "circe-core"      % circeVersion,
       "io.circe"          %% "circe-generic"   % circeVersion,
-      "io.circe"          %% "circe-parser"    % circeVersion,
+      "io.circe"          %% "circe-parser"    % circeVersion
+    ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq("com.github.bigwheel" %% "util-backports" % "2.1")
+      case _ => Seq.empty
+    }) ++ Seq(
       // Apache Tika
       "org.apache.tika" % "tika-core"                     % tikaVersion,
       "org.apache.tika" % "tika-parsers"                  % tikaVersion,
