@@ -5,6 +5,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
+import scala.util.Using
 
 import com.aspose.email.MailMessage
 
@@ -43,8 +44,9 @@ object EmailAttachmentAsposeSplitter
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
-      val msg    = MailMessage.load(new ByteArrayInputStream(content.data))
-      try {
+      val msg = MailMessage.load(new ByteArrayInputStream(content.data))
+      
+      Using.resource(msg) { _ =>
         val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
 
         // Add function to create and append chunks to our list
@@ -64,9 +66,9 @@ object EmailAttachmentAsposeSplitter
 
         // Process all attachments
         for (attachment <- msg.getAttachments.asScala) {
-          val name          = Option(attachment.getName).getOrElse(s"attachment_${chunks.length}")
-          val contentStream = new ByteArrayOutputStream()
-          try {
+          val name = Option(attachment.getName).getOrElse(s"attachment_${chunks.length}")
+          
+          Using.resource(new ByteArrayOutputStream()) { contentStream =>
             attachment.save(contentStream)
             val bytes = contentStream.toByteArray
 
@@ -76,8 +78,6 @@ object EmailAttachmentAsposeSplitter
               FileType.fromExtension(ext).map(_.getMimeType).getOrElse(MimeType.ApplicationOctet)
 
             addChunk(bytes, mime, name)
-          } finally {
-            contentStream.close()
           }
         }
 
@@ -100,8 +100,6 @@ object EmailAttachmentAsposeSplitter
           case None =>
             allChunks
         }
-      } finally {
-        msg.dispose()
       }
     }
   }

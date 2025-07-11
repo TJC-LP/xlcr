@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream
 
 import scala.util.Try
 
-import com.tjclp.xlcr.compat.Using
+import scala.util.Using
 
 import org.apache.tika.metadata.Metadata
 import org.apache.tika.parser.{ AutoDetectParser, ParseContext }

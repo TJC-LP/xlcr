@@ -7,7 +7,7 @@ import scala.util.Try
 
 import org.apache.poi.ss.usermodel.WorkbookFactory
 
-import compat.Using
+import scala.util.Using
 import models.FileContent
 import models.excel.{ SheetData, SheetsData }
 import parsers.ParserConfig

@@ -15,7 +15,7 @@ import models.FileContent
 import models.powerpoint._
 import parsers.SimpleParser
 import types.MimeType.ApplicationVndMsPowerpoint
-import compat.Using
+import scala.util.Using
 
 /**
  * SlidesDataPowerPointParser parses PowerPoint presentations (PPTX) into SlidesData, including

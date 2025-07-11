@@ -7,7 +7,7 @@ import java.nio.file.{ Files, Path, StandardOpenOption }
 
 import scala.util.{ Failure, Success, Try }
 
-import com.tjclp.xlcr.compat.Using
+import scala.util.Using
 
 import org.apache.tika.config.TikaConfig
 import org.apache.tika.io.TikaInputStream

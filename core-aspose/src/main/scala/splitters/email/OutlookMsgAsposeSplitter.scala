@@ -5,6 +5,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
+import scala.util.Using
 
 import com.aspose.email.MailMessage
 import org.slf4j.LoggerFactory
@@ -67,7 +68,7 @@ object OutlookMsgAsposeSplitter
         )
       }
 
-      try {
+      Using.resource(msg) { _ =>
         val chunks = ListBuffer.empty[DocChunk[_ <: MimeType]]
 
         // Add function to create and append chunks to our list
@@ -87,9 +88,9 @@ object OutlookMsgAsposeSplitter
 
         // Process all attachments
         for (attachment <- msg.getAttachments.asScala) {
-          val name          = Option(attachment.getName).getOrElse(s"attachment_${chunks.length}")
-          val contentStream = new ByteArrayOutputStream()
-          try {
+          val name = Option(attachment.getName).getOrElse(s"attachment_${chunks.length}")
+          
+          Using.resource(new ByteArrayOutputStream()) { contentStream =>
             attachment.save(contentStream)
             val bytes = contentStream.toByteArray
 
@@ -99,8 +100,6 @@ object OutlookMsgAsposeSplitter
               FileType.fromExtension(ext).map(_.getMimeType).getOrElse(MimeType.ApplicationOctet)
 
             addChunk(bytes, mime, name)
-          } finally {
-            contentStream.close()
           }
         }
 
@@ -123,8 +122,6 @@ object OutlookMsgAsposeSplitter
           case None =>
             allChunks
         }
-      } finally {
-        msg.dispose()
       }
     }
   }

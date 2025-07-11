@@ -4,7 +4,7 @@ package parsers.excel
 import java.io.FileOutputStream
 import java.nio.file.Path
 
-import com.tjclp.xlcr.compat.Using
+import scala.util.Using
 
 import org.apache.poi.ss.usermodel.{
   BorderStyle,

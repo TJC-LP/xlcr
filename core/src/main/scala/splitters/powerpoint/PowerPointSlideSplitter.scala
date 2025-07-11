@@ -5,13 +5,14 @@ package powerpoint
 import java.io.{ File, FileInputStream, FileOutputStream }
 
 import scala.jdk.CollectionConverters._
-import scala.util.Try
+import scala.util.{ Try, Using }
 
 import org.apache.poi.xslf.usermodel.XMLSlideShow
 import org.slf4j.LoggerFactory
 
 import models.FileContent
 import types.MimeType
+import utils.resource.ResourceWrappers._
 
 trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
     with SplitFailureHandler {
@@ -35,34 +36,30 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
-      // To avoid ZipEntry issues, write the content to a temporary file first
-      val tempFile = File.createTempFile("presentation", ".pptx")
-      tempFile.deleteOnExit()
-
-      try {
+      val result = Using.Manager { use =>
+        // To avoid ZipEntry issues, write the content to a temporary file first
+        val tempFile = File.createTempFile("presentation", ".pptx")
+        tempFile.deleteOnExit()
+        use(autoCloseable(Try(tempFile.delete())))
+        
         // Write the content to the temporary file
-        val fos = new FileOutputStream(tempFile)
-        try {
-          fos.write(content.data)
-        } finally {
-          fos.close()
-        }
-
+        val fos = use(new FileOutputStream(tempFile))
+        fos.write(content.data)
+        fos.close() // Close early so XMLSlideShow can read it
+        
         // Open the presentation from the file instead of from a stream
         // This avoids the "Cannot retrieve data from Zip Entry" issue
-        val src = new XMLSlideShow(new FileInputStream(tempFile))
+        val src = use(new XMLSlideShow(new FileInputStream(tempFile)))
 
-        try {
-          val slides = src.getSlides.asScala.toList
-          val total  = slides.size
+        val slides = src.getSlides.asScala.toList
+        val total  = slides.size
 
-          if (total == 0) {
-            src.close()
-            throw new EmptyDocumentException(
-              content.mimeType.toString,
-              "Presentation contains no slides"
-            )
-          }
+        if (total == 0) {
+          throw new EmptyDocumentException(
+            content.mimeType.toString,
+            "Presentation contains no slides"
+          )
+        }
 
           // Determine which slides to extract based on configuration
           val slidesToExtract = cfg.chunkRange match {
@@ -82,39 +79,31 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
                 .filter(_.nonEmpty)
                 .getOrElse(s"Slide ${idx + 1}")
 
-              // Create temp file for destination slideshow
-              val destFile = File.createTempFile(s"slide_${idx + 1}", ".pptx")
-              destFile.deleteOnExit()
-
-              try {
+              val slideResult = Using.Manager { slideUse =>
+                // Create temp file for destination slideshow
+                val destFile = File.createTempFile(s"slide_${idx + 1}", ".pptx")
+                destFile.deleteOnExit()
+                slideUse(autoCloseable(Try(destFile.delete())))
+                
                 // Create a new presentation for this slide
-                val dest = new XMLSlideShow()
-
-                try {
-                  // Import the content from the original slide
-                  dest.createSlide().importContent(originalSlide)
-
-                  // Write to the temp file
-                  val destFos = new FileOutputStream(destFile)
-                  try {
-                    dest.write(destFos)
-                  } finally {
-                    destFos.close()
-                  }
-
-                  // Read the file back into a byte array
-                  val destBytes =
-                    java.nio.file.Files.readAllBytes(destFile.toPath)
-
-                  // Create file content and chunk
-                  val fc = FileContent(destBytes, content.mimeType)
-                  Some(DocChunk(fc, title, idx, total))
-                } finally
-                  // Always close the destination
-                  dest.close()
-              } finally
-                // Clean up the temp file
-                Try(destFile.delete())
+                val dest = slideUse(new XMLSlideShow())
+                
+                // Import the content from the original slide
+                dest.createSlide().importContent(originalSlide)
+                
+                // Write to the temp file
+                val destFos = slideUse(new FileOutputStream(destFile))
+                dest.write(destFos)
+                destFos.close() // Close to allow reading
+                
+                // Read the file back into a byte array
+                val destBytes = java.nio.file.Files.readAllBytes(destFile.toPath)
+                
+                // Create file content and chunk
+                val fc = FileContent(destBytes, content.mimeType)
+                Some(DocChunk(fc, title, idx, total))
+              }
+              slideResult.get
             } catch {
               case ex: Exception =>
                 logger.error(s"Error processing slide ${idx + 1}: ${ex.getMessage}", ex)
@@ -122,21 +111,17 @@ trait PowerPointSlideSplitter[T <: MimeType] extends DocumentSplitter[T]
             }
           }
 
-          if (chunks.isEmpty) {
-            // If all slide imports failed, throw exception
-            throw new CorruptedDocumentException(
-              content.mimeType.toString,
-              "Failed to extract any slides from presentation"
-            )
-          } else {
-            chunks
-          }
-        } finally
-          // Close source after all slides are processed
-          Try(src.close())
-      } finally
-        // Clean up the main temp file
-        Try(tempFile.delete())
+        if (chunks.isEmpty) {
+          // If all slide imports failed, throw exception
+          throw new CorruptedDocumentException(
+            content.mimeType.toString,
+            "Failed to extract any slides from presentation"
+          )
+        } else {
+          chunks
+        }
+      }
+      result.get
     }.asInstanceOf[Seq[DocChunk[T]]]
   }
 }

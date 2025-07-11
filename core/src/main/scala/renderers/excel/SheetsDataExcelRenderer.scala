@@ -10,7 +10,7 @@ import org.apache.poi.ss.usermodel._
 import org.apache.poi.ss.util.CellRangeAddress
 import org.apache.poi.xssf.usermodel._
 
-import compat.Using
+import scala.util.Using
 import models.FileContent
 import models.excel._
 import renderers.RendererConfig
