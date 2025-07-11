@@ -32,6 +32,9 @@ trait WordPageAsposeSplitter extends DocumentSplitter[MimeType] with SplitFailur
 
     // Wrap main splitting logic with failure handling
     withFailureHandling(content, cfg) {
+      // Initialize Aspose license on executor
+      utils.aspose.AsposeLicense.initializeIfNeeded()
+      
       // Validate content is not empty
       if (content.data.isEmpty) {
         throw new EmptyDocumentException(

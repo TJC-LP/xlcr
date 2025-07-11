@@ -15,7 +15,7 @@ ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / scalaVersion            := scala212
 ThisBuild / crossScalaVersions      := Seq(scala212, scala213, scala3)
 ThisBuild / versionScheme           := Some("semver-spec")
-ThisBuild / version                 := "0.1.0-RC11"
+ThisBuild / version                 := "0.1.0-RC12-SNAPSHOT"
 
 // Scalafix configuration
 ThisBuild / semanticdbEnabled := true
@@ -224,12 +224,12 @@ lazy val coreAspose = (project in file("core-aspose"))
       "-Yresolve-term-conflict:package" // <- crucial for Aspose
     ),
     libraryDependencies ++= Seq(
-      "com.aspose"     % "aspose-cells"  % "25.4",
-      ("com.aspose"    % "aspose-words"  % "25.4").classifier("jdk17"),
-      ("com.aspose"    % "aspose-slides" % "25.4").classifier("jdk16"),
-      ("com.aspose"    % "aspose-email"  % "25.3").classifier("jdk16"),
-      "com.aspose"     % "aspose-zip"    % "25.3",
-      ("com.aspose"    % "aspose-pdf"    % "25.4").classifier("jdk17"),
+      "com.aspose"     % "aspose-cells"  % "25.7",
+      ("com.aspose"    % "aspose-words"  % "25.6").classifier("jdk17"),
+      ("com.aspose"    % "aspose-slides" % "25.6").classifier("jdk16"),
+      ("com.aspose"    % "aspose-email"  % "25.6").classifier("jdk16"),
+      "com.aspose"     % "aspose-zip"    % "25.6",
+      ("com.aspose"    % "aspose-pdf"    % "25.6").classifier("jdk17"),
       "org.scalatest" %% "scalatest"     % "3.2.19" % Test
     )
   )
@@ -373,6 +373,11 @@ lazy val assemblySettings = Seq(
           "jakarta.activation.DataContentHandler"
         ) =>
       MergeStrategy.filterDistinctLines
+    
+    // Handle ServiceLoader configuration files - MUST be concatenated
+    // to ensure all providers (Core + Aspose) are discovered
+    case PathList("META-INF", "services", xs @ _*) => MergeStrategy.concat
+    
     case PathList("javax", "activation", xs @ _*)      => MergeStrategy.first
     case PathList("jakarta", "activation", xs @ _*)    => MergeStrategy.first
     case PathList("jakarta", "mail", xs @ _*)          => MergeStrategy.first

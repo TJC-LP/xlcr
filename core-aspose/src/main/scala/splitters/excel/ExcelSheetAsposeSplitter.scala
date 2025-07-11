@@ -45,6 +45,9 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
     fileFormatType: Int,
     outputMimeType: M
   ): Seq[DocChunk[_ <: MimeType]] = {
+    
+    // Initialize Aspose license on executor
+    utils.aspose.AsposeLicense.initializeIfNeeded()
 
     // Check for valid strategy
     if (!cfg.hasStrategy(SplitStrategy.Sheet)) {

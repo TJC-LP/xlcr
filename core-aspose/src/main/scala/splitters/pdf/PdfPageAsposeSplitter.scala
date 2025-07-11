@@ -39,6 +39,9 @@ object PdfPageAsposeSplitter
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
+      // Initialize Aspose license on executor
+      utils.aspose.AsposeLicense.initializeIfNeeded()
+      
       var pdfDocument: AsposePdfDocument         = null
       var optimizedStream: OptimizedMemoryStream = null
       try {
