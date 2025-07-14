@@ -3,7 +3,7 @@ package splitters
 package excel
 
 import models.FileContent
-import splitters.{ DocChunk, SplitConfig }
+import splitters.{ DocChunk, HighPrioritySplitter, SplitConfig }
 import types.MimeType
 
 /**
@@ -13,7 +13,7 @@ import types.MimeType
  * Aspose.Cells library to handle the OpenDocument format.
  */
 object OdsSheetAsposeSplitter
-    extends DocumentSplitter[
+    extends HighPrioritySplitter[
       MimeType.ApplicationVndOasisOpendocumentSpreadsheet.type
     ] {
 

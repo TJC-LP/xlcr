@@ -13,7 +13,7 @@ import bridges.HighPrioritySimpleBridge
 import models.FileContent
 import renderers.RendererConfig
 import types.MimeType.{ ApplicationPdf, ImageJpeg }
-import types.Priority.LOW
+import types.Priority.HIGH
 import types.{ MimeType, Priority }
 import utils.image.ImageUtils
 import utils.resource.ResourceWrappers._
@@ -31,7 +31,7 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
   override val classTag: ClassTag[O]
 ) extends PdfToImageBridgeBase[O] with HighPrioritySimpleBridge[ApplicationPdf.type, O] {
 
-  override def priority: Priority = LOW // Image conversion may lead to dead hangs for certain files
+  override def priority: Priority = HIGH // Image conversion may lead to dead hangs for certain files
 
   // Default implementation for the output renderer - uses our renderPage method
   override private[bridges] def outputRenderer =
