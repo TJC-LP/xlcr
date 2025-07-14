@@ -31,7 +31,8 @@ abstract class PdfAsposeImageBridge[O <: MimeType](implicit
   override val classTag: ClassTag[O]
 ) extends PdfToImageBridgeBase[O] with HighPrioritySimpleBridge[ApplicationPdf.type, O] {
 
-  override def priority: Priority = HIGH // Image conversion may lead to dead hangs for certain files
+  override def priority: Priority =
+    HIGH // Image conversion may lead to dead hangs for certain files
 
   // Default implementation for the output renderer - uses our renderPage method
   override private[bridges] def outputRenderer =

@@ -6,7 +6,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.util.Using
 
-import com.aspose.slides.{ Presentation, PdfOptions, PdfTextCompression, SaveFormat }
+import com.aspose.slides.{ PdfOptions, PdfTextCompression, Presentation, SaveFormat }
 import org.slf4j.LoggerFactory
 
 import models.FileContent
@@ -54,35 +54,38 @@ trait PowerPointToPdfAsposeBridgeImpl[I <: MimeType]
           val inputStream  = use(new ByteArrayInputStream(model.data))
           val presentation = new Presentation(inputStream)
           use(new DisposableWrapper(presentation))
-          
+
           // Validate presentation structure
           if (presentation.getSlides == null) {
             throw new IllegalStateException("Presentation slides collection is null")
           }
-          
+
           val slideCount = presentation.getSlides.size()
           logger.debug(s"Loaded presentation with $slideCount slides")
-          
+
           if (slideCount == 0) {
             throw new IllegalStateException("Presentation has no slides")
           }
-          
+
           val pdfOutput = use(new ByteArrayOutputStream())
 
           // Use PDF options to handle problematic content more gracefully
           val pdfOptions = new PdfOptions()
           pdfOptions.setTextCompression(PdfTextCompression.None)
-          
+
           // Try to save with options first
-          try {
+          try
             presentation.save(pdfOutput, SaveFormat.Pdf, pdfOptions)
-          } catch {
+          catch {
             case e: NullPointerException =>
-              logger.warn("NullPointerException during PDF conversion with options, trying without options", e)
+              logger.warn(
+                "NullPointerException during PDF conversion with options, trying without options",
+                e
+              )
               // Fallback to simple save without options
               presentation.save(pdfOutput, SaveFormat.Pdf)
           }
-          
+
           pdfOutput.toByteArray
         }.get
 
