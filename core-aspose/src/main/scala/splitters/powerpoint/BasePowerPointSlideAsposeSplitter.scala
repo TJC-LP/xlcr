@@ -62,12 +62,29 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
 
     // Wrap main logic with failure handling
     withFailureHandling(content, cfg) {
+      // Validate input data
+      if (content.data == null || content.data.isEmpty) {
+        throw new EmptyDocumentException(
+          content.mimeType.toString,
+          "PowerPoint file data is null or empty"
+        )
+      }
+
       // Load the source presentation once so we can access slide metadata.
       val srcInputStream = new ByteArrayInputStream(content.data)
       val srcPres        = new Presentation(srcInputStream)
       Using.resource(new DisposableWrapper(srcPres)) { wrapper =>
         val srcPres = wrapper.resource
-        val total   = srcPres.getSlides.size()
+
+        // Validate presentation structure
+        if (srcPres.getSlides == null) {
+          throw new EmptyDocumentException(
+            content.mimeType.toString,
+            "Presentation slides collection is null"
+          )
+        }
+
+        val total = srcPres.getSlides.size()
 
         // Check if presentation is empty
         if (total == 0) {
@@ -113,8 +130,23 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
               newPres.getSlides.removeAt(0)
 
               // Clone the target slide and keep a reference to the clone.
-              val srcSlide    = srcPresForSlide.getSlides.get_Item(idx)
-              val clonedSlide = newPres.getSlides.addClone(srcSlide)
+              val srcSlide = srcPresForSlide.getSlides.get_Item(idx)
+              if (srcSlide == null) {
+                logger.warn(s"Slide at index $idx is null, skipping")
+                throw new IllegalStateException(s"Slide at index $idx is null")
+              }
+
+              val clonedSlide =
+                try
+                  newPres.getSlides.addClone(srcSlide)
+                catch {
+                  case e: NullPointerException =>
+                    logger.error(s"Failed to clone slide $idx due to null pointer", e)
+                    throw new IllegalStateException(
+                      s"Failed to clone slide $idx: ${Option(e.getMessage).getOrElse("Unknown error")}",
+                      e
+                    )
+                }
 
               // Copy notes, if requested, onto the cloned slide (not the blank slide).
               if (cfg.preserveSlideNotes) {
@@ -154,9 +186,20 @@ object BasePowerPointSlideAsposeSplitter extends SplitFailureHandler {
           }
 
           // Determine slide title safely
-          val title = Option(srcPres.getSlides.get_Item(idx).getName)
-            .filter(_.nonEmpty)
-            .getOrElse(s"Slide ${idx + 1}")
+          val title =
+            try {
+              val slide = srcPres.getSlides.get_Item(idx)
+              if (slide != null) {
+                Option(slide.getName).filter(_.nonEmpty).getOrElse(s"Slide ${idx + 1}")
+              } else {
+                logger.warn(s"Could not access slide $idx for title extraction")
+                s"Slide ${idx + 1}"
+              }
+            } catch {
+              case e: Exception =>
+                logger.debug(s"Error getting slide title for index $idx: ${e.getMessage}")
+                s"Slide ${idx + 1}"
+            }
 
           val fc = FileContent(slideBytes, outputMimeType)
           DocChunk(fc, title, idx, total)
