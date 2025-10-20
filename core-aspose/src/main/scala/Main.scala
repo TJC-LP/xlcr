@@ -110,6 +110,11 @@ object Main extends AbstractMain[AsposeConfig] {
         .valueName("<range>")
         .action((x, c) => c.copy(chunkRange = Some(x)))
         .text("Extract only specific chunks (e.g. 0-4, 50, 95-). Zero-based indexing."),
+      opt[Unit]("strip-masters")
+        .action((_, c) => c.copy(stripMasters = true))
+        .text(
+          "Remove master slides/templates during PowerPoint conversions for cleaner output and template swapping workflows"
+        ),
 
       // Aspose-specific license options
       opt[String]("licenseTotal")
@@ -140,10 +145,18 @@ object Main extends AbstractMain[AsposeConfig] {
   }
 
   /**
-   * Initialize Aspose licenses before processing
+   * Initialize Aspose licenses and bridge context before processing
    */
-  override protected def initialize(config: AsposeConfig): Unit =
+  override protected def initialize(config: AsposeConfig): Unit = {
     applyLicenses(config)
+
+    // Set bridge context for this thread
+    utils.aspose.BridgeContext.set(
+      utils.aspose.BridgeContextData(
+        stripMasters = config.stripMasters
+      )
+    )
+  }
 
   /**
    * Apply Aspose licenses from configuration

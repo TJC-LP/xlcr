@@ -13,7 +13,7 @@ import models.FileContent
 import renderers.{ Renderer, SimpleRenderer }
 import types.MimeType
 import types.MimeType.TextHtml
-import utils.aspose.AsposeLicense
+import utils.aspose.{ AsposeLicense, BridgeContext }
 import utils.resource.ResourceWrappers._
 
 /**
@@ -64,6 +64,26 @@ trait PowerPointToHtmlAsposeBridgeImpl[I <: MimeType]
 
           if (slideCount == 0) {
             throw new IllegalStateException("Presentation has no slides")
+          }
+
+          // Optionally remove master slides/templates before conversion to HTML
+          // This enables cleaner serialization and template swapping workflows
+          val stripMasters = BridgeContext.get().stripMasters
+          if (stripMasters) {
+            try {
+              val mastersBeforeCleanup = presentation.getMasters.size()
+              presentation.getMasters.removeUnused(true) // true = ignore preserve field
+              val mastersAfterCleanup = presentation.getMasters.size()
+              if (mastersBeforeCleanup > mastersAfterCleanup) {
+                logger.info(s"Removed ${mastersBeforeCleanup - mastersAfterCleanup} unused master slides (--strip-masters)")
+              } else {
+                logger.debug("No unused master slides to remove")
+              }
+            } catch {
+              case ex: Exception =>
+                // Don't fail the entire conversion if cleanup fails
+                logger.warn(s"Failed to remove unused masters: ${ex.getMessage}")
+            }
           }
 
           val htmlOutput = use(new ByteArrayOutputStream())

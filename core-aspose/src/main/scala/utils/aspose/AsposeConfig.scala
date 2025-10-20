@@ -36,6 +36,7 @@ case class AsposeConfig(
   failureMode: Option[String] = None,
   failureContext: Map[String, String] = Map.empty,
   chunkRange: Option[String] = None,
+  stripMasters: Boolean = false, // Remove master slides/templates during conversion
   licenseWords: Option[String] = None,
   licenseCells: Option[String] = None,
   licenseEmail: Option[String] = None,

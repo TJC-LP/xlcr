@@ -58,8 +58,16 @@ sbt "run -i presentation.html -o output.ppt"
 # Convert PowerPoint to HTML
 sbt "run -i presentation.pptx -o output.html"
 
+# Convert PowerPoint to HTML with master slide removal (cleaner output)
+sbt "run -i presentation.pptx -o output.html --strip-masters"
+
 # Convert legacy PowerPoint to HTML
 sbt "run -i presentation.ppt -o output.html"
+
+# Template swapping workflow: strip template, convert, apply new template
+sbt "run -i old-template.pptx -o clean.html --strip-masters"
+sbt "run -i clean.html -o new-presentation.pptx"
+# Then apply new template in PowerPoint
 ```
 
 ### Technical Details
@@ -67,6 +75,11 @@ sbt "run -i presentation.ppt -o output.html"
 - Default HTML import/export options (no custom configuration)
 - Handles HTML structure with best-effort slide creation
 - Preserves formatting and layout where possible
+- Automatically removes unused master slides/templates during HTML → PowerPoint conversions
+- Optional `--strip-masters` flag removes master slides/templates during PowerPoint → HTML conversions
+  - Enables cleaner HTML output without template overhead
+  - Facilitates template swapping workflows
+  - Reduces file sizes by removing unused template data
 - Supports round-trip conversions (HTML → PPTX → HTML)
 
 ## SpreadsheetLLM Module
