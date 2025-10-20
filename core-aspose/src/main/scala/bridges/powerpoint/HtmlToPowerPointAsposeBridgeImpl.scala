@@ -82,7 +82,7 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
             logger.warn("HTML import resulted in a presentation with no slides")
           }
 
-          // Optionally remove unused master slides and layouts to create cleaner presentations
+          // Remove unused master slides and layouts to create cleaner presentations
           // This helps ensure smoother round-trip conversions by eliminating
           // default templates that Aspose may have applied during HTML import
           // Note: This is enabled by default for HTML->PowerPoint conversions
@@ -91,6 +91,25 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
 
           if (shouldCleanupMasters) {
             try {
+              // First remove unused layouts from each master
+              var totalLayoutsRemoved = 0
+              val masters = presentation.getMasters
+              for (i <- 0 until masters.size()) {
+                val master = masters.get_Item(i)
+                val layoutsBefore = master.getLayoutSlides.size()
+                master.getLayoutSlides.removeUnused()
+                val layoutsAfter = master.getLayoutSlides.size()
+                totalLayoutsRemoved += (layoutsBefore - layoutsAfter)
+              }
+              if (totalLayoutsRemoved > 0) {
+                if (stripMasters) {
+                  logger.info(s"Removed $totalLayoutsRemoved unused layout slides (--strip-masters)")
+                } else {
+                  logger.debug(s"Removed $totalLayoutsRemoved unused layout slides")
+                }
+              }
+
+              // Then remove unused master slides
               val mastersBeforeCleanup = presentation.getMasters.size()
               presentation.getMasters.removeUnused(true) // true = ignore preserve field
               val mastersAfterCleanup = presentation.getMasters.size()
@@ -105,7 +124,7 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
             } catch {
               case ex: Exception =>
                 // Don't fail the entire conversion if cleanup fails
-                logger.warn(s"Failed to remove unused masters: ${ex.getMessage}")
+                logger.warn(s"Failed to remove unused masters/layouts: ${ex.getMessage}")
             }
           }
 

@@ -75,11 +75,15 @@ sbt "run -i clean.html -o new-presentation.pptx"
 - Default HTML import/export options (no custom configuration)
 - Handles HTML structure with best-effort slide creation
 - Preserves formatting and layout where possible
-- Automatically removes unused master slides/templates during HTML → PowerPoint conversions
-- Optional `--strip-masters` flag removes master slides/templates during PowerPoint → HTML conversions
-  - Enables cleaner HTML output without template overhead
-  - Facilitates template swapping workflows
-  - Reduces file sizes by removing unused template data
+- Automatically removes unused master slides and layout slides during HTML → PowerPoint conversions
+- Optional `--strip-masters` flag creates clean copies during PowerPoint → HTML conversions
+  - Creates a new blank presentation and copies slide content only
+  - Strips all masters, layouts, footers, logos, and template elements
+  - Resulting presentation has only blank layouts with default masters
+  - Enables cleaner HTML output without any template/layout/footer overhead
+  - Facilitates template swapping workflows - strip old templates, convert to HTML, then apply new templates
+  - Significantly reduces file sizes by removing all template and branding data
+  - Perfect for re-theming presentations or removing corporate branding
 - Supports round-trip conversions (HTML → PPTX → HTML)
 
 ## SpreadsheetLLM Module

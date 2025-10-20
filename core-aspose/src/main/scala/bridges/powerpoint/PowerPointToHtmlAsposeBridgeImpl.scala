@@ -66,24 +66,39 @@ trait PowerPointToHtmlAsposeBridgeImpl[I <: MimeType]
             throw new IllegalStateException("Presentation has no slides")
           }
 
-          // Optionally remove master slides/templates before conversion to HTML
+          // Optionally create a clean copy without masters/layouts before conversion
           // This enables cleaner serialization and template swapping workflows
           val stripMasters = BridgeContext.get().stripMasters
-          if (stripMasters) {
+          val presentationToConvert = if (stripMasters) {
             try {
-              val mastersBeforeCleanup = presentation.getMasters.size()
-              presentation.getMasters.removeUnused(true) // true = ignore preserve field
-              val mastersAfterCleanup = presentation.getMasters.size()
-              if (mastersBeforeCleanup > mastersAfterCleanup) {
-                logger.info(s"Removed ${mastersBeforeCleanup - mastersAfterCleanup} unused master slides (--strip-masters)")
-              } else {
-                logger.debug("No unused master slides to remove")
+              logger.info(s"Creating blank presentation copy without masters/layouts (--strip-masters)")
+
+              // Create a new blank presentation
+              val blankPresentation = new Presentation()
+              use(new DisposableWrapper(blankPresentation))
+
+              // Remove the default empty slide from blank presentation
+              if (blankPresentation.getSlides.size() > 0) {
+                blankPresentation.getSlides.removeAt(0)
               }
+
+              // Copy all slides from original to blank presentation
+              // This copies slide content without carrying over masters/layouts
+              for (i <- 0 until presentation.getSlides.size()) {
+                val sourceSlide = presentation.getSlides.get_Item(i)
+                blankPresentation.getSlides.addClone(sourceSlide)
+              }
+
+              logger.info(s"Copied ${presentation.getSlides.size()} slides to blank presentation (--strip-masters)")
+              blankPresentation
             } catch {
               case ex: Exception =>
-                // Don't fail the entire conversion if cleanup fails
-                logger.warn(s"Failed to remove unused masters: ${ex.getMessage}")
+                // If copy fails, fall back to using original presentation
+                logger.warn(s"Failed to create blank copy, using original presentation: ${ex.getMessage}")
+                presentation
             }
+          } else {
+            presentation
           }
 
           val htmlOutput = use(new ByteArrayOutputStream())
@@ -91,7 +106,7 @@ trait PowerPointToHtmlAsposeBridgeImpl[I <: MimeType]
           // Save as HTML with default options
           // Aspose.Slides will automatically handle HTML formatting
           try
-            presentation.save(htmlOutput, SaveFormat.Html)
+            presentationToConvert.save(htmlOutput, SaveFormat.Html)
           catch {
             case e: NullPointerException =>
               logger.warn(
