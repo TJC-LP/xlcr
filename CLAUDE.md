@@ -33,10 +33,41 @@ Note: See SCALA.md for more details on Scala version compatibility
 ## Module Structure
 The project is organized into these main modules:
 - `core` - Core functionality and abstract interfaces
-- `core-aspose` - Integration with Aspose for PDF conversion
+- `core-aspose` - Integration with Aspose for PDF conversion and document transformations
 - `core-spreadsheetllm` - Excel compression for LLM processing
 - `server` - Kotlin-based server for interactive editing
 - `data` - Directory containing sample Excel files for testing
+
+## HTML and PowerPoint Conversion
+The core-aspose module includes bidirectional conversion between HTML and PowerPoint formats:
+
+### Supported Conversions
+- **HTML → PPTX**: Convert HTML documents to PowerPoint Open XML format
+- **HTML → PPT**: Convert HTML documents to PowerPoint 97-2003 format
+- **PPTX → HTML**: Export PowerPoint presentations to HTML
+- **PPT → HTML**: Export legacy PowerPoint files to HTML
+
+### CLI Usage Examples
+```bash
+# Convert HTML to PowerPoint (PPTX)
+sbt "run -i presentation.html -o output.pptx"
+
+# Convert HTML to legacy PowerPoint (PPT)
+sbt "run -i presentation.html -o output.ppt"
+
+# Convert PowerPoint to HTML
+sbt "run -i presentation.pptx -o output.html"
+
+# Convert legacy PowerPoint to HTML
+sbt "run -i presentation.ppt -o output.html"
+```
+
+### Technical Details
+- Uses Aspose.Slides for Java for conversion
+- Default HTML import/export options (no custom configuration)
+- Handles HTML structure with best-effort slide creation
+- Preserves formatting and layout where possible
+- Supports round-trip conversions (HTML → PPTX → HTML)
 
 ## SpreadsheetLLM Module
 This module compresses Excel spreadsheets into an LLM-friendly JSON format:
