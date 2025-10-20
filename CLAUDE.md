@@ -39,13 +39,15 @@ The project is organized into these main modules:
 - `data` - Directory containing sample Excel files for testing
 
 ## HTML and PowerPoint Conversion
-The core-aspose module includes bidirectional conversion between HTML and PowerPoint formats:
+The core-aspose module includes bidirectional conversion between HTML and PowerPoint formats, as well as PDF to PowerPoint conversion:
 
 ### Supported Conversions
 - **HTML → PPTX**: Convert HTML documents to PowerPoint Open XML format
 - **HTML → PPT**: Convert HTML documents to PowerPoint 97-2003 format
 - **PPTX → HTML**: Export PowerPoint presentations to HTML
 - **PPT → HTML**: Export legacy PowerPoint files to HTML
+- **PDF → PPTX**: Convert PDF documents to PowerPoint Open XML format (each page becomes a slide)
+- **PDF → PPT**: Convert PDF documents to PowerPoint 97-2003 format (each page becomes a slide)
 
 ### CLI Usage Examples
 ```bash
@@ -68,6 +70,12 @@ sbt "run -i presentation.ppt -o output.html"
 sbt "run -i old-template.pptx -o clean.html --strip-masters"
 sbt "run -i clean.html -o new-presentation.pptx"
 # Then apply new template in PowerPoint
+
+# Convert PDF to PowerPoint (PPTX) - each page becomes a slide
+sbt "run -i document.pdf -o presentation.pptx"
+
+# Convert PDF to legacy PowerPoint (PPT)
+sbt "run -i document.pdf -o presentation.ppt"
 ```
 
 ### Technical Details
@@ -75,7 +83,8 @@ sbt "run -i clean.html -o new-presentation.pptx"
 - Default HTML import/export options (no custom configuration)
 - Handles HTML structure with best-effort slide creation
 - Preserves formatting and layout where possible
-- Automatically removes unused master slides and layout slides during HTML → PowerPoint conversions
+- Automatically removes unused master slides and layout slides during HTML → PowerPoint and PDF → PowerPoint conversions
+- PDF conversion: Each page in the PDF becomes a slide in the PowerPoint presentation
 - Optional `--strip-masters` flag creates clean copies during PowerPoint → HTML conversions
   - Creates a new blank presentation and copies slide content only
   - Strips all masters, layouts, footers, logos, and template elements
