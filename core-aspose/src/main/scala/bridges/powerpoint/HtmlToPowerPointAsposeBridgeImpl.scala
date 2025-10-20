@@ -66,6 +66,12 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
           val presentation = new Presentation()
           use(new DisposableWrapper(presentation))
 
+          // Remove the default blank slide that Aspose creates
+          // Without this, the output would have an unwanted blank slide at the beginning
+          if (presentation.getSlides.size() > 0) {
+            presentation.getSlides.removeAt(0)
+          }
+
           // Import HTML content into presentation slides
           // This method parses the HTML and creates slides accordingly
           presentation.getSlides.addFromHtml(inputStream)
