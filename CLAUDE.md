@@ -84,7 +84,11 @@ sbt "run -i document.pdf -o presentation.ppt"
 - Handles HTML structure with best-effort slide creation
 - Preserves formatting and layout where possible
 - Automatically removes unused master slides and layout slides during HTML → PowerPoint and PDF → PowerPoint conversions
-- PDF conversion: Each page in the PDF becomes a slide in the PowerPoint presentation
+- PDF conversion features:
+  - Each page in the PDF becomes a slide in the PowerPoint presentation
+  - Automatically handles encrypted and restricted PDFs (removes copy/edit restrictions)
+  - Uses Aspose.PDF to create unlocked copies when needed
+  - Supports password-protected PDFs (if password is available)
 - Optional `--strip-masters` flag creates clean copies during PowerPoint → HTML conversions
   - Creates a new blank presentation and copies slide content only
   - Strips all masters, layouts, footers, logos, and template elements

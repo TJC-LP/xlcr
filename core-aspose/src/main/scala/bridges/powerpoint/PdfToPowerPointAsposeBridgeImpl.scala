@@ -6,6 +6,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.util.Using
 
+import com.aspose.pdf.{ Document => PdfDocument }
 import com.aspose.slides.Presentation
 import org.slf4j.LoggerFactory
 
@@ -45,6 +46,59 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
     PdfToPowerPointAsposeRenderer
 
   /**
+   * Helper method to handle encrypted or restricted PDFs by creating an unlocked copy.
+   * This allows Aspose.Slides to successfully import the PDF content.
+   *
+   * @param pdfData
+   *   The original PDF data (possibly encrypted/restricted)
+   * @return
+   *   Unlocked PDF data ready for import, or original data if no restrictions detected
+   */
+  private def handleEncryptedPdf(pdfData: Array[Byte]): Array[Byte] = {
+    try {
+      Using.Manager { use =>
+        val inputStream = use(new ByteArrayInputStream(pdfData))
+        val pdfDocument = new PdfDocument(inputStream)
+        use(new DisposableWrapper(pdfDocument))
+
+        // Check if PDF is encrypted or has restrictions
+        val isEncrypted = pdfDocument.isEncrypted()
+        val hasRestrictions = !pdfDocument.getPermissions.toString.contains("Print")
+
+        if (isEncrypted || hasRestrictions) {
+          logger.info(
+            s"PDF has restrictions (encrypted: $isEncrypted), creating unlocked copy for conversion"
+          )
+
+          // Create unlocked copy by re-saving without restrictions
+          val outputStream = use(new ByteArrayOutputStream())
+
+          // Decrypt if encrypted
+          if (isEncrypted) {
+            pdfDocument.decrypt()
+          }
+
+          // Save without restrictions
+          pdfDocument.save(outputStream)
+          val unlockedData = outputStream.toByteArray
+
+          logger.debug(s"Created unlocked PDF copy: ${unlockedData.length} bytes")
+          unlockedData
+        } else {
+          // No restrictions, use original data
+          logger.debug("PDF has no restrictions, using original data")
+          pdfData
+        }
+      }.get
+    } catch {
+      case ex: Exception =>
+        // If we can't check/unlock, warn but try with original data
+        logger.warn(s"Could not check PDF encryption status, will attempt direct import: ${ex.getMessage}")
+        pdfData
+    }
+  }
+
+  /**
    * Renderer that performs PDF to PowerPoint conversion via Aspose.Slides. This works for both
    * PPT and PPTX output formats.
    */
@@ -61,8 +115,11 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
           throw new IllegalArgumentException("PDF file data is null or empty")
         }
 
+        // Handle encrypted or restricted PDFs by creating an unlocked copy
+        val pdfData = handleEncryptedPdf(model.data)
+
         val powerPointBytes = Using.Manager { use =>
-          val inputStream = use(new ByteArrayInputStream(model.data))
+          val inputStream = use(new ByteArrayInputStream(pdfData))
 
           // Create a new empty presentation
           val presentation = new Presentation()
