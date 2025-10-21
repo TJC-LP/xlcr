@@ -36,6 +36,13 @@ case class AsposeConfig(
   failureMode: Option[String] = None,
   failureContext: Map[String, String] = Map.empty,
   chunkRange: Option[String] = None,
+  // Parallel processing options
+  threads: Int = 1, // Default to serial processing (1 thread)
+  errorMode: Option[String] = None, // fail-fast, continue, skip
+  enableProgress: Boolean = true, // Enable progress reporting by default for batch operations
+  progressIntervalMs: Long = 2000, // Progress update interval in milliseconds
+  verbose: Boolean = false, // Verbose logging for individual file operations
+  // Aspose-specific options
   stripMasters: Boolean = false, // Remove master slides/templates during conversion
   licenseWords: Option[String] = None,
   licenseCells: Option[String] = None,
