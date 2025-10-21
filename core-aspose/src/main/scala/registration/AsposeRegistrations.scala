@@ -10,6 +10,7 @@ import bridges.image.{
   PdfToPngAsposeBridge,
   PngToPdfAsposeBridge
 }
+import bridges.pdf.PdfToHtmlAsposeBridge
 import bridges.powerpoint.{
   HtmlToPptAsposeBridge,
   HtmlToPptxAsposeBridge,
@@ -129,6 +130,12 @@ class AsposeRegistrations extends BridgeProvider with SplitterProvider {
         MimeType.ApplicationPdf,
         MimeType.ApplicationVndMsPowerpoint,
         PdfToPptAsposeBridge
+      ),
+      // PDF -> HTML
+      BridgeInfo(
+        MimeType.ApplicationPdf,
+        MimeType.TextHtml,
+        PdfToHtmlAsposeBridge
       ),
       // PDF -> Images
       BridgeInfo(

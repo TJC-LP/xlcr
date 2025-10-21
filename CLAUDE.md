@@ -38,16 +38,20 @@ The project is organized into these main modules:
 - `server` - Kotlin-based server for interactive editing
 - `data` - Directory containing sample Excel files for testing
 
-## HTML and PowerPoint Conversion
-The core-aspose module includes bidirectional conversion between HTML and PowerPoint formats, as well as PDF to PowerPoint conversion:
+## Document Conversion
+The core-aspose module includes comprehensive document conversion capabilities:
 
 ### Supported Conversions
-- **HTML → PPTX**: Convert HTML documents to PowerPoint Open XML format
-- **HTML → PPT**: Convert HTML documents to PowerPoint 97-2003 format
-- **PPTX → HTML**: Export PowerPoint presentations to HTML
-- **PPT → HTML**: Export legacy PowerPoint files to HTML
-- **PDF → PPTX**: Convert PDF documents to PowerPoint Open XML format (each page becomes a slide)
-- **PDF → PPT**: Convert PDF documents to PowerPoint 97-2003 format (each page becomes a slide)
+- **HTML ↔ PowerPoint**: Bidirectional conversion between HTML and PowerPoint formats
+  - HTML → PPTX (PowerPoint Open XML)
+  - HTML → PPT (PowerPoint 97-2003)
+  - PPTX → HTML
+  - PPT → HTML
+- **PDF → PowerPoint**: Direct conversion from PDF to editable PowerPoint
+  - PDF → PPTX (each page becomes a slide)
+  - PDF → PPT (each page becomes a slide)
+- **PDF → HTML**: Convert PDF to structured HTML (NEW - recommended for best editability!)
+- **Two-Stage Workflow**: PDF → HTML → PowerPoint (best for editable output)
 
 ### CLI Usage Examples
 ```bash
@@ -76,19 +80,54 @@ sbt "run -i document.pdf -o presentation.pptx"
 
 # Convert PDF to legacy PowerPoint (PPT)
 sbt "run -i document.pdf -o presentation.ppt"
+
+# === PDF → HTML Conversion (NEW!) ===
+
+# Convert PDF to HTML (preserves structure better)
+sbt "run -i document.pdf -o output.html"
+
+# Convert encrypted PDF to HTML
+sbt "run -i encrypted.pdf -o output.html"  # Auto-handles restrictions
+
+# === Two-Stage Workflow (RECOMMENDED for Best Editability) ===
+
+# Stage 1: PDF → HTML (extract structured content)
+sbt "run -i document.pdf -o intermediate.html"
+
+# Stage 2: HTML → PowerPoint (create editable slides)
+sbt "run -i intermediate.html -o presentation.pptx"
+
+# Why two-stage? File size: 76MB direct vs 254KB two-stage!
 ```
 
 ### Technical Details
-- Uses Aspose.Slides for Java for conversion
-- Default HTML import/export options (no custom configuration)
+
+**PowerPoint Conversion**:
+- Uses Aspose.Slides for Java for HTML ↔ PowerPoint
 - Handles HTML structure with best-effort slide creation
-- Preserves formatting and layout where possible
-- Automatically removes unused master slides and layout slides during HTML → PowerPoint and PDF → PowerPoint conversions
-- PDF conversion features:
-  - Each page in the PDF becomes a slide in the PowerPoint presentation
-  - Automatically handles encrypted and restricted PDFs (removes copy/edit restrictions)
-  - Uses Aspose.PDF to create unlocked copies when needed
-  - Supports password-protected PDFs (if password is available)
+- Automatically removes unused master slides and layout slides
+
+**PDF → HTML Conversion** (NEW):
+- Uses Aspose.PDF for Java with HtmlSaveOptions
+- Flowing layout mode for better editability (vs fixed positioning)
+- Embeds all resources (fonts, images) into single HTML file
+- Preserves text as editable text (not images)
+- Table structure preservation enabled
+- Automatically handles encrypted and restricted PDFs (removes copy/edit restrictions)
+
+**PDF → PowerPoint Conversion** (Direct):
+- Each page in the PDF becomes a slide
+- Uses Aspose.Slides' addFromPdf() method
+- Good visual fidelity, moderate editability
+- Automatically handles encrypted and restricted PDFs
+- Larger file sizes (76MB for 94-page document)
+
+**PDF → HTML → PowerPoint** (Two-Stage - RECOMMENDED):
+- Best editability and smallest file size
+- Better structure preservation through HTML intermediate format
+- Dramatically smaller output (254KB vs 76MB for 94-page document)
+- Recommended when PowerPoint editability is priority
+- Slightly lower visual fidelity vs direct conversion
 - Optional `--strip-masters` flag creates clean copies during PowerPoint → HTML conversions
   - Creates a new blank presentation and copies slide content only
   - Strips all masters, layouts, footers, logos, and template elements
