@@ -1,11 +1,11 @@
 package com.tjclp.xlcr
 
 import java.nio.file.{ Files, Path, Paths }
-import java.util.concurrent.{ Executors, ThreadFactory, TimeUnit }
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{ Executors, ThreadFactory, TimeUnit }
 
-import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
 import scala.util.{ Failure, Success, Try }
 
@@ -141,7 +141,7 @@ object ParallelDirectoryPipeline {
       }
     }
 
-    val executor = Executors.newFixedThreadPool(config.threads, threadFactory)
+    val executor                      = Executors.newFixedThreadPool(config.threads, threadFactory)
     implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(executor)
 
     val startTime = System.currentTimeMillis()
@@ -199,12 +199,12 @@ object ParallelDirectoryPipeline {
     } finally {
       // Shutdown executor
       executor.shutdown()
-      try {
+      try
         if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
           logger.warn("Executor did not terminate in time, forcing shutdown")
           executor.shutdownNow()
         }
-      } catch {
+      catch {
         case _: InterruptedException =>
           executor.shutdownNow()
           Thread.currentThread().interrupt()
@@ -310,7 +310,7 @@ object ParallelDirectoryPipeline {
     }
 
     // Find extension for output MIME type
-    val extension = findExtensionForMime(outputMime).getOrElse("dat")
+    val extension      = findExtensionForMime(outputMime).getOrElse("dat")
     val outputFileName = s"$baseName.$extension"
 
     outputDir.resolve(outputFileName)

@@ -27,9 +27,9 @@ object Main extends AbstractMain[BaseConfig] {
   override protected def getChunkRange(config: BaseConfig): Option[String]    = config.chunkRange
   override protected def getThreads(config: BaseConfig): Int                  = config.threads
   override protected def getErrorMode(config: BaseConfig): Option[String]     = config.errorMode
-  override protected def getEnableProgress(config: BaseConfig): Boolean       = config.enableProgress
-  override protected def getProgressIntervalMs(config: BaseConfig): Long      = config.progressIntervalMs
-  override protected def getVerbose(config: BaseConfig): Boolean              = config.verbose
+  override protected def getEnableProgress(config: BaseConfig): Boolean  = config.enableProgress
+  override protected def getProgressIntervalMs(config: BaseConfig): Long = config.progressIntervalMs
+  override protected def getVerbose(config: BaseConfig): Boolean         = config.verbose
 
   /**
    * Builds all CLI options using CommonCLI utilities

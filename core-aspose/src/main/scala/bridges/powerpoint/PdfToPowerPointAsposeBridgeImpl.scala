@@ -46,23 +46,23 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
     PdfToPowerPointAsposeRenderer
 
   /**
-   * Helper method to handle encrypted or restricted PDFs by creating an unlocked copy.
-   * This allows Aspose.Slides to successfully import the PDF content.
+   * Helper method to handle encrypted or restricted PDFs by creating an unlocked copy. This allows
+   * Aspose.Slides to successfully import the PDF content.
    *
    * @param pdfData
    *   The original PDF data (possibly encrypted/restricted)
    * @return
    *   Unlocked PDF data ready for import, or original data if no restrictions detected
    */
-  private def handleEncryptedPdf(pdfData: Array[Byte]): Array[Byte] = {
-    try {
+  private def handleEncryptedPdf(pdfData: Array[Byte]): Array[Byte] =
+    try
       Using.Manager { use =>
         val inputStream = use(new ByteArrayInputStream(pdfData))
         val pdfDocument = new PdfDocument(inputStream)
         use(new DisposableWrapper(pdfDocument))
 
         // Check if PDF is encrypted or has restrictions
-        val isEncrypted = pdfDocument.isEncrypted()
+        val isEncrypted     = pdfDocument.isEncrypted()
         val hasRestrictions = !pdfDocument.getPermissions.toString.contains("Print")
 
         if (isEncrypted || hasRestrictions) {
@@ -90,17 +90,18 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
           pdfData
         }
       }.get
-    } catch {
+    catch {
       case ex: Exception =>
         // If we can't check/unlock, warn but try with original data
-        logger.warn(s"Could not check PDF encryption status, will attempt direct import: ${ex.getMessage}")
+        logger.warn(
+          s"Could not check PDF encryption status, will attempt direct import: ${ex.getMessage}"
+        )
         pdfData
     }
-  }
 
   /**
-   * Renderer that performs PDF to PowerPoint conversion via Aspose.Slides. This works for both
-   * PPT and PPTX output formats.
+   * Renderer that performs PDF to PowerPoint conversion via Aspose.Slides. This works for both PPT
+   * and PPTX output formats.
    */
   private object PdfToPowerPointAsposeRenderer extends SimpleRenderer[M, O] {
     override def render(model: M): FileContent[O] =
@@ -137,7 +138,9 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
 
           // Validate presentation structure
           if (presentation.getSlides == null) {
-            throw new IllegalStateException("Presentation slides collection is null after PDF import")
+            throw new IllegalStateException(
+              "Presentation slides collection is null after PDF import"
+            )
           }
 
           val slideCount = presentation.getSlides.size()
@@ -152,15 +155,16 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
           // default templates that Aspose may have applied during PDF import
           // Note: This is enabled by default for PDF->PowerPoint conversions
           val stripMasters = BridgeContext.get().stripMasters
-          val shouldCleanupMasters = stripMasters || true // Always cleanup for PDF->PowerPoint by default
+          val shouldCleanupMasters =
+            stripMasters || true // Always cleanup for PDF->PowerPoint by default
 
           if (shouldCleanupMasters) {
             try {
               // First remove unused layouts from each master
               var totalLayoutsRemoved = 0
-              val masters = presentation.getMasters
+              val masters             = presentation.getMasters
               for (i <- 0 until masters.size()) {
-                val master = masters.get_Item(i)
+                val master        = masters.get_Item(i)
                 val layoutsBefore = master.getLayoutSlides.size()
                 master.getLayoutSlides.removeUnused()
                 val layoutsAfter = master.getLayoutSlides.size()
@@ -168,7 +172,9 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
               }
               if (totalLayoutsRemoved > 0) {
                 if (stripMasters) {
-                  logger.info(s"Removed $totalLayoutsRemoved unused layout slides (--strip-masters)")
+                  logger.info(
+                    s"Removed $totalLayoutsRemoved unused layout slides (--strip-masters)"
+                  )
                 } else {
                   logger.debug(s"Removed $totalLayoutsRemoved unused layout slides")
                 }
@@ -179,7 +185,8 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
               presentation.getMasters.removeUnused(true) // true = ignore preserve field
               val mastersAfterCleanup = presentation.getMasters.size()
               if (mastersBeforeCleanup > mastersAfterCleanup) {
-                val message = s"Removed ${mastersBeforeCleanup - mastersAfterCleanup} unused master slides"
+                val message =
+                  s"Removed ${mastersBeforeCleanup - mastersAfterCleanup} unused master slides"
                 if (stripMasters) {
                   logger.info(s"$message (--strip-masters)")
                 } else {
@@ -212,11 +219,15 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
             e
           )
           throw RendererError(
-            s"PDF to ${saveFormat.toString} conversion failed due to null reference: ${Option(e.getMessage).getOrElse("Unknown null pointer error")}",
+            s"PDF to ${saveFormat.toString} conversion failed due to null reference: ${Option(e
+                .getMessage).getOrElse("Unknown null pointer error")}",
             Some(e)
           )
         case e: IllegalArgumentException =>
-          logger.error(s"Invalid input for PDF -> ${saveFormat.toString} conversion: ${e.getMessage}", e)
+          logger.error(
+            s"Invalid input for PDF -> ${saveFormat.toString} conversion: ${e.getMessage}",
+            e
+          )
           throw RendererError(s"Invalid PDF file: ${e.getMessage}", Some(e))
         case e: IllegalStateException =>
           logger.error(s"Invalid presentation state after PDF import: ${e.getMessage}", e)

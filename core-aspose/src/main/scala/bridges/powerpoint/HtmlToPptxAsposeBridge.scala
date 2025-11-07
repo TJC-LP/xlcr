@@ -16,6 +16,7 @@ object HtmlToPptxAsposeBridge
   override protected def saveFormat: Int =
     SaveFormat.Pptx
 
-  override protected def outputMimeType: ApplicationVndOpenXmlFormatsPresentationmlPresentation.type =
+  override protected def outputMimeType
+    : ApplicationVndOpenXmlFormatsPresentationmlPresentation.type =
     ApplicationVndOpenXmlFormatsPresentationmlPresentation
 }

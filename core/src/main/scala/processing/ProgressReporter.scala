@@ -71,13 +71,13 @@ object ProgressReporter {
    * A no-op progress reporter that does nothing.
    */
   object NoOp extends ProgressReporter {
-    override def start(totalFiles: Int): Unit                                = ()
-    override def fileStarted(fileName: String): Unit                         = ()
-    override def fileCompleted(fileName: String): Unit                       = ()
-    override def fileFailed(fileName: String, error: Throwable): Unit        = ()
-    override def fileSkipped(fileName: String, reason: String): Unit         = ()
-    override def complete(): Unit                                            = ()
-    override def stop(): Unit                                                = ()
+    override def start(totalFiles: Int): Unit                         = ()
+    override def fileStarted(fileName: String): Unit                  = ()
+    override def fileCompleted(fileName: String): Unit                = ()
+    override def fileFailed(fileName: String, error: Throwable): Unit = ()
+    override def fileSkipped(fileName: String, reason: String): Unit  = ()
+    override def complete(): Unit                                     = ()
+    override def stop(): Unit                                         = ()
   }
 
   /**
@@ -124,16 +124,15 @@ class ConsoleProgressReporter(updateIntervalMs: Long, verbose: Boolean) extends 
     logger.info(s"Starting batch processing of $totalFiles files")
 
     // Start background update thread
-    val thread = new Thread(() => {
-      while (running) {
+    val thread = new Thread(() =>
+      while (running)
         try {
           Thread.sleep(updateIntervalMs)
           if (running) printProgress()
         } catch {
           case _: InterruptedException => // Thread interrupted, exit
         }
-      }
-    })
+    )
     thread.setDaemon(true)
     thread.setName("progress-reporter")
     thread.start()

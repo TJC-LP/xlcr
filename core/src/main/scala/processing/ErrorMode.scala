@@ -21,9 +21,8 @@ object ErrorMode {
   case object ContinueOnError extends ErrorMode
 
   /**
-   * Skip files that encounter errors and continue processing. Similar to ContinueOnError but
-   * failed files are not counted in final statistics and are treated as if they were filtered
-   * out.
+   * Skip files that encounter errors and continue processing. Similar to ContinueOnError but failed
+   * files are not counted in final statistics and are treated as if they were filtered out.
    */
   case object SkipOnError extends ErrorMode
 

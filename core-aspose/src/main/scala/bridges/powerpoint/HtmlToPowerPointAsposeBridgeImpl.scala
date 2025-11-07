@@ -43,8 +43,8 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
     HtmlToPowerPointAsposeRenderer
 
   /**
-   * Renderer that performs HTML to PowerPoint conversion via Aspose.Slides. This works for both
-   * PPT and PPTX output formats.
+   * Renderer that performs HTML to PowerPoint conversion via Aspose.Slides. This works for both PPT
+   * and PPTX output formats.
    */
   private object HtmlToPowerPointAsposeRenderer extends SimpleRenderer[M, O] {
     override def render(model: M): FileContent[O] =
@@ -78,7 +78,9 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
 
           // Validate presentation structure
           if (presentation.getSlides == null) {
-            throw new IllegalStateException("Presentation slides collection is null after HTML import")
+            throw new IllegalStateException(
+              "Presentation slides collection is null after HTML import"
+            )
           }
 
           val slideCount = presentation.getSlides.size()
@@ -93,15 +95,16 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
           // default templates that Aspose may have applied during HTML import
           // Note: This is enabled by default for HTML->PowerPoint conversions
           val stripMasters = BridgeContext.get().stripMasters
-          val shouldCleanupMasters = stripMasters || true // Always cleanup for HTML->PowerPoint by default
+          val shouldCleanupMasters =
+            stripMasters || true // Always cleanup for HTML->PowerPoint by default
 
           if (shouldCleanupMasters) {
             try {
               // First remove unused layouts from each master
               var totalLayoutsRemoved = 0
-              val masters = presentation.getMasters
+              val masters             = presentation.getMasters
               for (i <- 0 until masters.size()) {
-                val master = masters.get_Item(i)
+                val master        = masters.get_Item(i)
                 val layoutsBefore = master.getLayoutSlides.size()
                 master.getLayoutSlides.removeUnused()
                 val layoutsAfter = master.getLayoutSlides.size()
@@ -109,7 +112,9 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
               }
               if (totalLayoutsRemoved > 0) {
                 if (stripMasters) {
-                  logger.info(s"Removed $totalLayoutsRemoved unused layout slides (--strip-masters)")
+                  logger.info(
+                    s"Removed $totalLayoutsRemoved unused layout slides (--strip-masters)"
+                  )
                 } else {
                   logger.debug(s"Removed $totalLayoutsRemoved unused layout slides")
                 }
@@ -120,7 +125,8 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
               presentation.getMasters.removeUnused(true) // true = ignore preserve field
               val mastersAfterCleanup = presentation.getMasters.size()
               if (mastersBeforeCleanup > mastersAfterCleanup) {
-                val message = s"Removed ${mastersBeforeCleanup - mastersAfterCleanup} unused master slides"
+                val message =
+                  s"Removed ${mastersBeforeCleanup - mastersAfterCleanup} unused master slides"
                 if (stripMasters) {
                   logger.info(s"$message (--strip-masters)")
                 } else {
@@ -153,11 +159,15 @@ trait HtmlToPowerPointAsposeBridgeImpl[O <: MimeType]
             e
           )
           throw RendererError(
-            s"HTML to ${saveFormat.toString} conversion failed due to null reference: ${Option(e.getMessage).getOrElse("Unknown null pointer error")}",
+            s"HTML to ${saveFormat.toString} conversion failed due to null reference: ${Option(e
+                .getMessage).getOrElse("Unknown null pointer error")}",
             Some(e)
           )
         case e: IllegalArgumentException =>
-          logger.error(s"Invalid input for HTML -> ${saveFormat.toString} conversion: ${e.getMessage}", e)
+          logger.error(
+            s"Invalid input for HTML -> ${saveFormat.toString} conversion: ${e.getMessage}",
+            e
+          )
           throw RendererError(s"Invalid HTML file: ${e.getMessage}", Some(e))
         case e: IllegalStateException =>
           logger.error(s"Invalid presentation state after HTML import: ${e.getMessage}", e)

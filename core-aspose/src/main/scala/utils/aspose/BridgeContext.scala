@@ -34,9 +34,8 @@ object BridgeContext {
     try {
       set(data)
       block
-    } finally {
+    } finally
       clear()
-    }
 }
 
 /**

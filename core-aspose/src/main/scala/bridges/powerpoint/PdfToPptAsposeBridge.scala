@@ -6,8 +6,8 @@ import com.aspose.slides.SaveFormat
 import types.MimeType.ApplicationVndMsPowerpoint
 
 /**
- * Bridge that converts PDF documents to PPT (PowerPoint 97-2003) files using Aspose.Slides.
- * Each page in the PDF becomes a slide in the PowerPoint presentation.
+ * Bridge that converts PDF documents to PPT (PowerPoint 97-2003) files using Aspose.Slides. Each
+ * page in the PDF becomes a slide in the PowerPoint presentation.
  */
 object PdfToPptAsposeBridge
     extends PdfToPowerPointAsposeBridgeImpl[ApplicationVndMsPowerpoint.type] {

@@ -33,8 +33,8 @@ trait PowerPointToHtmlAsposeBridgeImpl[I <: MimeType]
     PowerPointToHtmlAsposeRenderer
 
   /**
-   * Renderer that performs PowerPoint to HTML conversion via Aspose.Slides. This works for both
-   * PPT and PPTX input formats.
+   * Renderer that performs PowerPoint to HTML conversion via Aspose.Slides. This works for both PPT
+   * and PPTX input formats.
    */
   private object PowerPointToHtmlAsposeRenderer extends SimpleRenderer[M, TextHtml.type] {
     override def render(model: M): FileContent[TextHtml.type] =
@@ -71,7 +71,9 @@ trait PowerPointToHtmlAsposeBridgeImpl[I <: MimeType]
           val stripMasters = BridgeContext.get().stripMasters
           val presentationToConvert = if (stripMasters) {
             try {
-              logger.info(s"Creating blank presentation copy without masters/layouts (--strip-masters)")
+              logger.info(
+                s"Creating blank presentation copy without masters/layouts (--strip-masters)"
+              )
 
               // Create a new blank presentation
               val blankPresentation = new Presentation()
@@ -89,12 +91,16 @@ trait PowerPointToHtmlAsposeBridgeImpl[I <: MimeType]
                 blankPresentation.getSlides.addClone(sourceSlide)
               }
 
-              logger.info(s"Copied ${presentation.getSlides.size()} slides to blank presentation (--strip-masters)")
+              logger.info(
+                s"Copied ${presentation.getSlides.size()} slides to blank presentation (--strip-masters)"
+              )
               blankPresentation
             } catch {
               case ex: Exception =>
                 // If copy fails, fall back to using original presentation
-                logger.warn(s"Failed to create blank copy, using original presentation: ${ex.getMessage}")
+                logger.warn(
+                  s"Failed to create blank copy, using original presentation: ${ex.getMessage}"
+                )
                 presentation
             }
           } else {

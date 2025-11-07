@@ -27,7 +27,7 @@ class PdfToPowerPointAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll 
   /**
    * Helper to create a simple test PDF with specified number of pages
    */
-  private def createTestPdf(pageCount: Int = 1): Array[Byte] = {
+  private def createTestPdf(pageCount: Int = 1): Array[Byte] =
     Using.Manager { use =>
       val pdfDocument = new PdfDocument()
       use(new utils.resource.ResourceWrappers.DisposableWrapper(pdfDocument))
@@ -43,7 +43,6 @@ class PdfToPowerPointAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll 
       pdfDocument.save(outputStream)
       outputStream.toByteArray
     }.get
-  }
 
   "PdfToPptxAsposeBridge" should "convert PDF to PPTX" in {
     // Create a simple 2-page PDF

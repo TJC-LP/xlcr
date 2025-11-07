@@ -1,6 +1,8 @@
 package com.tjclp.xlcr
 package bridges.powerpoint
 
+import java.io.ByteArrayOutputStream
+
 import com.aspose.slides.{ Presentation, SaveFormat }
 import org.scalatest.BeforeAndAfterAll
 
@@ -12,8 +14,6 @@ import types.MimeType.{
   TextHtml
 }
 import utils.aspose.AsposeLicense
-
-import java.io.ByteArrayOutputStream
 
 class PowerPointToHtmlAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll {
 
@@ -43,9 +43,8 @@ class PowerPointToHtmlAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll
       val outputStream = new ByteArrayOutputStream()
       presentation.save(outputStream, SaveFormat.Pptx)
       outputStream.toByteArray
-    } finally {
+    } finally
       if (presentation != null) presentation.dispose()
-    }
   }
 
   /**
@@ -69,9 +68,8 @@ class PowerPointToHtmlAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll
       val outputStream = new ByteArrayOutputStream()
       presentation.save(outputStream, SaveFormat.Ppt)
       outputStream.toByteArray
-    } finally {
+    } finally
       if (presentation != null) presentation.dispose()
-    }
   }
 
   "PptxToHtmlAsposeBridge" should "convert PPTX to HTML" in {
@@ -115,9 +113,8 @@ class PowerPointToHtmlAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll
 
       val htmlContent = new String(result.data, "UTF-8")
       htmlContent should include("html")
-    } finally {
+    } finally
       if (presentation != null) presentation.dispose()
-    }
   }
 
   "PptToHtmlAsposeBridge" should "convert PPT to HTML" in {
@@ -154,7 +151,7 @@ class PowerPointToHtmlAsposeBridgeSpec extends BridgeSpec with BeforeAndAfterAll
                          |</html>""".stripMargin
 
     // Convert HTML -> PPTX
-    val htmlInput = FileContent[TextHtml.type](originalHtml.getBytes("UTF-8"), TextHtml)
+    val htmlInput  = FileContent[TextHtml.type](originalHtml.getBytes("UTF-8"), TextHtml)
     val pptxResult = HtmlToPptxAsposeBridge.convert(htmlInput)
 
     // Verify PPTX was created

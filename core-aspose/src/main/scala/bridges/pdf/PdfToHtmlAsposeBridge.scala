@@ -18,8 +18,8 @@ import utils.resource.ResourceWrappers._
 /**
  * Bridge that converts PDF documents to HTML using Aspose.PDF.
  *
- * This bridge preserves document structure better than direct PDF → PowerPoint conversion,
- * enabling improved editability when used in a PDF → HTML → PowerPoint workflow.
+ * This bridge preserves document structure better than direct PDF → PowerPoint conversion, enabling
+ * improved editability when used in a PDF → HTML → PowerPoint workflow.
  *
  * Features:
  *   - Automatic handling of encrypted/restricted PDFs
@@ -46,19 +46,19 @@ object PdfToHtmlAsposeBridge extends HighPrioritySimpleBridge[ApplicationPdf.typ
     PdfToHtmlAsposeRenderer
 
   /**
-   * Helper method to handle encrypted or restricted PDFs. This method attempts to decrypt PDFs
-   * with user-level restrictions (copy:no, change:no) but does not handle password-protected
-   * PDFs.
+   * Helper method to handle encrypted or restricted PDFs. This method attempts to decrypt PDFs with
+   * user-level restrictions (copy:no, change:no) but does not handle password-protected PDFs.
    *
-   * Note: Password support will be added in future implementation (see password-protected-documents-roadmap.md)
+   * Note: Password support will be added in future implementation (see
+   * password-protected-documents-roadmap.md)
    *
    * @param pdfData
    *   The original PDF data (possibly encrypted/restricted)
    * @return
    *   Unlocked PDF data ready for HTML conversion, or original data if no restrictions detected
    */
-  private def handleEncryptedPdf(pdfData: Array[Byte]): Array[Byte] = {
-    try {
+  private def handleEncryptedPdf(pdfData: Array[Byte]): Array[Byte] =
+    try
       Using.Manager { use =>
         val inputStream = use(new ByteArrayInputStream(pdfData))
         val pdfDocument = new PdfDocument(inputStream)
@@ -83,7 +83,7 @@ object PdfToHtmlAsposeBridge extends HighPrioritySimpleBridge[ApplicationPdf.typ
           pdfData
         }
       }.get
-    } catch {
+    catch {
       case ex: Exception =>
         // If decryption fails (e.g., password-protected), warn and try with original data
         logger.warn(
@@ -92,7 +92,6 @@ object PdfToHtmlAsposeBridge extends HighPrioritySimpleBridge[ApplicationPdf.typ
         )
         pdfData
     }
-  }
 
   /**
    * Renderer that performs PDF to HTML conversion via Aspose.PDF.

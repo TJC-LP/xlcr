@@ -31,9 +31,10 @@ object Main extends AbstractMain[AsposeConfig] {
   override protected def getChunkRange(config: AsposeConfig): Option[String]  = config.chunkRange
   override protected def getThreads(config: AsposeConfig): Int                = config.threads
   override protected def getErrorMode(config: AsposeConfig): Option[String]   = config.errorMode
-  override protected def getEnableProgress(config: AsposeConfig): Boolean     = config.enableProgress
-  override protected def getProgressIntervalMs(config: AsposeConfig): Long = config.progressIntervalMs
-  override protected def getVerbose(config: AsposeConfig): Boolean         = config.verbose
+  override protected def getEnableProgress(config: AsposeConfig): Boolean = config.enableProgress
+  override protected def getProgressIntervalMs(config: AsposeConfig): Long =
+    config.progressIntervalMs
+  override protected def getVerbose(config: AsposeConfig): Boolean = config.verbose
 
   /**
    * Builds all CLI options including Aspose-specific ones
