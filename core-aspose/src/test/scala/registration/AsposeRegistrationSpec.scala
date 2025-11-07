@@ -28,7 +28,8 @@ class AsposeRegistrationSpec extends AnyFlatSpec with Matchers {
     val bridges       = registrations.getBridges.toList
 
     // Verify we have the expected number of bridges
-    bridges.size should be(16) // Updated based on actual count
+    // 16 original + 7 new (HTML↔PowerPoint, PDF→PowerPoint, PDF→HTML) = 23
+    bridges.size should be(23)
 
     // Verify key bridge registrations by checking mime type pairs
     val mimePairs = bridges.map(b => (b.inMime, b.outMime)).toSet
@@ -54,6 +55,28 @@ class AsposeRegistrationSpec extends AnyFlatSpec with Matchers {
     // Image to PDF bridges
     mimePairs should contain((MimeType.ImagePng, MimeType.ApplicationPdf))
     mimePairs should contain((MimeType.ImageJpeg, MimeType.ApplicationPdf))
+
+    // HTML ↔ PowerPoint bridges
+    mimePairs should contain((
+      MimeType.TextHtml,
+      MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation
+    ))
+    mimePairs should contain((MimeType.TextHtml, MimeType.ApplicationVndMsPowerpoint))
+    mimePairs should contain((
+      MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
+      MimeType.TextHtml
+    ))
+    mimePairs should contain((MimeType.ApplicationVndMsPowerpoint, MimeType.TextHtml))
+
+    // PDF → PowerPoint bridges
+    mimePairs should contain((
+      MimeType.ApplicationPdf,
+      MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation
+    ))
+    mimePairs should contain((MimeType.ApplicationPdf, MimeType.ApplicationVndMsPowerpoint))
+
+    // PDF → HTML bridge
+    mimePairs should contain((MimeType.ApplicationPdf, MimeType.TextHtml))
   }
 
   it should "register all expected splitters" in {

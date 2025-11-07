@@ -47,6 +47,11 @@ abstract class AbstractMain[C] {
   protected def getMappings(config: C): Seq[String]
   protected def getFailureMode(config: C): Option[String]
   protected def getChunkRange(config: C): Option[String]
+  protected def getThreads(config: C): Int
+  protected def getErrorMode(config: C): Option[String]
+  protected def getEnableProgress(config: C): Boolean
+  protected def getProgressIntervalMs(config: C): Long
+  protected def getVerbose(config: C): Boolean
 
   /**
    * Builds the complete parser by combining base options with module-specific options
@@ -114,11 +119,20 @@ abstract class AbstractMain[C] {
     // Check if this is a directory-to-directory conversion
     if (Files.isDirectory(input) && (Files.isDirectory(output) || !Files.exists(output))) {
       val parsedMappings = CommonCLI.parseMimeMappings(getMappings(config))
+
+      // Parse error mode
+      val errorModeOpt = getErrorMode(config).flatMap(processing.ErrorMode.fromString)
+
       DirectoryPipeline.runDirectoryToDirectory(
         inputDir = inputPath,
         outputDir = outputPath,
         mimeMappings = parsedMappings,
-        diffMode = getDiffMode(config)
+        diffMode = getDiffMode(config),
+        threads = getThreads(config),
+        errorMode = errorModeOpt,
+        enableProgress = getEnableProgress(config),
+        progressIntervalMs = getProgressIntervalMs(config),
+        verbose = getVerbose(config)
       )
     } else {
       // Single file conversion

@@ -23,6 +23,11 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     mappings: Seq[String] = Seq.empty,
     failureMode: Option[String] = None,
     chunkRange: Option[String] = None,
+    threads: Int = 1,
+    errorMode: Option[String] = None,
+    enableProgress: Boolean = false,
+    progressIntervalMs: Long = 1000L,
+    verbose: Boolean = false,
     customField: String = "test"
   )
 
@@ -50,6 +55,12 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     override protected def getMappings(config: TestConfig): Seq[String]       = config.mappings
     override protected def getFailureMode(config: TestConfig): Option[String] = config.failureMode
     override protected def getChunkRange(config: TestConfig): Option[String]  = config.chunkRange
+    override protected def getThreads(config: TestConfig): Int                = config.threads
+    override protected def getErrorMode(config: TestConfig): Option[String]   = config.errorMode
+    override protected def getEnableProgress(config: TestConfig): Boolean = config.enableProgress
+    override protected def getProgressIntervalMs(config: TestConfig): Long =
+      config.progressIntervalMs
+    override protected def getVerbose(config: TestConfig): Boolean = config.verbose
 
     override protected def buildAllOptions: OParser[_, TestConfig] = {
       val builder = OParser.builder[TestConfig]

@@ -33,7 +33,13 @@ object CommonCLI {
       Seq.empty, // strings like "xlsx=json" or "application/pdf=application/xml"
     failureMode: Option[String] = None,
     failureContext: Map[String, String] = Map.empty,
-    chunkRange: Option[String] = None
+    chunkRange: Option[String] = None,
+    // Parallel processing options
+    threads: Int = 1,                 // Default to serial processing (1 thread)
+    errorMode: Option[String] = None, // fail-fast, continue, skip
+    enableProgress: Boolean = true,   // Enable progress reporting by default for batch operations
+    progressIntervalMs: Long = 2000,  // Progress update interval in milliseconds
+    verbose: Boolean = false          // Verbose logging for individual file operations
   )
 
   /**
@@ -149,7 +155,30 @@ object CommonCLI {
       opt[String]("chunk-range")
         .valueName("<range>")
         .action((x, c) => c.asInstanceOf[BaseConfig].copy(chunkRange = Some(x)).asInstanceOf[C])
-        .text("Range of chunks to extract (e.g., 0-9, 5, 10-14,20-24). Zero-based indexing.")
+        .text("Range of chunks to extract (e.g., 0-9, 5, 10-14,20-24). Zero-based indexing."),
+      // Parallel processing options
+      opt[Int]("threads")
+        .valueName("<N>")
+        .action((x, c) => c.asInstanceOf[BaseConfig].copy(threads = x).asInstanceOf[C])
+        .text(
+          s"Number of parallel threads for directory processing (default: 1 for serial, max: ${Runtime.getRuntime.availableProcessors()})"
+        ),
+      opt[String]("error-mode")
+        .valueName("<mode>")
+        .action((x, c) => c.asInstanceOf[BaseConfig].copy(errorMode = Some(x)).asInstanceOf[C])
+        .text(
+          "Error handling mode for batch processing: fail-fast (stop on first error), continue (default, log and continue), skip (skip failed files)"
+        ),
+      opt[Unit]("no-progress")
+        .action((_, c) => c.asInstanceOf[BaseConfig].copy(enableProgress = false).asInstanceOf[C])
+        .text("Disable progress reporting for batch operations"),
+      opt[Long]("progress-interval")
+        .valueName("<milliseconds>")
+        .action((x, c) => c.asInstanceOf[BaseConfig].copy(progressIntervalMs = x).asInstanceOf[C])
+        .text("Progress update interval in milliseconds (default: 2000)"),
+      opt[Unit]("verbose")
+        .action((_, c) => c.asInstanceOf[BaseConfig].copy(verbose = true).asInstanceOf[C])
+        .text("Enable verbose logging for individual file operations")
     )
   }
 

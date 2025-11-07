@@ -29,6 +29,12 @@ object Main extends AbstractMain[AsposeConfig] {
   override protected def getMappings(config: AsposeConfig): Seq[String]       = config.mappings
   override protected def getFailureMode(config: AsposeConfig): Option[String] = config.failureMode
   override protected def getChunkRange(config: AsposeConfig): Option[String]  = config.chunkRange
+  override protected def getThreads(config: AsposeConfig): Int                = config.threads
+  override protected def getErrorMode(config: AsposeConfig): Option[String]   = config.errorMode
+  override protected def getEnableProgress(config: AsposeConfig): Boolean = config.enableProgress
+  override protected def getProgressIntervalMs(config: AsposeConfig): Long =
+    config.progressIntervalMs
+  override protected def getVerbose(config: AsposeConfig): Boolean = config.verbose
 
   /**
    * Builds all CLI options including Aspose-specific ones
@@ -110,6 +116,43 @@ object Main extends AbstractMain[AsposeConfig] {
         .valueName("<range>")
         .action((x, c) => c.copy(chunkRange = Some(x)))
         .text("Extract only specific chunks (e.g. 0-4, 50, 95-). Zero-based indexing."),
+      opt[Unit]("strip-masters")
+        .action((_, c) => c.copy(stripMasters = true))
+        .text(
+          "Remove master slides/templates during PowerPoint conversions for cleaner output and template swapping workflows"
+        ),
+
+      // Directory-to-directory conversion options
+      opt[Seq[String]]("mapping")
+        .valueName("mimeOrExt1=mimeOrExt2,...")
+        .action((xs, c) => c.copy(mappings = xs))
+        .text(
+          "Either MIME or extension to MIME/extension mapping, e.g. 'pdf=xml' or 'application/vnd.ms-excel=application/json'"
+        ),
+
+      // Parallel processing options
+      opt[Int]("threads")
+        .valueName("<N>")
+        .action((x, c) => c.copy(threads = x))
+        .text(
+          s"Number of parallel threads for directory processing (default: 1 for serial, max: ${Runtime.getRuntime.availableProcessors()})"
+        ),
+      opt[String]("error-mode")
+        .valueName("<mode>")
+        .action((x, c) => c.copy(errorMode = Some(x)))
+        .text(
+          "Error handling mode for batch processing: fail-fast (stop on first error), continue (default, log and continue), skip (skip failed files)"
+        ),
+      opt[Unit]("no-progress")
+        .action((_, c) => c.copy(enableProgress = false))
+        .text("Disable progress reporting for batch operations"),
+      opt[Long]("progress-interval")
+        .valueName("<milliseconds>")
+        .action((x, c) => c.copy(progressIntervalMs = x))
+        .text("Progress update interval in milliseconds (default: 2000)"),
+      opt[Unit]("verbose")
+        .action((_, c) => c.copy(verbose = true))
+        .text("Enable verbose logging for individual file operations"),
 
       // Aspose-specific license options
       opt[String]("licenseTotal")
@@ -140,10 +183,18 @@ object Main extends AbstractMain[AsposeConfig] {
   }
 
   /**
-   * Initialize Aspose licenses before processing
+   * Initialize Aspose licenses and bridge context before processing
    */
-  override protected def initialize(config: AsposeConfig): Unit =
+  override protected def initialize(config: AsposeConfig): Unit = {
     applyLicenses(config)
+
+    // Set bridge context for this thread
+    utils.aspose.BridgeContext.set(
+      utils.aspose.BridgeContextData(
+        stripMasters = config.stripMasters
+      )
+    )
+  }
 
   /**
    * Apply Aspose licenses from configuration
@@ -176,6 +227,53 @@ object Main extends AbstractMain[AsposeConfig] {
           AsposeLicense.initializeIfNeeded()
         }
     }
+
+  /**
+   * Override executeConversion to propagate BridgeContext to worker threads in parallel mode
+   */
+  override protected def executeConversion(config: AsposeConfig): Unit = {
+    import java.nio.file.{ Files, Paths }
+
+    val inputPath  = getInput(config)
+    val outputPath = getOutput(config)
+    val input      = Paths.get(inputPath)
+    val output     = Paths.get(outputPath)
+
+    // Check if this is a directory-to-directory conversion
+    if (Files.isDirectory(input) && (Files.isDirectory(output) || !Files.exists(output))) {
+      val parsedMappings = CommonCLI.parseMimeMappings(getMappings(config))
+
+      // Parse error mode
+      val errorModeOpt = getErrorMode(config).flatMap(processing.ErrorMode.fromString)
+
+      // Capture BridgeContext from main thread to propagate to worker threads
+      // This ensures per-thread options like --strip-masters are honored in parallel mode
+      val bridgeContextData = utils.aspose.BridgeContext.get()
+      val contextWrapper: (
+        () => ParallelDirectoryPipeline.ProcessingResult
+      ) => ParallelDirectoryPipeline.ProcessingResult =
+        (block: () => ParallelDirectoryPipeline.ProcessingResult) =>
+          utils.aspose.BridgeContext.withContext(bridgeContextData) {
+            block()
+          }
+
+      DirectoryPipeline.runDirectoryToDirectory(
+        inputDir = inputPath,
+        outputDir = outputPath,
+        mimeMappings = parsedMappings,
+        diffMode = getDiffMode(config),
+        threads = getThreads(config),
+        errorMode = errorModeOpt,
+        enableProgress = getEnableProgress(config),
+        progressIntervalMs = getProgressIntervalMs(config),
+        verbose = getVerbose(config),
+        contextWrapper = Some(contextWrapper)
+      )
+    } else {
+      // Single file conversion - use parent implementation
+      super.executeConversion(config)
+    }
+  }
 
   /**
    * Override executeSplit to handle Aspose-specific parameters

@@ -10,7 +10,17 @@ import bridges.image.{
   PdfToPngAsposeBridge,
   PngToPdfAsposeBridge
 }
-import bridges.powerpoint.{ PowerPointPptToPdfAsposeBridge, PowerPointPptxToPdfAsposeBridge }
+import bridges.pdf.PdfToHtmlAsposeBridge
+import bridges.powerpoint.{
+  HtmlToPptAsposeBridge,
+  HtmlToPptxAsposeBridge,
+  PdfToPptAsposeBridge,
+  PdfToPptxAsposeBridge,
+  PowerPointPptToPdfAsposeBridge,
+  PowerPointPptxToPdfAsposeBridge,
+  PptToHtmlAsposeBridge,
+  PptxToHtmlAsposeBridge
+}
 import bridges.word.{ WordDocToPdfAsposeBridge, WordDocxToPdfAsposeBridge }
 import spi.{ BridgeInfo, BridgeProvider, SplitterInfo, SplitterProvider }
 import splitters.archive._
@@ -87,6 +97,45 @@ class AsposeRegistrations extends BridgeProvider with SplitterProvider {
         MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
         MimeType.ApplicationPdf,
         PowerPointPptxToPdfAsposeBridge
+      ),
+      // HTML -> PowerPoint
+      BridgeInfo(
+        MimeType.TextHtml,
+        MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
+        HtmlToPptxAsposeBridge
+      ),
+      BridgeInfo(
+        MimeType.TextHtml,
+        MimeType.ApplicationVndMsPowerpoint,
+        HtmlToPptAsposeBridge
+      ),
+      // PowerPoint -> HTML
+      BridgeInfo(
+        MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
+        MimeType.TextHtml,
+        PptxToHtmlAsposeBridge
+      ),
+      BridgeInfo(
+        MimeType.ApplicationVndMsPowerpoint,
+        MimeType.TextHtml,
+        PptToHtmlAsposeBridge
+      ),
+      // PDF -> PowerPoint
+      BridgeInfo(
+        MimeType.ApplicationPdf,
+        MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
+        PdfToPptxAsposeBridge
+      ),
+      BridgeInfo(
+        MimeType.ApplicationPdf,
+        MimeType.ApplicationVndMsPowerpoint,
+        PdfToPptAsposeBridge
+      ),
+      // PDF -> HTML
+      BridgeInfo(
+        MimeType.ApplicationPdf,
+        MimeType.TextHtml,
+        PdfToHtmlAsposeBridge
       ),
       // PDF -> Images
       BridgeInfo(
