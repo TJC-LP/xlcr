@@ -42,6 +42,7 @@ object Main extends AbstractMain[AsposeConfig] {
   override protected def getProgressIntervalMs(config: AsposeConfig): Long =
     config.progressIntervalMs
   override protected def getVerbose(config: AsposeConfig): Boolean = config.verbose
+  override protected def getBackend(config: AsposeConfig): Option[String] = config.backend
 
   /**
    * Builds all CLI options including Aspose-specific ones.
@@ -147,6 +148,17 @@ object Main extends AbstractMain[AsposeConfig] {
       opt[Unit]("verbose")
         .action((_, c) => c.copy(verbose = true))
         .text("Enable verbose logging for individual file operations"),
+      // Backend selection
+      opt[String]("backend")
+        .valueName("<name>")
+        .action((x, c) => c.copy(backend = Some(x)))
+        .validate(x =>
+          if (Seq("aspose", "libreoffice", "core", "tika").contains(x.toLowerCase))
+            success
+          else
+            failure(s"Invalid backend '$x'. Must be one of: aspose, libreoffice, core, tika")
+        )
+        .text("Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)"),
       // Aspose-specific license options (gracefully ignored if Aspose not used)
       opt[String]("licenseTotal")
         .valueName("<path>")

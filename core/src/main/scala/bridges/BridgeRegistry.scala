@@ -20,6 +20,8 @@ object BridgeRegistry
       BridgeInfo[_ <: MimeType, _ <: MimeType]          // I: Info object type
     ] {
 
+  private val logger = org.slf4j.LoggerFactory.getLogger(getClass)
+
   // Implement abstract members from Registry trait
   override protected def registryName: String = "BridgeRegistry"
   override protected def providerClass: Class[BridgeProvider] =
@@ -150,6 +152,65 @@ object BridgeRegistry
     (allMatches ++ wildcardMatches).distinct
       .sortBy(b => -b.priority.value)
       .map(_.asInstanceOf[Bridge[_ <: Model, I, O]])
+  }
+
+  /**
+   * Find a bridge with optional backend filtering.
+   *
+   * @tparam I
+   *   The input mime type
+   * @tparam O
+   *   The output mime type
+   * @param inMime
+   *   The input mime type
+   * @param outMime
+   *   The output mime type
+   * @param backendPreference
+   *   Optional backend name filter (aspose, libreoffice, core, tika)
+   * @return
+   *   An optional bridge that can convert from inMime to outMime, filtered by backend if specified
+   */
+  def findBridgeWithBackend[I <: MimeType, O <: MimeType](
+    inMime: I,
+    outMime: O,
+    backendPreference: Option[String]
+  ): Option[Bridge[_ <: Model, I, O]] = {
+    backendPreference match {
+      case None =>
+        // No backend preference, use default behavior
+        findBridge(inMime, outMime)
+      case Some(backend) =>
+        // Get all bridges and filter by backend pattern
+        val allBridges = findAllBridges(inMime, outMime)
+        val filtered = allBridges.filter(bridge => matchesBackend(bridge, backend))
+
+        if (filtered.nonEmpty) {
+          logger.info(s"Selected ${filtered.head.getClass.getSimpleName} based on backend preference: $backend")
+          filtered.headOption
+        } else {
+          logger.warn(s"No bridge found for backend '$backend' for conversion $inMime -> $outMime. Available backends: ${allBridges.map(getBackendName).mkString(", ")}")
+          None
+        }
+    }
+  }
+
+  /**
+   * Determine which backend a bridge belongs to based on its class name and package.
+   */
+  private def getBackendName(bridge: Bridge[_, _, _]): String = {
+    val className = bridge.getClass.getName.toLowerCase
+    if (className.contains("aspose")) "aspose"
+    else if (className.contains("libreoffice")) "libreoffice"
+    else if (className.contains("tika")) "tika"
+    else "core"
+  }
+
+  /**
+   * Check if a bridge matches the specified backend preference.
+   */
+  private def matchesBackend(bridge: Bridge[_, _, _], backend: String): Boolean = {
+    val backendName = getBackendName(bridge)
+    backendName.equalsIgnoreCase(backend)
   }
 
   /**

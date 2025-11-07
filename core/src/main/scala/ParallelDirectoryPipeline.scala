@@ -100,7 +100,8 @@ object ParallelDirectoryPipeline {
     outputDir: String,
     mimeMappings: Map[MimeType, MimeType],
     config: Config = Config(),
-    diffMode: Boolean = false
+    diffMode: Boolean = false,
+    backendPreference: Option[String] = None
   ): BatchSummary = {
 
     val inPath  = Paths.get(inputDir)
@@ -170,10 +171,10 @@ object ParallelDirectoryPipeline {
           config.contextWrapper match {
             case Some(wrapper) =>
               wrapper(() =>
-                processFile(file, outPath, mimeMappings, diffMode, config.progressReporter)
+                processFile(file, outPath, mimeMappings, diffMode, config.progressReporter, backendPreference)
               )
             case None =>
-              processFile(file, outPath, mimeMappings, diffMode, config.progressReporter)
+              processFile(file, outPath, mimeMappings, diffMode, config.progressReporter, backendPreference)
           }
         }
       }
@@ -267,7 +268,8 @@ object ParallelDirectoryPipeline {
     outputDir: Path,
     mimeMappings: Map[MimeType, MimeType],
     diffMode: Boolean,
-    progressReporter: ProgressReporter
+    progressReporter: ProgressReporter,
+    backendPreference: Option[String] = None
   ): ProcessingResult = {
 
     val fileName = file.getFileName.toString
@@ -294,7 +296,8 @@ object ParallelDirectoryPipeline {
             Pipeline.run(
               inputPath = file.toString,
               outputPath = outputFile.toString,
-              diffMode = diffMode
+              diffMode = diffMode,
+              backendPreference = backendPreference
             )
           } match {
             case Success(_) =>

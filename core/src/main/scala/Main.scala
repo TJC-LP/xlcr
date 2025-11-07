@@ -30,6 +30,7 @@ object Main extends AbstractMain[BaseConfig] {
   override protected def getEnableProgress(config: BaseConfig): Boolean  = config.enableProgress
   override protected def getProgressIntervalMs(config: BaseConfig): Long = config.progressIntervalMs
   override protected def getVerbose(config: BaseConfig): Boolean         = config.verbose
+  override protected def getBackend(config: BaseConfig): Option[String]  = config.backend
 
   /**
    * Builds all CLI options using CommonCLI utilities

@@ -39,7 +39,9 @@ object CommonCLI {
     errorMode: Option[String] = None, // fail-fast, continue, skip
     enableProgress: Boolean = true,   // Enable progress reporting by default for batch operations
     progressIntervalMs: Long = 2000,  // Progress update interval in milliseconds
-    verbose: Boolean = false          // Verbose logging for individual file operations
+    verbose: Boolean = false,         // Verbose logging for individual file operations
+    // Backend selection
+    backend: Option[String] = None    // Explicit backend selection (aspose, libreoffice, core, tika)
   )
 
   /**
@@ -178,7 +180,18 @@ object CommonCLI {
         .text("Progress update interval in milliseconds (default: 2000)"),
       opt[Unit]("verbose")
         .action((_, c) => c.asInstanceOf[BaseConfig].copy(verbose = true).asInstanceOf[C])
-        .text("Enable verbose logging for individual file operations")
+        .text("Enable verbose logging for individual file operations"),
+      // Backend selection
+      opt[String]("backend")
+        .valueName("<name>")
+        .action((x, c) => c.asInstanceOf[BaseConfig].copy(backend = Some(x)).asInstanceOf[C])
+        .validate(x =>
+          if (Seq("aspose", "libreoffice", "core", "tika").contains(x.toLowerCase))
+            success
+          else
+            failure(s"Invalid backend '$x'. Must be one of: aspose, libreoffice, core, tika")
+        )
+        .text("Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)")
     )
   }
 

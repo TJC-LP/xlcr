@@ -60,6 +60,7 @@ object DirectoryPipeline {
     enableProgress: Boolean = true,
     progressIntervalMs: Long = 2000,
     verbose: Boolean = false,
+    backendPreference: Option[String] = None,
     contextWrapper: Option[(
       () => ParallelDirectoryPipeline.ProcessingResult
     ) => ParallelDirectoryPipeline.ProcessingResult] = None
@@ -94,7 +95,8 @@ object DirectoryPipeline {
         outputDir = outputDir,
         mimeMappings = mimeMappings,
         config = parallelConfig,
-        diffMode = diffMode
+        diffMode = diffMode,
+        backendPreference = backendPreference
       )
 
       // Log summary
@@ -166,7 +168,7 @@ object DirectoryPipeline {
               s"Converting $file (mime: ${inputMime.mimeType}) -> $outFile (mime: ${outputMime.mimeType})"
             )
             Try {
-              Pipeline.run(file.toString, outFile.toString, diffMode)
+              Pipeline.run(file.toString, outFile.toString, diffMode, backendPreference = backendPreference)
             } match {
               case Failure(ex) =>
                 logger.error(s"Failed to convert $file: ${ex.getMessage}")
