@@ -240,6 +240,24 @@ lazy val coreAspose = (project in file("core-aspose"))
     )
   )
 
+// LibreOffice integration module
+lazy val coreLibreOffice = (project in file("core-libreoffice"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .settings(assemblySettings)
+  .settings(
+    // All Scala versions for core-libreoffice
+    crossScalaVersions := Seq(scala212, scala213, scala3),
+    name               := "xlcr-core-libreoffice",
+    libraryDependencies ++= Seq(
+      // JODConverter for LibreOffice integration
+      "org.jodconverter" % "jodconverter-local" % "4.4.6",
+      "org.jodconverter" % "jodconverter-core"  % "4.4.6",
+      // Testing
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test
+    )
+  )
+
 lazy val coreSpark = (project in file("core-spark"))
   .dependsOn(core, coreAspose, coreSpreadsheetLLM)
   .settings(commonSettings)
@@ -418,6 +436,7 @@ lazy val assemblySettings = Seq(
 // Custom assembly tasks
 lazy val assembleCore   = taskKey[File]("Assemble the core module")
 lazy val assembleAspose = taskKey[File]("Assemble the aspose module")
+lazy val assembleLibreOffice = taskKey[File]("Assemble the libreoffice module")
 lazy val assembleSpreadsheetLLM =
   taskKey[File]("Assemble the spreadsheetLLM module")
 lazy val assembleSpark = taskKey[File]("Assemble the spark module")
@@ -470,7 +489,8 @@ ThisBuild / githubWorkflowPublish := Seq(
 
 // Root project for aggregating
 lazy val root = (project in file("."))
-  .aggregate(core, coreAspose, coreSpreadsheetLLM, coreSpark)
+  .aggregate(core, coreAspose, coreLibreOffice, coreSpreadsheetLLM, coreSpark)
+  .dependsOn(core, coreAspose, coreLibreOffice)
   .settings(
     name := "xlcr",
     // Don't publish the root project
@@ -479,6 +499,7 @@ lazy val root = (project in file("."))
     // Custom assembly tasks
     assembleCore           := (core / assembly).value,
     assembleAspose         := (coreAspose / assembly).value,
+    assembleLibreOffice    := (coreLibreOffice / assembly).value,
     assembleSpreadsheetLLM := (coreSpreadsheetLLM / assembly).value,
     assembleSpark          := (coreSpark / assembly).value,
     // Define projects that should be included when cross-building
