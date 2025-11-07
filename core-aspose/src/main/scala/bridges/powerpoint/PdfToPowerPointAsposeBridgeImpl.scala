@@ -151,14 +151,12 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
           }
 
           // Remove unused master slides and layouts to create cleaner presentations
-          // This helps ensure smoother round-trip conversions by eliminating
-          // default templates that Aspose may have applied during PDF import
-          // Note: This is enabled by default for PDF->PowerPoint conversions
+          // when --strip-masters flag is enabled. This helps ensure smoother round-trip
+          // conversions by eliminating default templates that Aspose may have applied
+          // during PDF import.
           val stripMasters = BridgeContext.get().stripMasters
-          val shouldCleanupMasters =
-            stripMasters || true // Always cleanup for PDF->PowerPoint by default
 
-          if (shouldCleanupMasters) {
+          if (stripMasters) {
             try {
               // First remove unused layouts from each master
               var totalLayoutsRemoved = 0
@@ -171,13 +169,9 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
                 totalLayoutsRemoved += (layoutsBefore - layoutsAfter)
               }
               if (totalLayoutsRemoved > 0) {
-                if (stripMasters) {
-                  logger.info(
-                    s"Removed $totalLayoutsRemoved unused layout slides (--strip-masters)"
-                  )
-                } else {
-                  logger.debug(s"Removed $totalLayoutsRemoved unused layout slides")
-                }
+                logger.info(
+                  s"Removed $totalLayoutsRemoved unused layout slides (--strip-masters)"
+                )
               }
 
               // Then remove unused master slides
@@ -185,13 +179,9 @@ trait PdfToPowerPointAsposeBridgeImpl[O <: MimeType]
               presentation.getMasters.removeUnused(true) // true = ignore preserve field
               val mastersAfterCleanup = presentation.getMasters.size()
               if (mastersBeforeCleanup > mastersAfterCleanup) {
-                val message =
-                  s"Removed ${mastersBeforeCleanup - mastersAfterCleanup} unused master slides"
-                if (stripMasters) {
-                  logger.info(s"$message (--strip-masters)")
-                } else {
-                  logger.debug(message)
-                }
+                logger.info(
+                  s"Removed ${mastersBeforeCleanup - mastersAfterCleanup} unused master slides (--strip-masters)"
+                )
               }
             } catch {
               case ex: Exception =>

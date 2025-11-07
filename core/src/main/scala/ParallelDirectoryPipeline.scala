@@ -58,12 +58,25 @@ object ParallelDirectoryPipeline {
 
   /**
    * Configuration for parallel directory processing.
+   *
+   * @param threads
+   *   Number of parallel threads to use
+   * @param errorMode
+   *   How to handle errors during processing
+   * @param progressReporter
+   *   Reporter for tracking progress
+   * @param timeout
+   *   Maximum time to wait for all files to process
+   * @param contextWrapper
+   *   Optional function to wrap each task execution (e.g., for ThreadLocal propagation). Receives a
+   *   block to execute and returns its result.
    */
   case class Config(
     threads: Int = Runtime.getRuntime.availableProcessors(),
     errorMode: ErrorMode = ErrorMode.default,
     progressReporter: ProgressReporter = ProgressReporter.NoOp,
-    timeout: Duration = Duration.Inf
+    timeout: Duration = Duration.Inf,
+    contextWrapper: Option[(() => ProcessingResult) => ProcessingResult] = None
   )
 
   /**
@@ -153,7 +166,15 @@ object ParallelDirectoryPipeline {
       // Create futures for each file
       val futures = files.map { file =>
         Future {
-          processFile(file, outPath, mimeMappings, diffMode, config.progressReporter)
+          // Wrap execution with context wrapper if provided (e.g., for ThreadLocal propagation)
+          config.contextWrapper match {
+            case Some(wrapper) =>
+              wrapper(() =>
+                processFile(file, outPath, mimeMappings, diffMode, config.progressReporter)
+              )
+            case None =>
+              processFile(file, outPath, mimeMappings, diffMode, config.progressReporter)
+          }
         }
       }
 

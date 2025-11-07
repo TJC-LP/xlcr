@@ -229,6 +229,53 @@ object Main extends AbstractMain[AsposeConfig] {
     }
 
   /**
+   * Override executeConversion to propagate BridgeContext to worker threads in parallel mode
+   */
+  override protected def executeConversion(config: AsposeConfig): Unit = {
+    import java.nio.file.{ Files, Paths }
+
+    val inputPath  = getInput(config)
+    val outputPath = getOutput(config)
+    val input      = Paths.get(inputPath)
+    val output     = Paths.get(outputPath)
+
+    // Check if this is a directory-to-directory conversion
+    if (Files.isDirectory(input) && (Files.isDirectory(output) || !Files.exists(output))) {
+      val parsedMappings = CommonCLI.parseMimeMappings(getMappings(config))
+
+      // Parse error mode
+      val errorModeOpt = getErrorMode(config).flatMap(processing.ErrorMode.fromString)
+
+      // Capture BridgeContext from main thread to propagate to worker threads
+      // This ensures per-thread options like --strip-masters are honored in parallel mode
+      val bridgeContextData = utils.aspose.BridgeContext.get()
+      val contextWrapper: (
+        () => ParallelDirectoryPipeline.ProcessingResult
+      ) => ParallelDirectoryPipeline.ProcessingResult =
+        (block: () => ParallelDirectoryPipeline.ProcessingResult) =>
+          utils.aspose.BridgeContext.withContext(bridgeContextData) {
+            block()
+          }
+
+      DirectoryPipeline.runDirectoryToDirectory(
+        inputDir = inputPath,
+        outputDir = outputPath,
+        mimeMappings = parsedMappings,
+        diffMode = getDiffMode(config),
+        threads = getThreads(config),
+        errorMode = errorModeOpt,
+        enableProgress = getEnableProgress(config),
+        progressIntervalMs = getProgressIntervalMs(config),
+        verbose = getVerbose(config),
+        contextWrapper = Some(contextWrapper)
+      )
+    } else {
+      // Single file conversion - use parent implementation
+      super.executeConversion(config)
+    }
+  }
+
+  /**
    * Override executeSplit to handle Aspose-specific parameters
    */
   override protected def executeSplit(config: AsposeConfig): Unit = {

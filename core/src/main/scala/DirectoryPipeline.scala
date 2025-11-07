@@ -47,6 +47,8 @@ object DirectoryPipeline {
    *   progress update interval in milliseconds
    * @param verbose
    *   enable verbose logging for individual file operations
+   * @param contextWrapper
+   *   optional function to wrap each task execution (e.g., for ThreadLocal propagation)
    */
   def runDirectoryToDirectory(
     inputDir: String,
@@ -57,7 +59,10 @@ object DirectoryPipeline {
     errorMode: Option[ErrorMode] = None,
     enableProgress: Boolean = true,
     progressIntervalMs: Long = 2000,
-    verbose: Boolean = false
+    verbose: Boolean = false,
+    contextWrapper: Option[(
+      () => ParallelDirectoryPipeline.ProcessingResult
+    ) => ParallelDirectoryPipeline.ProcessingResult] = None
   ): Unit = {
     // Route to parallel or serial implementation based on threads setting
     if (threads > 1) {
@@ -79,7 +84,8 @@ object DirectoryPipeline {
       val parallelConfig = ParallelDirectoryPipeline.Config(
         threads = threads,
         errorMode = effectiveErrorMode,
-        progressReporter = progressReporter
+        progressReporter = progressReporter,
+        contextWrapper = contextWrapper
       )
 
       // Run parallel processing
