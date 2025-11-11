@@ -249,6 +249,8 @@ lazy val coreLibreOffice = (project in file("core-libreoffice"))
     // All Scala versions for core-libreoffice
     crossScalaVersions := Seq(scala212, scala213, scala3),
     name               := "xlcr-core-libreoffice",
+    // Run tests serially to avoid LibreOffice OfficeManager conflicts
+    Test / parallelExecution := false,
     libraryDependencies ++= Seq(
       // JODConverter for LibreOffice integration
       "org.jodconverter" % "jodconverter-local" % "4.4.6",

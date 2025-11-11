@@ -13,12 +13,12 @@ import java.io.File
 class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
 
   override def afterEach(): Unit = {
-    // Clean up any initialized OfficeManager
-    LibreOfficeConfig.shutdown()
+    // Don't shutdown between tests - OfficeManager is expensive to initialize
   }
 
   override def afterAll(): Unit = {
-    LibreOfficeConfig.shutdown()
+    // Don't shutdown here either - let shutdown hook handle it
+    // Shutdown is tested explicitly in dedicated tests
   }
 
   "LibreOfficeConfig.detectLibreOfficeHome" should "detect LibreOffice from environment variable" in {
