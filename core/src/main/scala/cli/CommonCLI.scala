@@ -41,7 +41,7 @@ object CommonCLI {
     progressIntervalMs: Long = 2000,  // Progress update interval in milliseconds
     verbose: Boolean = false,         // Verbose logging for individual file operations
     // Backend selection
-    backend: Option[String] = None    // Explicit backend selection (aspose, libreoffice, core, tika)
+    backend: Option[String] = None // Explicit backend selection (aspose, libreoffice, core, tika)
   )
 
   /**
@@ -191,7 +191,9 @@ object CommonCLI {
           else
             failure(s"Invalid backend '$x'. Must be one of: aspose, libreoffice, core, tika")
         )
-        .text("Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)")
+        .text(
+          "Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)"
+        )
     )
   }
 

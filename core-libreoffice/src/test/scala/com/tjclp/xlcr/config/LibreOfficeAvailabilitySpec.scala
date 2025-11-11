@@ -5,8 +5,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 /**
- * Minimal test for LibreOffice availability detection.
- * This is the critical feature - detecting whether LibreOffice is installed.
+ * Minimal test for LibreOffice availability detection. This is the critical feature - detecting
+ * whether LibreOffice is installed.
  */
 class LibreOfficeAvailabilitySpec extends AnyFlatSpec with Matchers {
 
@@ -14,7 +14,7 @@ class LibreOfficeAvailabilitySpec extends AnyFlatSpec with Matchers {
     val isAvailable = LibreOfficeConfig.isAvailable()
 
     // Should return true or false, not throw
-    isAvailable should (be(true) or be(false))
+    isAvailable should (be(true).or(be(false)))
 
     info(s"LibreOffice available: $isAvailable")
   }
@@ -43,7 +43,7 @@ class LibreOfficeAvailabilitySpec extends AnyFlatSpec with Matchers {
   }
 
   it should "match isAvailable() result" in {
-    val detected = LibreOfficeConfig.detectLibreOfficeHome()
+    val detected  = LibreOfficeConfig.detectLibreOfficeHome()
     val available = LibreOfficeConfig.isAvailable()
 
     available shouldBe detected.isDefined

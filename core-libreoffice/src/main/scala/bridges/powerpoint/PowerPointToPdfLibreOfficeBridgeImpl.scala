@@ -15,11 +15,11 @@ import types.MimeType.ApplicationPdf
 import types.{ MimeType, Priority }
 
 /**
- * Common implementation for PowerPointToPdfLibreOfficeBridge that works with both Scala 2 and Scala 3.
- * This trait contains all the business logic for the bridge using LibreOffice via JODConverter.
+ * Common implementation for PowerPointToPdfLibreOfficeBridge that works with both Scala 2 and Scala
+ * 3. This trait contains all the business logic for the bridge using LibreOffice via JODConverter.
  *
- * Supports PowerPoint formats: PPT, PPTX
- * Priority is set to DEFAULT (0) to act as a fallback when Aspose (HIGH priority) is not available.
+ * Supports PowerPoint formats: PPT, PPTX Priority is set to DEFAULT (0) to act as a fallback when
+ * Aspose (HIGH priority) is not available.
  */
 trait PowerPointToPdfLibreOfficeBridgeImpl[I <: MimeType]
     extends SimpleBridge[I, ApplicationPdf.type] {
@@ -62,15 +62,17 @@ trait PowerPointToPdfLibreOfficeBridgeImpl[I <: MimeType]
   }
 
   /**
-   * Convert a PowerPoint presentation to PDF using LibreOffice.
-   * Uses temporary files as JODConverter requires file-based conversion.
+   * Convert a PowerPoint presentation to PDF using LibreOffice. Uses temporary files as
+   * JODConverter requires file-based conversion.
    *
-   * @param pptBytes The PowerPoint document as a byte array
-   * @return The PDF document as a byte array
+   * @param pptBytes
+   *   The PowerPoint document as a byte array
+   * @return
+   *   The PDF document as a byte array
    */
   private def convertPowerPointToPdf(pptBytes: Array[Byte]): Array[Byte] = {
     // Create temporary files for input and output
-    val inputFile = File.createTempFile("xlcr-ppt-input-", ".ppt")
+    val inputFile  = File.createTempFile("xlcr-ppt-input-", ".ppt")
     val outputFile = File.createTempFile("xlcr-pdf-output-", ".pdf")
 
     try {

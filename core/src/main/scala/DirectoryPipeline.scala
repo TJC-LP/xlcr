@@ -167,7 +167,12 @@ object DirectoryPipeline {
               s"Converting $file (mime: ${inputMime.mimeType}) -> $outFile (mime: ${outputMime.mimeType})"
             )
             Try {
-              Pipeline.run(file.toString, outFile.toString, diffMode, backendPreference = backendPreference)
+              Pipeline.run(
+                file.toString,
+                outFile.toString,
+                diffMode,
+                backendPreference = backendPreference
+              )
             } match {
               case Failure(ex) =>
                 logger.error(s"Failed to convert $file: ${ex.getMessage}")

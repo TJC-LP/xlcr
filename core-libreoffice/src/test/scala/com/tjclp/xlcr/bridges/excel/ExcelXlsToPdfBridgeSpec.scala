@@ -3,26 +3,27 @@ package bridges.excel
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import config.LibreOfficeConfig
-import types.MimeType._
 import types.Priority
 
 /**
- * Tests for ExcelXlsToPdfLibreOfficeBridge.
- * Converts legacy Excel (.xls) files to PDF using LibreOffice.
+ * Tests for ExcelXlsToPdfLibreOfficeBridge. Converts legacy Excel (.xls) files to PDF using
+ * LibreOffice.
  *
  * Note: We don't have easy XLS generation, so this tests basic configuration only.
  */
-class ExcelXlsToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class ExcelXlsToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     if (!LibreOfficeConfig.isAvailable()) {
-      info(s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}")
+      info(
+        s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}"
+      )
       cancel()
     }
-  }
 
   override def afterAll(): Unit = {
     // Don't shutdown LibreOffice here - shared across tests

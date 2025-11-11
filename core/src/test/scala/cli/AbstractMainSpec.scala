@@ -60,7 +60,7 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     override protected def getEnableProgress(config: TestConfig): Boolean = config.enableProgress
     override protected def getProgressIntervalMs(config: TestConfig): Long =
       config.progressIntervalMs
-    override protected def getVerbose(config: TestConfig): Boolean = config.verbose
+    override protected def getVerbose(config: TestConfig): Boolean        = config.verbose
     override protected def getBackend(config: TestConfig): Option[String] = None
 
     override protected def buildAllOptions: OParser[_, TestConfig] = {

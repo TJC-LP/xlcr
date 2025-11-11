@@ -6,8 +6,8 @@ import types.MimeType.ApplicationMsWord
 /**
  * Bridge that converts Microsoft Word .doc documents to PDF using LibreOffice.
  *
- * This object extends the common implementation trait that contains all the business logic,
- * making it compatible with both Scala 2 and Scala 3.
+ * This object extends the common implementation trait that contains all the business logic, making
+ * it compatible with both Scala 2 and Scala 3.
  *
  * Priority: DEFAULT (fallback to Aspose if available)
  */

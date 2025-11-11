@@ -3,7 +3,7 @@ package bridges.odf
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import config.LibreOfficeConfig
 import models.FileContent
@@ -12,19 +12,21 @@ import types.MimeType._
 import types.Priority
 
 /**
- * Tests for OdsToPdfLibreOfficeBridge.
- * Converts OpenDocument Spreadsheet (.ods) files to PDF using LibreOffice.
+ * Tests for OdsToPdfLibreOfficeBridge. Converts OpenDocument Spreadsheet (.ods) files to PDF using
+ * LibreOffice.
  *
  * ODS is LibreOffice's native format, so this should have excellent compatibility.
  */
-class OdsToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class OdsToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     if (!LibreOfficeConfig.isAvailable()) {
-      info(s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}")
+      info(
+        s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}"
+      )
       cancel()
     }
-  }
 
   override def afterAll(): Unit = {
     // Don't shutdown - shared OfficeManager
@@ -36,7 +38,7 @@ class OdsToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEa
 
   it should "convert minimal ODS to PDF" in {
     val odsBytes = DocumentGenerators.createMinimalOds()
-    val input = FileContent(odsBytes, ApplicationVndOasisOpendocumentSpreadsheet)
+    val input    = FileContent(odsBytes, ApplicationVndOasisOpendocumentSpreadsheet)
 
     val output = OdsToPdfLibreOfficeBridge.convert(input, None)
 
@@ -53,7 +55,7 @@ class OdsToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEa
 
     // Do 3 conversions in sequence
     (1 to 3).foreach { i =>
-      val input = FileContent(odsBytes, ApplicationVndOasisOpendocumentSpreadsheet)
+      val input  = FileContent(odsBytes, ApplicationVndOasisOpendocumentSpreadsheet)
       val output = OdsToPdfLibreOfficeBridge.convert(input, None)
 
       output.mimeType shouldBe ApplicationPdf

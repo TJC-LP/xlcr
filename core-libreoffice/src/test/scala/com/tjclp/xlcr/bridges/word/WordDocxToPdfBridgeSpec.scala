@@ -3,7 +3,7 @@ package bridges.word
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import config.LibreOfficeConfig
 import models.FileContent
@@ -12,17 +12,19 @@ import types.MimeType._
 import types.Priority
 
 /**
- * Tests for WordDocxToPdfLibreOfficeBridge.
- * Converts Word 2007+ (.docx) files to PDF using LibreOffice.
+ * Tests for WordDocxToPdfLibreOfficeBridge. Converts Word 2007+ (.docx) files to PDF using
+ * LibreOffice.
  */
-class WordDocxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class WordDocxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     if (!LibreOfficeConfig.isAvailable()) {
-      info(s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}")
+      info(
+        s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}"
+      )
       cancel()
     }
-  }
 
   override def afterAll(): Unit = {
     // Don't shutdown - shared OfficeManager
@@ -34,7 +36,7 @@ class WordDocxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAf
 
   it should "convert minimal DOCX to PDF" in {
     val docxBytes = DocumentGenerators.createMinimalDocx()
-    val input = FileContent(docxBytes, ApplicationVndOpenXmlFormatsWordprocessingmlDocument)
+    val input     = FileContent(docxBytes, ApplicationVndOpenXmlFormatsWordprocessingmlDocument)
 
     val output = WordDocxToPdfLibreOfficeBridge.convert(input, None)
 
@@ -48,7 +50,7 @@ class WordDocxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAf
 
   it should "convert DOCX with formatting to PDF" in {
     val docxBytes = DocumentGenerators.createDocxWithFormatting()
-    val input = FileContent(docxBytes, ApplicationVndOpenXmlFormatsWordprocessingmlDocument)
+    val input     = FileContent(docxBytes, ApplicationVndOpenXmlFormatsWordprocessingmlDocument)
 
     val output = WordDocxToPdfLibreOfficeBridge.convert(input, None)
 
@@ -65,7 +67,7 @@ class WordDocxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAf
 
     // Do 3 conversions in sequence
     (1 to 3).foreach { i =>
-      val input = FileContent(docxBytes, ApplicationVndOpenXmlFormatsWordprocessingmlDocument)
+      val input  = FileContent(docxBytes, ApplicationVndOpenXmlFormatsWordprocessingmlDocument)
       val output = WordDocxToPdfLibreOfficeBridge.convert(input, None)
 
       output.mimeType shouldBe ApplicationPdf

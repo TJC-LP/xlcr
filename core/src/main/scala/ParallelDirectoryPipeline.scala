@@ -339,7 +339,7 @@ object ParallelDirectoryPipeline {
     ex: Throwable,
     progressReporter: ProgressReporter,
     skipOnError: Boolean
-  ): ProcessingResult = {
+  ): ProcessingResult =
     if (skipOnError) {
       val reason = Option(ex.getMessage).getOrElse("Conversion error")
       progressReporter.fileSkipped(fileName, reason)
@@ -348,7 +348,6 @@ object ParallelDirectoryPipeline {
       progressReporter.fileFailed(fileName, ex)
       ProcessingFailure(fileName, ex)
     }
-  }
 
   /**
    * Determine the output file path based on input file and output MIME type.

@@ -15,26 +15,25 @@ import types.MimeType.ApplicationPdf
 import types.{ MimeType, Priority }
 
 /**
- * Common implementation for ODF (OpenDocument Format) to PDF bridges.
- * This trait handles conversion of LibreOffice native formats (ODS, ODT, ODP) to PDF.
+ * Common implementation for ODF (OpenDocument Format) to PDF bridges. This trait handles conversion
+ * of LibreOffice native formats (ODS, ODT, ODP) to PDF.
  *
- * Since these are LibreOffice's native formats, this bridge might provide better
- * quality than Aspose for these specific formats, though we still use DEFAULT priority
- * to maintain consistency.
+ * Since these are LibreOffice's native formats, this bridge might provide better quality than
+ * Aspose for these specific formats, though we still use DEFAULT priority to maintain consistency.
  *
  * Supported formats:
- * - ODS (OpenDocument Spreadsheet) - Calc
- * - ODT (OpenDocument Text) - Writer
- * - ODP (OpenDocument Presentation) - Impress
+ *   - ODS (OpenDocument Spreadsheet) - Calc
+ *   - ODT (OpenDocument Text) - Writer
+ *   - ODP (OpenDocument Presentation) - Impress
  */
 trait OdfToPdfLibreOfficeBridgeImpl[I <: MimeType]
     extends SimpleBridge[I, ApplicationPdf.type] {
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
-   * Set priority to DEFAULT for LibreOffice bridges.
-   * Note: Even though these are native LibreOffice formats, we use DEFAULT priority
-   * to maintain consistent behavior with other LibreOffice bridges.
+   * Set priority to DEFAULT for LibreOffice bridges. Note: Even though these are native LibreOffice
+   * formats, we use DEFAULT priority to maintain consistent behavior with other LibreOffice
+   * bridges.
    */
   override def priority: Priority = Priority.DEFAULT
 
@@ -70,16 +69,18 @@ trait OdfToPdfLibreOfficeBridgeImpl[I <: MimeType]
   }
 
   /**
-   * Convert an OpenDocument format file to PDF using LibreOffice.
-   * Uses temporary files as JODConverter requires file-based conversion.
+   * Convert an OpenDocument format file to PDF using LibreOffice. Uses temporary files as
+   * JODConverter requires file-based conversion.
    *
-   * @param odfBytes The OpenDocument file as a byte array
-   * @return The PDF document as a byte array
+   * @param odfBytes
+   *   The OpenDocument file as a byte array
+   * @return
+   *   The PDF document as a byte array
    */
   private def convertOdfToPdf(odfBytes: Array[Byte]): Array[Byte] = {
     // Create temporary files for input and output
     // Use generic .odf extension - LibreOffice will auto-detect the specific format
-    val inputFile = File.createTempFile("xlcr-odf-input-", ".odf")
+    val inputFile  = File.createTempFile("xlcr-odf-input-", ".odf")
     val outputFile = File.createTempFile("xlcr-pdf-output-", ".pdf")
 
     try {

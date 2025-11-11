@@ -61,15 +61,17 @@ trait WordToPdfLibreOfficeBridgeImpl[I <: MimeType]
   }
 
   /**
-   * Convert a Word document to PDF using LibreOffice.
-   * Uses temporary files as JODConverter requires file-based conversion.
+   * Convert a Word document to PDF using LibreOffice. Uses temporary files as JODConverter requires
+   * file-based conversion.
    *
-   * @param wordBytes The Word document as a byte array
-   * @return The PDF document as a byte array
+   * @param wordBytes
+   *   The Word document as a byte array
+   * @return
+   *   The PDF document as a byte array
    */
   private def convertWordToPdf(wordBytes: Array[Byte]): Array[Byte] = {
     // Create temporary files for input and output
-    val inputFile = File.createTempFile("xlcr-word-input-", ".doc")
+    val inputFile  = File.createTempFile("xlcr-word-input-", ".doc")
     val outputFile = File.createTempFile("xlcr-pdf-output-", ".pdf")
 
     try {

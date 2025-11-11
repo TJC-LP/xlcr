@@ -3,7 +3,7 @@ package bridges.excel
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import config.LibreOfficeConfig
 import models.FileContent
@@ -12,17 +12,19 @@ import types.MimeType._
 import types.Priority
 
 /**
- * Tests for ExcelXlsxToPdfLibreOfficeBridge.
- * Converts Excel 2007+ (.xlsx) files to PDF using LibreOffice.
+ * Tests for ExcelXlsxToPdfLibreOfficeBridge. Converts Excel 2007+ (.xlsx) files to PDF using
+ * LibreOffice.
  */
-class ExcelXlsxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class ExcelXlsxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     if (!LibreOfficeConfig.isAvailable()) {
-      info(s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}")
+      info(
+        s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}"
+      )
       cancel()
     }
-  }
 
   override def afterAll(): Unit = {
     // Don't shutdown LibreOffice here - it's shared across tests
@@ -35,7 +37,7 @@ class ExcelXlsxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndA
 
   it should "convert minimal XLSX to PDF" in {
     val xlsxBytes = DocumentGenerators.createMinimalXlsx()
-    val input = FileContent(xlsxBytes, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
+    val input     = FileContent(xlsxBytes, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
 
     val output = ExcelXlsxToPdfLibreOfficeBridge.convert(input, None)
 
@@ -49,7 +51,7 @@ class ExcelXlsxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndA
 
   it should "convert XLSX with formulas to PDF" in {
     val xlsxBytes = DocumentGenerators.createXlsxWithFormulas()
-    val input = FileContent(xlsxBytes, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
+    val input     = FileContent(xlsxBytes, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
 
     val output = ExcelXlsxToPdfLibreOfficeBridge.convert(input, None)
 
@@ -66,7 +68,7 @@ class ExcelXlsxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndA
 
     // Do 3 conversions in sequence
     (1 to 3).foreach { i =>
-      val input = FileContent(xlsxBytes, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
+      val input  = FileContent(xlsxBytes, ApplicationVndOpenXmlFormatsSpreadsheetmlSheet)
       val output = ExcelXlsxToPdfLibreOfficeBridge.convert(input, None)
 
       output.mimeType shouldBe ApplicationPdf

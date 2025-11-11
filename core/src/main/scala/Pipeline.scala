@@ -214,7 +214,14 @@ object Pipeline {
     )
 
     // Start with current depth = 0
-    splitRecursive(fileContent, outDir, splitCfg, outputType, depth = 0, backendPreference = backendPreference)
+    splitRecursive(
+      fileContent,
+      outDir,
+      splitCfg,
+      outputType,
+      depth = 0,
+      backendPreference = backendPreference
+    )
   }
 
   /**

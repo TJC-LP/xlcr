@@ -174,7 +174,7 @@ object BridgeRegistry
     inMime: I,
     outMime: O,
     backendPreference: Option[String]
-  ): Option[Bridge[_ <: Model, I, O]] = {
+  ): Option[Bridge[_ <: Model, I, O]] =
     backendPreference match {
       case None =>
         // No backend preference, use default behavior
@@ -182,17 +182,19 @@ object BridgeRegistry
       case Some(backend) =>
         // Get all bridges and filter by backend pattern
         val allBridges = findAllBridges(inMime, outMime)
-        val filtered = allBridges.filter(bridge => matchesBackend(bridge, backend))
+        val filtered   = allBridges.filter(bridge => matchesBackend(bridge, backend))
 
         if (filtered.nonEmpty) {
-          logger.info(s"Selected ${filtered.head.getClass.getSimpleName} based on backend preference: $backend")
+          logger.info(
+            s"Selected ${filtered.head.getClass.getSimpleName} based on backend preference: $backend"
+          )
           filtered.headOption
         } else {
-          logger.warn(s"No bridge found for backend '$backend' for conversion $inMime -> $outMime. Available backends: ${allBridges.map(getBackendName).mkString(", ")}")
+          logger.warn(s"No bridge found for backend '$backend' for conversion $inMime -> $outMime. Available backends: ${allBridges
+              .map(getBackendName).mkString(", ")}")
           None
         }
     }
-  }
 
   /**
    * Determine which backend a bridge belongs to based on its class name and package.

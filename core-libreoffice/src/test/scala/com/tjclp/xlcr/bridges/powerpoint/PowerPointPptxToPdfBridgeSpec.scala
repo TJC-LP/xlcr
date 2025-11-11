@@ -3,7 +3,7 @@ package bridges.powerpoint
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import config.LibreOfficeConfig
 import models.FileContent
@@ -12,17 +12,19 @@ import types.MimeType._
 import types.Priority
 
 /**
- * Tests for PowerPointPptxToPdfLibreOfficeBridge.
- * Converts PowerPoint 2007+ (.pptx) files to PDF using LibreOffice.
+ * Tests for PowerPointPptxToPdfLibreOfficeBridge. Converts PowerPoint 2007+ (.pptx) files to PDF
+ * using LibreOffice.
  */
-class PowerPointPptxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class PowerPointPptxToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     if (!LibreOfficeConfig.isAvailable()) {
-      info(s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}")
+      info(
+        s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}"
+      )
       cancel()
     }
-  }
 
   override def afterAll(): Unit = {
     // Don't shutdown - shared OfficeManager
@@ -34,7 +36,7 @@ class PowerPointPptxToPdfBridgeSpec extends AnyFlatSpec with Matchers with Befor
 
   it should "convert minimal PPTX to PDF" in {
     val pptxBytes = DocumentGenerators.createMinimalPptx()
-    val input = FileContent(pptxBytes, ApplicationVndOpenXmlFormatsPresentationmlPresentation)
+    val input     = FileContent(pptxBytes, ApplicationVndOpenXmlFormatsPresentationmlPresentation)
 
     val output = PowerPointPptxToPdfLibreOfficeBridge.convert(input, None)
 
@@ -48,7 +50,7 @@ class PowerPointPptxToPdfBridgeSpec extends AnyFlatSpec with Matchers with Befor
 
   it should "convert PPTX with multiple slides to PDF" in {
     val pptxBytes = DocumentGenerators.createPptxWithMultipleSlides()
-    val input = FileContent(pptxBytes, ApplicationVndOpenXmlFormatsPresentationmlPresentation)
+    val input     = FileContent(pptxBytes, ApplicationVndOpenXmlFormatsPresentationmlPresentation)
 
     val output = PowerPointPptxToPdfLibreOfficeBridge.convert(input, None)
 
@@ -65,7 +67,7 @@ class PowerPointPptxToPdfBridgeSpec extends AnyFlatSpec with Matchers with Befor
 
     // Do 3 conversions in sequence
     (1 to 3).foreach { i =>
-      val input = FileContent(pptxBytes, ApplicationVndOpenXmlFormatsPresentationmlPresentation)
+      val input  = FileContent(pptxBytes, ApplicationVndOpenXmlFormatsPresentationmlPresentation)
       val output = PowerPointPptxToPdfLibreOfficeBridge.convert(input, None)
 
       output.mimeType shouldBe ApplicationPdf

@@ -1,16 +1,17 @@
 package com.tjclp.xlcr
 package config
 
+import java.io.File
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{ BeforeAndAfterEach, BeforeAndAfterAll }
-
-import java.io.File
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 /**
  * Tests for LibreOfficeConfig availability detection and configuration.
  */
-class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
   override def afterEach(): Unit = {
     // Don't shutdown between tests - OfficeManager is expensive to initialize
@@ -85,7 +86,7 @@ class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
   }
 
   "LibreOfficeConfig.isAvailable" should "return true when LibreOffice is installed" in {
-    val detected = LibreOfficeConfig.detectLibreOfficeHome()
+    val detected    = LibreOfficeConfig.detectLibreOfficeHome()
     val isAvailable = LibreOfficeConfig.isAvailable()
 
     isAvailable shouldBe detected.isDefined
@@ -98,7 +99,7 @@ class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
   }
 
   it should "match detectLibreOfficeHome result" in {
-    val detected = LibreOfficeConfig.detectLibreOfficeHome()
+    val detected    = LibreOfficeConfig.detectLibreOfficeHome()
     val isAvailable = LibreOfficeConfig.isAvailable()
 
     isAvailable shouldBe detected.isDefined
@@ -111,7 +112,7 @@ class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
     if (LibreOfficeConfig.isAvailable()) {
       status should include("Available at")
-      status should not include("Not found")
+      (status should not).include("Not found")
     } else {
       status should include("Not found")
     }
@@ -119,7 +120,7 @@ class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
 
   it should "include path when available" in {
     if (LibreOfficeConfig.isAvailable()) {
-      val status = LibreOfficeConfig.availabilityStatus()
+      val status   = LibreOfficeConfig.availabilityStatus()
       val detected = LibreOfficeConfig.detectLibreOfficeHome().get
 
       status should include(detected.getAbsolutePath)
@@ -158,7 +159,7 @@ class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
       val manager1 = LibreOfficeConfig.getOfficeManager()
       val manager2 = LibreOfficeConfig.getOfficeManager()
 
-      manager1 should be theSameInstanceAs manager2
+      (manager1 should be).theSameInstanceAs(manager2)
 
       LibreOfficeConfig.shutdown()
     } else {

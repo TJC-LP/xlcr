@@ -12,12 +12,12 @@ import utils.aspose.AsposeLicense.Product
  * Unified entry point for XLCR conversion pipeline.
  *
  * This CLI automatically aggregates all available backends:
- * - Aspose (HIGH priority) - Commercial, full-featured
- * - LibreOffice (DEFAULT priority) - Open-source fallback
- * - Core (DEFAULT priority) - Basic POI/PDFBox/Tika conversions
+ *   - Aspose (HIGH priority) - Commercial, full-featured
+ *   - LibreOffice (DEFAULT priority) - Open-source fallback
+ *   - Core (DEFAULT priority) - Basic POI/PDFBox/Tika conversions
  *
- * Backend selection is automatic based on priority system.
- * The SPI (Service Provider Interface) system discovers all available bridges at runtime.
+ * Backend selection is automatic based on priority system. The SPI (Service Provider Interface)
+ * system discovers all available bridges at runtime.
  */
 object Main extends AbstractMain[AsposeConfig] {
 
@@ -41,12 +41,12 @@ object Main extends AbstractMain[AsposeConfig] {
   override protected def getEnableProgress(config: AsposeConfig): Boolean = config.enableProgress
   override protected def getProgressIntervalMs(config: AsposeConfig): Long =
     config.progressIntervalMs
-  override protected def getVerbose(config: AsposeConfig): Boolean = config.verbose
+  override protected def getVerbose(config: AsposeConfig): Boolean        = config.verbose
   override protected def getBackend(config: AsposeConfig): Option[String] = config.backend
 
   /**
-   * Builds all CLI options including Aspose-specific ones.
-   * These options are available even when using LibreOffice backend.
+   * Builds all CLI options including Aspose-specific ones. These options are available even when
+   * using LibreOffice backend.
    */
   override protected def buildAllOptions: OParser[_, AsposeConfig] = {
     val builder = OParser.builder[AsposeConfig]
@@ -75,14 +75,14 @@ object Main extends AbstractMain[AsposeConfig] {
         .action((x, c) => c.copy(splitStrategy = Some(x)))
         .text(
           "Split strategy (used with --split): page (PDF), sheet (Excel), slide (PowerPoint), " +
-          "attachment (emails), embedded (archives), heading (Word), paragraph, row, column, sentence"
+            "attachment (emails), embedded (archives), heading (Word), paragraph, row, column, sentence"
         ),
       opt[String]("type")
         .valueName("<mimeType>")
         .action((x, c) => c.copy(outputType = Some(x)))
         .text(
           "Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
-          "or extension (pdf). Used with --split only."
+            "or extension (pdf). Used with --split only."
         ),
       opt[String]("format")
         .valueName("<value>")
@@ -110,7 +110,9 @@ object Main extends AbstractMain[AsposeConfig] {
         .text("JPEG quality (0.0-1.0, default: 0.85)"),
       opt[Unit]("recursive")
         .action((_, c) => c.copy(recursiveExtraction = true))
-        .text("Enable recursive extraction of archives (ZIP within ZIP). Used with --split and embedded strategy."),
+        .text(
+          "Enable recursive extraction of archives (ZIP within ZIP). Used with --split and embedded strategy."
+        ),
       opt[Int]("max-recursion-depth")
         .valueName("<value>")
         .action((x, c) => c.copy(maxRecursionDepth = x))
@@ -118,26 +120,36 @@ object Main extends AbstractMain[AsposeConfig] {
       opt[String]("failure-mode")
         .valueName("<mode>")
         .action((x, c) => c.copy(failureMode = Some(x)))
-        .text("Failure mode when a document cannot be split using the chosen strategy (throw, preserve, drop, tag). Default: preserve"),
+        .text(
+          "Failure mode when a document cannot be split using the chosen strategy (throw, preserve, drop, tag). Default: preserve"
+        ),
       opt[String]("chunk-range")
         .valueName("<range>")
         .action((x, c) => c.copy(chunkRange = Some(x)))
         .text("Extract only specific chunks (e.g. 0-4, 50, 95-). Zero-based indexing."),
       opt[Unit]("strip-masters")
         .action((_, c) => c.copy(stripMasters = true))
-        .text("Remove master slides/templates during PowerPoint conversions for cleaner output and template swapping workflows"),
+        .text(
+          "Remove master slides/templates during PowerPoint conversions for cleaner output and template swapping workflows"
+        ),
       opt[Seq[String]]("mapping")
         .valueName("mimeOrExt1=mimeOrExt2,...")
         .action((x, c) => c.copy(mappings = x))
-        .text("Either MIME or extension to MIME/extension mapping, e.g. 'pdf=xml' or 'application/vnd.ms-excel=application/json'"),
+        .text(
+          "Either MIME or extension to MIME/extension mapping, e.g. 'pdf=xml' or 'application/vnd.ms-excel=application/json'"
+        ),
       opt[Int]("threads")
         .valueName("<N>")
         .action((x, c) => c.copy(threads = x))
-        .text("Number of parallel threads for directory processing (default: 1 for serial, max: 16)"),
+        .text(
+          "Number of parallel threads for directory processing (default: 1 for serial, max: 16)"
+        ),
       opt[String]("error-mode")
         .valueName("<mode>")
         .action((x, c) => c.copy(errorMode = Some(x)))
-        .text("Error handling mode for batch processing: fail-fast (stop on first error), continue (default, log and continue), skip (skip failed files)"),
+        .text(
+          "Error handling mode for batch processing: fail-fast (stop on first error), continue (default, log and continue), skip (skip failed files)"
+        ),
       opt[Unit]("no-progress")
         .action((_, c) => c.copy(enableProgress = false))
         .text("Disable progress reporting for batch operations"),
@@ -158,7 +170,9 @@ object Main extends AbstractMain[AsposeConfig] {
           else
             failure(s"Invalid backend '$x'. Must be one of: aspose, libreoffice, core, tika")
         )
-        .text("Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)"),
+        .text(
+          "Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)"
+        ),
       // Aspose-specific license options (gracefully ignored if Aspose not used)
       opt[String]("licenseTotal")
         .valueName("<path>")
@@ -188,10 +202,9 @@ object Main extends AbstractMain[AsposeConfig] {
   }
 
   /**
-   * Initialize all subsystems.
-   * Handles Aspose license loading if available.
+   * Initialize all subsystems. Handles Aspose license loading if available.
    */
-  override protected def initialize(config: AsposeConfig): Unit = {
+  override protected def initialize(config: AsposeConfig): Unit =
     // Initialize Aspose licenses if specified
     if (
       config.licenseTotal.isDefined ||
@@ -213,5 +226,4 @@ object Main extends AbstractMain[AsposeConfig] {
       println("No explicit license paths provided – using env vars / auto‑discovery …")
       AsposeLicense.initializeIfNeeded()
     }
-  }
 }

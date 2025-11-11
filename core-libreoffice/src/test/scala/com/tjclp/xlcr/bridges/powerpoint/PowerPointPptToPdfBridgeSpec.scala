@@ -3,26 +3,27 @@ package bridges.powerpoint
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import config.LibreOfficeConfig
-import types.MimeType._
 import types.Priority
 
 /**
- * Tests for PowerPointPptToPdfLibreOfficeBridge.
- * Converts legacy PowerPoint (.ppt) files to PDF using LibreOffice.
+ * Tests for PowerPointPptToPdfLibreOfficeBridge. Converts legacy PowerPoint (.ppt) files to PDF
+ * using LibreOffice.
  *
  * Note: We don't have easy PPT generation, so this tests basic configuration only.
  */
-class PowerPointPptToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class PowerPointPptToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     if (!LibreOfficeConfig.isAvailable()) {
-      info(s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}")
+      info(
+        s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}"
+      )
       cancel()
     }
-  }
 
   override def afterAll(): Unit = {
     // Don't shutdown - shared OfficeManager

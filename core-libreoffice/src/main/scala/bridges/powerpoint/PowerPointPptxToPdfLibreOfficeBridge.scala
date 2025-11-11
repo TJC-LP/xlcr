@@ -9,4 +9,6 @@ import types.MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation
  * Priority: DEFAULT (fallback to Aspose if available)
  */
 object PowerPointPptxToPdfLibreOfficeBridge
-    extends PowerPointToPdfLibreOfficeBridgeImpl[ApplicationVndOpenXmlFormatsPresentationmlPresentation.type]
+    extends PowerPointToPdfLibreOfficeBridgeImpl[
+      ApplicationVndOpenXmlFormatsPresentationmlPresentation.type
+    ]

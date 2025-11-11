@@ -34,7 +34,7 @@ object Main extends AbstractMain[AsposeConfig] {
   override protected def getEnableProgress(config: AsposeConfig): Boolean = config.enableProgress
   override protected def getProgressIntervalMs(config: AsposeConfig): Long =
     config.progressIntervalMs
-  override protected def getVerbose(config: AsposeConfig): Boolean = config.verbose
+  override protected def getVerbose(config: AsposeConfig): Boolean        = config.verbose
   override protected def getBackend(config: AsposeConfig): Option[String] = config.backend
 
   /**
@@ -164,7 +164,9 @@ object Main extends AbstractMain[AsposeConfig] {
           else
             failure(s"Invalid backend '$x'. Must be one of: aspose, libreoffice, core, tika")
         )
-        .text("Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)"),
+        .text(
+          "Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)"
+        ),
 
       // Aspose-specific license options
       opt[String]("licenseTotal")

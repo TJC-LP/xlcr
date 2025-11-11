@@ -18,8 +18,8 @@ import types.{ MimeType, Priority }
  * Common implementation for ExcelToPdfLibreOfficeBridge that works with both Scala 2 and Scala 3.
  * This trait contains all the business logic for the bridge using LibreOffice via JODConverter.
  *
- * Supports Excel formats: XLS, XLSX, XLSM, XLSB
- * Priority is set to DEFAULT (0) to act as a fallback when Aspose (HIGH priority) is not available.
+ * Supports Excel formats: XLS, XLSX, XLSM, XLSB Priority is set to DEFAULT (0) to act as a fallback
+ * when Aspose (HIGH priority) is not available.
  */
 trait ExcelToPdfLibreOfficeBridgeImpl[I <: MimeType]
     extends SimpleBridge[I, ApplicationPdf.type] {
@@ -62,15 +62,17 @@ trait ExcelToPdfLibreOfficeBridgeImpl[I <: MimeType]
   }
 
   /**
-   * Convert an Excel spreadsheet to PDF using LibreOffice.
-   * Uses temporary files as JODConverter requires file-based conversion.
+   * Convert an Excel spreadsheet to PDF using LibreOffice. Uses temporary files as JODConverter
+   * requires file-based conversion.
    *
-   * @param excelBytes The Excel document as a byte array
-   * @return The PDF document as a byte array
+   * @param excelBytes
+   *   The Excel document as a byte array
+   * @return
+   *   The PDF document as a byte array
    */
   private def convertExcelToPdf(excelBytes: Array[Byte]): Array[Byte] = {
     // Create temporary files for input and output
-    val inputFile = File.createTempFile("xlcr-excel-input-", ".xls")
+    val inputFile  = File.createTempFile("xlcr-excel-input-", ".xls")
     val outputFile = File.createTempFile("xlcr-pdf-output-", ".pdf")
 
     try {

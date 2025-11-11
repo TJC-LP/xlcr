@@ -3,26 +3,27 @@ package bridges.word
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterEach, BeforeAndAfterAll}
+import org.scalatest.{ BeforeAndAfterAll, BeforeAndAfterEach }
 
 import config.LibreOfficeConfig
-import types.MimeType._
 import types.Priority
 
 /**
- * Tests for WordDocToPdfLibreOfficeBridge.
- * Converts legacy Word (.doc) files to PDF using LibreOffice.
+ * Tests for WordDocToPdfLibreOfficeBridge. Converts legacy Word (.doc) files to PDF using
+ * LibreOffice.
  *
  * Note: We don't have easy DOC generation, so this tests basic configuration only.
  */
-class WordDocToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll {
+class WordDocToPdfBridgeSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
+    with BeforeAndAfterAll {
 
-  override def beforeAll(): Unit = {
+  override def beforeAll(): Unit =
     if (!LibreOfficeConfig.isAvailable()) {
-      info(s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}")
+      info(
+        s"Skipping all tests: LibreOffice not available - ${LibreOfficeConfig.availabilityStatus()}"
+      )
       cancel()
     }
-  }
 
   override def afterAll(): Unit = {
     // Don't shutdown - shared OfficeManager
