@@ -61,6 +61,7 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     override protected def getProgressIntervalMs(config: TestConfig): Long =
       config.progressIntervalMs
     override protected def getVerbose(config: TestConfig): Boolean = config.verbose
+    override protected def getBackend(config: TestConfig): Option[String] = None
 
     override protected def buildAllOptions: OParser[_, TestConfig] = {
       val builder = OParser.builder[TestConfig]
