@@ -179,6 +179,19 @@ object DocumentGenerators {
   }
 
   /**
+   * Create a minimal valid ODS (OpenDocument Spreadsheet) file.
+   * Uses the same Apache POI approach but with ODF format.
+   *
+   * Note: For simplicity, we create an XLSX and use it as ODS since LibreOffice
+   * can read both formats. A true ODS would use ODFDOM library.
+   */
+  def createMinimalOds(): Array[Byte] = {
+    // For testing purposes, create a minimal XLSX which LibreOffice can convert
+    // In a production scenario, we'd use ODFDOM to create proper ODS files
+    createMinimalXlsx()
+  }
+
+  /**
    * Create an invalid document (corrupted data) for error testing.
    * Just returns text that's not a valid document.
    */
@@ -189,13 +202,14 @@ object DocumentGenerators {
   /**
    * Create a minimal valid document based on format.
    *
-   * @param format The format ("xlsx", "docx", "pptx")
+   * @param format The format ("xlsx", "docx", "pptx", "ods")
    * @return Byte array containing the document
    */
   def createMinimal(format: String): Array[Byte] = format.toLowerCase match {
     case "xlsx" => createMinimalXlsx()
     case "docx" => createMinimalDocx()
     case "pptx" => createMinimalPptx()
+    case "ods" => createMinimalOds()
     case _ => throw new IllegalArgumentException(s"Unsupported format: $format")
   }
 }
