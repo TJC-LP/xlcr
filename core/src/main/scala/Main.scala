@@ -12,7 +12,7 @@ import cli.CommonCLI.BaseConfig
 object Main extends AbstractMain[BaseConfig] {
 
   override protected def programName: String     = "xlcr"
-  override protected def programVersion: String  = "0.1.0-RC11"
+  override protected def programVersion: String  = "0.1.0-RC14"
   override protected def emptyConfig: BaseConfig = BaseConfig()
 
   // Getter methods to extract fields from BaseConfig
@@ -38,16 +38,4 @@ object Main extends AbstractMain[BaseConfig] {
   override protected def buildAllOptions: OParser[_, BaseConfig] =
     CommonCLI.baseParser(programName, programVersion)
 
-  /**
-   * Override executeDiff to provide core-specific diff functionality
-   */
-  override protected def executeDiff(config: BaseConfig): Unit =
-    config.diffMode match {
-      case false =>
-        logger.error("Diff mode not enabled")
-        sys.exit(1)
-      case true =>
-        logger.error("Diff mode not yet implemented")
-        sys.exit(1)
-    }
 }

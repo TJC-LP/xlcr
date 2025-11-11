@@ -105,8 +105,10 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     override protected def executeConversion(config: TestConfig): Unit =
       executeConversionCalled = true
 
-    override protected def executeDiff(config: TestConfig): Unit =
+    override protected def executeDiff(config: TestConfig): Unit = {
       executeDiffCalled = true
+      super.executeDiff(config)
+    }
   }
 
   var testMain: TestMain   = _
@@ -238,7 +240,7 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     }
 
     testMain.executeSplitCalled shouldBe false
-    testMain.executeConversionCalled shouldBe false
+    testMain.executeConversionCalled shouldBe true
     testMain.executeDiffCalled shouldBe true
   }
 

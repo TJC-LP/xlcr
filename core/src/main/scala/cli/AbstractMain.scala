@@ -225,10 +225,12 @@ abstract class AbstractMain[C] {
   }
 
   /**
-   * Executes diff operation - override in modules that support it
+   * Executes diff operation. By default we reuse the standard conversion workflow with diff mode
+   * enabled so modules automatically inherit merge behavior. Modules can override this if they need
+   * custom semantics.
    */
   protected def executeDiff(config: C): Unit = {
-    logger.error("Diff mode is not supported in this module.")
-    sys.exit(1)
+    logger.info("Diff mode enabled - executing conversion with merge semantics")
+    executeConversion(config)
   }
 }

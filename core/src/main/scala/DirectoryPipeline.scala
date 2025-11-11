@@ -3,7 +3,7 @@ package com.tjclp.xlcr
 import java.nio.file.{ Files, Paths }
 
 import scala.jdk.CollectionConverters._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success, Try, Using }
 
 import com.tjclp.xlcr.processing.{ ErrorMode, ProgressReporter }
 import com.tjclp.xlcr.types.{ FileType, MimeType }
@@ -134,12 +134,11 @@ object DirectoryPipeline {
       }
 
       // Collect the files
-      val files = Files
-        .list(inPath)
-        .iterator()
-        .asScala
-        .filter(Files.isRegularFile(_))
-        .toList
+      val files = Using.resource(Files.list(inPath)) { stream =>
+        stream.iterator().asScala
+          .filter(Files.isRegularFile(_))
+          .toList
+      }
 
       // For each file, detect mime, figure out the mapping, and run the pipeline
       files.foreach { file =>
