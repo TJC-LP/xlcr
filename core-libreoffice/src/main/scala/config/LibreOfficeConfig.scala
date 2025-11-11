@@ -39,6 +39,70 @@ object LibreOfficeConfig {
   private val TaskQueueTimeout = 30000L      // 30 seconds
 
   /**
+   * Check if LibreOffice is available without initializing the OfficeManager.
+   * This is useful for pre-flight checks and backend discovery.
+   *
+   * @return true if LibreOffice installation can be found, false otherwise
+   */
+  def isAvailable(): Boolean = {
+    detectLibreOfficeHome().isDefined
+  }
+
+  /**
+   * Get detailed availability status with human-readable message.
+   *
+   * @return Status message indicating availability and location
+   */
+  def availabilityStatus(): String = {
+    detectLibreOfficeHome() match {
+      case Some(home) =>
+        if (home.exists() && home.isDirectory) {
+          s"Available at ${home.getAbsolutePath}"
+        } else {
+          s"Configured but not found at ${home.getAbsolutePath}"
+        }
+      case None =>
+        "Not found - set LIBREOFFICE_HOME or install in standard location"
+    }
+  }
+
+  /**
+   * Detect LibreOffice home directory without throwing exceptions.
+   * Checks environment variable first, then platform-specific defaults.
+   *
+   * @return Some(File) if LibreOffice found, None otherwise
+   */
+  def detectLibreOfficeHome(): Option[File] = {
+    // Check environment variable first
+    val homeFromEnv = Option(System.getenv(LibreOfficeHomeEnvVar))
+      .filter(_.nonEmpty)
+      .map(new File(_))
+      .filter(f => f.exists() && f.isDirectory)
+
+    if (homeFromEnv.isDefined) {
+      return homeFromEnv
+    }
+
+    // Try platform-specific defaults
+    val osName = System.getProperty("os.name").toLowerCase
+    val defaultPath = if (osName.contains("mac")) {
+      DefaultLibreOfficeHome
+    } else if (osName.contains("win")) {
+      "C:\\Program Files\\LibreOffice"
+    } else {
+      // Linux
+      "/usr/lib/libreoffice"
+    }
+
+    val defaultDir = new File(defaultPath)
+    if (defaultDir.exists() && defaultDir.isDirectory) {
+      Some(defaultDir)
+    } else {
+      None
+    }
+  }
+
+  /**
    * Gets or initializes the OfficeManager instance.
    * Thread-safe lazy initialization with automatic shutdown hook registration.
    *
@@ -113,50 +177,23 @@ object LibreOfficeConfig {
   /**
    * Determines the LibreOffice installation directory.
    * Checks environment variable first, then falls back to platform-specific defaults.
+   * Throws exception if not found (used during actual initialization).
    *
    * @return The LibreOffice installation directory
+   * @throws RuntimeException if LibreOffice home cannot be found
    */
   private def getLibreOfficeHome(): File = {
-    val homeFromEnv = Option(System.getenv(LibreOfficeHomeEnvVar))
-      .filter(_.nonEmpty)
-      .map(new File(_))
-
-    homeFromEnv match {
-      case Some(dir) if dir.exists() && dir.isDirectory =>
-        logger.info(s"Using LibreOffice home from environment variable: ${dir.getAbsolutePath}")
-        dir
-      case Some(dir) =>
-        logger.warn(s"LibreOffice home from environment variable does not exist: ${dir.getAbsolutePath}")
-        getDefaultLibreOfficeHome()
+    detectLibreOfficeHome() match {
+      case Some(home) =>
+        logger.info(s"Using LibreOffice home: ${home.getAbsolutePath}")
+        home
       case None =>
-        getDefaultLibreOfficeHome()
-    }
-  }
-
-  /**
-   * Returns the platform-specific default LibreOffice installation path.
-   *
-   * @return The default LibreOffice installation directory
-   */
-  private def getDefaultLibreOfficeHome(): File = {
-    val osName = System.getProperty("os.name").toLowerCase
-    val defaultPath = if (osName.contains("mac")) {
-      DefaultLibreOfficeHome
-    } else if (osName.contains("win")) {
-      "C:\\Program Files\\LibreOffice"
-    } else {
-      // Linux
-      "/usr/lib/libreoffice"
-    }
-
-    val dir = new File(defaultPath)
-    if (dir.exists() && dir.isDirectory) {
-      logger.info(s"Using default LibreOffice home: ${dir.getAbsolutePath}")
-      dir
-    } else {
-      logger.error(s"Default LibreOffice home does not exist: ${dir.getAbsolutePath}")
-      // Return it anyway and let the error happen during manager initialization with better error message
-      dir
+        val tried = s"Tried: LIBREOFFICE_HOME environment variable and platform default"
+        logger.error(s"LibreOffice home not found. $tried")
+        throw new RuntimeException(
+          s"LibreOffice installation not found. $tried. " +
+          s"Please install LibreOffice or set LIBREOFFICE_HOME environment variable."
+        )
     }
   }
 
