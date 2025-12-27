@@ -52,6 +52,7 @@ abstract class AbstractMain[C] {
   protected def getEnableProgress(config: C): Boolean
   protected def getProgressIntervalMs(config: C): Long
   protected def getVerbose(config: C): Boolean
+  protected def getBackend(config: C): Option[String]
 
   /**
    * Builds the complete parser by combining base options with module-specific options
@@ -98,7 +99,8 @@ abstract class AbstractMain[C] {
         strategy = splitStrategyOpt,
         outputType = outputMimeOpt,
         failureMode = failureModeOpt,
-        chunkRange = chunkRangeOpt
+        chunkRange = chunkRangeOpt,
+        backendPreference = getBackend(config)
       )
     ).recover { case ex =>
       logger.error(s"Split operation failed: ${ex.getMessage}")
@@ -132,7 +134,8 @@ abstract class AbstractMain[C] {
         errorMode = errorModeOpt,
         enableProgress = getEnableProgress(config),
         progressIntervalMs = getProgressIntervalMs(config),
-        verbose = getVerbose(config)
+        verbose = getVerbose(config),
+        backendPreference = getBackend(config)
       )
     } else {
       // Single file conversion
@@ -140,7 +143,8 @@ abstract class AbstractMain[C] {
         Pipeline.run(
           inputPath = inputPath,
           outputPath = outputPath,
-          diffMode = getDiffMode(config)
+          diffMode = getDiffMode(config),
+          backendPreference = getBackend(config)
         )
       ).recover { case ex =>
         logger.error(s"Conversion failed: ${ex.getMessage}")
@@ -221,10 +225,12 @@ abstract class AbstractMain[C] {
   }
 
   /**
-   * Executes diff operation - override in modules that support it
+   * Executes diff operation. By default we reuse the standard conversion workflow with diff mode
+   * enabled so modules automatically inherit merge behavior. Modules can override this if they need
+   * custom semantics.
    */
   protected def executeDiff(config: C): Unit = {
-    logger.error("Diff mode is not supported in this module.")
-    sys.exit(1)
+    logger.info("Diff mode enabled - executing conversion with merge semantics")
+    executeConversion(config)
   }
 }

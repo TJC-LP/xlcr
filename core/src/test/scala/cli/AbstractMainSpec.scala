@@ -60,7 +60,8 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     override protected def getEnableProgress(config: TestConfig): Boolean = config.enableProgress
     override protected def getProgressIntervalMs(config: TestConfig): Long =
       config.progressIntervalMs
-    override protected def getVerbose(config: TestConfig): Boolean = config.verbose
+    override protected def getVerbose(config: TestConfig): Boolean        = config.verbose
+    override protected def getBackend(config: TestConfig): Option[String] = None
 
     override protected def buildAllOptions: OParser[_, TestConfig] = {
       val builder = OParser.builder[TestConfig]
@@ -104,8 +105,10 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     override protected def executeConversion(config: TestConfig): Unit =
       executeConversionCalled = true
 
-    override protected def executeDiff(config: TestConfig): Unit =
+    override protected def executeDiff(config: TestConfig): Unit = {
       executeDiffCalled = true
+      super.executeDiff(config)
+    }
   }
 
   var testMain: TestMain   = _
@@ -237,7 +240,7 @@ class AbstractMainSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach
     }
 
     testMain.executeSplitCalled shouldBe false
-    testMain.executeConversionCalled shouldBe false
+    testMain.executeConversionCalled shouldBe true
     testMain.executeDiffCalled shouldBe true
   }
 

@@ -1,5 +1,27 @@
 # XLCR Development Guide
 
+## Java Version Requirements
+
+XLCR modules have different Java version requirements:
+- **Core, Aspose, LibreOffice**: Java 17+ (tested with Java 17, 21, 25)
+- **Spark Module**: Java 17 or 21 only (Spark 3.x limitation - Java 25 not supported)
+
+### Running Tests with Java 25
+
+If you're using Java 25 locally, you have two options:
+
+**Option 1: Skip Spark tests** (recommended for LibreOffice/core development)
+```bash
+sbt "core/test" "coreAspose/test" "coreLibreOffice/test"
+```
+
+**Option 2: Use Java 17 for Spark tests**
+```bash
+# Set Java 17 for this session
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+sbt test
+```
+
 ## Build Commands
 - `sbt compile` - Compile the project with default Scala version (2.12)
 - `sbt compileScala2` - Compile all modules with Scala 2.12
@@ -33,7 +55,8 @@ Note: See SCALA.md for more details on Scala version compatibility
 ## Module Structure
 The project is organized into these main modules:
 - `core` - Core functionality and abstract interfaces
-- `core-aspose` - Integration with Aspose for PDF conversion and document transformations
+- `core-aspose` - Integration with Aspose for PDF conversion and document transformations (HIGH priority)
+- `core-libreoffice` - Integration with LibreOffice for open-source document conversions (DEFAULT priority fallback)
 - `core-spreadsheetllm` - Excel compression for LLM processing
 - `server` - Kotlin-based server for interactive editing
 - `data` - Directory containing sample Excel files for testing
@@ -137,6 +160,95 @@ sbt "run -i intermediate.html -o presentation.pptx"
   - Significantly reduces file sizes by removing all template and branding data
   - Perfect for re-theming presentations or removing corporate branding
 - Supports round-trip conversions (HTML → PPTX → HTML)
+
+## LibreOffice Backend (Open-Source Alternative)
+
+XLCR includes an optional LibreOffice-based conversion backend that serves as an open-source fallback when Aspose is not available.
+
+### Features
+- **Open Source**: No commercial license required
+- **Automatic Fallback**: Activates when Aspose is unavailable (lower priority)
+- **Headless Operation**: Runs LibreOffice in headless mode via JODConverter
+- **Wide Format Support**: Handles Microsoft Office and OpenDocument formats
+
+### Supported Conversions
+The LibreOffice backend (`core-libreoffice` module) supports these conversions to PDF:
+- **Word**: DOC, DOCX → PDF
+- **Excel**: XLS, XLSX, XLSM → PDF
+- **PowerPoint**: PPT, PPTX → PDF
+- **OpenDocument**: ODS (Calc spreadsheets) → PDF
+
+### Installation Requirements
+
+LibreOffice must be installed on your system:
+
+**macOS:**
+```bash
+brew install --cask libreoffice
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt-get install libreoffice
+```
+
+**Windows:**
+Download from https://www.libreoffice.org/download/
+
+### Configuration
+
+By default, XLCR looks for LibreOffice in platform-specific locations:
+- **macOS**: `/Applications/LibreOffice.app/Contents`
+- **Linux**: `/usr/lib/libreoffice`
+- **Windows**: `C:\Program Files\LibreOffice`
+
+To specify a custom path, set the environment variable:
+```bash
+export LIBREOFFICE_HOME=/path/to/libreoffice
+```
+
+### Usage
+
+The LibreOffice backend works automatically as a fallback. No code changes needed:
+
+```bash
+# These commands will use Aspose if available, LibreOffice otherwise
+sbt "run -i document.docx -o output.pdf"
+sbt "run -i spreadsheet.xlsx -o output.pdf"
+sbt "run -i presentation.pptx -o output.pdf"
+sbt "run -i spreadsheet.ods -o output.pdf"
+```
+
+### Priority System
+
+XLCR uses a priority-based bridge selection:
+- **HIGH Priority**: Aspose bridges (preferred when available)
+- **DEFAULT Priority**: LibreOffice bridges (fallback)
+- **LOW Priority**: Last-resort implementations
+
+This ensures the best available converter is always used automatically.
+
+### Performance Considerations
+
+- **Aspose**: Pure Java, faster, no external dependencies, better quality
+- **LibreOffice**: Requires external process, slower startup, but free and open-source
+- **Recommendation**: Use Aspose for production, LibreOffice for development/testing
+
+### Module Structure
+
+The `core-libreoffice` module follows the same bridge pattern as other backends:
+- `core-libreoffice/src/main/scala/bridges/` - Bridge implementations
+- `core-libreoffice/src/main/scala/config/` - JODConverter configuration
+- `core-libreoffice/src/main/scala/registration/` - SPI registration
+
+### Building
+
+To build the LibreOffice module:
+```bash
+sbt "coreLibreOffice/compile"
+sbt "coreLibreOffice/test"
+sbt "assembleLibreOffice"
+```
 
 ## SpreadsheetLLM Module
 This module compresses Excel spreadsheets into an LLM-friendly JSON format:

@@ -1,0 +1,4 @@
+# SDKMAN configuration for XLCR project
+# This ensures Java 17 is used (required for Spark module compatibility)
+
+java=17.0.17-tem

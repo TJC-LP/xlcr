@@ -9,12 +9,19 @@ import utils.aspose.{ AsposeConfig, AsposeLicense }
 import utils.aspose.AsposeLicense.Product
 
 /**
- * Entry point for the Aspose-based conversion pipeline. Extends AbstractMain to leverage common CLI
- * parsing and execution logic while adding Aspose-specific license handling.
+ * Unified entry point for XLCR conversion pipeline.
+ *
+ * This CLI automatically aggregates all available backends:
+ *   - Aspose (HIGH priority) - Commercial, full-featured
+ *   - LibreOffice (DEFAULT priority) - Open-source fallback
+ *   - Core (DEFAULT priority) - Basic POI/PDFBox/Tika conversions
+ *
+ * Backend selection is automatic based on priority system. The SPI (Service Provider Interface)
+ * system discovers all available bridges at runtime.
  */
 object Main extends AbstractMain[AsposeConfig] {
 
-  override protected def programName: String       = "xlcr-aspose"
+  override protected def programName: String       = "xlcr"
   override protected def programVersion: String    = "0.1.0-RC14"
   override protected def emptyConfig: AsposeConfig = AsposeConfig()
 
@@ -38,7 +45,8 @@ object Main extends AbstractMain[AsposeConfig] {
   override protected def getBackend(config: AsposeConfig): Option[String] = config.backend
 
   /**
-   * Builds all CLI options including Aspose-specific ones
+   * Builds all CLI options including Aspose-specific ones. These options are available even when
+   * using LibreOffice backend.
    */
   override protected def buildAllOptions: OParser[_, AsposeConfig] = {
     val builder = OParser.builder[AsposeConfig]
@@ -66,13 +74,15 @@ object Main extends AbstractMain[AsposeConfig] {
         .valueName("<value>")
         .action((x, c) => c.copy(splitStrategy = Some(x)))
         .text(
-          "Split strategy (used with --split): page (PDF), sheet (Excel), slide (PowerPoint), attachment (emails), embedded (archives), heading (Word), paragraph, row, column, sentence"
+          "Split strategy (used with --split): page (PDF), sheet (Excel), slide (PowerPoint), " +
+            "attachment (emails), embedded (archives), heading (Word), paragraph, row, column, sentence"
         ),
       opt[String]("type")
         .valueName("<mimeType>")
         .action((x, c) => c.copy(outputType = Some(x)))
         .text(
-          "Override output MIME type/extension for split chunks - can be MIME type (application/pdf) or extension (pdf). Used with --split only."
+          "Override output MIME type/extension for split chunks - can be MIME type (application/pdf) " +
+            "or extension (pdf). Used with --split only."
         ),
       opt[String]("format")
         .valueName("<value>")
@@ -122,21 +132,17 @@ object Main extends AbstractMain[AsposeConfig] {
         .text(
           "Remove master slides/templates during PowerPoint conversions for cleaner output and template swapping workflows"
         ),
-
-      // Directory-to-directory conversion options
       opt[Seq[String]]("mapping")
         .valueName("mimeOrExt1=mimeOrExt2,...")
-        .action((xs, c) => c.copy(mappings = xs))
+        .action((x, c) => c.copy(mappings = x))
         .text(
           "Either MIME or extension to MIME/extension mapping, e.g. 'pdf=xml' or 'application/vnd.ms-excel=application/json'"
         ),
-
-      // Parallel processing options
       opt[Int]("threads")
         .valueName("<N>")
         .action((x, c) => c.copy(threads = x))
         .text(
-          s"Number of parallel threads for directory processing (default: 1 for serial, max: ${Runtime.getRuntime.availableProcessors()})"
+          "Number of parallel threads for directory processing (default: 1 for serial, max: 16)"
         ),
       opt[String]("error-mode")
         .valueName("<mode>")
@@ -167,204 +173,57 @@ object Main extends AbstractMain[AsposeConfig] {
         .text(
           "Explicitly select backend: aspose (HIGH priority), libreoffice (DEFAULT), core (DEFAULT), tika (LOW)"
         ),
-
-      // Aspose-specific license options
+      // Aspose-specific license options (gracefully ignored if Aspose not used)
       opt[String]("licenseTotal")
         .valueName("<path>")
-        .action((p, c) => c.copy(licenseTotal = Some(p)))
+        .action((x, c) => c.copy(licenseTotal = Some(x)))
         .text("Aspose.Total license (covers all products)"),
       opt[String]("licenseWords")
         .valueName("<path>")
-        .action((p, c) => c.copy(licenseWords = Some(p)))
+        .action((x, c) => c.copy(licenseWords = Some(x)))
         .text("Aspose.Words license path"),
       opt[String]("licenseCells")
         .valueName("<path>")
-        .action((p, c) => c.copy(licenseCells = Some(p)))
+        .action((x, c) => c.copy(licenseCells = Some(x)))
         .text("Aspose.Cells license path"),
       opt[String]("licenseEmail")
         .valueName("<path>")
-        .action((p, c) => c.copy(licenseEmail = Some(p)))
+        .action((x, c) => c.copy(licenseEmail = Some(x)))
         .text("Aspose.Email license path"),
       opt[String]("licenseSlides")
         .valueName("<path>")
-        .action((p, c) => c.copy(licenseSlides = Some(p)))
+        .action((x, c) => c.copy(licenseSlides = Some(x)))
         .text("Aspose.Slides license path"),
       opt[String]("licenseZip")
         .valueName("<path>")
-        .action((p, c) => c.copy(licenseZip = Some(p)))
+        .action((x, c) => c.copy(licenseZip = Some(x)))
         .text("Aspose.Zip license path")
     )
   }
 
   /**
-   * Initialize Aspose licenses and bridge context before processing
+   * Initialize all subsystems. Handles Aspose license loading if available.
    */
-  override protected def initialize(config: AsposeConfig): Unit = {
-    applyLicenses(config)
+  override protected def initialize(config: AsposeConfig): Unit =
+    // Initialize Aspose licenses if specified
+    if (
+      config.licenseTotal.isDefined ||
+      config.licenseWords.isDefined ||
+      config.licenseCells.isDefined ||
+      config.licenseEmail.isDefined ||
+      config.licenseSlides.isDefined ||
+      config.licenseZip.isDefined
+    ) {
+      println("Explicit license paths provided – loading Aspose licenses …")
 
-    // Set bridge context for this thread
-    utils.aspose.BridgeContext.set(
-      utils.aspose.BridgeContextData(
-        stripMasters = config.stripMasters
-      )
-    )
-  }
-
-  /**
-   * Apply Aspose licenses from configuration
-   */
-  private def applyLicenses(cfg: AsposeConfig): Unit =
-    cfg.licenseTotal match {
-      case Some(totalPath) =>
-        logger.info(s"Loading Aspose.Total license → $totalPath")
-        AsposeLicense.loadTotal(totalPath)
-      case None =>
-        val paths: Map[Product, Option[String]] = Map(
-          Product.Words  -> cfg.licenseWords,
-          Product.Cells  -> cfg.licenseCells,
-          Product.Email  -> cfg.licenseEmail,
-          Product.Slides -> cfg.licenseSlides,
-          Product.Zip    -> cfg.licenseZip
-        )
-
-        val anyExplicit = paths.exists(_._2.isDefined)
-
-        if (anyExplicit) {
-          paths.foreach {
-            case (prod, Some(path)) =>
-              logger.info(s"Loading Aspose.${prod.name} license → $path")
-              AsposeLicense.loadProduct(prod, path)
-            case _ => // nothing supplied
-          }
-        } else {
-          logger.info("No explicit license paths provided – using env vars / auto‑discovery …")
-          AsposeLicense.initializeIfNeeded()
-        }
-    }
-
-  /**
-   * Override executeConversion to propagate BridgeContext to worker threads in parallel mode
-   */
-  override protected def executeConversion(config: AsposeConfig): Unit = {
-    import java.nio.file.{ Files, Paths }
-
-    val inputPath  = getInput(config)
-    val outputPath = getOutput(config)
-    val input      = Paths.get(inputPath)
-    val output     = Paths.get(outputPath)
-
-    // Check if this is a directory-to-directory conversion
-    if (Files.isDirectory(input) && (Files.isDirectory(output) || !Files.exists(output))) {
-      val parsedMappings = CommonCLI.parseMimeMappings(getMappings(config))
-
-      // Parse error mode
-      val errorModeOpt = getErrorMode(config).flatMap(processing.ErrorMode.fromString)
-
-      // Capture BridgeContext from main thread to propagate to worker threads
-      // This ensures per-thread options like --strip-masters are honored in parallel mode
-      val bridgeContextData = utils.aspose.BridgeContext.get()
-      val contextWrapper: (
-        () => ParallelDirectoryPipeline.ProcessingResult
-      ) => ParallelDirectoryPipeline.ProcessingResult =
-        (block: () => ParallelDirectoryPipeline.ProcessingResult) =>
-          utils.aspose.BridgeContext.withContext(bridgeContextData) {
-            block()
-          }
-
-      DirectoryPipeline.runDirectoryToDirectory(
-        inputDir = inputPath,
-        outputDir = outputPath,
-        mimeMappings = parsedMappings,
-        diffMode = getDiffMode(config),
-        threads = getThreads(config),
-        errorMode = errorModeOpt,
-        enableProgress = getEnableProgress(config),
-        progressIntervalMs = getProgressIntervalMs(config),
-        verbose = getVerbose(config),
-        contextWrapper = Some(contextWrapper)
-      )
+      config.licenseTotal.foreach(AsposeLicense.loadTotal)
+      config.licenseWords.foreach(p => AsposeLicense.loadProduct(Product.Words, p))
+      config.licenseCells.foreach(p => AsposeLicense.loadProduct(Product.Cells, p))
+      config.licenseEmail.foreach(p => AsposeLicense.loadProduct(Product.Email, p))
+      config.licenseSlides.foreach(p => AsposeLicense.loadProduct(Product.Slides, p))
+      config.licenseZip.foreach(p => AsposeLicense.loadProduct(Product.Zip, p))
     } else {
-      // Single file conversion - use parent implementation
-      super.executeConversion(config)
+      println("No explicit license paths provided – using env vars / auto‑discovery …")
+      AsposeLicense.initializeIfNeeded()
     }
-  }
-
-  /**
-   * Override executeSplit to handle Aspose-specific parameters
-   */
-  override protected def executeSplit(config: AsposeConfig): Unit = {
-    import java.nio.file.{ Files, Paths }
-    import splitters.SplitStrategy
-
-    val inputPath  = Paths.get(config.input)
-    val outputPath = Paths.get(config.output)
-
-    // Verify input is a file
-    if (Files.isDirectory(inputPath)) {
-      logger.error("Split mode expects --input to be a file, not a directory.")
-      sys.exit(1)
-    }
-
-    // Ensure output directory exists or can be created
-    if (!Files.exists(outputPath)) {
-      try Files.createDirectories(outputPath)
-      catch {
-        case ex: Exception =>
-          logger.error(s"Failed to create output directory: ${ex.getMessage}")
-          sys.exit(1)
-      }
-    } else if (!Files.isDirectory(outputPath)) {
-      logger.error("--output must be a directory when using --split mode.")
-      sys.exit(1)
-    }
-
-    // Parse strategy and output type
-    val splitStrategyOpt = config.splitStrategy.flatMap(SplitStrategy.fromString)
-
-    // Parse failure mode
-    val failureModeOpt = config.failureMode.flatMap { mode =>
-      mode.toLowerCase match {
-        case "throw"    => Some(splitters.SplitFailureMode.ThrowException)
-        case "preserve" => Some(splitters.SplitFailureMode.PreserveAsChunk)
-        case "drop"     => Some(splitters.SplitFailureMode.DropDocument)
-        case "tag"      => Some(splitters.SplitFailureMode.TagAndPreserve)
-        case _ =>
-          logger.warn(s"Unknown failure mode: $mode. Using default (preserve).")
-          None
-      }
-    }
-
-    // Parse chunk range
-    val chunkRangeOpt = config.chunkRange.flatMap(CommonCLI.parseChunkRange)
-
-    // Handle output type - combine --type and --format options
-    val outputMimeOpt = CommonCLI.parseOutputMimeType(
-      config.outputType,
-      config.outputFormat
-    )
-
-    // Run the split operation
-    Try(
-      Pipeline.split(
-        inputPath = config.input,
-        outputDir = config.output,
-        strategy = splitStrategyOpt,
-        outputType = outputMimeOpt,
-        recursive = config.recursiveExtraction,
-        maxRecursionDepth = config.maxRecursionDepth,
-        maxImageWidth = config.maxImageWidth,
-        maxImageHeight = config.maxImageHeight,
-        maxImageSizeBytes = config.maxImageSizeBytes,
-        imageDpi = config.imageDpi,
-        jpegQuality = config.jpegQuality,
-        failureMode = failureModeOpt,
-        failureContext = config.failureContext,
-        chunkRange = chunkRangeOpt
-      )
-    ).recover { case ex =>
-      logger.error(s"Split operation failed: ${ex.getMessage}")
-      ex.printStackTrace()
-      sys.exit(1)
-    }
-  }
 }

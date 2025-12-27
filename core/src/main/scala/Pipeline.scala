@@ -31,7 +31,8 @@ object Pipeline {
     inputPath: String,
     outputPath: String,
     diffMode: Boolean = false,
-    config: Option[bridges.BridgeConfig] = None
+    config: Option[bridges.BridgeConfig] = None,
+    backendPreference: Option[String] = None
   ): Unit = {
     logger.info(
       s"Starting extraction process. Input: $inputPath, Output: $outputPath, DiffMode: $diffMode"
@@ -76,7 +77,7 @@ object Pipeline {
         if (diffMode && canMergeInPlace(inputMimeType, outputMimeType)) {
           doDiffConversion(fileContent, output, outputMimeType, config)
         } else {
-          doRegularConversion(fileContent, outputMimeType, config)
+          doRegularConversion(fileContent, outputMimeType, config, backendPreference)
         }
 
       resultTry match {
@@ -161,7 +162,8 @@ object Pipeline {
     jpegQuality: Float = 0.85f,
     failureMode: Option[SplitFailureMode] = None,
     failureContext: Map[String, String] = Map.empty,
-    chunkRange: Option[Range] = None
+    chunkRange: Option[Range] = None,
+    backendPreference: Option[String] = None
   ): Unit = {
 
     logger.info(
@@ -212,7 +214,14 @@ object Pipeline {
     )
 
     // Start with current depth = 0
-    splitRecursive(fileContent, outDir, splitCfg, outputType, depth = 0)
+    splitRecursive(
+      fileContent,
+      outDir,
+      splitCfg,
+      outputType,
+      depth = 0,
+      backendPreference = backendPreference
+    )
   }
 
   /**
@@ -239,7 +248,8 @@ object Pipeline {
     cfg: SplitConfig,
     outputType: Option[MimeType],
     depth: Int,
-    pathPrefix: Option[String] = None
+    pathPrefix: Option[String] = None,
+    backendPreference: Option[String] = None
   ): Int = {
 
     // Get chunks for the current content
@@ -328,7 +338,7 @@ object Pipeline {
         // We need to be careful with the types here, so use a safer approach
         try
           // Use doRegularConversion which handles the type casting internally
-          doRegularConversion(chunk.content, wantedMime, bridgeConfig) match {
+          doRegularConversion(chunk.content, wantedMime, bridgeConfig, backendPreference) match {
             case Success(convertedContent) =>
               convertedContent
             case Failure(ex) =>
@@ -418,7 +428,8 @@ object Pipeline {
               nestedCfg,
               outputType,
               depth + 1,
-              Some(newPrefix)
+              Some(newPrefix),
+              backendPreference
             )
 
             // If no nested content found, remove the empty directory
@@ -510,10 +521,11 @@ object Pipeline {
   private def doRegularConversion(
     input: FileContent[MimeType],
     outMime: MimeType,
-    config: Option[bridges.BridgeConfig] = None
+    config: Option[bridges.BridgeConfig] = None,
+    backendPreference: Option[String] = None
   ): Try[FileContent[MimeType]] =
     Try {
-      BridgeRegistry.findBridge(input.mimeType, outMime) match {
+      BridgeRegistry.findBridgeWithBackend(input.mimeType, outMime, backendPreference) match {
         case Some(bridge) =>
           bridge
             .convert(input, config)

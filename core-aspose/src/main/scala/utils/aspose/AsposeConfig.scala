@@ -49,5 +49,7 @@ case class AsposeConfig(
   licenseEmail: Option[String] = None,
   licenseSlides: Option[String] = None,
   licenseZip: Option[String] = None,
-  licenseTotal: Option[String] = None
+  licenseTotal: Option[String] = None,
+  // Backend selection
+  backend: Option[String] = None // Explicit backend selection (aspose, libreoffice, core, tika)
 )

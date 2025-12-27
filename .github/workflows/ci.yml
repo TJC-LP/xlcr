@@ -51,6 +51,10 @@ jobs:
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
 
+      - name: Install LibreOffice
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libreoffice
+
       - name: Check Formatting
         run: sbt '++ ${{ matrix.scala }}' scalafmtCheckAll
 
@@ -61,7 +65,7 @@ jobs:
         run: sbt '++ ${{ matrix.scala }}' test
 
       - name: Compress target directories
-        run: tar cf targets.tar target core-aspose/target core-spark/target core-spreadsheetllm/target core/target project/target
+        run: tar cf targets.tar target core-libreoffice/target core-aspose/target core-spark/target core-spreadsheetllm/target core/target project/target
 
       - name: Upload target directories
         uses: actions/upload-artifact@v4

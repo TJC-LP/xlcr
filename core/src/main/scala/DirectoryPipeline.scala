@@ -3,7 +3,7 @@ package com.tjclp.xlcr
 import java.nio.file.{ Files, Paths }
 
 import scala.jdk.CollectionConverters._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success, Try, Using }
 
 import com.tjclp.xlcr.processing.{ ErrorMode, ProgressReporter }
 import com.tjclp.xlcr.types.{ FileType, MimeType }
@@ -60,6 +60,7 @@ object DirectoryPipeline {
     enableProgress: Boolean = true,
     progressIntervalMs: Long = 2000,
     verbose: Boolean = false,
+    backendPreference: Option[String] = None,
     contextWrapper: Option[(
       () => ParallelDirectoryPipeline.ProcessingResult
     ) => ParallelDirectoryPipeline.ProcessingResult] = None
@@ -94,7 +95,8 @@ object DirectoryPipeline {
         outputDir = outputDir,
         mimeMappings = mimeMappings,
         config = parallelConfig,
-        diffMode = diffMode
+        diffMode = diffMode,
+        backendPreference = backendPreference
       )
 
       // Log summary
@@ -132,12 +134,11 @@ object DirectoryPipeline {
       }
 
       // Collect the files
-      val files = Files
-        .list(inPath)
-        .iterator()
-        .asScala
-        .filter(Files.isRegularFile(_))
-        .toList
+      val files = Using.resource(Files.list(inPath)) { stream =>
+        stream.iterator().asScala
+          .filter(Files.isRegularFile(_))
+          .toList
+      }
 
       // For each file, detect mime, figure out the mapping, and run the pipeline
       files.foreach { file =>
@@ -166,7 +167,12 @@ object DirectoryPipeline {
               s"Converting $file (mime: ${inputMime.mimeType}) -> $outFile (mime: ${outputMime.mimeType})"
             )
             Try {
-              Pipeline.run(file.toString, outFile.toString, diffMode)
+              Pipeline.run(
+                file.toString,
+                outFile.toString,
+                diffMode,
+                backendPreference = backendPreference
+              )
             } match {
               case Failure(ex) =>
                 logger.error(s"Failed to convert $file: ${ex.getMessage}")

@@ -7,7 +7,7 @@ import java.util.concurrent.{ Executors, ThreadFactory, TimeUnit }
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.jdk.CollectionConverters._
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Success, Try, Using }
 
 import org.slf4j.LoggerFactory
 
@@ -100,7 +100,8 @@ object ParallelDirectoryPipeline {
     outputDir: String,
     mimeMappings: Map[MimeType, MimeType],
     config: Config = Config(),
-    diffMode: Boolean = false
+    diffMode: Boolean = false,
+    backendPreference: Option[String] = None
   ): BatchSummary = {
 
     val inPath  = Paths.get(inputDir)
@@ -120,13 +121,12 @@ object ParallelDirectoryPipeline {
       throw new IllegalArgumentException(s"Output path is not a directory: $outputDir")
     }
 
-    // Collect files to process
-    val files = Files
-      .list(inPath)
-      .iterator()
-      .asScala
-      .filter(Files.isRegularFile(_))
-      .toList
+    // Collect files to process (ensure the stream is closed)
+    val files = Using.resource(Files.list(inPath)) { stream =>
+      stream.iterator().asScala
+        .filter(Files.isRegularFile(_))
+        .toList
+    }
 
     if (files.isEmpty) {
       logger.warn(s"No files found in input directory: $inputDir")
@@ -162,18 +162,27 @@ object ParallelDirectoryPipeline {
     // Start progress reporting
     config.progressReporter.start(files.size)
 
+    val skipFailures = config.errorMode == ErrorMode.SkipOnError
+
     try {
       // Create futures for each file
       val futures = files.map { file =>
+        val task = () =>
+          processFile(
+            file,
+            outPath,
+            mimeMappings,
+            diffMode,
+            config.progressReporter,
+            backendPreference,
+            skipFailures
+          )
         Future {
           // Wrap execution with context wrapper if provided (e.g., for ThreadLocal propagation)
           config.contextWrapper match {
             case Some(wrapper) =>
-              wrapper(() =>
-                processFile(file, outPath, mimeMappings, diffMode, config.progressReporter)
-              )
-            case None =>
-              processFile(file, outPath, mimeMappings, diffMode, config.progressReporter)
+              wrapper(() => task())
+            case None => task()
           }
         }
       }
@@ -193,10 +202,21 @@ object ParallelDirectoryPipeline {
       val endTime  = System.currentTimeMillis()
       val duration = endTime - startTime
 
+      val finalResults =
+        if (skipFailures)
+          allResults.map {
+            case ProcessingFailure(fileName, error) =>
+              val reason =
+                Option(error).flatMap(e => Option(e.getMessage)).getOrElse("Conversion error")
+              ProcessingSkipped(fileName, s"Skipped due to error: $reason")
+            case other => other
+          }
+        else allResults
+
       // Categorize results
-      val successful = allResults.count(_.isInstanceOf[ProcessingSuccess])
-      val failed     = allResults.count(_.isInstanceOf[ProcessingFailure])
-      val skipped    = allResults.count(_.isInstanceOf[ProcessingSkipped])
+      val successful = finalResults.count(_.isInstanceOf[ProcessingSuccess])
+      val failed     = finalResults.count(_.isInstanceOf[ProcessingFailure])
+      val skipped    = finalResults.count(_.isInstanceOf[ProcessingSkipped])
 
       val summary = BatchSummary(
         totalFiles = files.size,
@@ -204,7 +224,7 @@ object ParallelDirectoryPipeline {
         failedFiles = failed,
         skippedFiles = skipped,
         durationMs = duration,
-        results = allResults
+        results = finalResults
       )
 
       // Complete progress reporting
@@ -267,7 +287,9 @@ object ParallelDirectoryPipeline {
     outputDir: Path,
     mimeMappings: Map[MimeType, MimeType],
     diffMode: Boolean,
-    progressReporter: ProgressReporter
+    progressReporter: ProgressReporter,
+    backendPreference: Option[String] = None,
+    skipOnError: Boolean = false
   ): ProcessingResult = {
 
     val fileName = file.getFileName.toString
@@ -294,7 +316,8 @@ object ParallelDirectoryPipeline {
             Pipeline.run(
               inputPath = file.toString,
               outputPath = outputFile.toString,
-              diffMode = diffMode
+              diffMode = diffMode,
+              backendPreference = backendPreference
             )
           } match {
             case Success(_) =>
@@ -302,16 +325,29 @@ object ParallelDirectoryPipeline {
               ProcessingSuccess(fileName, inputMime.mimeType, outputMime.mimeType)
 
             case Failure(ex) =>
-              progressReporter.fileFailed(fileName, ex)
-              ProcessingFailure(fileName, ex)
+              handleFailure(fileName, ex, progressReporter, skipOnError)
           }
       }
     } catch {
       case ex: Throwable =>
-        progressReporter.fileFailed(fileName, ex)
-        ProcessingFailure(fileName, ex)
+        handleFailure(fileName, ex, progressReporter, skipOnError)
     }
   }
+
+  private def handleFailure(
+    fileName: String,
+    ex: Throwable,
+    progressReporter: ProgressReporter,
+    skipOnError: Boolean
+  ): ProcessingResult =
+    if (skipOnError) {
+      val reason = Option(ex.getMessage).getOrElse("Conversion error")
+      progressReporter.fileSkipped(fileName, reason)
+      ProcessingSkipped(fileName, reason)
+    } else {
+      progressReporter.fileFailed(fileName, ex)
+      ProcessingFailure(fileName, ex)
+    }
 
   /**
    * Determine the output file path based on input file and output MIME type.
