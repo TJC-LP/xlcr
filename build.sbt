@@ -467,6 +467,11 @@ ThisBuild / githubWorkflowEnv := Map(
 
 // Add quality gates to the workflow
 ThisBuild / githubWorkflowBuildPreamble ++= Seq(
+  WorkflowStep.Run(
+    commands = List("sudo apt-get update && sudo apt-get install -y libreoffice"),
+    name = Some("Install LibreOffice"),
+    cond = Some("matrix.os == 'ubuntu-latest'")
+  ),
   WorkflowStep.Sbt(List("scalafmtCheckAll"), name = Some("Check Formatting"))
 )
 
