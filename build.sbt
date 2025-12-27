@@ -512,8 +512,9 @@ lazy val root = (project in file("."))
     // Define projects that should be included when cross-building
     crossScalaVersions := Seq(
       scala212,
-      scala213
-    ), // Root project only uses 2.12 and 2.13 for all modules
+      scala213,
+      scala3
+    ), // Root project supports all Scala versions for proper cross-building
     // Custom tasks for different Scala versions
     addCommandAlias(
       "compileScala3",
