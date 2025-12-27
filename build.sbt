@@ -185,6 +185,8 @@ lazy val coreAspose = (project in file("core-aspose"))
     // All Scala versions for core-aspose
     crossScalaVersions := Seq(scala212, scala213, scala3),
     name               := "xlcr-core-aspose",
+    // Run tests serially to avoid Aspose library race conditions
+    Test / parallelExecution := false,
     // Added resolver settings specifically for Aspose
     resolvers ++= Seq(
       "Aspose Java Repository".at("https://releases.aspose.com/java/repo/")
