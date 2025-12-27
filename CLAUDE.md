@@ -1,5 +1,27 @@
 # XLCR Development Guide
 
+## Java Version Requirements
+
+XLCR modules have different Java version requirements:
+- **Core, Aspose, LibreOffice**: Java 17+ (tested with Java 17, 21, 25)
+- **Spark Module**: Java 17 or 21 only (Spark 3.x limitation - Java 25 not supported)
+
+### Running Tests with Java 25
+
+If you're using Java 25 locally, you have two options:
+
+**Option 1: Skip Spark tests** (recommended for LibreOffice/core development)
+```bash
+sbt "core/test" "coreAspose/test" "coreLibreOffice/test"
+```
+
+**Option 2: Use Java 17 for Spark tests**
+```bash
+# Set Java 17 for this session
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+sbt test
+```
+
 ## Build Commands
 - `sbt compile` - Compile the project with default Scala version (2.12)
 - `sbt compileScala2` - Compile all modules with Scala 2.12
