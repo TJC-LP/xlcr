@@ -1,0 +1,52 @@
+package build.`core-spark`
+
+import mill._
+import mill.scalalib._
+
+object `package` extends Cross[CoreSparkModule](build.scalaVersions)
+
+trait CoreSparkModule extends build.XLCRModule {
+  override def artifactName = "xlcr-core-spark"
+  override def artifactDescription =
+    "XLCR Spark - Spark DataFrame integration for document processing"
+
+  override def moduleDeps = Seq(
+    build.core(crossScalaVersion),
+    build.`core-aspose`(crossScalaVersion)
+  )
+
+  override def forkArgs: T[Seq[String]] = build.BuildConfig.sparkJvmArgs
+
+  // Test source directories (defined at module level where moduleDir is accessible)
+  def testSources = Task.Sources(moduleDir / "test" / "src")
+  def testResources = Task.Sources(moduleDir / "test" / "resources")
+
+  // Spark 3.x doesn't have native Scala 3 artifacts, use 2.13 artifacts
+  // Scala 3 is binary compatible with Scala 2.13
+  override def mvnDeps = {
+    val sparkVersion = "3.5.2"
+    val compatVersion = "2.13.0"
+    val xmlVersion = "2.3.0"
+
+    if (crossScalaVersion.startsWith("3.")) {
+      Seq(
+        mvn"org.apache.spark:spark-sql_2.13:${sparkVersion}",
+        mvn"org.apache.spark:spark-sql-kafka-0-10_2.13:${sparkVersion}",
+        mvn"org.scala-lang.modules:scala-collection-compat_2.13:${compatVersion}",
+        mvn"org.scala-lang.modules:scala-xml_2.13:${xmlVersion}"
+      )
+    } else {
+      Seq(
+        mvn"org.apache.spark::spark-sql:${sparkVersion}",
+        mvn"org.apache.spark::spark-sql-kafka-0-10:${sparkVersion}",
+        mvn"org.scala-lang.modules::scala-collection-compat:${compatVersion}",
+        mvn"org.scala-lang.modules::scala-xml:${xmlVersion}"
+      )
+    }
+  }
+
+  object test extends ScalaTests with build.XLCRSparkTestModule {
+    override def sources = testSources
+    override def resources = testResources
+  }
+}
