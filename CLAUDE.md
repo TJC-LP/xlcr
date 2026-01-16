@@ -22,6 +22,23 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 17)
 ./mill __.test
 ```
 
+### Aspose License for Local Testing
+
+The `core-aspose` tests require a valid Aspose license to run without evaluation watermarks. CI uses the `ASPOSE_TOTAL_LICENSE_B64` environment variable. For local development:
+
+**Option 1: Copy license to resources** (recommended)
+```bash
+cp Aspose.Java.Total.lic core-aspose/resources/
+```
+
+**Option 2: Set environment variable**
+```bash
+export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Java.Total.lic)
+./mill 'core-aspose[3.3.4].test'
+```
+
+The license file in `core-aspose/resources/` is gitignored (`*.lic` pattern).
+
 ## Build Commands
 - `./mill __.compile` - Compile all modules for all Scala versions
 - `./mill __[3.3.4].compile` - Compile all modules with Scala 3.3.4
