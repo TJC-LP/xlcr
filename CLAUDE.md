@@ -74,11 +74,26 @@ XLCR supports cross-building for:
 
 ## Module Structure
 The project is organized into these main modules:
-- `core` - Core functionality and abstract interfaces
+- `core` - Core functionality: Tika text extraction, splitters (PDF/Excel/PowerPoint/Word/Email/Archives), XLSX→ODS conversion
 - `core-aspose` - Integration with Aspose for PDF conversion and document transformations (HIGH priority)
 - `core-libreoffice` - Integration with LibreOffice for open-source document conversions (DEFAULT priority fallback)
 - `core-spark` - Spark DataFrame integration for document processing
 - `data` - Directory containing sample Excel files for testing
+
+### Core Module Capabilities
+The core module provides:
+- **Tika Text Extraction**: Universal fallback for extracting plain text or XML from any document
+- **Document Splitters**: Extract pages/sheets/slides from documents
+  - PDF: PdfPageSplitter
+  - Excel: ExcelXlsSheetSplitter, ExcelXlsxSheetSplitter, OdsSheetSplitter
+  - PowerPoint: PowerPointPptSlideSplitter, PowerPointPptxSlideSplitter
+  - Word: WordDocRouterSplitter, WordDocxRouterSplitter
+  - Email: EmailAttachmentSplitter, OutlookMsgSplitter
+  - Archives: ZipEntrySplitter
+  - Text: TextSplitter, CsvSplitter
+- **Format Conversion**: XLSX → ODS (ExcelToOdsBridge)
+
+For Excel/PowerPoint JSON conversions, use the `~/git/xl` library instead.
 
 ## Document Conversion
 The core-aspose module includes comprehensive document conversion capabilities:

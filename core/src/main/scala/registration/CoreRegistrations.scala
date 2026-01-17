@@ -1,9 +1,7 @@
 package com.tjclp.xlcr
 package registration
 
-import bridges.excel._
-import bridges.image._
-import bridges.powerpoint._
+import bridges.excel.ExcelToOdsBridge
 import bridges.tika._
 import spi.{ BridgeInfo, BridgeProvider, SplitterInfo, SplitterProvider }
 import splitters.archive.ZipEntrySplitter
@@ -22,77 +20,15 @@ class CoreRegistrations extends BridgeProvider with SplitterProvider {
 
   override def getBridges: Iterable[BridgeInfo[_ <: MimeType, _ <: MimeType]] =
     Seq(
-      // SheetsData bridging
-      BridgeInfo(
-        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-        MimeType.ApplicationJson,
-        SheetsDataExcelBridge.chain(SheetsDataJsonBridge)
-      ),
-      BridgeInfo(
-        MimeType.ApplicationJson,
-        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-        SheetsDataJsonBridge.chain(SheetsDataExcelBridge)
-      ),
-      BridgeInfo(
-        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-        MimeType.TextMarkdown,
-        SheetsDataExcelBridge.chain(SheetsDataMarkdownBridge)
-      ),
-      BridgeInfo(
-        MimeType.TextMarkdown,
-        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-        SheetsDataMarkdownBridge.chain(SheetsDataExcelBridge)
-      ),
-      BridgeInfo(
-        MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-        MimeType.ImageSvgXml,
-        SheetsDataExcelBridge.chain(SheetsDataSvgBridge)
-      ),
+      // Excel → ODS (well-defined format conversion)
       BridgeInfo(
         MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
         MimeType.ApplicationVndOasisOpendocumentSpreadsheet,
         ExcelToOdsBridge
       ),
-      // Image bridging
-      BridgeInfo(
-        MimeType.ImageSvgXml,
-        MimeType.ImagePng,
-        SvgToPngBridge
-      ),
-      BridgeInfo(
-        MimeType.ApplicationPdf,
-        MimeType.ImagePng,
-        PdfToPngBridge
-      ),
-      BridgeInfo(
-        MimeType.ApplicationPdf,
-        MimeType.ImageJpeg,
-        PdfToJpegBridge
-      ),
-      // SlidesData bridging
-      BridgeInfo(
-        MimeType.ApplicationVndMsPowerpoint,
-        MimeType.ApplicationJson,
-        SlidesDataPowerPointBridge.chain(SlidesDataJsonBridge)
-      ),
-      BridgeInfo(
-        MimeType.ApplicationJson,
-        MimeType.ApplicationVndMsPowerpoint,
-        SlidesDataJsonBridge.chain(SlidesDataPowerPointBridge)
-      ),
       // Tika bridging (catch-all, low priority)
-      // Register Tika bridges as wildcard bridges to handle any mime type
-      // These will be used when no specific bridge is found for an input->output pair
-      BridgeInfo(
-        MimeType.Wildcard,
-        MimeType.TextPlain,
-        TikaPlainTextBridge
-      ),
-      BridgeInfo(
-        MimeType.Wildcard,
-        MimeType.ApplicationXml,
-        TikaXmlBridge
-      )
+      BridgeInfo(MimeType.Wildcard, MimeType.TextPlain, TikaPlainTextBridge),
+      BridgeInfo(MimeType.Wildcard, MimeType.ApplicationXml, TikaXmlBridge)
     )
 
   override def getSplitters: Iterable[SplitterInfo[_ <: MimeType]] = Seq(
@@ -100,28 +36,16 @@ class CoreRegistrations extends BridgeProvider with SplitterProvider {
     SplitterInfo(MimeType.ApplicationPdf, PdfPageSplitter),
     // Excel
     SplitterInfo(MimeType.ApplicationVndMsExcel, ExcelXlsSheetSplitter),
-    SplitterInfo(
-      MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet,
-      ExcelXlsxSheetSplitter
-    ),
-    SplitterInfo(
-      MimeType.ApplicationVndOasisOpendocumentSpreadsheet,
-      OdsSheetSplitter
-    ),
+    SplitterInfo(MimeType.ApplicationVndOpenXmlFormatsSpreadsheetmlSheet, ExcelXlsxSheetSplitter),
+    SplitterInfo(MimeType.ApplicationVndOasisOpendocumentSpreadsheet, OdsSheetSplitter),
     // PowerPoint
-    SplitterInfo(
-      MimeType.ApplicationVndMsPowerpoint,
-      PowerPointPptSlideSplitter
-    ),
+    SplitterInfo(MimeType.ApplicationVndMsPowerpoint, PowerPointPptSlideSplitter),
     SplitterInfo(
       MimeType.ApplicationVndOpenXmlFormatsPresentationmlPresentation,
       PowerPointPptxSlideSplitter
     ),
     // Word
-    SplitterInfo(
-      MimeType.ApplicationMsWord,
-      WordDocRouterSplitter
-    ),
+    SplitterInfo(MimeType.ApplicationMsWord, WordDocRouterSplitter),
     SplitterInfo(
       MimeType.ApplicationVndOpenXmlFormatsWordprocessingmlDocument,
       WordDocxRouterSplitter
