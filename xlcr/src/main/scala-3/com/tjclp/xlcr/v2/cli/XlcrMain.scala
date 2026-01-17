@@ -6,6 +6,7 @@ import zio.*
 
 import com.tjclp.xlcr.v2.aspose.AsposeTransforms
 import com.tjclp.xlcr.v2.cli.Commands.*
+import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.v2.types.{Content, Mime}
 
@@ -91,7 +92,8 @@ object XlcrMain extends ZIOAppDefault:
         val backendName = args.backend match
           case Some("aspose") => "Aspose"
           case Some("libreoffice") => "LibreOffice"
-          case _ => "Unified (Aspose with LibreOffice fallback)"
+          case Some("xlcr") => "XLCR Core (POI/Tika)"
+          case _ => "Unified (Aspose → LibreOffice → XLCR Core fallback)"
         Console.printLine(s"Using backend: $backendName")
       }
 
@@ -140,7 +142,8 @@ object XlcrMain extends ZIOAppDefault:
         val backendName = args.backend match
           case Some("aspose") => "Aspose"
           case Some("libreoffice") => "LibreOffice"
-          case _ => "Unified (Aspose with LibreOffice fallback)"
+          case Some("xlcr") => "XLCR Core (POI/Tika)"
+          case _ => "Unified (Aspose → LibreOffice → XLCR Core fallback)"
         Console.printLine(s"Using backend: $backendName")
       }
 
@@ -220,6 +223,9 @@ object XlcrMain extends ZIOAppDefault:
       _ <- Console.printLine("")
       _ <- Console.printLine("  LibreOffice Backend:")
       _ <- checkLibreOfficeStatus()
+      _ <- Console.printLine("")
+      _ <- Console.printLine("  XLCR Core Backend:")
+      _ <- checkXlcrCoreStatus()
     yield ()
 
   private def checkAsposeStatus(): ZIO[Any, Throwable, Unit] =
@@ -249,6 +255,24 @@ object XlcrMain extends ZIOAppDefault:
       println("    Supported splits: None (use Aspose for splitting)")
     }.unit
 
+  private def checkXlcrCoreStatus(): ZIO[Any, Throwable, Unit] =
+    ZIO.attempt {
+      println("    Status: Always available (built-in)")
+      println("    Libraries: Apache Tika, Apache POI, Apache PDFBox, ODFDOM")
+      println("    Supported conversions:")
+      println("      - ANY -> text/plain (Tika text extraction)")
+      println("      - ANY -> application/xml (Tika XML extraction)")
+      println("      - XLSX -> ODS (POI + ODFDOM)")
+      println("    Supported splits:")
+      println("      - XLSX/XLS/ODS sheets (POI/ODFDOM)")
+      println("      - PPTX slides (POI)")
+      println("      - DOCX sections (POI)")
+      println("      - PDF pages (PDFBox)")
+      println("      - Text paragraphs, CSV rows")
+      println("      - EML/MSG attachments (Jakarta Mail / POI HSMF)")
+      println("      - ZIP entries (java.util.zip)")
+    }.unit
+
   // ============================================================================
   // Backend Selection
   // ============================================================================
@@ -258,6 +282,7 @@ object XlcrMain extends ZIOAppDefault:
     backend match
       case Some("aspose") => AsposeBackend
       case Some("libreoffice") => LibreOfficeBackend
+      case Some("xlcr") => XlcrBackend
       case _ => UnifiedBackend
 
   /** Trait for backend dispatch */
@@ -272,6 +297,10 @@ object XlcrMain extends ZIOAppDefault:
   private object LibreOfficeBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime) = LibreOfficeTransforms.convert(input, to)
     def split(input: Content[Mime]) = LibreOfficeTransforms.split(input)
+
+  private object XlcrBackend extends BackendDispatch:
+    def convert(input: Content[Mime], to: Mime) = XlcrTransforms.convert(input, to)
+    def split(input: Content[Mime]) = XlcrTransforms.split(input)
 
   private object UnifiedBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime) = UnifiedTransforms.convert(input, to)

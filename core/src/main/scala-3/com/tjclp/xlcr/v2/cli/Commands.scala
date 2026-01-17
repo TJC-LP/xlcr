@@ -86,7 +86,7 @@ object Commands:
     Opts.option[String](
       long = "backend",
       short = "b",
-      help = "Backend to use: aspose, libreoffice (default: auto with fallback)"
+      help = "Backend to use: aspose, libreoffice, xlcr (default: auto with fallback chain)"
     ).orNone
 
   // ============================================================================
