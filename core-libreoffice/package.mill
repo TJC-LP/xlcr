@@ -21,7 +21,7 @@ trait CoreLibreOfficeModule extends build.XLCRModule {
     mvn"org.jodconverter:jodconverter-core:4.4.6"
   )
 
-  object test extends ScalaTests with build.XLCRSerialTestModule {
+  object test extends ScalaTests with build.XLCRLibreOfficeTestModule {
     override def sources = testSources
   }
 }

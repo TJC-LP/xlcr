@@ -131,12 +131,23 @@ trait XLCRTestModule extends TestModule.ScalaTest {
   )
 }
 
-/** Trait for test modules that require serial execution (Aspose, LibreOffice) */
+/** Trait for test modules that require serial execution (Aspose) */
 trait XLCRSerialTestModule extends XLCRTestModule {
   /** Run tests serially - one test class per fork to avoid race conditions */
   override def testForkGrouping: T[Seq[Seq[String]]] = Task {
     discoveredTestClasses().map(c => Seq(c))
   }
+}
+
+/** Trait for LibreOffice tests - runs all tests in a single fork to share one LibreOffice process */
+trait XLCRLibreOfficeTestModule extends XLCRTestModule {
+  /** Run all tests in a single fork - LibreOffice process is shared across all tests */
+  override def testForkGrouping: T[Seq[Seq[String]]] = Task {
+    Seq(discoveredTestClasses())
+  }
+
+  /** Disable parallel test execution within the fork - LibreOffice can only handle one conversion at a time */
+  override def testParallelism: T[Boolean] = false
 }
 
 /** Trait for Spark test modules with additional JVM args */
