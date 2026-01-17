@@ -1,0 +1,156 @@
+import mill._
+import mill.scalalib._
+import mill.scalalib.publish._
+import mill.scalalib.scalafmt._
+import mill.scalalib.Assembly._
+
+val scalaVersions = Seq("3.3.4", "2.13.14")
+val organization = "com.tjclp"
+
+/** Shared build configuration constants */
+object BuildConfig {
+  /** Aspose Maven repository URL */
+  val asposeRepoUrl = "https://releases.aspose.com/java/repo/"
+
+  /** JVM options to silence Scala 3 LazyVals sun.misc.Unsafe deprecation warnings (JDK 21+) */
+  val lazyValsJvmArgs: Seq[String] = Seq(
+    "--add-opens=java.base/sun.misc=ALL-UNNAMED",
+    "-XX:+IgnoreUnrecognizedVMOptions"
+  )
+
+  /** Spark-required JVM args for Java 17+ */
+  val sparkJvmArgs: Seq[String] = Seq(
+    "--add-opens=java.base/java.lang=ALL-UNNAMED",
+    "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+    "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+    "--add-opens=java.base/java.io=ALL-UNNAMED",
+    "--add-opens=java.base/java.net=ALL-UNNAMED",
+    "--add-opens=java.base/java.nio=ALL-UNNAMED",
+    "--add-opens=java.base/java.util=ALL-UNNAMED",
+    "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
+    "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+    "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
+    "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
+    "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
+  ) ++ lazyValsJvmArgs
+}
+
+/** Base trait for all XLCR modules - shared compiler settings and formatting */
+trait XLCRModuleBase extends CrossScalaModule with ScalafmtModule {
+  override def repositoriesTask: Task[Seq[coursier.Repository]] = Task.Anon {
+    super.repositoriesTask() ++ Seq(
+      coursier.MavenRepository(BuildConfig.asposeRepoUrl)
+    )
+  }
+
+  // JVM options for forked processes (run, test execution)
+  override def forkArgs: T[Seq[String]] = BuildConfig.lazyValsJvmArgs
+
+  override def scalacOptions: T[Seq[String]] = {
+    val baseOpts = Seq(
+      "-encoding",
+      "utf-8",
+      "-feature",
+      "-language:implicitConversions",
+      "-language:higherKinds",
+      "-unchecked",
+      "-deprecation"
+    )
+
+    val versionOpts =
+      if (crossScalaVersion.startsWith("3.")) {
+        Seq("-Wunused:imports")
+      } else {
+        Seq("-Wunused:imports")
+      }
+
+    baseOpts ++ versionOpts
+  }
+
+  /** Source directories for cross-compilation */
+  def scala3Sources = Task.Sources(
+    moduleDir / "src" / "main" / "scala",
+    moduleDir / "src" / "main" / "scala-3"
+  )
+
+  def scala2Sources = Task.Sources(
+    moduleDir / "src" / "main" / "scala",
+    moduleDir / "src" / "main" / "scala-2",
+    moduleDir / "src" / "main" / "scala-2.13"
+  )
+
+  override def sources = if (crossScalaVersion.startsWith("3.")) scala3Sources else scala2Sources
+}
+
+/** Trait for publishable library modules - publishes to Maven Central via Sonatype */
+trait XLCRModule extends XLCRModuleBase with PublishModule {
+
+  /** Version derived from PUBLISH_VERSION env var (set by CI), or default for local dev */
+  override def publishVersion: T[String] =
+    sys.env.getOrElse("PUBLISH_VERSION", "1.0.0-SNAPSHOT")
+
+  override def pomSettings: T[PomSettings] = PomSettings(
+    description = artifactDescription,
+    organization = organization,
+    url = "https://github.com/TJC-LP/xlcr",
+    licenses = Seq(License.MIT),
+    versionControl = VersionControl.github("TJC-LP", "xlcr"),
+    developers = Seq(
+      Developer("arcaputo3", "Richie Caputo", "https://github.com/arcaputo3")
+    )
+  )
+
+  /** Override in each module to provide module-specific description */
+  def artifactDescription: String = "XLCR - Cross-format document conversion library"
+
+  /** Assembly rules for ServiceLoader and META-INF handling */
+  override def assemblyRules: Seq[Rule] = Seq(
+    // ServiceLoader configuration files MUST be concatenated
+    Rule.AppendPattern("META-INF/services/.*"),
+    // Akka/reference.conf should be appended
+    Rule.Append("reference.conf"),
+    // Exclude signature files
+    Rule.ExcludePattern("META-INF/.*\\.(SF|DSA|RSA)"),
+    // Exclude manifest (will be regenerated)
+    Rule.Exclude("META-INF/MANIFEST.MF"),
+    // Exclude module-info.class files
+    Rule.Exclude("module-info.class"),
+    Rule.ExcludePattern("META-INF/versions/.*/module-info.class")
+  )
+}
+
+/** Trait for test modules using ScalaTest */
+trait XLCRTestModule extends TestModule.ScalaTest {
+  override def forkArgs: T[Seq[String]] = BuildConfig.lazyValsJvmArgs
+
+  override def mvnDeps = Seq(
+    mvn"org.scalatest::scalatest:3.2.19",
+    mvn"org.scalatestplus::scalacheck-1-17:3.2.18.0",
+    mvn"org.scalacheck::scalacheck:1.18.1"
+  )
+}
+
+/** Trait for test modules that require serial execution (Aspose) */
+trait XLCRSerialTestModule extends XLCRTestModule {
+  /** Run tests serially - one test class per fork to avoid race conditions */
+  override def testForkGrouping: T[Seq[Seq[String]]] = Task {
+    discoveredTestClasses().map(c => Seq(c))
+  }
+}
+
+/** Trait for LibreOffice tests - runs all tests in a single fork to share one LibreOffice process */
+trait XLCRLibreOfficeTestModule extends XLCRTestModule {
+  /** Run all tests in a single fork - LibreOffice process is shared across all tests */
+  override def testForkGrouping: T[Seq[Seq[String]]] = Task {
+    Seq(discoveredTestClasses())
+  }
+
+  /** Disable parallel test execution within the fork - LibreOffice can only handle one conversion at a time */
+  override def testParallelism: T[Boolean] = false
+}
+
+/** Trait for Spark test modules with additional JVM args */
+trait XLCRSparkTestModule extends XLCRTestModule {
+  override def forkArgs: T[Seq[String]] = BuildConfig.sparkJvmArgs
+}

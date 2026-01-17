@@ -1,0 +1,32 @@
+# JVM options for Mill build process
+#
+# Scala 3 LazyVals sun.misc.Unsafe Deprecation Warnings
+# ======================================================
+# These are JVM-level warnings that Scala 3 triggers when using lazy vals.
+# The warnings occur because Scala 3's LazyVals$ class uses sun.misc.Unsafe internally.
+# See: https://github.com/scala/scala3/issues/12490
+#
+# Spark Module Requirements
+# =========================
+# Spark 3.x requires additional --add-opens flags for Java 17+ compatibility.
+
+# Allow access to sun.misc for Scala 3 LazyVals
+--add-opens=java.base/sun.misc=ALL-UNNAMED
+
+# Spark-required opens for Java 17+
+--add-opens=java.base/java.lang=ALL-UNNAMED
+--add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+--add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+--add-opens=java.base/java.io=ALL-UNNAMED
+--add-opens=java.base/java.net=ALL-UNNAMED
+--add-opens=java.base/java.nio=ALL-UNNAMED
+--add-opens=java.base/java.util=ALL-UNNAMED
+--add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+--add-opens=java.base/sun.nio.cs=ALL-UNNAMED
+--add-opens=java.base/sun.security.action=ALL-UNNAMED
+--add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+
+# Ignore unrecognized options (for JVMs that don't support these flags)
+-XX:+IgnoreUnrecognizedVMOptions

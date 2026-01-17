@@ -1,0 +1,51 @@
+package build.`core-aspose`
+
+import mill._
+import mill.scalalib._
+
+object `package` extends Cross[CoreAsposeModule](build.scalaVersions)
+
+trait CoreAsposeModule extends build.XLCRModule {
+  override def artifactName = "xlcr-core-aspose"
+  override def artifactDescription =
+    "XLCR Aspose - Aspose-based document conversion bridges"
+
+  override def moduleDeps = Seq(build.core(crossScalaVersion))
+
+  // Test source directories
+  def testScala3Sources = Task.Sources(
+    moduleDir / "test" / "src",
+    moduleDir / "test" / "src-3"
+  )
+
+  def testScala2Sources = Task.Sources(
+    moduleDir / "test" / "src",
+    moduleDir / "test" / "src-2"
+  )
+
+  // Disable Scala 3 doc generation due to Aspose term conflicts
+  override def docSources: T[Seq[PathRef]] = Task {
+    if (crossScalaVersion.startsWith("3.")) {
+      Seq.empty[PathRef]
+    } else {
+      super.docSources()
+    }
+  }
+
+  override def scalacOptions: T[Seq[String]] =
+    super.scalacOptions() ++ Seq("-Yresolve-term-conflict:package")
+
+  override def mvnDeps = Seq(
+    mvn"com.aspose:aspose-cells:25.7",
+    mvn"com.aspose:aspose-words:25.6;classifier=jdk17",
+    mvn"com.aspose:aspose-slides:25.6;classifier=jdk16",
+    mvn"com.aspose:aspose-email:25.6;classifier=jdk16",
+    mvn"com.aspose:aspose-zip:25.6",
+    mvn"com.aspose:aspose-pdf:25.6;classifier=jdk17"
+  )
+
+  object test extends ScalaTests with build.XLCRSerialTestModule {
+    override def sources =
+      if (crossScalaVersion.startsWith("3.")) testScala3Sources else testScala2Sources
+  }
+}
