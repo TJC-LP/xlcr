@@ -1,6 +1,6 @@
 package com.tjclp.xlcr.v2.cli
 
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
 
 import zio.*
 
@@ -90,9 +90,9 @@ object XlcrMain extends ZIOAppDefault:
       // Show which backend will be used
       _ <- ZIO.when(args.verbose) {
         val backendName = args.backend match
-          case Some("aspose") => "Aspose"
-          case Some("libreoffice") => "LibreOffice"
-          case Some("xlcr") => "XLCR Core (POI/Tika)"
+          case Some(Backend.Aspose) => "Aspose"
+          case Some(Backend.LibreOffice) => "LibreOffice"
+          case Some(Backend.Xlcr) => "XLCR Core (POI/Tika)"
           case _ => "Unified (Aspose → LibreOffice → XLCR Core fallback)"
         Console.printLine(s"Using backend: $backendName")
       }
@@ -140,9 +140,9 @@ object XlcrMain extends ZIOAppDefault:
       // Show which backend will be used
       _ <- ZIO.when(args.verbose) {
         val backendName = args.backend match
-          case Some("aspose") => "Aspose"
-          case Some("libreoffice") => "LibreOffice"
-          case Some("xlcr") => "XLCR Core (POI/Tika)"
+          case Some(Backend.Aspose) => "Aspose"
+          case Some(Backend.LibreOffice) => "LibreOffice"
+          case Some(Backend.Xlcr) => "XLCR Core (POI/Tika)"
           case _ => "Unified (Aspose → LibreOffice → XLCR Core fallback)"
         Console.printLine(s"Using backend: $backendName")
       }
@@ -278,11 +278,11 @@ object XlcrMain extends ZIOAppDefault:
   // ============================================================================
 
   /** Select the appropriate backend based on user choice */
-  private def selectBackend(backend: Option[String]): BackendDispatch =
+  private def selectBackend(backend: Option[Backend]): BackendDispatch =
     backend match
-      case Some("aspose") => AsposeBackend
-      case Some("libreoffice") => LibreOfficeBackend
-      case Some("xlcr") => XlcrBackend
+      case Some(Backend.Aspose) => AsposeBackend
+      case Some(Backend.LibreOffice) => LibreOfficeBackend
+      case Some(Backend.Xlcr) => XlcrBackend
       case _ => UnifiedBackend
 
   /** Trait for backend dispatch */

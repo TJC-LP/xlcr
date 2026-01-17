@@ -1,17 +1,17 @@
 package com.tjclp.xlcr.v2.cli
 
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
 
 import zio.*
 
 import com.tjclp.xlcr.v2.cli.Commands.*
-import com.tjclp.xlcr.v2.pipeline.Pipeline
+import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.types.{Content, Mime}
 
 /**
  * ZIO-based CLI entry point for XLCR v2.
  *
- * Uses Decline for argument parsing and the v2 Pipeline API for transforms.
+ * Uses Decline for argument parsing and the XLCR Core transforms for conversion.
  */
 object Main extends ZIOAppDefault:
 
@@ -49,6 +49,10 @@ object Main extends ZIOAppDefault:
         Console.printLine(s"Converting ${args.input} to ${args.output}")
       )
 
+      _ <- ZIO.when(args.backend.exists(_ != Backend.Xlcr))(
+        ZIO.fail(new RuntimeException("Only the xlcr backend is available in the core CLI"))
+      )
+
       // Read input file
       inputBytes <- ZIO.attemptBlocking(Files.readAllBytes(args.input))
       inputMime = Mime.fromFilename(args.input.getFileName.toString)
@@ -60,7 +64,7 @@ object Main extends ZIOAppDefault:
       )
 
       // Perform conversion
-      result <- Pipeline.convert(content, outputMime).mapError { err =>
+      result <- XlcrTransforms.convert(content, outputMime).mapError { err =>
         new RuntimeException(s"Conversion failed: ${err.message}")
       }
 
@@ -84,6 +88,10 @@ object Main extends ZIOAppDefault:
         Console.printLine(s"Splitting ${args.input} into ${args.outputDir}")
       )
 
+      _ <- ZIO.when(args.backend.exists(_ != Backend.Xlcr))(
+        ZIO.fail(new RuntimeException("Only the xlcr backend is available in the core CLI"))
+      )
+
       // Ensure output directory exists
       _ <- ZIO.attemptBlocking {
         if !Files.exists(args.outputDir) then
@@ -100,7 +108,7 @@ object Main extends ZIOAppDefault:
       )
 
       // Perform split
-      fragments <- Pipeline.split(content).mapError { err =>
+      fragments <- XlcrTransforms.split(content).mapError { err =>
         new RuntimeException(s"Split failed: ${err.message}")
       }
 
@@ -155,7 +163,7 @@ object Main extends ZIOAppDefault:
       }
 
       // Check if splittable
-      canSplit = Pipeline.canConvert(inputMime, inputMime) // Simplified check
+      canSplit = XlcrTransforms.canSplit(inputMime)
       _ <- Console.printLine("")
       _ <- Console.printLine(s"Splittable: $canSplit")
     yield ExitCode.success
@@ -201,4 +209,4 @@ object Main extends ZIOAppDefault:
       Mime.docx, Mime.xlsx, Mime.pptx,
       Mime.odt, Mime.ods, Mime.odp
     )
-    targets.filter(target => target != from && Pipeline.canConvert(from, target))
+    targets.filter(target => target != from && XlcrTransforms.canConvert(from, target))

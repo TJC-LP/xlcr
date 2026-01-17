@@ -2,6 +2,7 @@ package com.tjclp.xlcr.v2.registry
 
 import com.tjclp.xlcr.v2.transform.Transform
 import com.tjclp.xlcr.v2.types.Mime
+import scala.util.NotGiven
 
 /**
  * Type class evidence that a transform exists from type I to type O.
@@ -37,6 +38,15 @@ object CanTransform:
       val transform: Transform[I, O] = t
 
   /**
+   * Lift any in-scope Transform into CanTransform evidence.
+   *
+   * This allows compile-time path resolution to start from given conversions
+   * and splitters without runtime registration.
+   */
+  given direct[I <: Mime, O <: Mime](using t: Transform[I, O]): CanTransform[I, O] =
+    from(t)
+
+  /**
    * Identity instance - any type can transform to itself.
    */
   given identity[M <: Mime]: CanTransform[M, M] =
@@ -50,7 +60,8 @@ object CanTransform:
    */
   given composed[I <: Mime, M <: Mime, O <: Mime](
       using first: CanTransform[I, M],
-      second: CanTransform[M, O]
+      second: CanTransform[M, O],
+      noDirect: NotGiven[Transform[I, O]]
   ): CanTransform[I, O] =
     from(first.transform >>> second.transform)
 

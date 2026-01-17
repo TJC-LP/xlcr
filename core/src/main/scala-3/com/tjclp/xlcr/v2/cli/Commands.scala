@@ -20,16 +20,15 @@ object Commands:
   case class ConvertArgs(
       input: Path,
       output: Path,
-      backend: Option[String] = None,
-      verbose: Boolean = false,
-      stripMasters: Boolean = false
+      backend: Option[Backend] = None,
+      verbose: Boolean = false
   )
 
   /** Arguments for the split command */
   case class SplitArgs(
       input: Path,
       outputDir: Path,
-      backend: Option[String] = None,
+      backend: Option[Backend] = None,
       verbose: Boolean = false
   )
 
@@ -43,6 +42,12 @@ object Commands:
     case Convert(args: ConvertArgs)
     case Split(args: SplitArgs)
     case Info(args: InfoArgs)
+
+  /** Backend selection for CLI commands */
+  enum Backend:
+    case Aspose
+    case LibreOffice
+    case Xlcr
 
   // ============================================================================
   // Common Options
@@ -76,25 +81,27 @@ object Commands:
       help = "Enable verbose output"
     ).orFalse
 
-  private val stripMastersFlag: Opts[Boolean] =
-    Opts.flag(
-      long = "strip-masters",
-      help = "Strip master slides and layouts (PowerPoint only)"
-    ).orFalse
-
-  private val backendOpt: Opts[Option[String]] =
+  private val backendOpt: Opts[Option[Backend]] =
     Opts.option[String](
       long = "backend",
       short = "b",
       help = "Backend to use: aspose, libreoffice, xlcr (default: auto with fallback chain)"
-    ).orNone
+    ).mapValidated(parseBackend).orNone
+
+  private def parseBackend(value: String) =
+    value.toLowerCase match
+      case "aspose" => Backend.Aspose.validNel
+      case "libreoffice" => Backend.LibreOffice.validNel
+      case "xlcr" => Backend.Xlcr.validNel
+      case other =>
+        s"Unknown backend: $other (expected: aspose, libreoffice, xlcr)".invalidNel
 
   // ============================================================================
   // Subcommands
   // ============================================================================
 
   private val convertOpts: Opts[ConvertArgs] =
-    (inputOpt, outputOpt, backendOpt, verboseFlag, stripMastersFlag).mapN(ConvertArgs.apply)
+    (inputOpt, outputOpt, backendOpt, verboseFlag).mapN(ConvertArgs.apply)
 
   val convertCmd: Opts[CliCommand] =
     Opts.subcommand(

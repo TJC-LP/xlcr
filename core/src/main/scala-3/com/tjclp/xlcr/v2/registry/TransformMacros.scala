@@ -2,8 +2,8 @@ package com.tjclp.xlcr.v2.registry
 
 import scala.quoted.*
 
-import com.tjclp.xlcr.v2.transform.{Conversion, Splitter, Transform, TransformError}
-import com.tjclp.xlcr.v2.types.{Content, Mime}
+import com.tjclp.xlcr.v2.transform.{Conversion, Splitter, Transform}
+import com.tjclp.xlcr.v2.types.Mime
 
 /**
  * Compile-time macros for given transform discovery and verification.
@@ -78,36 +78,3 @@ object TransformMacros:
         '{ Some(${ iss.tree.asExprOf[Splitter[I, O]] }) }
       case _: ImplicitSearchFailure =>
         '{ None }
-
-/**
- * Auto-registration trait for transforms.
- *
- * When a given extends this trait, it will automatically register itself
- * with the TransformRegistry upon first access.
- */
-trait AutoRegister[I <: Mime, O <: Mime]:
-  self: Transform[I, O] =>
-
-  protected def inputMimeValue: I
-  protected def outputMimeValue: O
-
-  // Register on instantiation
-  TransformRegistry.registerConversion(inputMimeValue, outputMimeValue, this)
-
-/**
- * Auto-registration trait for conversions.
- */
-trait AutoRegisterConversion[I <: Mime, O <: Mime] extends AutoRegister[I, O]:
-  self: Conversion[I, O] =>
-
-/**
- * Auto-registration trait for splitters.
- */
-trait AutoRegisterSplitter[I <: Mime, O <: Mime]:
-  self: Splitter[I, O] =>
-
-  protected def inputMimeValue: I
-  protected def outputMimeValue: O
-
-  // Register as both conversion and splitter
-  TransformRegistry.registerSplitter(inputMimeValue, outputMimeValue, this)

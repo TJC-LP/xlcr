@@ -25,7 +25,6 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
         args.input shouldBe Paths.get("input.pdf")
         args.output shouldBe Paths.get("output.html")
         args.verbose shouldBe false
-        args.stripMasters shouldBe false
         args.backend shouldBe None
       case _ => fail("Expected Convert command")
   }
@@ -61,23 +60,13 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
       case _ => fail("Expected Convert command")
   }
 
-  it should "parse convert command with --strip-masters flag" in {
-    val result = parse(Seq("convert", "-i", "presentation.pptx", "-o", "output.html", "--strip-masters"))
-
-    result.isRight shouldBe true
-    result.toOption.get match
-      case CliCommand.Convert(args) =>
-        args.stripMasters shouldBe true
-      case _ => fail("Expected Convert command")
-  }
-
   it should "parse convert command with backend option" in {
     val result = parse(Seq("convert", "-i", "in.pdf", "-o", "out.pptx", "-b", "aspose"))
 
     result.isRight shouldBe true
     result.toOption.get match
       case CliCommand.Convert(args) =>
-        args.backend shouldBe Some("aspose")
+        args.backend shouldBe Some(Backend.Aspose)
       case _ => fail("Expected Convert command")
   }
 
@@ -87,7 +76,7 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
     result.isRight shouldBe true
     result.toOption.get match
       case CliCommand.Convert(args) =>
-        args.backend shouldBe Some("libreoffice")
+        args.backend shouldBe Some(Backend.LibreOffice)
       case _ => fail("Expected Convert command")
   }
 
@@ -97,7 +86,6 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
       "-i", "input.pptx",
       "-o", "output.html",
       "-v",
-      "--strip-masters",
       "-b", "xlcr"
     ))
 
@@ -107,9 +95,15 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
         args.input shouldBe Paths.get("input.pptx")
         args.output shouldBe Paths.get("output.html")
         args.verbose shouldBe true
-        args.stripMasters shouldBe true
-        args.backend shouldBe Some("xlcr")
+        args.backend shouldBe Some(Backend.Xlcr)
       case _ => fail("Expected Convert command")
+  }
+
+  it should "reject unknown backend values" in {
+    val result = parse(Seq("convert", "-i", "in.pdf", "-o", "out.pptx", "-b", "unknown"))
+
+    result.isLeft shouldBe true
+    result.left.getOrElse(fail("Expected Help")).toString should include("Unknown backend")
   }
 
   // ============================================================================
@@ -155,7 +149,7 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
     result.isRight shouldBe true
     result.toOption.get match
       case CliCommand.Split(args) =>
-        args.backend shouldBe Some("aspose")
+        args.backend shouldBe Some(Backend.Aspose)
       case _ => fail("Expected Split command")
   }
 
@@ -353,7 +347,6 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
 
     args.backend shouldBe None
     args.verbose shouldBe false
-    args.stripMasters shouldBe false
   }
 
   "SplitArgs" should "have correct defaults" in {

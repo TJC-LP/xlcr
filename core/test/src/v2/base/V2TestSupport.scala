@@ -4,20 +4,17 @@ import zio.{Runtime, Unsafe, ZIO}
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import com.tjclp.xlcr.v2.registry.{PathFinder, TransformRegistry}
 import com.tjclp.xlcr.v2.transform.TransformError
 
 /**
- * Base trait for v2 tests providing ZIO runtime helpers and registry cleanup.
+ * Base trait for v2 tests providing ZIO runtime helpers.
  *
  * Extends this trait to get:
  * - ZIO effect execution helpers (runZIO, runZIOExpectingError)
- * - Automatic registry cleanup between tests
  * - Common ScalaTest mixins
  */
-trait V2TestSupport extends AnyFlatSpec with Matchers with BeforeAndAfterEach with BeforeAndAfterAll:
+trait V2TestSupport extends AnyFlatSpec with Matchers:
 
   /** The ZIO runtime for executing effects synchronously */
   protected val runtime: Runtime[Any] = Runtime.default
@@ -56,19 +53,3 @@ trait V2TestSupport extends AnyFlatSpec with Matchers with BeforeAndAfterEach wi
     Unsafe.unsafe { implicit unsafe =>
       runtime.unsafe.run(zio.either).getOrThrowFiberFailure()
     }
-
-  /**
-   * Clear the transform registry before each test for isolation.
-   */
-  override def beforeEach(): Unit =
-    super.beforeEach()
-    TransformRegistry.clear()
-    PathFinder.clearCache()
-
-  /**
-   * Optional: Clear registry after all tests complete.
-   */
-  override def afterAll(): Unit =
-    super.afterAll()
-    TransformRegistry.clear()
-    PathFinder.clearCache()
