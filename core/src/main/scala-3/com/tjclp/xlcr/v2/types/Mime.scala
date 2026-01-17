@@ -354,3 +354,73 @@ object Mime:
   def fromString(mimeTypeStr: String): Option[Mime] =
     val parsed = parse(mimeTypeStr)
     values.find(_.mimeType == parsed.mimeType)
+
+  // ============================================================================
+  // Content-Based Detection (Tika)
+  // ============================================================================
+
+  import org.apache.tika.config.TikaConfig
+  import org.apache.tika.io.TikaInputStream
+  import org.apache.tika.metadata.{Metadata, HttpHeaders}
+  import scala.util.Using
+  import java.io.ByteArrayInputStream
+
+  /** Lazy Tika detector - initialized on first use */
+  private lazy val tikaDetector = TikaConfig.getDefaultConfig.getDetector
+
+  /**
+   * Detect MIME type from content bytes using Tika.
+   *
+   * @param data Raw content bytes
+   * @param filenameHint Optional filename to help detection (improves accuracy for text formats)
+   * @return Detected MIME type, or application/octet-stream if detection fails
+   */
+  def detectFromContent(data: zio.Chunk[Byte], filenameHint: Option[String] = None): Mime =
+    if data.isEmpty then octet
+    else
+      try
+        val metadata = new Metadata()
+        filenameHint.foreach(name => metadata.set(HttpHeaders.CONTENT_LOCATION, name))
+        Using.resource(TikaInputStream.get(new ByteArrayInputStream(data.toArray))) { stream =>
+          val mediaType = tikaDetector.detect(stream, metadata)
+          parse(mediaType.toString)
+        }
+      catch
+        case _: Exception => octet
+
+  /**
+   * Detect MIME type with smart fallback strategy:
+   * 1. Try Tika content-based detection
+   * 2. If Tika returns octet-stream, fall back to extension-based detection
+   * 3. If extension-based also fails, return octet-stream
+   *
+   * @param data Raw content bytes
+   * @param filename Filename (used for both Tika hint and extension fallback)
+   * @return Detected MIME type
+   */
+  def detect(data: zio.Chunk[Byte], filename: String): Mime =
+    val tikaResult = detectFromContent(data, Some(filename))
+    if tikaResult == octet then
+      // Tika couldn't identify - try extension-based
+      fromFilename(filename)
+    else
+      tikaResult
+
+  /**
+   * Detect MIME type from a file path.
+   *
+   * @param path Path to the file
+   * @return Detected MIME type
+   */
+  def detectFromPath(path: java.nio.file.Path): Mime =
+    try
+      val metadata = new Metadata()
+      metadata.set(HttpHeaders.CONTENT_LOCATION, path.getFileName.toString)
+      Using.resource(TikaInputStream.get(path)) { stream =>
+        val mediaType = tikaDetector.detect(stream, metadata)
+        val tikaResult = parse(mediaType.toString)
+        if tikaResult == octet then fromFilename(path.getFileName.toString)
+        else tikaResult
+      }
+    catch
+      case _: Exception => fromFilename(path.getFileName.toString)

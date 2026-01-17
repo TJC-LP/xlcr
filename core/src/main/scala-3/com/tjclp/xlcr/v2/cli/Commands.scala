@@ -21,7 +21,8 @@ object Commands:
       input: Path,
       output: Path,
       backend: Option[Backend] = None,
-      verbose: Boolean = false
+      verbose: Boolean = false,
+      extensionOnly: Boolean = false
   )
 
   /** Arguments for the split command */
@@ -29,13 +30,22 @@ object Commands:
       input: Path,
       outputDir: Path,
       backend: Option[Backend] = None,
-      verbose: Boolean = false
+      verbose: Boolean = false,
+      extensionOnly: Boolean = false
   )
 
   /** Arguments for the info command */
   case class InfoArgs(
-      input: Path
+      input: Path,
+      extensionOnly: Boolean = false,
+      format: OutputFormat = OutputFormat.Text
   )
+
+  /** Output format for the info command */
+  enum OutputFormat:
+    case Text
+    case Json
+    case Xml
 
   /** Sum type for all CLI commands */
   enum CliCommand:
@@ -81,6 +91,31 @@ object Commands:
       help = "Enable verbose output"
     ).orFalse
 
+  private val extensionOnlyFlag: Opts[Boolean] =
+    Opts.flag(
+      long = "extension-only",
+      help = "Use extension-based MIME detection only (skip content analysis)"
+    ).orFalse
+
+  private val jsonFlag: Opts[Boolean] =
+    Opts.flag(
+      long = "json",
+      help = "Output in JSON format"
+    ).orFalse
+
+  private val xmlFlag: Opts[Boolean] =
+    Opts.flag(
+      long = "xml",
+      help = "Output in XML format"
+    ).orFalse
+
+  private val outputFormatOpt: Opts[OutputFormat] =
+    (jsonFlag, xmlFlag).mapN { (json, xml) =>
+      if json then OutputFormat.Json
+      else if xml then OutputFormat.Xml
+      else OutputFormat.Text
+    }
+
   private val backendOpt: Opts[Option[Backend]] =
     Opts.option[String](
       long = "backend",
@@ -101,7 +136,7 @@ object Commands:
   // ============================================================================
 
   private val convertOpts: Opts[ConvertArgs] =
-    (inputOpt, outputOpt, backendOpt, verboseFlag).mapN(ConvertArgs.apply)
+    (inputOpt, outputOpt, backendOpt, verboseFlag, extensionOnlyFlag).mapN(ConvertArgs.apply)
 
   val convertCmd: Opts[CliCommand] =
     Opts.subcommand(
@@ -110,7 +145,7 @@ object Commands:
     )(convertOpts.map(CliCommand.Convert.apply))
 
   private val splitOpts: Opts[SplitArgs] =
-    (inputOpt, outputDirOpt, backendOpt, verboseFlag).mapN(SplitArgs.apply)
+    (inputOpt, outputDirOpt, backendOpt, verboseFlag, extensionOnlyFlag).mapN(SplitArgs.apply)
 
   val splitCmd: Opts[CliCommand] =
     Opts.subcommand(
@@ -119,7 +154,7 @@ object Commands:
     )(splitOpts.map(CliCommand.Split.apply))
 
   private val infoOpts: Opts[InfoArgs] =
-    inputOpt.map(InfoArgs.apply)
+    (inputOpt, extensionOnlyFlag, outputFormatOpt).mapN(InfoArgs.apply)
 
   val infoCmd: Opts[CliCommand] =
     Opts.subcommand(

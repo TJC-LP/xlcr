@@ -1,6 +1,13 @@
 package com.tjclp.xlcr.v2.cli
 
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
+
+import org.apache.tika.io.TikaInputStream
+import org.apache.tika.metadata.{Metadata, HttpHeaders}
+import org.apache.tika.parser.AutoDetectParser
+import org.apache.tika.sax.BodyContentHandler
+
+import scala.util.Using
 
 import zio.*
 
@@ -77,11 +84,15 @@ object XlcrMain extends ZIOAppDefault:
         Console.printLine(s"Converting ${args.input} to ${args.output}")
       )
 
-      // Read input file
+      // Read input file and detect MIME type
       inputBytes <- ZIO.attemptBlocking(Files.readAllBytes(args.input))
-      inputMime = Mime.fromFilename(args.input.getFileName.toString)
+      inputChunk = Chunk.fromArray(inputBytes)
+      inputMime = if args.extensionOnly then
+        Mime.fromFilename(args.input.getFileName.toString)
+      else
+        Mime.detect(inputChunk, args.input.getFileName.toString)
       outputMime = Mime.fromFilename(args.output.getFileName.toString)
-      content = Content.fromChunk(Chunk.fromArray(inputBytes), inputMime)
+      content = Content.fromChunk(inputChunk, inputMime)
 
       _ <- ZIO.when(args.verbose)(
         Console.printLine(s"Input MIME: ${inputMime.value}, Output MIME: ${outputMime.value}")
@@ -128,10 +139,14 @@ object XlcrMain extends ZIOAppDefault:
           Files.createDirectories(args.outputDir)
       }
 
-      // Read input file
+      // Read input file and detect MIME type
       inputBytes <- ZIO.attemptBlocking(Files.readAllBytes(args.input))
-      inputMime = Mime.fromFilename(args.input.getFileName.toString)
-      content = Content.fromChunk(Chunk.fromArray(inputBytes), inputMime)
+      inputChunk = Chunk.fromArray(inputBytes)
+      inputMime = if args.extensionOnly then
+        Mime.fromFilename(args.input.getFileName.toString)
+      else
+        Mime.detect(inputChunk, args.input.getFileName.toString)
+      content = Content.fromChunk(inputChunk, inputMime)
 
       _ <- ZIO.when(args.verbose)(
         Console.printLine(s"Input MIME: ${inputMime.value}")
@@ -183,29 +198,34 @@ object XlcrMain extends ZIOAppDefault:
         ZIO.fail(new RuntimeException(s"File not found: ${args.input}"))
       )
 
-      // Get file info
+      // Read file and detect MIME type with metadata
+      inputBytes <- ZIO.attemptBlocking(Files.readAllBytes(args.input))
+      inputChunk = Chunk.fromArray(inputBytes)
       size <- ZIO.attemptBlocking(Files.size(args.input))
-      inputMime = Mime.fromFilename(args.input.getFileName.toString)
 
-      // Display info
-      _ <- Console.printLine(s"File: ${args.input}")
-      _ <- Console.printLine(s"Size: ${formatSize(size)}")
-      _ <- Console.printLine(s"MIME Type: ${inputMime.value}")
-      _ <- Console.printLine(s"Base Type: ${inputMime.baseType}")
-      _ <- Console.printLine(s"Sub Type: ${inputMime.subType}")
+      inputMime = if args.extensionOnly then
+        Mime.fromFilename(args.input.getFileName.toString)
+      else
+        Mime.detect(inputChunk, args.input.getFileName.toString)
 
-      // Check available conversions
-      _ <- Console.printLine("")
-      _ <- Console.printLine("Available conversions:")
+      // Extract Tika metadata (skip if extension-only mode for speed)
+      metadata <- if args.extensionOnly then
+        ZIO.succeed(Map.empty[String, String])
+      else
+        ZIO.attemptBlocking(extractMetadata(inputChunk, args.input.getFileName.toString))
+
+      // Check available conversions and splittability
       availableTargets = findAvailableConversions(inputMime)
-      _ <- ZIO.foreachDiscard(availableTargets) { target =>
-        Console.printLine(s"  -> ${target.value}")
-      }
-
-      // Check if splittable
       canSplitFile = UnifiedTransforms.canSplit(inputMime)
-      _ <- Console.printLine("")
-      _ <- Console.printLine(s"Splittable: $canSplitFile")
+
+      // Output based on format
+      _ <- args.format match
+        case OutputFormat.Json =>
+          printInfoJson(args.input, size, inputMime, metadata, availableTargets, canSplitFile)
+        case OutputFormat.Xml =>
+          printInfoXml(args.input, size, inputMime, metadata, availableTargets, canSplitFile)
+        case OutputFormat.Text =>
+          printInfoText(args.input, size, inputMime, metadata, availableTargets, canSplitFile)
     yield ExitCode.success
 
   // ============================================================================
@@ -349,3 +369,131 @@ object XlcrMain extends ZIOAppDefault:
       Mime.png, Mime.jpeg
     )
     targets.filter(target => target != from && UnifiedTransforms.canConvert(from, target))
+
+  // ============================================================================
+  // Metadata Extraction
+  // ============================================================================
+
+  private def extractMetadata(data: Chunk[Byte], filename: String): Map[String, String] =
+    if data.isEmpty then Map.empty
+    else
+      try
+        val metadata = new Metadata()
+        metadata.set(HttpHeaders.CONTENT_LOCATION, filename)
+        val parser = new AutoDetectParser()
+        val handler = new BodyContentHandler(-1)
+        Using.resource(TikaInputStream.get(new java.io.ByteArrayInputStream(data.toArray))) { stream =>
+          parser.parse(stream, handler, metadata)
+        }
+        metadata.names().toList.map(name => name -> metadata.get(name)).toMap
+      catch
+        case _: Exception => Map.empty
+
+  // ============================================================================
+  // Info Output Formatters
+  // ============================================================================
+
+  private def printInfoText(
+      path: Path,
+      size: Long,
+      mime: Mime,
+      metadata: Map[String, String],
+      conversions: List[Mime],
+      canSplit: Boolean
+  ): ZIO[Any, Throwable, Unit] =
+    for
+      _ <- Console.printLine(s"File: $path")
+      _ <- Console.printLine(s"Size: ${formatSize(size)}")
+      _ <- Console.printLine(s"MIME Type: ${mime.value}")
+      _ <- Console.printLine(s"Base Type: ${mime.baseType}")
+      _ <- Console.printLine(s"Sub Type: ${mime.subType}")
+      _ <- Console.printLine("")
+      _ <- Console.printLine("Available conversions:")
+      _ <- ZIO.foreachDiscard(conversions)(t => Console.printLine(s"  -> ${t.value}"))
+      _ <- Console.printLine("")
+      _ <- Console.printLine(s"Splittable: $canSplit")
+      _ <- ZIO.when(metadata.nonEmpty) {
+        for
+          _ <- Console.printLine("")
+          _ <- Console.printLine("Metadata:")
+          _ <- ZIO.foreachDiscard(metadata.toList.sortBy(_._1)) { case (k, v) =>
+            Console.printLine(s"  $k: $v")
+          }
+        yield ()
+      }
+    yield ()
+
+  private def printInfoJson(
+      path: Path,
+      size: Long,
+      mime: Mime,
+      metadata: Map[String, String],
+      conversions: List[Mime],
+      canSplit: Boolean
+  ): ZIO[Any, Throwable, Unit] =
+    val metadataJson = metadata.map { case (k, v) =>
+      s""""${escapeJson(k)}": "${escapeJson(v)}""""
+    }.mkString(",\n    ")
+
+    val conversionsJson = conversions.map(m => s""""${m.value}"""").mkString(", ")
+
+    val json = s"""{
+  "file": "${escapeJson(path.toString)}",
+  "size": $size,
+  "sizeFormatted": "${formatSize(size)}",
+  "mimeType": "${mime.value}",
+  "baseType": "${mime.baseType}",
+  "subType": "${mime.subType}",
+  "availableConversions": [$conversionsJson],
+  "splittable": $canSplit,
+  "metadata": {
+    $metadataJson
+  }
+}"""
+    Console.printLine(json)
+
+  private def printInfoXml(
+      path: Path,
+      size: Long,
+      mime: Mime,
+      metadata: Map[String, String],
+      conversions: List[Mime],
+      canSplit: Boolean
+  ): ZIO[Any, Throwable, Unit] =
+    val metadataXml = metadata.map { case (k, v) =>
+      s"""    <entry key="${escapeXml(k)}">${escapeXml(v)}</entry>"""
+    }.mkString("\n")
+
+    val conversionsXml = conversions.map(m => s"""    <conversion>${escapeXml(m.value)}</conversion>""").mkString("\n")
+
+    val xml = s"""<?xml version="1.0" encoding="UTF-8"?>
+<fileInfo>
+  <file>${escapeXml(path.toString)}</file>
+  <size>$size</size>
+  <sizeFormatted>${formatSize(size)}</sizeFormatted>
+  <mimeType>${escapeXml(mime.value)}</mimeType>
+  <baseType>${escapeXml(mime.baseType)}</baseType>
+  <subType>${escapeXml(mime.subType)}</subType>
+  <availableConversions>
+$conversionsXml
+  </availableConversions>
+  <splittable>$canSplit</splittable>
+  <metadata>
+$metadataXml
+  </metadata>
+</fileInfo>"""
+    Console.printLine(xml)
+
+  private def escapeJson(s: String): String =
+    s.replace("\\", "\\\\")
+      .replace("\"", "\\\"")
+      .replace("\n", "\\n")
+      .replace("\r", "\\r")
+      .replace("\t", "\\t")
+
+  private def escapeXml(s: String): String =
+    s.replace("&", "&amp;")
+      .replace("<", "&lt;")
+      .replace(">", "&gt;")
+      .replace("\"", "&quot;")
+      .replace("'", "&apos;")
