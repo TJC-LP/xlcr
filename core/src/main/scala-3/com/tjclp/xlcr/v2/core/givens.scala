@@ -1,6 +1,6 @@
 package com.tjclp.xlcr.v2.core
 
-import com.tjclp.xlcr.v2.transform.{Conversion, DynamicSplitter, Splitter}
+import com.tjclp.xlcr.v2.transform.{ Conversion, DynamicSplitter, Splitter }
 import com.tjclp.xlcr.v2.types.Mime
 
 /**

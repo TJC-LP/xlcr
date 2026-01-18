@@ -1,24 +1,23 @@
 package com.tjclp.xlcr.v2.core
 
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 
-import com.tjclp.xlcr.v2.transform.{TransformError, UnsupportedConversion}
-import com.tjclp.xlcr.v2.types.{Content, DynamicFragment, Mime}
+import com.tjclp.xlcr.v2.transform.{ TransformError, UnsupportedConversion }
+import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Mime }
 
 /**
  * Stateless dispatch object for XLCR Core transforms.
  *
- * This object provides compile-time dispatch to core conversion and splitter
- * implementations using Apache Tika, Apache POI, Apache PDFBox, and Java standard
- * libraries. No external commercial dependencies (Aspose) or system installations
- * (LibreOffice) are required.
+ * This object provides compile-time dispatch to core conversion and splitter implementations using
+ * Apache Tika, Apache POI, Apache PDFBox, and Java standard libraries. No external commercial
+ * dependencies (Aspose) or system installations (LibreOffice) are required.
  *
  * Priority: XLCR Core (lowest) < LibreOffice < Aspose (highest)
  *
  * Key Features:
- * - Universal text extraction via Tika (any format → plain text or XML)
- * - XLSX → ODS conversion via POI + ODFDOM
- * - Document splitting for Excel, PowerPoint, Word, PDF, email, and archives
+ *   - Universal text extraction via Tika (any format → plain text or XML)
+ *   - XLSX → ODS conversion via POI + ODFDOM
+ *   - Document splitting for Excel, PowerPoint, Word, PDF, email, and archives
  *
  * Usage:
  * {{{
@@ -34,20 +33,20 @@ import com.tjclp.xlcr.v2.types.{Content, DynamicFragment, Mime}
 object XlcrTransforms:
 
   // MIME type string constants for pattern matching
-  private val DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  private val DOC = "application/msword"
-  private val XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  private val XLS = "application/vnd.ms-excel"
-  private val ODS = "application/vnd.oasis.opendocument.spreadsheet"
-  private val PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-  private val PPT = "application/vnd.ms-powerpoint"
-  private val PDF = "application/pdf"
+  private val DOCX  = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  private val DOC   = "application/msword"
+  private val XLSX  = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  private val XLS   = "application/vnd.ms-excel"
+  private val ODS   = "application/vnd.oasis.opendocument.spreadsheet"
+  private val PPTX  = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  private val PPT   = "application/vnd.ms-powerpoint"
+  private val PDF   = "application/pdf"
   private val PLAIN = "text/plain"
-  private val XML = "application/xml"
-  private val CSV = "text/csv"
-  private val EML = "message/rfc822"
-  private val MSG = "application/vnd.ms-outlook"
-  private val ZIP = "application/zip"
+  private val XML   = "application/xml"
+  private val CSV   = "text/csv"
+  private val EML   = "message/rfc822"
+  private val MSG   = "application/vnd.ms-outlook"
+  private val ZIP   = "application/zip"
 
   // ===========================================================================
   // Conversion dispatch
@@ -57,13 +56,16 @@ object XlcrTransforms:
    * Convert content to a target MIME type using XLCR Core.
    *
    * Supported conversions:
-   * - ANY → text/plain (Tika text extraction)
-   * - ANY → application/xml (Tika XML extraction)
-   * - XLSX → ODS (POI + ODFDOM)
+   *   - ANY → text/plain (Tika text extraction)
+   *   - ANY → application/xml (Tika XML extraction)
+   *   - XLSX → ODS (POI + ODFDOM)
    *
-   * @param input The input content to convert
-   * @param to The target MIME type
-   * @return The converted content or UnsupportedConversion error
+   * @param input
+   *   The input content to convert
+   * @param to
+   *   The target MIME type
+   * @return
+   *   The converted content or UnsupportedConversion error
    */
   def convert(input: Content[Mime], to: Mime): ZIO[Any, TransformError, Content[Mime]] =
     to.mimeType match
@@ -94,7 +96,7 @@ object XlcrTransforms:
       case PLAIN | XML => true
       // XLSX → ODS is supported
       case ODS if from.mimeType == XLSX => true
-      case _ => false
+      case _                            => false
 
   // ===========================================================================
   // Splitter dispatch
@@ -104,19 +106,21 @@ object XlcrTransforms:
    * Split content into fragments using XLCR Core.
    *
    * Supported splits:
-   * - XLSX/XLS sheets (POI)
-   * - ODS sheets (ODFDOM)
-   * - PPTX slides (POI)
-   * - DOCX sections (POI)
-   * - PDF pages (PDFBox)
-   * - Text paragraphs (built-in)
-   * - CSV rows (built-in)
-   * - EML attachments (Jakarta Mail)
-   * - MSG attachments (POI HSMF)
-   * - ZIP entries (java.util.zip)
+   *   - XLSX/XLS sheets (POI)
+   *   - ODS sheets (ODFDOM)
+   *   - PPTX slides (POI)
+   *   - DOCX sections (POI)
+   *   - PDF pages (PDFBox)
+   *   - Text paragraphs (built-in)
+   *   - CSV rows (built-in)
+   *   - EML attachments (Jakarta Mail)
+   *   - MSG attachments (POI HSMF)
+   *   - ZIP entries (java.util.zip)
    *
-   * @param input The input content to split
-   * @return Chunk of dynamic fragments or UnsupportedConversion error
+   * @param input
+   *   The input content to split
+   * @return
+   *   Chunk of dynamic fragments or UnsupportedConversion error
    */
   def split(input: Content[Mime]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     input.mime.mimeType match
@@ -176,11 +180,15 @@ object XlcrTransforms:
     splittableMimeTypes.contains(mime.mimeType)
 
   private val splittableMimeTypes: Set[String] = Set(
-    XLSX, XLS, ODS,
+    XLSX,
+    XLS,
+    ODS,
     PPTX,
     DOCX,
     PDF,
-    PLAIN, CSV,
-    EML, MSG,
+    PLAIN,
+    CSV,
+    EML,
+    MSG,
     ZIP
   )

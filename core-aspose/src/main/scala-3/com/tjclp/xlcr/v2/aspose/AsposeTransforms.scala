@@ -1,15 +1,15 @@
 package com.tjclp.xlcr.v2.aspose
 
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 
-import com.tjclp.xlcr.v2.transform.{TransformError, UnsupportedConversion}
-import com.tjclp.xlcr.v2.types.{Content, DynamicFragment, Mime}
+import com.tjclp.xlcr.v2.transform.{ TransformError, UnsupportedConversion }
+import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Mime }
 
 /**
  * Stateless dispatch object for Aspose-based transforms.
  *
- * This object provides compile-time dispatch to Aspose conversion and splitter
- * implementations. No runtime registry initialization is required.
+ * This object provides compile-time dispatch to Aspose conversion and splitter implementations. No
+ * runtime registry initialization is required.
  *
  * Usage:
  * {{{
@@ -22,22 +22,22 @@ import com.tjclp.xlcr.v2.types.{Content, DynamicFragment, Mime}
 object AsposeTransforms:
 
   // MIME type string constants for pattern matching
-  private val DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  private val DOC = "application/msword"
-  private val XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  private val XLS = "application/vnd.ms-excel"
-  private val XLSM = "application/vnd.ms-excel.sheet.macroenabled.12"
-  private val XLSB = "application/vnd.ms-excel.sheet.binary.macroenabled.12"
-  private val ODS = "application/vnd.oasis.opendocument.spreadsheet"
-  private val PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-  private val PPT = "application/vnd.ms-powerpoint"
-  private val PDF = "application/pdf"
-  private val HTML = "text/html"
-  private val PNG = "image/png"
-  private val JPEG = "image/jpeg"
-  private val EML = "message/rfc822"
-  private val MSG = "application/vnd.ms-outlook"
-  private val ZIP = "application/zip"
+  private val DOCX     = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  private val DOC      = "application/msword"
+  private val XLSX     = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  private val XLS      = "application/vnd.ms-excel"
+  private val XLSM     = "application/vnd.ms-excel.sheet.macroenabled.12"
+  private val XLSB     = "application/vnd.ms-excel.sheet.binary.macroenabled.12"
+  private val ODS      = "application/vnd.oasis.opendocument.spreadsheet"
+  private val PPTX     = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  private val PPT      = "application/vnd.ms-powerpoint"
+  private val PDF      = "application/pdf"
+  private val HTML     = "text/html"
+  private val PNG      = "image/png"
+  private val JPEG     = "image/jpeg"
+  private val EML      = "message/rfc822"
+  private val MSG      = "application/vnd.ms-outlook"
+  private val ZIP      = "application/zip"
   private val SEVENZIP = "application/x-7z-compressed"
 
   // ===========================================================================
@@ -47,9 +47,12 @@ object AsposeTransforms:
   /**
    * Convert content to a target MIME type using Aspose.
    *
-   * @param input The input content to convert
-   * @param to The target MIME type
-   * @return The converted content or UnsupportedConversion error
+   * @param input
+   *   The input content to convert
+   * @param to
+   *   The target MIME type
+   * @return
+   *   The converted content or UnsupportedConversion error
    */
   def convert(input: Content[Mime], to: Mime): ZIO[Any, TransformError, Content[Mime]] =
     (input.mime.mimeType, to.mimeType) match
@@ -130,21 +133,36 @@ object AsposeTransforms:
 
   private val supportedConversions: Set[(String, String)] = Set(
     // Word -> PDF
-    (DOCX, PDF), (DOC, PDF),
+    (DOCX, PDF),
+    (DOC, PDF),
     // Excel -> PDF
-    (XLSX, PDF), (XLS, PDF), (XLSM, PDF), (XLSB, PDF), (ODS, PDF),
+    (XLSX, PDF),
+    (XLS, PDF),
+    (XLSM, PDF),
+    (XLSB, PDF),
+    (ODS, PDF),
     // PowerPoint -> PDF
-    (PPTX, PDF), (PPT, PDF),
+    (PPTX, PDF),
+    (PPT, PDF),
     // PowerPoint <-> HTML
-    (PPTX, HTML), (PPT, HTML), (HTML, PPTX), (HTML, PPT),
+    (PPTX, HTML),
+    (PPT, HTML),
+    (HTML, PPTX),
+    (HTML, PPT),
     // PDF -> HTML/PowerPoint
-    (PDF, HTML), (PDF, PPTX), (PDF, PPT),
+    (PDF, HTML),
+    (PDF, PPTX),
+    (PDF, PPT),
     // PDF <-> Images
-    (PDF, PNG), (PDF, JPEG), (PNG, PDF), (JPEG, PDF),
+    (PDF, PNG),
+    (PDF, JPEG),
+    (PNG, PDF),
+    (JPEG, PDF),
     // HTML -> PDF
     (HTML, PDF),
     // Email -> PDF
-    (EML, PDF), (MSG, PDF)
+    (EML, PDF),
+    (MSG, PDF)
   )
 
   // ===========================================================================
@@ -154,8 +172,10 @@ object AsposeTransforms:
   /**
    * Split content into fragments using Aspose.
    *
-   * @param input The input content to split
-   * @return Chunks of dynamic fragments or UnsupportedConversion error
+   * @param input
+   *   The input content to split
+   * @return
+   *   Chunks of dynamic fragments or UnsupportedConversion error
    */
   def split(input: Content[Mime]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     input.mime.mimeType match
@@ -219,10 +239,18 @@ object AsposeTransforms:
     splittableMimeTypes.contains(mime.mimeType)
 
   private val splittableMimeTypes: Set[String] = Set(
-    XLSX, XLS, XLSM, XLSB, ODS,
-    PPTX, PPT,
+    XLSX,
+    XLS,
+    XLSM,
+    XLSB,
+    ODS,
+    PPTX,
+    PPT,
     PDF,
-    DOCX, DOC,
-    ZIP, SEVENZIP,
-    EML, MSG
+    DOCX,
+    DOC,
+    ZIP,
+    SEVENZIP,
+    EML,
+    MSG
   )

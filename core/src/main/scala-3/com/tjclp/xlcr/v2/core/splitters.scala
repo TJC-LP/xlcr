@@ -1,12 +1,18 @@
 package com.tjclp.xlcr.v2.core
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream}
+import java.io.{
+  ByteArrayInputStream,
+  ByteArrayOutputStream,
+  File,
+  FileInputStream,
+  FileOutputStream
+}
 import java.util.Properties
-import java.util.zip.{ZipEntry, ZipInputStream}
+import java.util.zip.{ ZipEntry, ZipInputStream }
 
 import scala.jdk.CollectionConverters.*
 
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.poi.hsmf.MAPIMessage
@@ -15,15 +21,15 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xslf.usermodel.XMLSlideShow
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
-import jakarta.mail.{Multipart, Part, Session}
+import jakarta.mail.{ Multipart, Part, Session }
 import jakarta.mail.internet.MimeMessage
 
-import com.tjclp.xlcr.v2.transform.{DynamicSplitter, SplitError, Splitter}
-import com.tjclp.xlcr.v2.types.{Content, DynamicFragment, Fragment, Mime}
+import com.tjclp.xlcr.v2.transform.{ DynamicSplitter, SplitError, Splitter }
+import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Fragment, Mime }
 
 /**
- * Core XLCR splitters using POI, PDFBox, and Java standard libraries.
- * These serve as the lowest-priority fallback when Aspose and LibreOffice are unavailable.
+ * Core XLCR splitters using POI, PDFBox, and Java standard libraries. These serve as the
+ * lowest-priority fallback when Aspose and LibreOffice are unavailable.
  *
  * Priority: XLCR Core < LibreOffice < Aspose
  */
@@ -86,7 +92,7 @@ object XlcrSplitters:
       // Second pass: extract each sheet
       val fragments = (0 until total).map { idx =>
         val bais = new ByteArrayInputStream(data)
-        val wb = WorkbookFactory.create(bais)
+        val wb   = WorkbookFactory.create(bais)
         try
           val cnt = wb.getNumberOfSheets
           // Remove all sheets except the target
@@ -113,8 +119,8 @@ object XlcrSplitters:
     val (total, sheetNames) =
       try
         val sheets = tempDoc.getTableList(false)
-        val count = sheets.size()
-        val names = (0 until count).map(idx => sheets.get(idx).getTableName)
+        val count  = sheets.size()
+        val names  = (0 until count).map(idx => sheets.get(idx).getTableName)
         (count, names)
       finally
         tempDoc.close()
@@ -151,8 +157,8 @@ object XlcrSplitters:
   /**
    * Split PPTX presentation into individual slides using Apache POI.
    *
-   * Note: POI requires file-based access for reliable PPTX handling,
-   * so we use temporary files internally.
+   * Note: POI requires file-based access for reliable PPTX handling, so we use temporary files
+   * internally.
    */
   val pptxSlideSplitter: Splitter[Mime.Pptx, Mime.Pptx] =
     Splitter.withPriority[Mime.Pptx, Mime.Pptx](CORE_PRIORITY) { input =>
@@ -177,7 +183,7 @@ object XlcrSplitters:
       val src = new XMLSlideShow(new FileInputStream(tempFile))
       try
         val slides = src.getSlides.asScala.toVector
-        val total = slides.size
+        val total  = slides.size
 
         if total == 0 then
           throw new IllegalStateException("Presentation contains no slides")
@@ -185,7 +191,8 @@ object XlcrSplitters:
         // Extract each slide
         val fragments = (0 until total).flatMap { idx =>
           val originalSlide = slides(idx)
-          val title = Option(originalSlide.getTitle).filter(_.nonEmpty).getOrElse(s"Slide ${idx + 1}")
+          val title =
+            Option(originalSlide.getTitle).filter(_.nonEmpty).getOrElse(s"Slide ${idx + 1}")
 
           try
             // Create temp file for destination
@@ -204,7 +211,7 @@ object XlcrSplitters:
                   destFos.close()
 
                 val destBytes = java.nio.file.Files.readAllBytes(destFile.toPath)
-                val content = Content(destBytes, Mime.pptx)
+                val content   = Content(destBytes, Mime.pptx)
                 Some(Fragment(content, idx, Some(title)))
               finally
                 dest.close()
@@ -227,8 +234,8 @@ object XlcrSplitters:
   /**
    * Split DOCX document into sections using Apache POI.
    *
-   * This splits by section breaks in the document. If no section breaks exist,
-   * returns the entire document as a single fragment.
+   * This splits by section breaks in the document. If no section breaks exist, returns the entire
+   * document as a single fragment.
    */
   val docxSectionSplitter: Splitter[Mime.Docx, Mime.Docx] =
     Splitter.withPriority[Mime.Docx, Mime.Docx](CORE_PRIORITY) { input =>
@@ -298,8 +305,7 @@ object XlcrSplitters:
   /**
    * Split plain text into chunks.
    *
-   * Default behavior: split by paragraphs (double newlines).
-   * Each paragraph becomes a fragment.
+   * Default behavior: split by paragraphs (double newlines). Each paragraph becomes a fragment.
    */
   val textSplitter: DynamicSplitter[Mime.Plain] =
     DynamicSplitter.withPriority[Mime.Plain](CORE_PRIORITY) { input =>
@@ -309,7 +315,7 @@ object XlcrSplitters:
         else
           // Split by paragraphs (double newlines)
           val paragraphs = text.split("\n\\s*\n").filter(_.trim.nonEmpty)
-          val total = paragraphs.length
+          val total      = paragraphs.length
 
           val fragments = paragraphs.zipWithIndex.map { case (para, idx) =>
             val content: Content[Mime] = Content.fromString(para.trim, Mime.plain)
@@ -325,18 +331,18 @@ object XlcrSplitters:
   val csvSplitter: DynamicSplitter[Mime.Csv] =
     DynamicSplitter.withPriority[Mime.Csv](CORE_PRIORITY) { input =>
       ZIO.attemptBlocking {
-        val csv = new String(input.data.toArray, "UTF-8")
+        val csv   = new String(input.data.toArray, "UTF-8")
         val lines = csv.split("\r?\n", -1).toVector
         if lines.isEmpty then Chunk.empty
         else
           val header = lines.head
-          val rows = lines.tail.filter(_.trim.nonEmpty)
+          val rows   = lines.tail.filter(_.trim.nonEmpty)
 
           if rows.isEmpty then Chunk.empty
           else
             val total = rows.size
             val fragments = rows.zipWithIndex.map { case (row, idx) =>
-              val chunkText = s"$header\n$row"
+              val chunkText              = s"$header\n$row"
               val content: Content[Mime] = Content.fromString(chunkText, Mime.csv)
               DynamicFragment(content, idx, Some(s"Row ${idx + 2}"))
             }
@@ -355,12 +361,14 @@ object XlcrSplitters:
     DynamicSplitter.withPriority[Mime.Eml](CORE_PRIORITY) { input =>
       ZIO.attemptBlocking {
         splitEmlMessage(input.data.toArray)
-      }.mapError(e => SplitError(s"EML attachment split failed: ${e.getMessage}", Mime.eml, Some(e)))
+      }.mapError(e =>
+        SplitError(s"EML attachment split failed: ${e.getMessage}", Mime.eml, Some(e))
+      )
     }
 
   private def splitEmlMessage(data: Array[Byte]): Chunk[DynamicFragment] =
-    val session = Session.getDefaultInstance(new Properties())
-    val msg = new MimeMessage(session, new ByteArrayInputStream(data))
+    val session   = Session.getDefaultInstance(new Properties())
+    val msg       = new MimeMessage(session, new ByteArrayInputStream(data))
     val fragments = scala.collection.mutable.ListBuffer.empty[DynamicFragment]
 
     var bodyCaptured = false
@@ -373,20 +381,22 @@ object XlcrSplitters:
           case _ => // Skip non-multipart content
       else
         val disposition = Option(part.getDisposition).getOrElse("")
-        val ctype = part.getContentType.toLowerCase
+        val ctype       = part.getContentType.toLowerCase
 
         if Part.ATTACHMENT.equalsIgnoreCase(disposition) ||
-           (disposition == "inline" && ctype.startsWith("image/")) then
-          val bytes = part.getInputStream.readAllBytes()
+          (disposition == "inline" && ctype.startsWith("image/"))
+        then
+          val bytes   = part.getInputStream.readAllBytes()
           val mimeStr = ctype.split(";")(0).trim
-          val mime = Mime.fromString(mimeStr).getOrElse(Mime.octet)
-          val name = Option(part.getFileName).getOrElse(s"attachment_${fragments.size}")
+          val mime    = Mime.fromString(mimeStr).getOrElse(Mime.octet)
+          val name    = Option(part.getFileName).getOrElse(s"attachment_${fragments.size}")
           val content = Content.fromChunk(Chunk.fromArray(bytes), mime)
           fragments += DynamicFragment(content, fragments.size, Some(name))
-        else if !bodyCaptured && (part.isMimeType("text/plain") || part.isMimeType("text/html")) then
-          val bytes = part.getInputStream.readAllBytes()
-          val mime = if part.isMimeType("text/html") then Mime.html else Mime.plain
-          val subj = Option(msg.getSubject).getOrElse("body")
+        else if !bodyCaptured && (part.isMimeType("text/plain") || part.isMimeType("text/html"))
+        then
+          val bytes   = part.getInputStream.readAllBytes()
+          val mime    = if part.isMimeType("text/html") then Mime.html else Mime.plain
+          val subj    = Option(msg.getSubject).getOrElse("body")
           val content = Content.fromChunk(Chunk.fromArray(bytes), mime)
           fragments += DynamicFragment(content, fragments.size, Some(subj))
           bodyCaptured = true
@@ -401,20 +411,22 @@ object XlcrSplitters:
     DynamicSplitter.withPriority[Mime.Msg](CORE_PRIORITY) { input =>
       ZIO.attemptBlocking {
         splitMsgMessage(input.data.toArray)
-      }.mapError(e => SplitError(s"MSG attachment split failed: ${e.getMessage}", Mime.msg, Some(e)))
+      }.mapError(e =>
+        SplitError(s"MSG attachment split failed: ${e.getMessage}", Mime.msg, Some(e))
+      )
     }
 
   private def splitMsgMessage(data: Array[Byte]): Chunk[DynamicFragment] =
-    val msg = new MAPIMessage(new ByteArrayInputStream(data))
+    val msg       = new MAPIMessage(new ByteArrayInputStream(data))
     val fragments = scala.collection.mutable.ListBuffer.empty[DynamicFragment]
 
     // Extract body
     val bodyText = Option(msg.getTextBody).orElse(Option(msg.getHtmlBody)).getOrElse("")
-    val hasBody = bodyText.nonEmpty
+    val hasBody  = bodyText.nonEmpty
 
     if hasBody then
-      val mime = if msg.getHtmlBody != null then Mime.html else Mime.plain
-      val subj = Option(msg.getSubject).getOrElse("body")
+      val mime    = if msg.getHtmlBody != null then Mime.html else Mime.plain
+      val subj    = Option(msg.getSubject).getOrElse("body")
       val content = Content.fromString(bodyText, mime)
       fragments += DynamicFragment(content, fragments.size, Some(subj))
 
@@ -428,8 +440,8 @@ object XlcrSplitters:
       val bytes = Option(att.getEmbeddedAttachmentObject)
         .collect { case arr: Array[Byte] => arr }
         .getOrElse(Array.emptyByteArray)
-      val ext = name.split("\\.").lastOption.getOrElse("").toLowerCase
-      val mime = Mime.fromExtension(ext)
+      val ext     = name.split("\\.").lastOption.getOrElse("").toLowerCase
+      val mime    = Mime.fromExtension(ext)
       val content = Content.fromChunk(Chunk.fromArray(bytes), mime)
       fragments += DynamicFragment(content, fragments.size, Some(name))
     }
@@ -451,7 +463,7 @@ object XlcrSplitters:
     }
 
   private def splitZipArchive(data: Array[Byte]): Chunk[DynamicFragment] =
-    val fragments = scala.collection.mutable.ListBuffer.empty[DynamicFragment]
+    val fragments      = scala.collection.mutable.ListBuffer.empty[DynamicFragment]
     val zipInputStream = new ZipInputStream(new ByteArrayInputStream(data))
 
     try
@@ -461,14 +473,14 @@ object XlcrSplitters:
 
         // Skip directories and macOS metadata
         if !entry.isDirectory && !isMacOsMetadata(entryName) then
-          val baos = new ByteArrayOutputStream()
+          val baos   = new ByteArrayOutputStream()
           val buffer = new Array[Byte](8192)
-          var len = 0
+          var len    = 0
           while { len = zipInputStream.read(buffer); len > 0 } do
             baos.write(buffer, 0, len)
 
           // Determine MIME type from extension
-          val ext = entryName.split("\\.").lastOption.getOrElse("").toLowerCase
+          val ext  = entryName.split("\\.").lastOption.getOrElse("").toLowerCase
           val mime = Mime.fromExtension(ext)
 
           // Clean entry name for display

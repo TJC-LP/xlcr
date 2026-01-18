@@ -1,15 +1,15 @@
 package com.tjclp.xlcr.v2.libreoffice
 
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 
-import com.tjclp.xlcr.v2.transform.{TransformError, UnsupportedConversion}
-import com.tjclp.xlcr.v2.types.{Content, DynamicFragment, Mime}
+import com.tjclp.xlcr.v2.transform.{ TransformError, UnsupportedConversion }
+import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Mime }
 
 /**
  * Stateless dispatch object for LibreOffice-based transforms.
  *
- * This object provides compile-time dispatch to LibreOffice conversion
- * implementations. No runtime registry initialization is required.
+ * This object provides compile-time dispatch to LibreOffice conversion implementations. No runtime
+ * registry initialization is required.
  *
  * LibreOffice must be installed on the system for these conversions to work.
  *
@@ -24,17 +24,17 @@ object LibreOfficeTransforms:
 
   // MIME type string constants for pattern matching
   private val DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  private val DOC = "application/msword"
+  private val DOC  = "application/msword"
   private val XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  private val XLS = "application/vnd.ms-excel"
+  private val XLS  = "application/vnd.ms-excel"
   private val XLSM = "application/vnd.ms-excel.sheet.macroenabled.12"
-  private val ODS = "application/vnd.oasis.opendocument.spreadsheet"
+  private val ODS  = "application/vnd.oasis.opendocument.spreadsheet"
   private val PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-  private val PPT = "application/vnd.ms-powerpoint"
-  private val ODT = "application/vnd.oasis.opendocument.text"
-  private val ODP = "application/vnd.oasis.opendocument.presentation"
-  private val RTF = "application/rtf"
-  private val PDF = "application/pdf"
+  private val PPT  = "application/vnd.ms-powerpoint"
+  private val ODT  = "application/vnd.oasis.opendocument.text"
+  private val ODP  = "application/vnd.oasis.opendocument.presentation"
+  private val RTF  = "application/rtf"
+  private val PDF  = "application/pdf"
 
   // ===========================================================================
   // Conversion dispatch
@@ -43,9 +43,12 @@ object LibreOfficeTransforms:
   /**
    * Convert content to a target MIME type using LibreOffice.
    *
-   * @param input The input content to convert
-   * @param to The target MIME type
-   * @return The converted content or UnsupportedConversion error
+   * @param input
+   *   The input content to convert
+   * @param to
+   *   The target MIME type
+   * @return
+   *   The converted content or UnsupportedConversion error
    */
   def convert(input: Content[Mime], to: Mime): ZIO[Any, TransformError, Content[Mime]] =
     (input.mime.mimeType, to.mimeType) match
@@ -96,13 +99,19 @@ object LibreOfficeTransforms:
 
   private val supportedConversions: Set[(String, String)] = Set(
     // Word -> PDF
-    (DOCX, PDF), (DOC, PDF),
+    (DOCX, PDF),
+    (DOC, PDF),
     // Excel -> PDF
-    (XLSX, PDF), (XLS, PDF), (XLSM, PDF), (ODS, PDF),
+    (XLSX, PDF),
+    (XLS, PDF),
+    (XLSM, PDF),
+    (ODS, PDF),
     // PowerPoint -> PDF
-    (PPTX, PDF), (PPT, PDF),
+    (PPTX, PDF),
+    (PPT, PDF),
     // OpenDocument -> PDF
-    (ODT, PDF), (ODP, PDF),
+    (ODT, PDF),
+    (ODP, PDF),
     // RTF -> PDF
     (RTF, PDF)
   )

@@ -1,21 +1,21 @@
 package com.tjclp.xlcr.v2.aspose
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.util.Using
 
-import zio.{Chunk, ZIO}
+import zio.ZIO
 
-import com.tjclp.xlcr.v2.transform.{Conversion, TransformError}
-import com.tjclp.xlcr.v2.types.{Content, Mime}
+import com.tjclp.xlcr.v2.transform.{ Conversion, TransformError }
+import com.tjclp.xlcr.v2.types.{ Content, Mime }
 import com.tjclp.xlcr.utils.aspose.AsposeLicense
 import com.tjclp.xlcr.utils.resource.ResourceWrappers.CleanupWrapper
 
 /**
  * Pure given instances for Aspose-based document conversions.
  *
- * These are HIGH priority (100) and will be preferred over LibreOffice
- * conversions when both are available.
+ * These are HIGH priority (100) and will be preferred over LibreOffice conversions when both are
+ * available.
  *
  * Import these givens to enable Aspose conversions:
  * {{{
@@ -66,7 +66,7 @@ given asposeXlsxToPdf: Conversion[Mime.Xlsx, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-      val out = new ByteArrayOutputStream()
+      val out      = new ByteArrayOutputStream()
       workbook.save(out, com.aspose.cells.SaveFormat.PDF)
       Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
     }.mapError(TransformError.fromThrowable)
@@ -78,7 +78,7 @@ given asposeXlsToPdf: Conversion[Mime.Xls, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-      val out = new ByteArrayOutputStream()
+      val out      = new ByteArrayOutputStream()
       workbook.save(out, com.aspose.cells.SaveFormat.PDF)
       Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
     }.mapError(TransformError.fromThrowable)
@@ -90,7 +90,7 @@ given asposeXlsmToPdf: Conversion[Mime.Xlsm, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-      val out = new ByteArrayOutputStream()
+      val out      = new ByteArrayOutputStream()
       workbook.save(out, com.aspose.cells.SaveFormat.PDF)
       Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
     }.mapError(TransformError.fromThrowable)
@@ -102,7 +102,7 @@ given asposeXlsbToPdf: Conversion[Mime.Xlsb, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-      val out = new ByteArrayOutputStream()
+      val out      = new ByteArrayOutputStream()
       workbook.save(out, com.aspose.cells.SaveFormat.PDF)
       Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
     }.mapError(TransformError.fromThrowable)
@@ -114,7 +114,7 @@ given asposeOdsToPdf: Conversion[Mime.Ods, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-      val out = new ByteArrayOutputStream()
+      val out      = new ByteArrayOutputStream()
       workbook.save(out, com.aspose.cells.SaveFormat.PDF)
       Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
     }.mapError(TransformError.fromThrowable)
@@ -238,8 +238,12 @@ given asposePdfToHtml: Conversion[Mime.Pdf, Mime.Html] with
       val document = new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
       try
         val saveOptions = new com.aspose.pdf.HtmlSaveOptions()
-        saveOptions.setPartsEmbeddingMode(com.aspose.pdf.HtmlSaveOptions.PartsEmbeddingModes.EmbedAllIntoHtml)
-        saveOptions.setRasterImagesSavingMode(com.aspose.pdf.HtmlSaveOptions.RasterImagesSavingModes.AsEmbeddedPartsOfPngPageBackground)
+        saveOptions.setPartsEmbeddingMode(
+          com.aspose.pdf.HtmlSaveOptions.PartsEmbeddingModes.EmbedAllIntoHtml
+        )
+        saveOptions.setRasterImagesSavingMode(
+          com.aspose.pdf.HtmlSaveOptions.RasterImagesSavingModes.AsEmbeddedPartsOfPngPageBackground
+        )
         val out = new ByteArrayOutputStream()
         document.save(out, saveOptions)
         Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
@@ -298,8 +302,8 @@ given asposePdfToPng: Conversion[Mime.Pdf, Mime.Png] with
       val document = new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
       try
         val resolution = new com.aspose.pdf.devices.Resolution(300)
-        val pngDevice = new com.aspose.pdf.devices.PngDevice(resolution)
-        val out = new ByteArrayOutputStream()
+        val pngDevice  = new com.aspose.pdf.devices.PngDevice(resolution)
+        val out        = new ByteArrayOutputStream()
         // Convert first page to PNG
         pngDevice.process(document.getPages.get_Item(1), out)
         Content[Mime.Png](out.toByteArray, Mime.png, input.metadata)
@@ -317,7 +321,7 @@ given asposePdfToJpeg: Conversion[Mime.Pdf, Mime.Jpeg] with
       try
         val resolution = new com.aspose.pdf.devices.Resolution(300)
         val jpegDevice = new com.aspose.pdf.devices.JpegDevice(resolution)
-        val out = new ByteArrayOutputStream()
+        val out        = new ByteArrayOutputStream()
         jpegDevice.process(document.getPages.get_Item(1), out)
         Content[Mime.Jpeg](out.toByteArray, Mime.jpeg, input.metadata)
       finally
@@ -335,8 +339,8 @@ given asposePngToPdf: Conversion[Mime.Png, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       val document = new com.aspose.pdf.Document()
-      val page = document.getPages.add()
-      val image = new com.aspose.pdf.Image()
+      val page     = document.getPages.add()
+      val image    = new com.aspose.pdf.Image()
       image.setImageStream(new ByteArrayInputStream(input.data.toArray))
       page.getParagraphs.add(image)
       val out = new ByteArrayOutputStream()
@@ -352,8 +356,8 @@ given asposeJpegToPdf: Conversion[Mime.Jpeg, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       val document = new com.aspose.pdf.Document()
-      val page = document.getPages.add()
-      val image = new com.aspose.pdf.Image()
+      val page     = document.getPages.add()
+      val image    = new com.aspose.pdf.Image()
       image.setImageStream(new ByteArrayInputStream(input.data.toArray))
       page.getParagraphs.add(image)
       val out = new ByteArrayOutputStream()
@@ -373,7 +377,8 @@ given asposeHtmlToPdf: Conversion[Mime.Html, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       val htmlOptions = new com.aspose.pdf.HtmlLoadOptions()
-      val document = new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray), htmlOptions)
+      val document =
+        new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray), htmlOptions)
       val out = new ByteArrayOutputStream()
       document.save(out)
       document.close()

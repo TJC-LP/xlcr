@@ -18,27 +18,27 @@ object Commands:
 
   /** Arguments for the convert command */
   case class ConvertArgs(
-      input: Path,
-      output: Path,
-      backend: Option[Backend] = None,
-      verbose: Boolean = false,
-      extensionOnly: Boolean = false
+    input: Path,
+    output: Path,
+    backend: Option[Backend] = None,
+    verbose: Boolean = false,
+    extensionOnly: Boolean = false
   )
 
   /** Arguments for the split command */
   case class SplitArgs(
-      input: Path,
-      outputDir: Path,
-      backend: Option[Backend] = None,
-      verbose: Boolean = false,
-      extensionOnly: Boolean = false
+    input: Path,
+    outputDir: Path,
+    backend: Option[Backend] = None,
+    verbose: Boolean = false,
+    extensionOnly: Boolean = false
   )
 
   /** Arguments for the info command */
   case class InfoArgs(
-      input: Path,
-      extensionOnly: Boolean = false,
-      format: OutputFormat = OutputFormat.Text
+    input: Path,
+    extensionOnly: Boolean = false,
+    format: OutputFormat = OutputFormat.Text
   )
 
   /** Output format for the info command */
@@ -125,9 +125,9 @@ object Commands:
 
   private def parseBackend(value: String) =
     value.toLowerCase match
-      case "aspose" => Backend.Aspose.validNel
+      case "aspose"      => Backend.Aspose.validNel
       case "libreoffice" => Backend.LibreOffice.validNel
-      case "xlcr" => Backend.Xlcr.validNel
+      case "xlcr"        => Backend.Xlcr.validNel
       case other =>
         s"Unknown backend: $other (expected: aspose, libreoffice, xlcr)".invalidNel
 
@@ -170,7 +170,7 @@ object Commands:
     name = "xlcr",
     header = "XLCR - Cross-format document conversion toolkit"
   )(
-    convertCmd orElse splitCmd orElse infoCmd
+    convertCmd.orElse(splitCmd).orElse(infoCmd)
   )
 
   /** Parse command line arguments */

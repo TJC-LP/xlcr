@@ -5,19 +5,23 @@ import zio.Chunk
 /**
  * Type-safe content wrapper for the v2 Transform algebra.
  *
- * Content associates binary data with a compile-time MIME type, enabling
- * type-safe transformations where the compiler can verify that a transform
- * accepting `Content[Mime.Pdf]` cannot be called with `Content[Mime.Html]`.
+ * Content associates binary data with a compile-time MIME type, enabling type-safe transformations
+ * where the compiler can verify that a transform accepting `Content[Mime.Pdf]` cannot be called
+ * with `Content[Mime.Html]`.
  *
- * @tparam M The MIME type of this content (a singleton literal type from Mime)
- * @param data The binary content as a ZIO Chunk
- * @param mime The runtime MIME type value (matches type parameter M)
- * @param metadata Optional metadata key-value pairs (e.g., filename, charset, page count)
+ * @tparam M
+ *   The MIME type of this content (a singleton literal type from Mime)
+ * @param data
+ *   The binary content as a ZIO Chunk
+ * @param mime
+ *   The runtime MIME type value (matches type parameter M)
+ * @param metadata
+ *   Optional metadata key-value pairs (e.g., filename, charset, page count)
  */
 final case class Content[M <: Mime](
-    data: Chunk[Byte],
-    mime: M,
-    metadata: Map[String, String] = Map.empty
+  data: Chunk[Byte],
+  mime: M,
+  metadata: Map[String, String] = Map.empty
 ):
 
   /** Get the size of the content in bytes */
@@ -68,17 +72,17 @@ object Content:
 
   /** Standard metadata keys */
   object MetadataKeys:
-    val Filename = "filename"
-    val Charset = "charset"
+    val Filename   = "filename"
+    val Charset    = "charset"
     val SourcePath = "source-path"
-    val PageCount = "page-count"
+    val PageCount  = "page-count"
     val SheetCount = "sheet-count"
     val SlideCount = "slide-count"
-    val Index = "index"
-    val Total = "total"
-    val Title = "title"
-    val Author = "author"
-    val CreatedAt = "created-at"
+    val Index      = "index"
+    val Total      = "total"
+    val Title      = "title"
+    val Author     = "author"
+    val CreatedAt  = "created-at"
     val ModifiedAt = "modified-at"
 
   /** Create Content from a byte array */
@@ -87,17 +91,17 @@ object Content:
 
   /** Create Content from a byte array with metadata */
   def apply[M <: Mime](
-      data: Array[Byte],
-      mime: M,
-      metadata: Map[String, String]
+    data: Array[Byte],
+    mime: M,
+    metadata: Map[String, String]
   ): Content[M] =
     Content(Chunk.fromArray(data), mime, metadata)
 
   /** Create Content from a Chunk with metadata - explicit factory to help type inference */
   def fromChunk[M <: Mime](
-      data: Chunk[Byte],
-      mime: M,
-      metadata: Map[String, String] = Map.empty
+    data: Chunk[Byte],
+    mime: M,
+    metadata: Map[String, String] = Map.empty
   ): Content[M] =
     new Content(data, mime, metadata)
 
@@ -107,9 +111,9 @@ object Content:
 
   /** Create Content from a string with specified charset */
   def fromString[M <: Mime](
-      text: String,
-      mime: M,
-      charset: String
+    text: String,
+    mime: M,
+    charset: String
   ): Content[M] =
     Content(
       Chunk.fromArray(text.getBytes(charset)),

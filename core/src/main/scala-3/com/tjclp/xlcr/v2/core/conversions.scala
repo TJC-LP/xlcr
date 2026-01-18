@@ -1,21 +1,21 @@
 package com.tjclp.xlcr.v2.core
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import zio.ZIO
 
 import org.apache.tika.metadata.Metadata
-import org.apache.tika.parser.{AutoDetectParser, ParseContext}
-import org.apache.tika.sax.{BodyContentHandler, ToXMLContentHandler, WriteOutContentHandler}
-import org.apache.poi.ss.usermodel.{CellType, DateUtil, WorkbookFactory}
+import org.apache.tika.parser.{ AutoDetectParser, ParseContext }
+import org.apache.tika.sax.{ BodyContentHandler, ToXMLContentHandler, WriteOutContentHandler }
+import org.apache.poi.ss.usermodel.{ CellType, DateUtil, WorkbookFactory }
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
 
-import com.tjclp.xlcr.v2.transform.{Conversion, ParseError, RenderError}
-import com.tjclp.xlcr.v2.types.{Content, Mime}
+import com.tjclp.xlcr.v2.transform.{ Conversion, ParseError, RenderError }
+import com.tjclp.xlcr.v2.types.{ Content, Mime }
 
 /**
- * Core XLCR conversions using Tika and POI with no external dependencies.
- * These serve as the lowest-priority fallback when Aspose and LibreOffice are unavailable.
+ * Core XLCR conversions using Tika and POI with no external dependencies. These serve as the
+ * lowest-priority fallback when Aspose and LibreOffice are unavailable.
  *
  * Priority: XLCR Core < LibreOffice < Aspose
  */
@@ -31,16 +31,16 @@ object XlcrConversions:
   /**
    * Convert any document to plain text using Apache Tika.
    *
-   * This is a catch-all conversion that works with any input format that Tika supports,
-   * making it the universal fallback for text extraction.
+   * This is a catch-all conversion that works with any input format that Tika supports, making it
+   * the universal fallback for text extraction.
    */
   val anyToPlainText: Conversion[Mime, Mime.Plain] =
     Conversion.withPriority[Mime, Mime.Plain](CORE_PRIORITY) { input =>
       ZIO.attemptBlocking {
-        val parser = new AutoDetectParser()
+        val parser   = new AutoDetectParser()
         val metadata = new Metadata()
-        val context = new ParseContext()
-        val handler = new BodyContentHandler(-1) // unlimited
+        val context  = new ParseContext()
+        val handler  = new BodyContentHandler(-1) // unlimited
 
         val stream = new ByteArrayInputStream(input.data.toArray)
         try
@@ -58,17 +58,17 @@ object XlcrConversions:
   /**
    * Convert any document to structured XML using Apache Tika.
    *
-   * This is a catch-all conversion that extracts structured XML content,
-   * preserving document structure when possible.
+   * This is a catch-all conversion that extracts structured XML content, preserving document
+   * structure when possible.
    */
   val anyToXml: Conversion[Mime, Mime.Xml] =
     Conversion.withPriority[Mime, Mime.Xml](CORE_PRIORITY) { input =>
       ZIO.attemptBlocking {
-        val parser = new AutoDetectParser()
-        val metadata = new Metadata()
-        val context = new ParseContext()
+        val parser     = new AutoDetectParser()
+        val metadata   = new Metadata()
+        val context    = new ParseContext()
         val xmlHandler = new ToXMLContentHandler()
-        val handler = new WriteOutContentHandler(xmlHandler, -1) // unlimited
+        val handler    = new WriteOutContentHandler(xmlHandler, -1) // unlimited
 
         val stream = new ByteArrayInputStream(input.data.toArray)
         try
@@ -91,9 +91,9 @@ object XlcrConversions:
    * Convert Excel XLSX to OpenDocument Spreadsheet (ODS) using POI + ODFDOM.
    *
    * This conversion preserves:
-   * - Sheet names and structure
-   * - Cell values (strings, numbers, dates, booleans)
-   * - Basic data types
+   *   - Sheet names and structure
+   *   - Cell values (strings, numbers, dates, booleans)
+   *   - Basic data types
    *
    * Note: Advanced formatting and formulas may not be perfectly preserved.
    */
@@ -119,7 +119,7 @@ object XlcrConversions:
               // Process each sheet
               for sheetIndex <- 0 until excelWorkbook.getNumberOfSheets do
                 val excelSheet = excelWorkbook.getSheetAt(sheetIndex)
-                val sheetName = excelSheet.getSheetName
+                val sheetName  = excelSheet.getSheetName
 
                 // Get or create ODS sheet
                 val odsSheet =
@@ -141,8 +141,8 @@ object XlcrConversions:
                   val cellIterator = excelRow.cellIterator()
                   while cellIterator.hasNext do
                     val excelCell = cellIterator.next()
-                    val colIndex = excelCell.getColumnIndex
-                    val odsCell = odsSheet.getCellByPosition(colIndex, rowIndex)
+                    val colIndex  = excelCell.getColumnIndex
+                    val odsCell   = odsSheet.getCellByPosition(colIndex, rowIndex)
 
                     // Transfer value based on cell type
                     excelCell.getCellType match
@@ -151,7 +151,7 @@ object XlcrConversions:
 
                       case CellType.NUMERIC =>
                         if DateUtil.isCellDateFormatted(excelCell) then
-                          val date = excelCell.getDateCellValue
+                          val date     = excelCell.getDateCellValue
                           val calendar = java.util.Calendar.getInstance()
                           calendar.setTime(date)
                           odsCell.setDateValue(calendar)
@@ -169,7 +169,7 @@ object XlcrConversions:
                           case _: Exception => odsCell.setStringValue("Formula")
 
                       case CellType.BLANK =>
-                        // Skip blank cells
+                      // Skip blank cells
 
                       case _ =>
                         odsCell.setStringValue(excelCell.toString)
@@ -177,7 +177,6 @@ object XlcrConversions:
                   end while
                 end while
               end for
-
               // Save ODS to byte array
               val baos = new ByteArrayOutputStream()
               try

@@ -1,36 +1,41 @@
 package com.tjclp.xlcr.v2.streaming
 
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 import zio.stream.ZStream
 
-import com.tjclp.xlcr.v2.transform.{Transform, TransformError}
-import com.tjclp.xlcr.v2.types.{Content, Mime}
+import com.tjclp.xlcr.v2.transform.{ Transform, TransformError }
+import com.tjclp.xlcr.v2.types.{ Content, Mime }
 
 /**
- * A StreamingTransform processes input as a stream of chunks rather than
- * loading the entire input into memory.
+ * A StreamingTransform processes input as a stream of chunks rather than loading the entire input
+ * into memory.
  *
- * This is useful for processing large files that don't fit in memory,
- * or for pipeline scenarios where partial results can be emitted early.
+ * This is useful for processing large files that don't fit in memory, or for pipeline scenarios
+ * where partial results can be emitted early.
  *
- * @tparam I Input MIME type
- * @tparam O Output MIME type
+ * @tparam I
+ *   Input MIME type
+ * @tparam O
+ *   Output MIME type
  */
 trait StreamingTransform[I <: Mime, O <: Mime] extends Transform[I, O]:
 
   /**
    * Process streaming input and produce streaming output.
    *
-   * This method receives input as a stream of byte chunks and should
-   * emit output Content elements as they become available.
+   * This method receives input as a stream of byte chunks and should emit output Content elements
+   * as they become available.
    *
-   * @param input Stream of input byte chunks
-   * @param inputMime The MIME type of the input
-   * @return Stream of output Content elements
+   * @param input
+   *   Stream of input byte chunks
+   * @param inputMime
+   *   The MIME type of the input
+   * @return
+   *   Stream of output Content elements
    */
   def streamChunked(
-      input: ZStream[Any, Nothing, Chunk[Byte]],
-      inputMime: I
+    input: ZStream[Any, Nothing, Chunk[Byte]],
+    inputMime: I
   ): ZStream[Any, TransformError, Content[O]]
 
   /**
@@ -51,12 +56,12 @@ object StreamingTransform:
    * Create a StreamingTransform from a function.
    */
   def apply[I <: Mime, O <: Mime](
-      f: (ZStream[Any, Nothing, Chunk[Byte]], I) => ZStream[Any, TransformError, Content[O]]
+    f: (ZStream[Any, Nothing, Chunk[Byte]], I) => ZStream[Any, TransformError, Content[O]]
   ): StreamingTransform[I, O] =
     new StreamingTransform[I, O]:
       override def streamChunked(
-          input: ZStream[Any, Nothing, Chunk[Byte]],
-          inputMime: I
+        input: ZStream[Any, Nothing, Chunk[Byte]],
+        inputMime: I
       ): ZStream[Any, TransformError, Content[O]] =
         f(input, inputMime)
 
@@ -64,25 +69,26 @@ object StreamingTransform:
    * Create a StreamingTransform with a specific priority.
    */
   def withPriority[I <: Mime, O <: Mime](
-      prio: Int
-  )(f: (ZStream[Any, Nothing, Chunk[Byte]], I) => ZStream[Any, TransformError, Content[O]]): StreamingTransform[I, O] =
+    prio: Int
+  )(f: (ZStream[Any, Nothing, Chunk[Byte]], I) => ZStream[Any, TransformError, Content[O]])
+    : StreamingTransform[I, O] =
     new StreamingTransform[I, O]:
       override def streamChunked(
-          input: ZStream[Any, Nothing, Chunk[Byte]],
-          inputMime: I
+        input: ZStream[Any, Nothing, Chunk[Byte]],
+        inputMime: I
       ): ZStream[Any, TransformError, Content[O]] =
         f(input, inputMime)
       override def priority: Int = prio
 
   /**
-   * Lift a regular Transform to a StreamingTransform.
-   * This doesn't provide true streaming - it materializes the input first.
+   * Lift a regular Transform to a StreamingTransform. This doesn't provide true streaming - it
+   * materializes the input first.
    */
   def fromTransform[I <: Mime, O <: Mime](transform: Transform[I, O]): StreamingTransform[I, O] =
     new StreamingTransform[I, O]:
       override def streamChunked(
-          input: ZStream[Any, Nothing, Chunk[Byte]],
-          inputMime: I
+        input: ZStream[Any, Nothing, Chunk[Byte]],
+        inputMime: I
       ): ZStream[Any, TransformError, Content[O]] =
         ZStream.fromZIO(
           input.runCollect.flatMap { chunks =>
@@ -92,11 +98,11 @@ object StreamingTransform:
         ).flattenChunks
 
       override def priority: Int = transform.priority
-      override def name: String = s"StreamingAdapter(${transform.name})"
+      override def name: String  = s"StreamingAdapter(${transform.name})"
 
 /**
- * A ChunkedProcessor handles documents that can be processed in chunks.
- * Useful for formats that support incremental processing.
+ * A ChunkedProcessor handles documents that can be processed in chunks. Useful for formats that
+ * support incremental processing.
  */
 trait ChunkedProcessor[I <: Mime, O <: Mime]:
   /**
@@ -107,20 +113,25 @@ trait ChunkedProcessor[I <: Mime, O <: Mime]:
   /**
    * Process a chunk of input bytes.
    *
-   * @param state Current processing state
-   * @param chunk Input bytes to process
-   * @return Updated state and any output produced
+   * @param state
+   *   Current processing state
+   * @param chunk
+   *   Input bytes to process
+   * @return
+   *   Updated state and any output produced
    */
   def processChunk(
-      state: ChunkedProcessor.State[O],
-      chunk: Chunk[Byte]
+    state: ChunkedProcessor.State[O],
+    chunk: Chunk[Byte]
   ): ZIO[Any, TransformError, (ChunkedProcessor.State[O], Chunk[Content[O]])]
 
   /**
    * Finalize processing and produce any remaining output.
    *
-   * @param state Final processing state
-   * @return Any remaining output
+   * @param state
+   *   Final processing state
+   * @return
+   *   Any remaining output
    */
   def finalize(state: ChunkedProcessor.State[O]): ZIO[Any, TransformError, Chunk[Content[O]]]
 

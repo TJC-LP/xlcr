@@ -1,38 +1,41 @@
 package com.tjclp.xlcr.v2.transform
 
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 import zio.stream.ZStream
 
-import com.tjclp.xlcr.v2.types.{Content, Mime}
+import com.tjclp.xlcr.v2.types.{ Content, Mime }
 
 /**
  * The unified Transform algebra for XLCR v2.
  *
- * A Transform represents a conversion from content of one MIME type to content
- * of another MIME type (possibly the same). The key insight is that both
- * conversions and splits share the same algebra:
+ * A Transform represents a conversion from content of one MIME type to content of another MIME type
+ * (possibly the same). The key insight is that both conversions and splits share the same algebra:
  *
- *   `Content[I] → ZIO[Any, TransformError, Chunk[Content[O]]]`
+ * `Content[I] → ZIO[Any, TransformError, Chunk[Content[O]]]`
  *
- * - Conversions return a Chunk of size 1
- * - Splits return a Chunk of size N
+ *   - Conversions return a Chunk of size 1
+ *   - Splits return a Chunk of size N
  *
  * This unified algebra enables:
- * - Composable transform pipelines
- * - Uniform error handling via ZIO
- * - Streaming support for large files
- * - Priority-based transform selection
+ *   - Composable transform pipelines
+ *   - Uniform error handling via ZIO
+ *   - Streaming support for large files
+ *   - Priority-based transform selection
  *
- * @tparam I Input MIME type
- * @tparam O Output MIME type
+ * @tparam I
+ *   Input MIME type
+ * @tparam O
+ *   Output MIME type
  */
 trait Transform[I <: Mime, O <: Mime]:
 
   /**
    * Apply this transform to input content.
    *
-   * @param input The input content to transform
-   * @return A ZIO effect producing a Chunk of output content
+   * @param input
+   *   The input content to transform
+   * @return
+   *   A ZIO effect producing a Chunk of output content
    */
   def apply(input: Content[I]): ZIO[Any, TransformError, Chunk[Content[O]]]
 
@@ -41,8 +44,10 @@ trait Transform[I <: Mime, O <: Mime]:
    *
    * Default implementation materializes the full result. Override for true streaming.
    *
-   * @param input The input content to transform
-   * @return A ZStream producing output content elements
+   * @param input
+   *   The input content to transform
+   * @return
+   *   A ZStream producing output content elements
    */
   def stream(input: Content[I]): ZStream[Any, TransformError, Content[O]] =
     ZStream.fromIterableZIO(apply(input))
@@ -50,12 +55,15 @@ trait Transform[I <: Mime, O <: Mime]:
   /**
    * Compose this transform with another, producing a transform from I to O2.
    *
-   * The resulting transform applies this transform first, then applies the
-   * second transform to each output element, flattening the results.
+   * The resulting transform applies this transform first, then applies the second transform to each
+   * output element, flattening the results.
    *
-   * @tparam O2 The output type of the composed transform
-   * @param that The transform to apply after this one
-   * @return A composed transform
+   * @tparam O2
+   *   The output type of the composed transform
+   * @param that
+   *   The transform to apply after this one
+   * @return
+   *   A composed transform
    */
   def andThen[O2 <: Mime](that: Transform[O, O2]): Transform[I, O2] =
     Transform.Composed(this, that)
@@ -67,8 +75,8 @@ trait Transform[I <: Mime, O <: Mime]:
     andThen(that)
 
   /**
-   * Priority of this transform for registry-based selection.
-   * Higher priority transforms are preferred. Default is 0.
+   * Priority of this transform for registry-based selection. Higher priority transforms are
+   * preferred. Default is 0.
    */
   def priority: Int = 0
 
@@ -83,14 +91,14 @@ object Transform:
    * Composed transform that chains two transforms together.
    */
   private[transform] final class Composed[I <: Mime, M <: Mime, O <: Mime](
-      first: Transform[I, M],
-      second: Transform[M, O]
+    first: Transform[I, M],
+    second: Transform[M, O]
   ) extends Transform[I, O]:
 
     override def apply(input: Content[I]): ZIO[Any, TransformError, Chunk[Content[O]]] =
       for
         intermediate <- first(input)
-        results <- ZIO.foreach(intermediate)(second.apply)
+        results      <- ZIO.foreach(intermediate)(second.apply)
       yield results.flatten
 
     override def stream(input: Content[I]): ZStream[Any, TransformError, Content[O]] =
@@ -105,7 +113,7 @@ object Transform:
    * Create a Transform from a function.
    */
   def apply[I <: Mime, O <: Mime](
-      f: Content[I] => ZIO[Any, TransformError, Chunk[Content[O]]]
+    f: Content[I] => ZIO[Any, TransformError, Chunk[Content[O]]]
   ): Transform[I, O] =
     new Transform[I, O]:
       override def apply(input: Content[I]): ZIO[Any, TransformError, Chunk[Content[O]]] =
@@ -115,7 +123,7 @@ object Transform:
    * Create a Transform that produces exactly one output from a function.
    */
   def single[I <: Mime, O <: Mime](
-      f: Content[I] => ZIO[Any, TransformError, Content[O]]
+    f: Content[I] => ZIO[Any, TransformError, Content[O]]
   ): Transform[I, O] =
     new Transform[I, O]:
       override def apply(input: Content[I]): ZIO[Any, TransformError, Chunk[Content[O]]] =
@@ -125,7 +133,7 @@ object Transform:
    * Create a Transform with a specific priority.
    */
   def withPriority[I <: Mime, O <: Mime](
-      prio: Int
+    prio: Int
   )(f: Content[I] => ZIO[Any, TransformError, Chunk[Content[O]]]): Transform[I, O] =
     new Transform[I, O]:
       override def apply(input: Content[I]): ZIO[Any, TransformError, Chunk[Content[O]]] =

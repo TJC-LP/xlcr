@@ -3,17 +3,17 @@ package com.tjclp.xlcr.v2.libreoffice
 import java.io.File
 import java.nio.file.Files
 
-import zio.{Chunk, ZIO}
+import zio.ZIO
 
-import com.tjclp.xlcr.v2.transform.{Conversion, TransformError}
-import com.tjclp.xlcr.v2.types.{Content, Mime}
+import com.tjclp.xlcr.v2.transform.{ Conversion, TransformError }
+import com.tjclp.xlcr.v2.types.{ Content, Mime }
 import com.tjclp.xlcr.config.LibreOfficeConfig
 
 /**
  * Pure given instances for LibreOffice-based document conversions.
  *
- * These are DEFAULT priority (0) and will be used as fallbacks
- * when Aspose conversions are not available.
+ * These are DEFAULT priority (0) and will be used as fallbacks when Aspose conversions are not
+ * available.
  *
  * LibreOffice must be installed on the system for these to work.
  *
@@ -28,12 +28,12 @@ import com.tjclp.xlcr.config.LibreOfficeConfig
 // =============================================================================
 
 private def convertWithLibreOffice(
-    inputBytes: Array[Byte],
-    inputExtension: String,
-    outputExtension: String
+  inputBytes: Array[Byte],
+  inputExtension: String,
+  outputExtension: String
 ): ZIO[Any, TransformError, Array[Byte]] =
   ZIO.attemptBlocking {
-    val inputFile = File.createTempFile("xlcr-input-", s".$inputExtension")
+    val inputFile  = File.createTempFile("xlcr-input-", s".$inputExtension")
     val outputFile = File.createTempFile("xlcr-output-", s".$outputExtension")
 
     try

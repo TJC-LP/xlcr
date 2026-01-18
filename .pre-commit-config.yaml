@@ -1,0 +1,38 @@
+# Pre-commit hooks for XLCR project
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Local Mill-based checks
+  - repo: local
+    hooks:
+      - id: scalafmt-check
+        name: Check Scala formatting (Scalafmt 3.8.2)
+        entry: ./mill __.checkFormat
+        language: system
+        pass_filenames: false
+        files: \.scala$
+
+      - id: scala-compile
+        name: Compile Scala code
+        entry: ./mill __.compile
+        language: system
+        pass_filenames: false
+        files: \.scala$
+
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^docs/
+      - id: end-of-file-fixer
+        exclude: ^docs/
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+# Configuration
+default_language_version:
+  python: python3

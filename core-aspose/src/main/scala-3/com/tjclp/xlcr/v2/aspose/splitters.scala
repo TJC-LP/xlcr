@@ -1,14 +1,14 @@
 package com.tjclp.xlcr.v2.aspose
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 
-import com.tjclp.xlcr.v2.transform.{Splitter, DynamicSplitter, TransformError}
-import com.tjclp.xlcr.v2.types.{Content, DynamicFragment, Fragment, Mime}
+import com.tjclp.xlcr.v2.transform.{ DynamicSplitter, Splitter, TransformError }
+import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Fragment, Mime }
 import com.tjclp.xlcr.utils.aspose.AsposeLicense
 import com.tjclp.xlcr.compat.aspose.AsposeWorkbook
 import com.tjclp.xlcr.utils.resource.ResourceWrappers.DisposableWrapper
@@ -16,8 +16,7 @@ import com.tjclp.xlcr.utils.resource.ResourceWrappers.DisposableWrapper
 /**
  * Pure given instances for Aspose-based document splitters.
  *
- * These are HIGH priority (100) and will be preferred over core splitters
- * when both are available.
+ * These are HIGH priority (100) and will be preferred over core splitters when both are available.
  *
  * Import these givens to enable Aspose splitters:
  * {{{
@@ -61,23 +60,23 @@ given asposeOdsSheetSplitter: Splitter[Mime.Ods, Mime.Ods] with
 
 // Helper function for Excel splitting
 private def splitExcelWorkbook[M <: Mime](
-    input: Content[M],
-    outputMime: M,
-    fileFormatType: Int
+  input: Content[M],
+  outputMime: M,
+  fileFormatType: Int
 ): ZIO[Any, TransformError, Chunk[Fragment[M]]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
 
     Using.Manager { use =>
       val srcInputStream = use(new ByteArrayInputStream(input.data.toArray))
-      val srcWb = new AsposeWorkbook(srcInputStream)
+      val srcWb          = new AsposeWorkbook(srcInputStream)
       use(new DisposableWrapper(srcWb))
 
       val sheets = srcWb.getWorksheets
-      val total = sheets.getCount
+      val total  = sheets.getCount
 
       val fragments = (0 until total).map { idx =>
-        val srcSheet = sheets.get(idx)
+        val srcSheet  = sheets.get(idx)
         val sheetName = srcSheet.getName
 
         Using.Manager { destUse =>
@@ -87,7 +86,7 @@ private def splitExcelWorkbook[M <: Mime](
           val destSheets = destWb.getWorksheets
           destSheets.removeAt(0)
 
-          val newIdx = destSheets.add()
+          val newIdx    = destSheets.add()
           val destSheet = destSheets.get(newIdx)
           destSheet.copy(srcSheet)
           destSheet.setName(sheetName)
@@ -96,7 +95,8 @@ private def splitExcelWorkbook[M <: Mime](
           val baos = destUse(new ByteArrayOutputStream())
           destWb.save(baos, fileFormatType)
 
-          val content = Content.fromChunk(Chunk.fromArray(baos.toByteArray), outputMime, input.metadata)
+          val content =
+            Content.fromChunk(Chunk.fromArray(baos.toByteArray), outputMime, input.metadata)
           Fragment(content, idx, Some(sheetName))
         }.get
       }
@@ -123,9 +123,9 @@ given asposePptSlideSplitter: Splitter[Mime.Ppt, Mime.Ppt] with
 
 // Helper function for PowerPoint splitting
 private def splitPowerPointPresentation[M <: Mime](
-    input: Content[M],
-    outputMime: M,
-    saveFormat: Int
+  input: Content[M],
+  outputMime: M,
+  saveFormat: Int
 ): ZIO[Any, TransformError, Chunk[Fragment[M]]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
@@ -133,7 +133,7 @@ private def splitPowerPointPresentation[M <: Mime](
     val srcPres = new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
     try
       val slides = srcPres.getSlides
-      val total = slides.size()
+      val total  = slides.size()
 
       val fragments = (0 until total).map { idx =>
         val srcSlide = slides.get_Item(idx)
@@ -149,7 +149,8 @@ private def splitPowerPointPresentation[M <: Mime](
           val out = new ByteArrayOutputStream()
           destPres.save(out, saveFormat)
 
-          val content = Content.fromChunk(Chunk.fromArray(out.toByteArray), outputMime, input.metadata)
+          val content =
+            Content.fromChunk(Chunk.fromArray(out.toByteArray), outputMime, input.metadata)
           Fragment(content, idx, Some(s"Slide ${idx + 1}"))
         finally
           destPres.dispose()
@@ -185,7 +186,8 @@ given asposePdfPageSplitter: Splitter[Mime.Pdf, Mime.Pdf] with
           destDoc.save(out)
           destDoc.close()
 
-          val content = Content.fromChunk[Mime.Pdf](Chunk.fromArray(out.toByteArray), Mime.pdf, input.metadata)
+          val content =
+            Content.fromChunk[Mime.Pdf](Chunk.fromArray(out.toByteArray), Mime.pdf, input.metadata)
           Fragment(content, pageNum - 1, Some(s"Page $pageNum"))
         }
 
@@ -212,16 +214,16 @@ given asposeDocSectionSplitter: Splitter[Mime.Doc, Mime.Doc] with
 
 // Helper function for Word splitting
 private def splitWordDocument[M <: Mime](
-    input: Content[M],
-    outputMime: M,
-    saveFormat: Int
+  input: Content[M],
+  outputMime: M,
+  saveFormat: Int
 ): ZIO[Any, TransformError, Chunk[Fragment[M]]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
 
-    val srcDoc = new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
+    val srcDoc   = new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
     val sections = srcDoc.getSections
-    val total = sections.getCount
+    val total    = sections.getCount
 
     val fragments = (0 until total).map { idx =>
       val srcSection = sections.get(idx)
@@ -263,8 +265,12 @@ given asposeZipArchiveSplitter: DynamicSplitter[Mime.Zip] with
             val out = new ByteArrayOutputStream()
             entry.extract(out)
             val entryName = entry.getName
-            val mime = Mime.fromFilename(entryName)
-            val content = Content.fromChunk(Chunk.fromArray(out.toByteArray), mime, Map("filename" -> entryName))
+            val mime      = Mime.fromFilename(entryName)
+            val content = Content.fromChunk(
+              Chunk.fromArray(out.toByteArray),
+              mime,
+              Map("filename" -> entryName)
+            )
             Some(DynamicFragment(content, idx, Some(entryName)))
           else
             None
@@ -277,7 +283,8 @@ given asposeZipArchiveSplitter: DynamicSplitter[Mime.Zip] with
 given asposeSevenZipArchiveSplitter: DynamicSplitter[Mime.SevenZip] with
   override def name = "Aspose.Zip.SevenZipArchiveSplitter"
 
-  def splitDynamic(input: Content[Mime.SevenZip]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
+  def splitDynamic(input: Content[Mime.SevenZip])
+    : ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
 
@@ -289,8 +296,12 @@ given asposeSevenZipArchiveSplitter: DynamicSplitter[Mime.SevenZip] with
             val out = new ByteArrayOutputStream()
             entry.extract(out)
             val entryName = entry.getName
-            val mime = Mime.fromFilename(entryName)
-            val content = Content.fromChunk(Chunk.fromArray(out.toByteArray), mime, Map("filename" -> entryName))
+            val mime      = Mime.fromFilename(entryName)
+            val content = Content.fromChunk(
+              Chunk.fromArray(out.toByteArray),
+              mime,
+              Map("filename" -> entryName)
+            )
             Some(DynamicFragment(content, idx, Some(entryName)))
           else
             None
@@ -317,9 +328,11 @@ given asposeEmlAttachmentSplitter: DynamicSplitter[Mime.Eml] with
         val out = new ByteArrayOutputStream()
         attachment.save(out)
         val filename = attachment.getName
-        val contentType = Option(attachment.getContentType).map(_.toString).getOrElse("application/octet-stream")
+        val contentType =
+          Option(attachment.getContentType).map(_.toString).getOrElse("application/octet-stream")
         val mime = Mime.parse(contentType)
-        val content = Content.fromChunk(Chunk.fromArray(out.toByteArray), mime, Map("filename" -> filename))
+        val content =
+          Content.fromChunk(Chunk.fromArray(out.toByteArray), mime, Map("filename" -> filename))
         DynamicFragment(content, idx, Some(filename))
       }
       Chunk.fromIterable(fragments.toSeq)
@@ -335,10 +348,10 @@ given asposeMsgAttachmentSplitter: DynamicSplitter[Mime.Msg] with
       val msg = com.aspose.email.MapiMessage.load(new ByteArrayInputStream(input.data.toArray))
       val attachments = msg.getAttachments
       val fragments = attachments.asScala.zipWithIndex.map { case (attachment, idx) =>
-        val data = attachment.getBinaryData
+        val data     = attachment.getBinaryData
         val filename = attachment.getDisplayName
-        val mime = Mime.fromFilename(filename)
-        val content = Content.fromChunk(Chunk.fromArray(data), mime, Map("filename" -> filename))
+        val mime     = Mime.fromFilename(filename)
+        val content  = Content.fromChunk(Chunk.fromArray(data), mime, Map("filename" -> filename))
         DynamicFragment(content, idx, Some(filename))
       }
       Chunk.fromIterable(fragments.toSeq)

@@ -5,8 +5,8 @@ import com.tjclp.xlcr.v2.types.Mime
 /**
  * Base trait for all transform errors in the v2 algebra.
  *
- * Extends Exception for interoperability with existing code while providing
- * a typed error hierarchy for ZIO effect handling.
+ * Extends Exception for interoperability with existing code while providing a typed error hierarchy
+ * for ZIO effect handling.
  */
 sealed trait TransformError extends Exception:
   /** Human-readable error message */
@@ -22,12 +22,14 @@ sealed trait TransformError extends Exception:
 /**
  * Error during parsing/reading input content.
  *
- * @param message Description of what went wrong
- * @param cause Optional underlying exception
+ * @param message
+ *   Description of what went wrong
+ * @param cause
+ *   Optional underlying exception
  */
 final case class ParseError(
-    message: String,
-    cause: Option[Throwable] = None
+  message: String,
+  cause: Option[Throwable] = None
 ) extends TransformError
 
 object ParseError:
@@ -40,12 +42,14 @@ object ParseError:
 /**
  * Error during rendering/writing output content.
  *
- * @param message Description of what went wrong
- * @param cause Optional underlying exception
+ * @param message
+ *   Description of what went wrong
+ * @param cause
+ *   Optional underlying exception
  */
 final case class RenderError(
-    message: String,
-    cause: Option[Throwable] = None
+  message: String,
+  cause: Option[Throwable] = None
 ) extends TransformError
 
 object RenderError:
@@ -58,12 +62,14 @@ object RenderError:
 /**
  * Error when a transform encounters invalid input data.
  *
- * @param message Description of the validation failure
- * @param cause Optional underlying exception
+ * @param message
+ *   Description of the validation failure
+ * @param cause
+ *   Optional underlying exception
  */
 final case class ValidationError(
-    message: String,
-    cause: Option[Throwable] = None
+  message: String,
+  cause: Option[Throwable] = None
 ) extends TransformError
 
 object ValidationError:
@@ -73,48 +79,55 @@ object ValidationError:
 /**
  * Error when no transform path exists between two MIME types.
  *
- * @param from Source MIME type
- * @param to Target MIME type
+ * @param from
+ *   Source MIME type
+ * @param to
+ *   Target MIME type
  */
 final case class UnsupportedConversion(
-    from: Mime,
-    to: Mime
+  from: Mime,
+  to: Mime
 ) extends TransformError:
-  val message: String = s"No conversion path from ${from.value} to ${to.value}"
+  val message: String          = s"No conversion path from ${from.value} to ${to.value}"
   val cause: Option[Throwable] = None
 
 /**
  * Error when a transform times out.
  *
- * @param message Description of the timeout
- * @param durationMs The duration in milliseconds before timeout
+ * @param message
+ *   Description of the timeout
+ * @param durationMs
+ *   The duration in milliseconds before timeout
  */
 final case class TimeoutError(
-    message: String,
-    durationMs: Long
+  message: String,
+  durationMs: Long
 ) extends TransformError:
   val cause: Option[Throwable] = None
 
 /**
  * Error when transform is cancelled.
  *
- * @param message Description of why it was cancelled
+ * @param message
+ *   Description of why it was cancelled
  */
 final case class CancellationError(
-    message: String
+  message: String
 ) extends TransformError:
   val cause: Option[Throwable] = None
 
 /**
  * Error when a required resource is not available.
  *
- * @param message Description of the missing resource
- * @param resourceType Type of resource (e.g., "file", "license", "library")
+ * @param message
+ *   Description of the missing resource
+ * @param resourceType
+ *   Type of resource (e.g., "file", "license", "library")
  */
 final case class ResourceError(
-    message: String,
-    resourceType: String,
-    cause: Option[Throwable] = None
+  message: String,
+  resourceType: String,
+  cause: Option[Throwable] = None
 ) extends TransformError
 
 object ResourceError:
@@ -130,14 +143,17 @@ object ResourceError:
 /**
  * Error during split operation.
  *
- * @param message Description of the split failure
- * @param inputMime The MIME type of the input that failed to split
- * @param cause Optional underlying exception
+ * @param message
+ *   Description of the split failure
+ * @param inputMime
+ *   The MIME type of the input that failed to split
+ * @param cause
+ *   Optional underlying exception
  */
 final case class SplitError(
-    message: String,
-    inputMime: Mime,
-    cause: Option[Throwable] = None
+  message: String,
+  inputMime: Mime,
+  cause: Option[Throwable] = None
 ) extends TransformError
 
 object SplitError:
@@ -147,10 +163,11 @@ object SplitError:
 /**
  * Wrapper for multiple errors (for batch operations).
  *
- * @param errors The list of errors that occurred
+ * @param errors
+ *   The list of errors that occurred
  */
 final case class CompositeError(
-    errors: List[TransformError]
+  errors: List[TransformError]
 ) extends TransformError:
   val message: String =
     s"${errors.size} errors occurred: ${errors.map(_.message).mkString("; ")}"
@@ -163,12 +180,14 @@ object CompositeError:
 /**
  * General transform error for cases not covered by specific types.
  *
- * @param message Description of the error
- * @param cause Optional underlying exception
+ * @param message
+ *   Description of the error
+ * @param cause
+ *   Optional underlying exception
  */
 final case class GeneralError(
-    message: String,
-    cause: Option[Throwable] = None
+  message: String,
+  cause: Option[Throwable] = None
 ) extends TransformError
 
 object GeneralError:

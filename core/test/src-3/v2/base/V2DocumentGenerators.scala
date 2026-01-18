@@ -2,8 +2,6 @@ package com.tjclp.xlcr.v2.base
 
 import java.io.ByteArrayOutputStream
 
-import zio.Chunk
-
 import org.apache.pdfbox.pdmodel.{PDDocument, PDPage, PDPageContentStream}
 import org.apache.pdfbox.pdmodel.common.PDRectangle
 import org.apache.pdfbox.pdmodel.font.PDType1Font

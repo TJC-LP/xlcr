@@ -1,9 +1,9 @@
 package com.tjclp.xlcr.v2.cli
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{ Files, Path }
 
 import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{Metadata, HttpHeaders}
+import org.apache.tika.metadata.{ HttpHeaders, Metadata }
 import org.apache.tika.parser.AutoDetectParser
 import org.apache.tika.sax.BodyContentHandler
 
@@ -15,18 +15,18 @@ import com.tjclp.xlcr.v2.aspose.AsposeTransforms
 import com.tjclp.xlcr.v2.cli.Commands.*
 import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
-import com.tjclp.xlcr.v2.types.{Content, Mime}
+import com.tjclp.xlcr.v2.types.{ Content, Mime }
 
 /**
  * XLCR CLI entry point with compile-time transform discovery.
  *
- * This CLI uses stateless, compile-time dispatch to backend transform objects.
- * No runtime registry initialization is required - zero startup overhead.
+ * This CLI uses stateless, compile-time dispatch to backend transform objects. No runtime registry
+ * initialization is required - zero startup overhead.
  *
  * Backend selection:
- * - `--backend aspose` - Use Aspose exclusively
- * - `--backend libreoffice` - Use LibreOffice exclusively
- * - No flag (default) - Use Aspose with LibreOffice fallback
+ *   - `--backend aspose` - Use Aspose exclusively
+ *   - `--backend libreoffice` - Use LibreOffice exclusively
+ *   - No flag (default) - Use Aspose with LibreOffice fallback
  *
  * Usage:
  * {{{
@@ -42,7 +42,7 @@ object XlcrMain extends ZIOAppDefault:
   override def run: ZIO[ZIOAppArgs, Any, ExitCode] =
     for
       // No TransformInit.initialize() - zero startup overhead!
-      args <- ZIOAppArgs.getArgs
+      args   <- ZIOAppArgs.getArgs
       result <- handleArgs(args.toList)
     yield result
 
@@ -71,8 +71,8 @@ object XlcrMain extends ZIOAppDefault:
   private def executeCommand(cmd: CliCommand): ZIO[Any, Throwable, ExitCode] =
     cmd match
       case CliCommand.Convert(args) => runConvert(args)
-      case CliCommand.Split(args) => runSplit(args)
-      case CliCommand.Info(args) => runInfo(args)
+      case CliCommand.Split(args)   => runSplit(args)
+      case CliCommand.Info(args)    => runInfo(args)
 
   // ============================================================================
   // Convert Command
@@ -92,7 +92,7 @@ object XlcrMain extends ZIOAppDefault:
       else
         Mime.detect(inputChunk, args.input.getFileName.toString)
       outputMime = Mime.fromFilename(args.output.getFileName.toString)
-      content = Content.fromChunk(inputChunk, inputMime)
+      content    = Content.fromChunk(inputChunk, inputMime)
 
       _ <- ZIO.when(args.verbose)(
         Console.printLine(s"Input MIME: ${inputMime.value}, Output MIME: ${outputMime.value}")
@@ -101,10 +101,10 @@ object XlcrMain extends ZIOAppDefault:
       // Show which backend will be used
       _ <- ZIO.when(args.verbose) {
         val backendName = args.backend match
-          case Some(Backend.Aspose) => "Aspose"
+          case Some(Backend.Aspose)      => "Aspose"
           case Some(Backend.LibreOffice) => "LibreOffice"
-          case Some(Backend.Xlcr) => "XLCR Core (POI/Tika)"
-          case _ => "Unified (Aspose → LibreOffice → XLCR Core fallback)"
+          case Some(Backend.Xlcr)        => "XLCR Core (POI/Tika)"
+          case _                         => "Unified (Aspose → LibreOffice → XLCR Core fallback)"
         Console.printLine(s"Using backend: $backendName")
       }
 
@@ -120,7 +120,9 @@ object XlcrMain extends ZIOAppDefault:
         Console.printLine(s"Wrote ${result.size} bytes to ${args.output}")
       )
 
-      _ <- Console.printLine(s"Successfully converted ${args.input.getFileName} to ${args.output.getFileName}")
+      _ <- Console.printLine(
+        s"Successfully converted ${args.input.getFileName} to ${args.output.getFileName}"
+      )
     yield ExitCode.success
 
   // ============================================================================
@@ -155,10 +157,10 @@ object XlcrMain extends ZIOAppDefault:
       // Show which backend will be used
       _ <- ZIO.when(args.verbose) {
         val backendName = args.backend match
-          case Some(Backend.Aspose) => "Aspose"
+          case Some(Backend.Aspose)      => "Aspose"
           case Some(Backend.LibreOffice) => "LibreOffice"
-          case Some(Backend.Xlcr) => "XLCR Core (POI/Tika)"
-          case _ => "Unified (Aspose → LibreOffice → XLCR Core fallback)"
+          case Some(Backend.Xlcr)        => "XLCR Core (POI/Tika)"
+          case _                         => "Unified (Aspose → LibreOffice → XLCR Core fallback)"
         Console.printLine(s"Using backend: $backendName")
       }
 
@@ -169,11 +171,11 @@ object XlcrMain extends ZIOAppDefault:
 
       // Write fragments to output directory
       _ <- ZIO.foreachDiscard(fragments) { fragment =>
-        val baseName = args.input.getFileName.toString.replaceFirst("\\.[^.]+$", "")
-        val extension = getExtension(fragment.content.mime)
-        val fragmentName = fragment.name.getOrElse(s"part-${fragment.index}")
+        val baseName      = args.input.getFileName.toString.replaceFirst("\\.[^.]+$", "")
+        val extension     = getExtension(fragment.content.mime)
+        val fragmentName  = fragment.name.getOrElse(s"part-${fragment.index}")
         val sanitizedName = fragmentName.replaceAll("[^a-zA-Z0-9._-]", "_")
-        val outputPath = args.outputDir.resolve(s"${baseName}_${sanitizedName}.$extension")
+        val outputPath    = args.outputDir.resolve(s"${baseName}_${sanitizedName}.$extension")
 
         for
           _ <- ZIO.attemptBlocking(Files.write(outputPath, fragment.content.data.toArray))
@@ -183,7 +185,9 @@ object XlcrMain extends ZIOAppDefault:
         yield ()
       }
 
-      _ <- Console.printLine(s"Successfully split ${args.input.getFileName} into ${fragments.size} parts")
+      _ <- Console.printLine(
+        s"Successfully split ${args.input.getFileName} into ${fragments.size} parts"
+      )
     yield ExitCode.success
 
   // ============================================================================
@@ -216,7 +220,7 @@ object XlcrMain extends ZIOAppDefault:
 
       // Check available conversions and splittability
       availableTargets = findAvailableConversions(inputMime)
-      canSplitFile = UnifiedTransforms.canSplit(inputMime)
+      canSplitFile     = UnifiedTransforms.canSplit(inputMime)
 
       // Output based on format
       _ <- args.format match
@@ -300,31 +304,38 @@ object XlcrMain extends ZIOAppDefault:
   /** Select the appropriate backend based on user choice */
   private def selectBackend(backend: Option[Backend]): BackendDispatch =
     backend match
-      case Some(Backend.Aspose) => AsposeBackend
+      case Some(Backend.Aspose)      => AsposeBackend
       case Some(Backend.LibreOffice) => LibreOfficeBackend
-      case Some(Backend.Xlcr) => XlcrBackend
-      case _ => UnifiedBackend
+      case Some(Backend.Xlcr)        => XlcrBackend
+      case _                         => UnifiedBackend
 
   /** Trait for backend dispatch */
   private trait BackendDispatch:
-    def convert(input: Content[Mime], to: Mime): ZIO[Any, com.tjclp.xlcr.v2.transform.TransformError, Content[Mime]]
-    def split(input: Content[Mime]): ZIO[Any, com.tjclp.xlcr.v2.transform.TransformError, Chunk[com.tjclp.xlcr.v2.types.DynamicFragment]]
+    def convert(
+      input: Content[Mime],
+      to: Mime
+    ): ZIO[Any, com.tjclp.xlcr.v2.transform.TransformError, Content[Mime]]
+    def split(input: Content[Mime]): ZIO[
+      Any,
+      com.tjclp.xlcr.v2.transform.TransformError,
+      Chunk[com.tjclp.xlcr.v2.types.DynamicFragment]
+    ]
 
   private object AsposeBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime) = AsposeTransforms.convert(input, to)
-    def split(input: Content[Mime]) = AsposeTransforms.split(input)
+    def split(input: Content[Mime])             = AsposeTransforms.split(input)
 
   private object LibreOfficeBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime) = LibreOfficeTransforms.convert(input, to)
-    def split(input: Content[Mime]) = LibreOfficeTransforms.split(input)
+    def split(input: Content[Mime])             = LibreOfficeTransforms.split(input)
 
   private object XlcrBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime) = XlcrTransforms.convert(input, to)
-    def split(input: Content[Mime]) = XlcrTransforms.split(input)
+    def split(input: Content[Mime])             = XlcrTransforms.split(input)
 
   private object UnifiedBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime) = UnifiedTransforms.convert(input, to)
-    def split(input: Content[Mime]) = UnifiedTransforms.split(input)
+    def split(input: Content[Mime])             = UnifiedTransforms.split(input)
 
   // ============================================================================
   // Utility Functions
@@ -332,27 +343,27 @@ object XlcrMain extends ZIOAppDefault:
 
   private def getExtension(mime: Mime): String =
     mime.mimeType match
-      case "application/pdf" => "pdf"
-      case "text/html" => "html"
-      case "text/plain" => "txt"
-      case "text/csv" => "csv"
-      case "text/tab-separated-values" => "tsv"
-      case "application/json" => "json"
-      case "application/xml" | "text/xml" => "xml"
-      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => "docx"
-      case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => "xlsx"
+      case "application/pdf"                                                           => "pdf"
+      case "text/html"                                                                 => "html"
+      case "text/plain"                                                                => "txt"
+      case "text/csv"                                                                  => "csv"
+      case "text/tab-separated-values"                                                 => "tsv"
+      case "application/json"                                                          => "json"
+      case "application/xml" | "text/xml"                                              => "xml"
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document"   => "docx"
+      case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"         => "xlsx"
       case "application/vnd.openxmlformats-officedocument.presentationml.presentation" => "pptx"
-      case "application/msword" => "doc"
-      case "application/vnd.ms-excel" => "xls"
-      case "application/vnd.ms-powerpoint" => "ppt"
-      case "application/vnd.oasis.opendocument.text" => "odt"
-      case "application/vnd.oasis.opendocument.spreadsheet" => "ods"
-      case "application/vnd.oasis.opendocument.presentation" => "odp"
-      case "image/png" => "png"
-      case "image/jpeg" => "jpg"
-      case "image/gif" => "gif"
-      case "image/svg+xml" => "svg"
-      case _ => "bin"
+      case "application/msword"                                                        => "doc"
+      case "application/vnd.ms-excel"                                                  => "xls"
+      case "application/vnd.ms-powerpoint"                                             => "ppt"
+      case "application/vnd.oasis.opendocument.text"                                   => "odt"
+      case "application/vnd.oasis.opendocument.spreadsheet"                            => "ods"
+      case "application/vnd.oasis.opendocument.presentation"                           => "odp"
+      case "image/png"                                                                 => "png"
+      case "image/jpeg"                                                                => "jpg"
+      case "image/gif"                                                                 => "gif"
+      case "image/svg+xml"                                                             => "svg"
+      case _                                                                           => "bin"
 
   private def formatSize(bytes: Long): String =
     if bytes < 1024 then s"$bytes B"
@@ -363,10 +374,19 @@ object XlcrMain extends ZIOAppDefault:
   private def findAvailableConversions(from: Mime): List[Mime] =
     // Check common target formats
     val targets = List(
-      Mime.pdf, Mime.html, Mime.plain, Mime.csv, Mime.json,
-      Mime.docx, Mime.xlsx, Mime.pptx,
-      Mime.odt, Mime.ods, Mime.odp,
-      Mime.png, Mime.jpeg
+      Mime.pdf,
+      Mime.html,
+      Mime.plain,
+      Mime.csv,
+      Mime.json,
+      Mime.docx,
+      Mime.xlsx,
+      Mime.pptx,
+      Mime.odt,
+      Mime.ods,
+      Mime.odp,
+      Mime.png,
+      Mime.jpeg
     )
     targets.filter(target => target != from && UnifiedTransforms.canConvert(from, target))
 
@@ -380,10 +400,11 @@ object XlcrMain extends ZIOAppDefault:
       try
         val metadata = new Metadata()
         metadata.set(HttpHeaders.CONTENT_LOCATION, filename)
-        val parser = new AutoDetectParser()
+        val parser  = new AutoDetectParser()
         val handler = new BodyContentHandler(-1)
-        Using.resource(TikaInputStream.get(new java.io.ByteArrayInputStream(data.toArray))) { stream =>
-          parser.parse(stream, handler, metadata)
+        Using.resource(TikaInputStream.get(new java.io.ByteArrayInputStream(data.toArray))) {
+          stream =>
+            parser.parse(stream, handler, metadata)
         }
         metadata.names().toList.map(name => name -> metadata.get(name)).toMap
       catch
@@ -394,12 +415,12 @@ object XlcrMain extends ZIOAppDefault:
   // ============================================================================
 
   private def printInfoText(
-      path: Path,
-      size: Long,
-      mime: Mime,
-      metadata: Map[String, String],
-      conversions: List[Mime],
-      canSplit: Boolean
+    path: Path,
+    size: Long,
+    mime: Mime,
+    metadata: Map[String, String],
+    conversions: List[Mime],
+    canSplit: Boolean
   ): ZIO[Any, Throwable, Unit] =
     for
       _ <- Console.printLine(s"File: $path")
@@ -424,12 +445,12 @@ object XlcrMain extends ZIOAppDefault:
     yield ()
 
   private def printInfoJson(
-      path: Path,
-      size: Long,
-      mime: Mime,
-      metadata: Map[String, String],
-      conversions: List[Mime],
-      canSplit: Boolean
+    path: Path,
+    size: Long,
+    mime: Mime,
+    metadata: Map[String, String],
+    conversions: List[Mime],
+    canSplit: Boolean
   ): ZIO[Any, Throwable, Unit] =
     val metadataJson = metadata.map { case (k, v) =>
       s""""${escapeJson(k)}": "${escapeJson(v)}""""
@@ -453,18 +474,19 @@ object XlcrMain extends ZIOAppDefault:
     Console.printLine(json)
 
   private def printInfoXml(
-      path: Path,
-      size: Long,
-      mime: Mime,
-      metadata: Map[String, String],
-      conversions: List[Mime],
-      canSplit: Boolean
+    path: Path,
+    size: Long,
+    mime: Mime,
+    metadata: Map[String, String],
+    conversions: List[Mime],
+    canSplit: Boolean
   ): ZIO[Any, Throwable, Unit] =
     val metadataXml = metadata.map { case (k, v) =>
       s"""    <entry key="${escapeXml(k)}">${escapeXml(v)}</entry>"""
     }.mkString("\n")
 
-    val conversionsXml = conversions.map(m => s"""    <conversion>${escapeXml(m.value)}</conversion>""").mkString("\n")
+    val conversionsXml =
+      conversions.map(m => s"""    <conversion>${escapeXml(m.value)}</conversion>""").mkString("\n")
 
     val xml = s"""<?xml version="1.0" encoding="UTF-8"?>
 <fileInfo>

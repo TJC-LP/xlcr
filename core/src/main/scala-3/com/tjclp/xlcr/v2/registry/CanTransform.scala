@@ -7,9 +7,9 @@ import scala.util.NotGiven
 /**
  * Type class evidence that a transform exists from type I to type O.
  *
- * This enables compile-time verification of transform paths. When a `CanTransform[I, O]`
- * instance is in scope, it proves that there exists a way to transform content from
- * MIME type I to MIME type O (either directly or via intermediate transforms).
+ * This enables compile-time verification of transform paths. When a `CanTransform[I, O]` instance
+ * is in scope, it proves that there exists a way to transform content from MIME type I to MIME type
+ * O (either directly or via intermediate transforms).
  *
  * Usage:
  * {{{
@@ -21,8 +21,10 @@ import scala.util.NotGiven
  * given pdfToHtml: CanTransform[Mime.Pdf, Mime.Html] = CanTransform.from(myPdfToHtmlConversion)
  * }}}
  *
- * @tparam I Input MIME type
- * @tparam O Output MIME type
+ * @tparam I
+ *   Input MIME type
+ * @tparam O
+ *   Output MIME type
  */
 trait CanTransform[I <: Mime, O <: Mime]:
   /** The transform that converts from I to O */
@@ -40,8 +42,8 @@ object CanTransform:
   /**
    * Lift any in-scope Transform into CanTransform evidence.
    *
-   * This allows compile-time path resolution to start from given conversions
-   * and splitters without runtime registration.
+   * This allows compile-time path resolution to start from given conversions and splitters without
+   * runtime registration.
    */
   given direct[I <: Mime, O <: Mime](using t: Transform[I, O]): CanTransform[I, O] =
     from(t)
@@ -55,13 +57,14 @@ object CanTransform:
   /**
    * Compose two transforms if we have evidence for I -> M and M -> O.
    *
-   * This enables automatic path finding at compile time when all intermediate
-   * steps have CanTransform instances in scope.
+   * This enables automatic path finding at compile time when all intermediate steps have
+   * CanTransform instances in scope.
    */
   given composed[I <: Mime, M <: Mime, O <: Mime](
-      using first: CanTransform[I, M],
-      second: CanTransform[M, O],
-      noDirect: NotGiven[Transform[I, O]]
+    using
+    first: CanTransform[I, M],
+    second: CanTransform[M, O],
+    noDirect: NotGiven[Transform[I, O]]
   ): CanTransform[I, O] =
     from(first.transform >>> second.transform)
 
@@ -86,7 +89,7 @@ object CanTransform:
    * This is useful when you want to attempt a transform without compile-time guarantees.
    */
   def optional[I <: Mime, O <: Mime](using
-      ev: CanTransform[I, O] = null
+    ev: CanTransform[I, O] = null
   ): Option[Transform[I, O]] =
     Option(ev).map(_.transform)
 
@@ -97,11 +100,17 @@ extension [I <: Mime](content: com.tjclp.xlcr.v2.types.Content[I])
   /**
    * Convert this content to another MIME type if a transform exists.
    */
-  def convertTo[O <: Mime](using ct: CanTransform[I, O]): zio.ZIO[Any, com.tjclp.xlcr.v2.transform.TransformError, com.tjclp.xlcr.v2.types.Content[O]] =
+  def convertTo[O <: Mime](using
+    ct: CanTransform[I, O]
+  ): zio.ZIO[Any, com.tjclp.xlcr.v2.transform.TransformError, com.tjclp.xlcr.v2.types.Content[O]] =
     ct.transform(content).map(_.head)
 
   /**
    * Transform this content to another MIME type (may produce multiple outputs).
    */
-  def transformTo[O <: Mime](using ct: CanTransform[I, O]): zio.ZIO[Any, com.tjclp.xlcr.v2.transform.TransformError, zio.Chunk[com.tjclp.xlcr.v2.types.Content[O]]] =
+  def transformTo[O <: Mime](using ct: CanTransform[I, O]): zio.ZIO[
+    Any,
+    com.tjclp.xlcr.v2.transform.TransformError,
+    zio.Chunk[com.tjclp.xlcr.v2.types.Content[O]]
+  ] =
     ct.transform(content)

@@ -1,21 +1,21 @@
 package com.tjclp.xlcr.v2.pipeline
 
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 import zio.stream.ZStream
 
 import com.tjclp.xlcr.v2.registry.CanTransform
-import com.tjclp.xlcr.v2.transform.{DynamicSplitter, Splitter, Transform, TransformError}
-import com.tjclp.xlcr.v2.types.{Content, DynamicFragment, Fragment, Mime}
+import com.tjclp.xlcr.v2.transform.{ DynamicSplitter, Splitter, Transform, TransformError }
+import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Fragment, Mime }
 
 /**
  * High-level Pipeline API for the v2 Transform algebra.
  *
  * Provides typed, compile-time-verified helpers for common transform operations:
- * - Single content conversion
- * - Multi-step pipelines with intermediate formats
- * - Batch processing
- * - Streaming operations
- * - Typed and dynamic splitting
+ *   - Single content conversion
+ *   - Multi-step pipelines with intermediate formats
+ *   - Batch processing
+ *   - Streaming operations
+ *   - Typed and dynamic splitting
  *
  * Usage:
  * {{{
@@ -41,11 +41,11 @@ object Pipeline:
   /**
    * Convert content from one MIME type to another using compile-time evidence.
    *
-   * This requires a CanTransform[I, O] in scope, which is derived from in-scope
-   * given Transform instances (conversions or splitters).
+   * This requires a CanTransform[I, O] in scope, which is derived from in-scope given Transform
+   * instances (conversions or splitters).
    */
   def convert[I <: Mime, O <: Mime](
-      input: Content[I]
+    input: Content[I]
   )(using ct: CanTransform[I, O]): ZIO[Any, TransformError, Content[O]] =
     val transform = ct.transform
     transform(input).flatMap(firstOrFail(_, transform.name))
@@ -54,7 +54,7 @@ object Pipeline:
    * Convert content with compile-time type verification (alias of convert).
    */
   def convertTyped[I <: Mime, O <: Mime](
-      input: Content[I]
+    input: Content[I]
   )(using ct: CanTransform[I, O]): ZIO[Any, TransformError, Content[O]] =
     convert(input)
 
@@ -62,7 +62,7 @@ object Pipeline:
    * Transform content, potentially producing multiple outputs.
    */
   def transform[I <: Mime, O <: Mime](
-      input: Content[I]
+    input: Content[I]
   )(using ct: CanTransform[I, O]): ZIO[Any, TransformError, Chunk[Content[O]]] =
     ct.transform(input)
 
@@ -70,7 +70,7 @@ object Pipeline:
    * Transform content with compile-time type verification (alias of transform).
    */
   def transformTyped[I <: Mime, O <: Mime](
-      input: Content[I]
+    input: Content[I]
   )(using ct: CanTransform[I, O]): ZIO[Any, TransformError, Chunk[Content[O]]] =
     transform(input)
 
@@ -78,7 +78,7 @@ object Pipeline:
    * Split content into typed fragments using an in-scope Splitter.
    */
   def split[I <: Mime, O <: Mime](
-      input: Content[I]
+    input: Content[I]
   )(using splitter: Splitter[I, O]): ZIO[Any, TransformError, Chunk[Fragment[O]]] =
     splitter.split(input)
 
@@ -86,7 +86,7 @@ object Pipeline:
    * Split content into dynamic fragments using an in-scope DynamicSplitter.
    */
   def splitDynamic[I <: Mime](
-      input: Content[I]
+    input: Content[I]
   )(using splitter: DynamicSplitter[I]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     splitter.splitDynamic(input)
 
@@ -94,7 +94,7 @@ object Pipeline:
    * Split content using a typed Splitter and widen results to DynamicFragment.
    */
   def splitToDynamic[I <: Mime, O <: Mime](
-      input: Content[I]
+    input: Content[I]
   )(using splitter: Splitter[I, O]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     splitter.split(input).map(_.map(DynamicFragment.from))
 
@@ -102,7 +102,7 @@ object Pipeline:
    * Stream transform results as they become available.
    */
   def stream[I <: Mime, O <: Mime](
-      input: Content[I]
+    input: Content[I]
   )(using ct: CanTransform[I, O]): ZStream[Any, TransformError, Content[O]] =
     ct.transform.stream(input)
 
@@ -114,7 +114,7 @@ object Pipeline:
    * Convert multiple contents in parallel.
    */
   def convertAll[I <: Mime, O <: Mime](
-      inputs: Chunk[Content[I]]
+    inputs: Chunk[Content[I]]
   )(using ct: CanTransform[I, O]): ZIO[Any, TransformError, Chunk[Content[O]]] =
     ZIO.foreachPar(inputs)(convert(_))
 
@@ -122,7 +122,7 @@ object Pipeline:
    * Convert multiple contents sequentially.
    */
   def convertAllSeq[I <: Mime, O <: Mime](
-      inputs: Chunk[Content[I]]
+    inputs: Chunk[Content[I]]
   )(using ct: CanTransform[I, O]): ZIO[Any, TransformError, Chunk[Content[O]]] =
     ZIO.foreach(inputs)(convert(_))
 
@@ -137,8 +137,8 @@ object Pipeline:
     PipelineBuilder.initial(mime)
 
   private[pipeline] def firstOrFail[O <: Mime](
-      results: Chunk[Content[O]],
-      transformName: String
+    results: Chunk[Content[O]],
+    transformName: String
   ): ZIO[Any, TransformError, Content[O]] =
     ZIO.fromOption(results.headOption)
       .orElseFail(TransformError.validation(s"$transformName produced no outputs"))
@@ -146,18 +146,20 @@ object Pipeline:
 /**
  * Fluent builder for constructing multi-step transform pipelines.
  *
- * @tparam I Original input MIME type
- * @tparam C Current intermediate MIME type
+ * @tparam I
+ *   Original input MIME type
+ * @tparam C
+ *   Current intermediate MIME type
  */
 final class PipelineBuilder[I <: Mime, C <: Mime] private (
-    inputMime: I,
-    currentMime: C,
-    transform: Transform[I, C]
+  inputMime: I,
+  currentMime: C,
+  transform: Transform[I, C]
 ):
 
   /**
-   * Add an intermediate format to the pipeline.
-   * Requires compile-time evidence that C -> M is possible.
+   * Add an intermediate format to the pipeline. Requires compile-time evidence that C -> M is
+   * possible.
    */
   def via[M <: Mime](mime: M)(using ct: CanTransform[C, M]): PipelineBuilder[I, M] =
     new PipelineBuilder(inputMime, mime, transform >>> ct.transform)
@@ -175,13 +177,15 @@ object PipelineBuilder:
 /**
  * A fully constructed pipeline ready to execute.
  *
- * @tparam I Input MIME type
- * @tparam O Output MIME type
+ * @tparam I
+ *   Input MIME type
+ * @tparam O
+ *   Output MIME type
  */
 final class BuiltPipeline[I <: Mime, O <: Mime] private[pipeline] (
-    inputMime: I,
-    outputMime: O,
-    transform: Transform[I, O]
+  inputMime: I,
+  outputMime: O,
+  transform: Transform[I, O]
 ):
 
   /**
