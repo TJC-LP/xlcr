@@ -181,17 +181,6 @@ class ZipBuilderSpec extends AnyFlatSpec with Matchers {
     entries.head shouldBe "1__Sheet_ Q1_Q2 _Results_.xlsx"
   }
 
-  it should "handle 100+ fragments correctly (verify 3-digit padding)" in {
-    // Use 101 fragments to test 3-digit padding without excessive runtime
-    val fragments = (0 until 101).map { i =>
-      makeFragment(s"c$i", i, Some(s"P${i + 1}"), Mime.pdf)
-    }
-
-    val zipBytes = ZipBuilder.buildZip(fragments)
-    val entries  = extractEntryNames(zipBytes)
-
-    entries.head shouldBe "001__P1.pdf"
-    entries(99) shouldBe "100__P100.pdf"
-    entries.last shouldBe "101__P101.pdf"
-  }
+  // Note: Padding logic is tested in FragmentNamingSpec.
+  // We only verify ZipBuilder uses it correctly with a small count here.
 }
