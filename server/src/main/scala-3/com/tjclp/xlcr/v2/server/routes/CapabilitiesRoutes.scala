@@ -64,6 +64,7 @@ object CapabilitiesRoutes:
       Mime.pptx,
       // MS Office macro-enabled
       Mime.xlsm,
+      Mime.xlsb,
       // OpenDocument
       Mime.odt,
       Mime.ods,
@@ -72,7 +73,8 @@ object CapabilitiesRoutes:
       Mime.eml,
       Mime.msg,
       // Archives
-      Mime.zip
+      Mime.zip,
+      Mime.sevenZip
     )
 
     // Common output types
@@ -115,7 +117,8 @@ object CapabilitiesRoutes:
       }
 
     // Collect supported input/output types
-    val supportedInputTypes  = conversions.map(_.from).distinct.sorted
+    val supportedInputTypes =
+      (conversions.map(_.from) ++ splits.map(_.mimeType)).distinct.sorted
     val supportedOutputTypes = conversions.map(_.to).distinct.sorted
 
     CapabilitiesResponse(

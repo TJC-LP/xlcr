@@ -50,7 +50,8 @@ import com.tjclp.xlcr.v2.server.routes.Routes
 object Server extends ZIOAppDefault:
 
   override def run: ZIO[Any, Throwable, Nothing] =
-    val config = ServerConfig.fromEnv
+    val config         = ServerConfig.fromEnv
+    val maxRequestSize = Math.min(config.maxRequestSize, Int.MaxValue.toLong).toInt
 
     val program =
       for
@@ -67,8 +68,8 @@ object Server extends ZIOAppDefault:
     program.forever.provide(
       ZLayer.succeed(
         zio.http.Server.Config.default
-          .port(config.port)
-          .enableRequestStreaming
+          .binding(config.host, config.port)
+          .hybridRequestStreaming(maxRequestSize)
       ),
       zio.http.Server.live
     )
