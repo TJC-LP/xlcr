@@ -28,10 +28,11 @@ object Commands:
   /** Arguments for the split command */
   case class SplitArgs(
     input: Path,
-    outputDir: Path,
+    output: Path,
     backend: Option[Backend] = None,
     verbose: Boolean = false,
-    extensionOnly: Boolean = false
+    extensionOnly: Boolean = false,
+    extract: Boolean = false
   )
 
   /** Arguments for the info command */
@@ -81,8 +82,15 @@ object Commands:
     Opts.option[Path](
       long = "output-dir",
       short = "d",
-      help = "Output directory for split files"
+      help = "Output path (ZIP file by default, or directory with --extract)"
     )
+
+  private val extractFlag: Opts[Boolean] =
+    Opts.flag(
+      long = "extract",
+      short = "x",
+      help = "Extract fragments to directory instead of creating a ZIP file"
+    ).orFalse
 
   private val verboseFlag: Opts[Boolean] =
     Opts.flag(
@@ -145,7 +153,9 @@ object Commands:
     )(convertOpts.map(CliCommand.Convert.apply))
 
   private val splitOpts: Opts[SplitArgs] =
-    (inputOpt, outputDirOpt, backendOpt, verboseFlag, extensionOnlyFlag).mapN(SplitArgs.apply)
+    (inputOpt, outputDirOpt, backendOpt, verboseFlag, extensionOnlyFlag, extractFlag).mapN(
+      SplitArgs.apply
+    )
 
   val splitCmd: Opts[CliCommand] =
     Opts.subcommand(

@@ -1,5 +1,6 @@
 package com.tjclp.xlcr.v2.cli
 
+import java.io.FileOutputStream
 import java.nio.file.{ Files, Path }
 
 import org.apache.tika.io.TikaInputStream
@@ -15,6 +16,7 @@ import com.tjclp.xlcr.v2.aspose.AsposeTransforms
 import com.tjclp.xlcr.v2.cli.Commands.*
 import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
+import com.tjclp.xlcr.v2.output.{ FragmentNaming, MimeExtensions, ZipBuilder }
 import com.tjclp.xlcr.v2.types.{ Content, Mime }
 
 /**
@@ -132,14 +134,8 @@ object XlcrMain extends ZIOAppDefault:
   private def runSplit(args: SplitArgs): ZIO[Any, Throwable, ExitCode] =
     for
       _ <- ZIO.when(args.verbose)(
-        Console.printLine(s"Splitting ${args.input} into ${args.outputDir}")
+        Console.printLine(s"Splitting ${args.input} into ${args.output}")
       )
-
-      // Ensure output directory exists
-      _ <- ZIO.attemptBlocking {
-        if !Files.exists(args.outputDir) then
-          Files.createDirectories(args.outputDir)
-      }
 
       // Read input file and detect MIME type
       inputBytes <- ZIO.attemptBlocking(Files.readAllBytes(args.input))
@@ -169,26 +165,80 @@ object XlcrMain extends ZIOAppDefault:
         new RuntimeException(s"Split failed: ${err.message}")
       }
 
-      // Write fragments to output directory
-      _ <- ZIO.foreachDiscard(fragments) { fragment =>
-        val baseName      = args.input.getFileName.toString.replaceFirst("\\.[^.]+$", "")
-        val extension     = getExtension(fragment.content.mime)
-        val fragmentName  = fragment.name.getOrElse(s"part-${fragment.index}")
-        val sanitizedName = fragmentName.replaceAll("[^a-zA-Z0-9._-]", "_")
-        val outputPath    = args.outputDir.resolve(s"${baseName}_${sanitizedName}.$extension")
-
-        for
-          _ <- ZIO.attemptBlocking(Files.write(outputPath, fragment.content.data.toArray))
-          _ <- ZIO.when(args.verbose)(
-            Console.printLine(s"  Wrote fragment: $outputPath")
-          )
-        yield ()
-      }
+      // Output based on --extract flag
+      _ <- if args.extract then
+        // Extract fragments to directory
+        writeFragmentsToDirectory(args.output, fragments, args.verbose)
+      else
+        // Create ZIP file (default)
+        writeFragmentsToZip(args.output, fragments, args.verbose)
 
       _ <- Console.printLine(
         s"Successfully split ${args.input.getFileName} into ${fragments.size} parts"
       )
     yield ExitCode.success
+
+  /**
+   * Write fragments to a directory with standardized naming.
+   */
+  private def writeFragmentsToDirectory(
+    outputDir: Path,
+    fragments: Chunk[com.tjclp.xlcr.v2.types.DynamicFragment],
+    verbose: Boolean
+  ): ZIO[Any, Throwable, Unit] =
+    for
+      // Ensure output directory exists
+      _ <- ZIO.attemptBlocking {
+        if !Files.exists(outputDir) then
+          Files.createDirectories(outputDir)
+      }
+
+      total = fragments.size
+
+      // Write each fragment with standardized naming
+      _ <- ZIO.foreachDiscard(fragments.zipWithIndex) { case (fragment, idx) =>
+        val index      = idx + 1
+        val name       = fragment.name.getOrElse(s"fragment_$index")
+        val ext        = MimeExtensions.getExtensionOrDefault(fragment.mime)
+        val filename   = FragmentNaming.buildFilename(index, total, name, ext)
+        val outputPath = outputDir.resolve(filename)
+
+        for
+          _ <- ZIO.attemptBlocking(Files.write(outputPath, fragment.content.data.toArray))
+          _ <- ZIO.when(verbose)(
+            Console.printLine(s"  Wrote fragment: $outputPath")
+          )
+        yield ()
+      }
+    yield ()
+
+  /**
+   * Write fragments to a ZIP file with standardized naming.
+   */
+  private def writeFragmentsToZip(
+    outputPath: Path,
+    fragments: Chunk[com.tjclp.xlcr.v2.types.DynamicFragment],
+    verbose: Boolean
+  ): ZIO[Any, Throwable, Unit] =
+    for
+      // Ensure parent directory exists
+      _ <- ZIO.attemptBlocking {
+        val parent = outputPath.getParent
+        if parent != null && !Files.exists(parent) then
+          Files.createDirectories(parent)
+      }
+
+      // Build ZIP using shared utilities
+      _ <- ZIO.attemptBlocking {
+        Using.resource(new FileOutputStream(outputPath.toFile)) { fos =>
+          ZipBuilder.writeZip(fragments, fos, "bin")
+        }
+      }
+
+      _ <- ZIO.when(verbose)(
+        Console.printLine(s"  Wrote ZIP: $outputPath")
+      )
+    yield ()
 
   // ============================================================================
   // Info Command

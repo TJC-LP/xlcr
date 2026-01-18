@@ -117,9 +117,10 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
     result.toOption.get match
       case CliCommand.Split(args) =>
         args.input shouldBe Paths.get("workbook.xlsx")
-        args.outputDir shouldBe Paths.get("sheets/")
+        args.output shouldBe Paths.get("sheets/")
         args.verbose shouldBe false
         args.backend shouldBe None
+        args.extract shouldBe false
       case _ => fail("Expected Split command")
   }
 
@@ -129,7 +130,27 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
     result.isRight shouldBe true
     result.toOption.get match
       case CliCommand.Split(args) =>
-        args.outputDir shouldBe Paths.get("/tmp/pages")
+        args.output shouldBe Paths.get("/tmp/pages")
+      case _ => fail("Expected Split command")
+  }
+
+  it should "parse split command with --extract flag" in {
+    val result = parse(Seq("split", "-i", "doc.pdf", "-d", "/tmp/pages", "--extract"))
+
+    result.isRight shouldBe true
+    result.toOption.get match
+      case CliCommand.Split(args) =>
+        args.extract shouldBe true
+      case _ => fail("Expected Split command")
+  }
+
+  it should "parse split command with -x flag" in {
+    val result = parse(Seq("split", "-i", "doc.pdf", "-d", "/tmp/pages", "-x"))
+
+    result.isRight shouldBe true
+    result.toOption.get match
+      case CliCommand.Split(args) =>
+        args.extract shouldBe true
       case _ => fail("Expected Split command")
   }
 
@@ -354,4 +375,5 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
 
     args.backend shouldBe None
     args.verbose shouldBe false
+    args.extract shouldBe false
   }
