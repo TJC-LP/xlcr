@@ -1,0 +1,34 @@
+package build.xlcr
+
+import mill._
+import mill.scalalib._
+
+// Only build for Scala 3 - this is a unified CLI module
+object `package` extends Cross[XlcrModule](Seq("3.3.4"))
+
+trait XlcrModule extends build.XLCRModule {
+  override def artifactName = "xlcr"
+  override def artifactDescription = "XLCR - Cross-format document conversion CLI"
+
+  // Depend on both Aspose and LibreOffice modules (which transitively include core)
+  override def moduleDeps = Seq(
+    build.`core-aspose`(crossScalaVersion),
+    build.`core-libreoffice`(crossScalaVersion)
+  )
+
+  // Set main class for executable JAR
+  override def mainClass = Some("com.tjclp.xlcr.v2.cli.XlcrMain")
+
+  // Disable prepended shell script - JAR has >65535 entries
+  override def prependShellScript = ""
+
+  // No additional dependencies - all come from module deps
+  override def mvnDeps = Seq.empty
+
+  // Test source directories
+  def testSources = Task.Sources(moduleDir / "test" / "src")
+
+  object test extends ScalaTests with build.XLCRTestModule {
+    override def sources = testSources
+  }
+}
