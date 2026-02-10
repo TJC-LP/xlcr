@@ -40,7 +40,7 @@ object ZipBuilder:
    *   ZIP archive as byte array
    */
   def buildZip(fragments: zio.Chunk[DynamicFragment], defaultExt: String): Array[Byte] =
-    buildZip(fragments.toSeq, defaultExt)
+    buildZip(fragments.toList, defaultExt)
 
   /**
    * Build a ZIP archive from a ZIO Chunk of fragments with default extension.
@@ -51,7 +51,7 @@ object ZipBuilder:
    *   ZIP archive as byte array
    */
   def buildZip(fragments: zio.Chunk[DynamicFragment]): Array[Byte] =
-    buildZip(fragments.toSeq, "bin")
+    buildZip(fragments.toList, "bin")
 
   /**
    * Write a ZIP archive to an output stream.
@@ -104,4 +104,4 @@ object ZipBuilder:
     out: OutputStream,
     defaultExt: String
   ): Unit =
-    writeZip(fragments.toSeq, out, defaultExt)
+    writeZip(fragments.toList, out, defaultExt)

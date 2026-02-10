@@ -53,4 +53,27 @@ class ZipBuilderSpec extends AnyFlatSpec with Matchers {
 
     entries shouldBe empty
   }
+
+  it should "build ZIP from zio.Chunk without infinite recursion" in {
+    val chunks = zio.Chunk(
+      makeFragment("Page 1", Mime.pdf),
+      makeFragment("Page 2", Mime.pdf)
+    )
+
+    // Before fix, Chunk.toSeq returned itself (Chunk extends Seq),
+    // causing infinite recursion between overloaded buildZip methods.
+    val zipBytes = ZipBuilder.buildZip(chunks)
+    val entries  = extractEntryNames(zipBytes)
+
+    entries shouldBe List("1__Page 1.pdf", "2__Page 2.pdf")
+  }
+
+  it should "build ZIP from zio.Chunk with custom extension" in {
+    val chunks = zio.Chunk(makeFragment("Sheet 1", Mime.xlsx))
+
+    val zipBytes = ZipBuilder.buildZip(chunks, "bin")
+    val entries  = extractEntryNames(zipBytes)
+
+    entries shouldBe List("1__Sheet 1.xlsx")
+  }
 }
