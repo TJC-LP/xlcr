@@ -69,30 +69,15 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.PGP_SECRET }}
-          passphrase: ${{ secrets.PGP_PASSPHRASE }}
-
       - name: Extract version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Publish to Maven Central
+        run: ./mill -i mill.javalib.SonatypeCentralPublishModule/
         env:
-          PUBLISH_VERSION: ${{ steps.version.outputs.VERSION }}
-          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-        run: |
-          ./mill mill.scalalib.PublishModule/publishAll \
-            --sonatypeUri https://s01.oss.sonatype.org/service/local \
-            --sonatypeSnapshotUri https://s01.oss.sonatype.org/content/repositories/snapshots \
-            --publishArtifacts __.publishArtifacts \
-            --username "$SONATYPE_USERNAME" \
-            --password "$SONATYPE_PASSWORD" \
-            --gpgArgs --passphrase="$PGP_PASSPHRASE",--batch,--yes,-a,-b \
-            --readTimeout 600000 \
-            --awaitTimeout 600000 \
-            --release true
+          PUBLISH_VERSION: ${{ steps.version.outputs.version }}
+          MILL_SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          MILL_SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          MILL_PGP_SECRET_BASE64: ${{ secrets.PGP_SECRET }}
+          MILL_PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
