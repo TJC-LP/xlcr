@@ -182,6 +182,12 @@ given asposePdfPageSplitter: Splitter[Mime.Pdf, Mime.Pdf] with
           val destDoc = new com.aspose.pdf.Document()
           destDoc.getPages.add(pages.get_Item(pageNum))
 
+          val opts = new com.aspose.pdf.optimization.OptimizationOptions()
+          opts.setRemoveUnusedStreams(true)
+          opts.setRemoveUnusedObjects(true)
+          opts.setAllowReusePageContent(true)
+          destDoc.optimizeResources(opts)
+
           val out = new ByteArrayOutputStream()
           destDoc.save(out)
           destDoc.close()
