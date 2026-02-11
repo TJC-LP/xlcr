@@ -78,6 +78,13 @@ object PdfPageAsposeSplitter
             val page = pdfDocument.getPages.get_Item(pageIndex)
             newDocument.getPages.add(page)
 
+            // Optimize to deduplicate fonts and streams (prevents full resource embedding per page)
+            val opts = new com.aspose.pdf.optimization.OptimizationOptions()
+            opts.setRemoveUnusedStreams(true)
+            opts.setRemoveUnusedObjects(true)
+            opts.setAllowReusePageContent(true)
+            newDocument.optimizeResources(opts)
+
             // Save to byte array
             val outputStream = pageUse(new ByteArrayOutputStream())
             newDocument.save(outputStream)
