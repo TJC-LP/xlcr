@@ -5,7 +5,7 @@ All notable changes to XLCR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.2] - 2026-02-11
+## [0.1.3] - 2026-02-12
 
 ### Changed
 - Upgraded `aspose-pdf` from 25.6 to 26.1 (dropped `jdk17` classifier)
@@ -15,11 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - PDF page splitting now calls `optimizeResources()` to deduplicate fonts/streams — reduces per-page output from ~7MB to 37-355KB (98%+ reduction)
 - Fixed image-to-PDF test fixtures for stricter Aspose PDF 26.1 parsing
-
-## [0.1.1] - 2026-02-10
-
-### Fixed
-- Resolved infinite recursion in ZipBuilder Chunk overloads
+- Resolved infinite recursion in ZipBuilder Chunk overloads (cherry-picked from v0.1.1)
 
 ## [0.1.0] - 2026-02-10
 
@@ -72,6 +68,6 @@ First stable release. XLCR provides document conversion and splitting across PDF
 - PowerPoint slide dimension loss during splitting
 - Word heading splitter overlapping content and empty headings
 
-[0.1.2]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.2
+[0.1.3]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.3
 [0.1.1]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.1
 [0.1.0]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.0

@@ -12,7 +12,7 @@ import cli.CommonCLI.BaseConfig
 object Main extends AbstractMain[BaseConfig] {
 
   override protected def programName: String     = "xlcr"
-  override protected def programVersion: String  = "0.1.2"
+  override protected def programVersion: String  = "0.1.3"
   override protected def emptyConfig: BaseConfig = BaseConfig()
 
   // Getter methods to extract fields from BaseConfig
