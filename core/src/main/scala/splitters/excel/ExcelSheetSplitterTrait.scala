@@ -78,6 +78,18 @@ trait ExcelSheetSplitterTrait[M <: MimeType] extends SplitFailureHandler {
             val bais = use(new ByteArrayInputStream(content.data))
             val wb   = WorkbookFactory.create(bais)
             use(new CloseableWrapper(wb))
+
+            // Evaluate formulas on the target sheet BEFORE removing other sheets
+            // so cross-sheet references (e.g. =Data!A1) resolve correctly.
+            val evaluator = wb.getCreationHelper.createFormulaEvaluator()
+            wb.getSheetAt(idx).rowIterator().forEachRemaining { row =>
+              row.cellIterator().forEachRemaining { cell =>
+                if (cell.getCellType == org.apache.poi.ss.usermodel.CellType.FORMULA)
+                  try { val _ = evaluator.evaluateInCell(cell) }
+                  catch { case _: Exception => () }
+              }
+            }
+
             val cnt = wb.getNumberOfSheets
             (cnt - 1 to 0 by -1).foreach(i => if (i != idx) wb.removeSheetAt(i))
 

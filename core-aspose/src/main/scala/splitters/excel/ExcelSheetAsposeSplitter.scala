@@ -72,6 +72,11 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
         val srcWb          = new AsposeWorkbook(srcInputStream)
         use(new DisposableWrapper(srcWb))
 
+        // Calculate all formulas while all sheets are present so cross-sheet
+        // references resolve correctly (e.g. =Data!A1 in a Summary sheet).
+        try srcWb.calculateFormula()
+        catch { case _: Exception => () }
+
         val sheets = srcWb.getWorksheets
         val total  = sheets.getCount
 
@@ -112,6 +117,16 @@ object ExcelSheetAsposeSplitter extends SplitFailureHandler {
             // Preserve name & ensure visibility
             destSheet.setName(srcSheet.getName)
             destSheet.setVisible(true)
+
+            // Replace formula cells with computed values so the split file is
+            // self-contained (no broken cross-sheet references).
+            val cellIter = destSheet.getCells.iterator()
+            while (cellIter.hasNext) {
+              val cell = cellIter.next().asInstanceOf[com.aspose.cells.Cell]
+              if (cell.getFormula != null && cell.getFormula.nonEmpty)
+                try cell.putValue(cell.getValue)
+                catch { case _: Exception => () }
+            }
 
             // Persist to bytes
             val baos = destUse(new ByteArrayOutputStream())

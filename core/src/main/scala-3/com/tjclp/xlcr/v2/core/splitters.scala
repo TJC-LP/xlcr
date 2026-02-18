@@ -94,6 +94,17 @@ object XlcrSplitters:
         val bais = new ByteArrayInputStream(data)
         val wb   = WorkbookFactory.create(bais)
         try
+          // Evaluate formulas on the target sheet BEFORE removing other sheets
+          // so cross-sheet references (e.g. =Data!A1) resolve correctly.
+          val evaluator = wb.getCreationHelper.createFormulaEvaluator()
+          wb.getSheetAt(idx).rowIterator().asScala.foreach { row =>
+            row.cellIterator().asScala.foreach { cell =>
+              if cell.getCellType == org.apache.poi.ss.usermodel.CellType.FORMULA then
+                try evaluator.evaluateInCell(cell)
+                catch case _: Exception => ()
+            }
+          }
+
           val cnt = wb.getNumberOfSheets
           // Remove all sheets except the target
           (cnt - 1 to 0 by -1).foreach { i =>

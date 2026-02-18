@@ -72,6 +72,11 @@ private def splitExcelWorkbook[M <: Mime](
       val srcWb          = new AsposeWorkbook(srcInputStream)
       use(new DisposableWrapper(srcWb))
 
+      // Calculate all formulas while all sheets are present so cross-sheet
+      // references resolve correctly (e.g. =Data!A1 in a Summary sheet).
+      try srcWb.calculateFormula()
+      catch case _: Exception => ()
+
       val sheets = srcWb.getWorksheets
       val total  = sheets.getCount
 
@@ -91,6 +96,15 @@ private def splitExcelWorkbook[M <: Mime](
           destSheet.copy(srcSheet)
           destSheet.setName(sheetName)
           destSheet.setVisible(true)
+
+          // Replace formula cells with their computed values so the split file
+          // is self-contained (no broken cross-sheet references).
+          val cellIter = destSheet.getCells.iterator()
+          while cellIter.hasNext do
+            val cell = cellIter.next().asInstanceOf[com.aspose.cells.Cell]
+            if cell.getFormula != null && cell.getFormula.nonEmpty then
+              try cell.putValue(cell.getValue)
+              catch case _: Exception => ()
 
           val baos = destUse(new ByteArrayOutputStream())
           destWb.save(baos, fileFormatType)
