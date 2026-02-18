@@ -1,0 +1,32 @@
+# Build artifacts
+out/
+target/
+
+# IDE files
+.idea/
+.vscode/
+.bsp/
+.metals/
+
+# Git
+.git/
+
+# Data and test files
+data/
+test-output/
+spreadsheetllm-base/
+heap-dumps/
+input/
+logs/
+
+# Documentation
+docs/
+*.md
+
+# OS files
+.DS_Store
+
+# Test artifacts
+aspose-license-b64.txt
+changes.txt
+repomix*

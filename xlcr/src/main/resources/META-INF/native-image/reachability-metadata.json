@@ -1,0 +1,4749 @@
+{
+  "reflection": [
+    {
+      "type": "Mono.Runtime"
+    },
+    {
+      "type": "byte[]"
+    },
+    {
+      "type": "cats.Later",
+      "fields": [
+        {
+          "name": "value$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.classic.BasicConfigurator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.classic.encoder.PatternLayoutEncoder",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.classic.joran.SerializedModelConfigurator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.classic.spi.LogbackServiceProvider"
+    },
+    {
+      "type": "ch.qos.logback.classic.util.DefaultJoranConfigurator",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.ConsoleAppender",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.FileAppender",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "setAppend",
+          "parameterTypes": [
+            "boolean"
+          ]
+        },
+        {
+          "name": "setFile",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.OutputStreamAppender",
+      "methods": [
+        {
+          "name": "setEncoder",
+          "parameterTypes": [
+            "ch.qos.logback.core.encoder.Encoder"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.encoder.Encoder"
+    },
+    {
+      "type": "ch.qos.logback.core.encoder.LayoutWrappingEncoder",
+      "methods": [
+        {
+          "name": "setParent",
+          "parameterTypes": [
+            "ch.qos.logback.core.spi.ContextAware"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.pattern.PatternLayoutEncoderBase",
+      "methods": [
+        {
+          "name": "setPattern",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ch.qos.logback.core.spi.ContextAware"
+    },
+    {
+      "type": "com.apple.eawt._AppEventHandler",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "handleNativeNotification",
+          "parameterTypes": [
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.apple.eawt._AppMenuBarHandler",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "initMenuStates",
+          "parameterTypes": [
+            "boolean",
+            "boolean",
+            "boolean",
+            "boolean"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.email.internal.ah.zdx$za"
+    },
+    {
+      "type": "com.aspose.email.internal.ah.zdx$za[]"
+    },
+    {
+      "type": "com.aspose.email.internal.ah.zez$za"
+    },
+    {
+      "type": "com.aspose.email.internal.ah.zez$za[]"
+    },
+    {
+      "type": "com.aspose.email.internal.ah.zez$zb"
+    },
+    {
+      "type": "com.aspose.email.internal.ah.zez$zb[]"
+    },
+    {
+      "type": "com.aspose.pdf.AbsorbedCell"
+    },
+    {
+      "type": "com.aspose.pdf.AbsorbedRow"
+    },
+    {
+      "type": "com.aspose.pdf.AbsorbedTable"
+    },
+    {
+      "type": "com.aspose.pdf.ActionCollection"
+    },
+    {
+      "type": "com.aspose.pdf.AnnotationActionCollection"
+    },
+    {
+      "type": "com.aspose.pdf.AnnotationCollection"
+    },
+    {
+      "type": "com.aspose.pdf.AnnotationFlags"
+    },
+    {
+      "type": "com.aspose.pdf.AnnotationSelector"
+    },
+    {
+      "type": "com.aspose.pdf.AnnotationState"
+    },
+    {
+      "type": "com.aspose.pdf.AnnotationStateModel"
+    },
+    {
+      "type": "com.aspose.pdf.AnnotationType"
+    },
+    {
+      "type": "com.aspose.pdf.AppearanceDictionary"
+    },
+    {
+      "type": "com.aspose.pdf.ApsToFlowConverter"
+    },
+    {
+      "type": "com.aspose.pdf.Artifact"
+    },
+    {
+      "type": "com.aspose.pdf.ArtifactCollection"
+    },
+    {
+      "type": "com.aspose.pdf.BackgroundArtifact"
+    },
+    {
+      "type": "com.aspose.pdf.BarcodeField"
+    },
+    {
+      "type": "com.aspose.pdf.BlendMode"
+    },
+    {
+      "type": "com.aspose.pdf.Border"
+    },
+    {
+      "type": "com.aspose.pdf.BorderCornerStyle"
+    },
+    {
+      "type": "com.aspose.pdf.BorderEffect"
+    },
+    {
+      "type": "com.aspose.pdf.BorderInfo"
+    },
+    {
+      "type": "com.aspose.pdf.BorderSide"
+    },
+    {
+      "type": "com.aspose.pdf.BorderStyle"
+    },
+    {
+      "type": "com.aspose.pdf.BorderStyleConverter"
+    },
+    {
+      "type": "com.aspose.pdf.BoxStyle"
+    },
+    {
+      "type": "com.aspose.pdf.BuildVersionInfo"
+    },
+    {
+      "type": "com.aspose.pdf.ButtonField"
+    },
+    {
+      "type": "com.aspose.pdf.CapStyle"
+    },
+    {
+      "type": "com.aspose.pdf.CaptionPosition"
+    },
+    {
+      "type": "com.aspose.pdf.CaretAnnotation"
+    },
+    {
+      "type": "com.aspose.pdf.CaretSymbol"
+    },
+    {
+      "type": "com.aspose.pdf.CaretSymbolConverter"
+    },
+    {
+      "type": "com.aspose.pdf.Cell"
+    },
+    {
+      "type": "com.aspose.pdf.Cells"
+    },
+    {
+      "type": "com.aspose.pdf.CgmImportOptions"
+    },
+    {
+      "type": "com.aspose.pdf.CgmLoadOptions"
+    },
+    {
+      "type": "com.aspose.pdf.CharInfo"
+    },
+    {
+      "type": "com.aspose.pdf.CharInfoCollection"
+    },
+    {
+      "type": "com.aspose.pdf.Characteristics"
+    },
+    {
+      "type": "com.aspose.pdf.CheckboxField"
+    },
+    {
+      "type": "com.aspose.pdf.CircleAnnotation"
+    },
+    {
+      "type": "com.aspose.pdf.Collection"
+    },
+    {
+      "type": "com.aspose.pdf.Color"
+    },
+    {
+      "type": "com.aspose.pdf.ColorSpace"
+    },
+    {
+      "type": "com.aspose.pdf.ColorType"
+    },
+    {
+      "type": "com.aspose.pdf.ColumnAdjustment"
+    },
+    {
+      "type": "com.aspose.pdf.ColumnInfo"
+    },
+    {
+      "type": "com.aspose.pdf.ComHelper"
+    },
+    {
+      "type": "com.aspose.pdf.ComboBoxField"
+    },
+    {
+      "type": "com.aspose.pdf.CompositingParameters"
+    },
+    {
+      "type": "com.aspose.pdf.ContentDisposition"
+    },
+    {
+      "type": "com.aspose.pdf.ContentsAppender"
+    },
+    {
+      "type": "com.aspose.pdf.ConvertErrorAction"
+    },
+    {
+      "type": "com.aspose.pdf.ConvertTransparencyAction"
+    },
+    {
+      "type": "com.aspose.pdf.Copier"
+    },
+    {
+      "type": "com.aspose.pdf.CryptoAlgorithm"
+    },
+    {
+      "type": "com.aspose.pdf.CustomExplicitDestination"
+    },
+    {
+      "type": "com.aspose.pdf.Dash"
+    },
+    {
+      "type": "com.aspose.pdf.DefaultAppearance"
+    },
+    {
+      "type": "com.aspose.pdf.DefaultDirectory"
+    },
+    {
+      "type": "com.aspose.pdf.DestinationCollection"
+    },
+    {
+      "type": "com.aspose.pdf.DestinationFactory"
+    },
+    {
+      "type": "com.aspose.pdf.Direction"
+    },
+    {
+      "type": "com.aspose.pdf.DocMDPAccessPermissions"
+    },
+    {
+      "type": "com.aspose.pdf.DocMDPSignature"
+    },
+    {
+      "type": "com.aspose.pdf.DocSaveOptions"
+    },
+    {
+      "type": "com.aspose.pdf.Document"
+    },
+    {
+      "type": "com.aspose.pdf.DocumentActionCollection"
+    },
+    {
+      "type": "com.aspose.pdf.DocumentFactory"
+    },
+    {
+      "type": "com.aspose.pdf.DocumentInfo"
+    },
+    {
+      "type": "com.aspose.pdf.DocumentWeb"
+    },
+    {
+      "type": "com.aspose.pdf.EmbeddedFileCollection"
+    },
+    {
+      "type": "com.aspose.pdf.EpubLoadOptions"
+    },
+    {
+      "type": "com.aspose.pdf.EpubSaveOptions"
+    },
+    {
+      "type": "com.aspose.pdf.ExcelSaveOptions"
+    },
+    {
+      "type": "com.aspose.pdf.ExplicitDestinationType"
+    },
+    {
+      "type": "com.aspose.pdf.ExplicitDestinationTypeConverter"
+    },
+    {
+      "type": "com.aspose.pdf.ExtendedBoolean"
+    },
+    {
+      "type": "com.aspose.pdf.ExternalSignature"
+    },
+    {
+      "type": "com.aspose.pdf.ExtractImageMode"
+    },
+    {
+      "type": "com.aspose.pdf.Field"
+    },
+    {
+      "type": "com.aspose.pdf.FigureElement"
+    },
+    {
+      "type": "com.aspose.pdf.FileAttachmentAnnotation"
+    },
+    {
+      "type": "com.aspose.pdf.FileEncoding"
+    },
+    {
+      "type": "com.aspose.pdf.FileFontSource"
+    },
+    {
+      "type": "com.aspose.pdf.FileHyperlink"
+    },
+    {
+      "type": "com.aspose.pdf.FileIcon"
+    },
+    {
+      "type": "com.aspose.pdf.FileIconConverter"
+    },
+    {
+      "type": "com.aspose.pdf.FileParams"
+    },
+    {
+      "type": "com.aspose.pdf.FileSelectBoxField"
+    },
+    {
+      "type": "com.aspose.pdf.FileSpecification"
+    },
+    {
+      "type": "com.aspose.pdf.FitBExplicitDestination"
+    },
+    {
+      "type": "com.aspose.pdf.FitBHExplicitDestination"
+    },
+    {
+      "type": "com.aspose.pdf.FitBVExplicitDestination"
+    },
+    {
+      "type": "com.aspose.pdf.FitExplicitDestination"
+    },
+    {
+      "type": "com.aspose.pdf.FitHExplicitDestination"
+    },
+    {
+      "type": "com.aspose.pdf.FitRExplicitDestination"
+    },
+    {
+      "type": "com.aspose.pdf.FitVExplicitDestination"
+    },
+    {
+      "type": "com.aspose.pdf.FixedPrint"
+    },
+    {
+      "type": "com.aspose.pdf.FloatingBox"
+    },
+    {
+      "type": "com.aspose.pdf.FolderFontSource"
+    },
+    {
+      "type": "com.aspose.pdf.Font"
+    },
+    {
+      "type": "com.aspose.pdf.FontAbsorber"
+    },
+    {
+      "type": "com.aspose.pdf.FontCollection"
+    },
+    {
+      "type": "com.aspose.pdf.FontEmbeddingOptions"
+    },
+    {
+      "type": "com.aspose.pdf.FontRepository"
+    },
+    {
+      "type": "com.aspose.pdf.FontStyles"
+    },
+    {
+      "type": "com.aspose.pdf.FontSubsetStrategy"
+    },
+    {
+      "type": "com.aspose.pdf.FooterArtifact"
+    },
+    {
+      "type": "com.aspose.pdf.Form"
+    },
+    {
+      "type": "com.aspose.pdf.FormType"
+    },
+    {
+      "type": "com.aspose.pdf.FreeTextAnnotation"
+    },
+    {
+      "type": "com.aspose.pdf.FreeTextIntent"
+    },
+    {
+      "type": "com.aspose.pdf.GoToAction"
+    },
+    {
+      "type": "com.aspose.pdf.GoToRemoteAction"
+    },
+    {
+      "type": "com.aspose.pdf.GoToURIAction"
+    },
+    {
+      "type": "com.aspose.pdf.GraphInfo"
+    },
+    {
+      "type": "com.aspose.pdf.Group"
+    },
+    {
+      "type": "com.aspose.pdf.HeaderArtifact"
+    },
+    {
+      "type": "com.aspose.pdf.HeaderFooter"
+    },
+    {
+      "type": "com.aspose.pdf.Heading"
+    },
+    {
+      "type": "com.aspose.pdf.HideAction"
+    },
+    {
+      "type": "com.aspose.pdf.HighlightAnnotation"
+    },
+    {
+      "type": "com.aspose.pdf.HorizontalAlignment"
+    },
+    {
+      "type": "com.aspose.pdf.HtmlDocumentType"
+    },
+    {
+      "type": "com.aspose.pdf.HtmlFragment"
+    },
+    {
+      "type": "com.aspose.pdf.HtmlLoadOptions"
+    },
+    {
+      "type": "com.aspose.pdf.HtmlMediaType"
+    },
+    {
+      "type": "com.aspose.pdf.internal.foundation.rendering.l0if[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.html.dom.Node[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.html.dom.events.lj$lf[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.html.l0t[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.html.rendering.GraphicContext"
+    },
+    {
+      "type": "com.aspose.pdf.internal.html.rendering.lj",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10j.lI[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.l0t"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.lI"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.lc"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.ld"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.le"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.lh"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.lk"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.lt"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.lv"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l10y.ly",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l116f.l1v$lf[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l116h.l0p[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l116j.l6if"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l116j.l9l[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l117u.l1t[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l117u.lb[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l117u.ld[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l117u.lj[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l117v.lI$lI"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l117v.lI$lI[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l1f.lI"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l36y.lt",
+      "fields": [
+        {
+          "name": "lf"
+        },
+        {
+          "name": "lt"
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l37p.lI[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l38f.lI",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l45k.l0u"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l45k.l0u[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l47if.lI$lf",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l47if.lI$lf[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l47l.lk[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l48y.lt$lI",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l48y.lt$lI[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l49if.lI[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l49n.l2k"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l49n.l6u"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l49n.l8l"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l49n.l8l[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l49n.l8t"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l49n.l8v"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l50j.lt$lj",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l50j.lt$lj[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l52u.lc$ld",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l52u.lc$lf",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l52u.lc$lu",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l5h.le"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l5h.le[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l6f.lk"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l78h.l13h",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l78h.l13h[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l78h.ld",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l78h.ld[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l81n.l30p$lI",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l81n.l30p$lI[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l81n.l30p$lf",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.l81n.l30p$lf[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.l9v.lu",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.Collections.Generic.IGenericList"
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.Collections.Generic.l0t"
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.Collections.Generic.le"
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.Collections.Generic.lh"
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.Collections.Generic.lk"
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.Collections.Generic.ly",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.Collections.Generic.ly[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.Security.Cryptography.l5u",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.l3n[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.ms.System.l5p"
+    },
+    {
+      "type": "com.aspose.pdf.l3l"
+    },
+    {
+      "type": "com.aspose.slides.ShapeType"
+    },
+    {
+      "type": "com.aspose.slides.i2j"
+    },
+    {
+      "type": "com.aspose.slides.internal.a2k.l4"
+    },
+    {
+      "type": "com.aspose.slides.internal.a2k.l4[]"
+    },
+    {
+      "type": "com.aspose.slides.internal.c7.i9[]"
+    },
+    {
+      "type": "com.aspose.slides.internal.g4.g8a",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.slides.internal.g4.w0l",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.slides.internal.l4b.z9"
+    },
+    {
+      "type": "com.aspose.slides.internal.l4b.z9[]"
+    },
+    {
+      "type": "com.aspose.slides.internal.n1.w0"
+    },
+    {
+      "type": "com.aspose.slides.internal.v3g.p6"
+    },
+    {
+      "type": "com.aspose.slides.internal.v3g.t2"
+    },
+    {
+      "type": "com.aspose.slides.internal.v3g.t2[]"
+    },
+    {
+      "type": "com.aspose.slides.internal.v3g.w0"
+    },
+    {
+      "type": "com.aspose.slides.internal.v3g.w0[]"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.d1$x6"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.d1$x6[]"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.s4$m8"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.s4$m8[]"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.s4$v0"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.s4$v0[]"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.s4$x6"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.s4$x6[]"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.z0$r2"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.z0$r2[]"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.z0$x6"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.Xml.z0$x6[]"
+    },
+    {
+      "type": "com.aspose.slides.ms.System.l4",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.slides.ms.System.l4[]"
+    },
+    {
+      "type": "com.aspose.words.internal.zzXAW[]"
+    },
+    {
+      "type": "com.aspose.words.internal.zzZF3"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.common.PackageUtil"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.bmp.BMPImageReaderSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.bmp.BMPImageWriterSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.gif.GIFImageWriterSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.pcx.PCXImageReaderSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.pcx.PCXImageWriterSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.pnm.PNMImageReaderSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.pnm.PNMImageWriterSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.raw.RawImageReaderSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.raw.RawImageWriterSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.tiff.TIFFImageReaderSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.tiff.TIFFImageWriterSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.wbmp.WBMPImageReaderSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.plugins.wbmp.WBMPImageWriterSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.stream.ChannelImageInputStreamSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.impl.stream.ChannelImageOutputStreamSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.jpeg2000.impl.J2KImageReaderCodecLibSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.jpeg2000.impl.J2KImageReaderSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.jpeg2000.impl.J2KImageWriterCodecLibSpi"
+    },
+    {
+      "type": "com.github.jaiimageio.jpeg2000.impl.J2KImageWriterSpi"
+    },
+    {
+      "type": "com.github.luben.zstd.ZstdInputStream"
+    },
+    {
+      "type": "com.luciad.imageio.webp.WebPImageReaderSpi"
+    },
+    {
+      "type": "com.luciad.imageio.webp.WebPImageWriterSpi"
+    },
+    {
+      "type": "com.sun.imageio.plugins.jpeg.JPEGImageWriter",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "grabPixels",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "warningOccurred",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "warningWithMessage",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "writeMetadata",
+          "parameterTypes": []
+        },
+        {
+          "name": "writeOutputData",
+          "parameterTypes": [
+            "byte[]",
+            "int",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault"
+    },
+    {
+      "type": "com.tjclp.xlcr.v2.types.Mime$package$Mime$",
+      "fields": [
+        {
+          "name": "tikaDetector$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "com.twelvemonkeys.imageio.color.ProfileDeferralActivator$Spi"
+    },
+    {
+      "type": "com.twelvemonkeys.imageio.plugins.webp.WebPImageReaderSpi"
+    },
+    {
+      "type": "com.twelvemonkeys.imageio.stream.BufferedFileImageInputStreamSpi"
+    },
+    {
+      "type": "com.twelvemonkeys.imageio.stream.BufferedInputStreamImageInputStreamSpi"
+    },
+    {
+      "type": "com.twelvemonkeys.imageio.stream.BufferedRAFImageInputStreamSpi"
+    },
+    {
+      "type": "float[]"
+    },
+    {
+      "type": "int[]"
+    },
+    {
+      "type": "izumi.reflect.internal.fundamentals.platform.console.TrivialLogger$Config$",
+      "fields": [
+        {
+          "name": "0bitmap$1"
+        }
+      ]
+    },
+    {
+      "type": "izumi.reflect.macrortti.LightTypeTag",
+      "fields": [
+        {
+          "name": "0bitmap$1"
+        }
+      ]
+    },
+    {
+      "type": "izumi.reflect.macrortti.LightTypeTag$ParsedLightTypeTag230Plus",
+      "fields": [
+        {
+          "name": "0bitmap$3"
+        }
+      ]
+    },
+    {
+      "type": "izumi.reflect.macrortti.LightTypeTagInheritance",
+      "fields": [
+        {
+          "name": "0bitmap$1"
+        }
+      ]
+    },
+    {
+      "type": "izumi.reflect.macrortti.LightTypeTagRef$NameReference",
+      "fields": [
+        {
+          "name": "0bitmap$5"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.AlphaComposite",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "extraAlpha"
+        },
+        {
+          "name": "rule"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.Color",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getRGB",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.awt.DisplayMode",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "int",
+            "int",
+            "int",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.awt.GraphicsEnvironment",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "isHeadless",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.awt.event.InputEvent",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getButtonDownMasks",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.awt.geom.AffineTransform",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "m00"
+        },
+        {
+          "name": "m01"
+        },
+        {
+          "name": "m02"
+        },
+        {
+          "name": "m10"
+        },
+        {
+          "name": "m11"
+        },
+        {
+          "name": "m12"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.geom.GeneralPath",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "int",
+            "byte[]",
+            "int",
+            "float[]",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.awt.geom.Path2D",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "numTypes"
+        },
+        {
+          "name": "pointTypes"
+        },
+        {
+          "name": "windingRule"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.geom.Path2D$Float",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "floatCoords"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.geom.Point2D$Float",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "x"
+        },
+        {
+          "name": "y"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "float",
+            "float"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.awt.geom.Rectangle2D$Double",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "double",
+            "double",
+            "double",
+            "double"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.awt.geom.Rectangle2D$Float",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "height"
+        },
+        {
+          "name": "width"
+        },
+        {
+          "name": "x"
+        },
+        {
+          "name": "y"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "float",
+            "float",
+            "float",
+            "float"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.awt.image.BufferedImage",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "colorModel"
+        },
+        {
+          "name": "imageType"
+        },
+        {
+          "name": "raster"
+        }
+      ],
+      "methods": [
+        {
+          "name": "getRGB",
+          "parameterTypes": [
+            "int",
+            "int",
+            "int",
+            "int",
+            "int[]",
+            "int",
+            "int"
+          ]
+        },
+        {
+          "name": "setRGB",
+          "parameterTypes": [
+            "int",
+            "int",
+            "int",
+            "int",
+            "int[]",
+            "int",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.awt.image.ColorConvertOp"
+    },
+    {
+      "type": "java.awt.image.ColorModel",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "colorSpace"
+        },
+        {
+          "name": "colorSpaceType"
+        },
+        {
+          "name": "isAlphaPremultiplied"
+        },
+        {
+          "name": "is_sRGB"
+        },
+        {
+          "name": "nBits"
+        },
+        {
+          "name": "numComponents"
+        },
+        {
+          "name": "supportsAlpha"
+        },
+        {
+          "name": "transparency"
+        }
+      ],
+      "methods": [
+        {
+          "name": "getRGBdefault",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.awt.image.IndexColorModel",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "allgrayopaque"
+        },
+        {
+          "name": "colorData"
+        },
+        {
+          "name": "map_size"
+        },
+        {
+          "name": "rgb"
+        },
+        {
+          "name": "transparent_index"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.image.Raster",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "dataBuffer"
+        },
+        {
+          "name": "height"
+        },
+        {
+          "name": "minX"
+        },
+        {
+          "name": "minY"
+        },
+        {
+          "name": "numBands"
+        },
+        {
+          "name": "numDataElements"
+        },
+        {
+          "name": "sampleModel"
+        },
+        {
+          "name": "sampleModelTranslateX"
+        },
+        {
+          "name": "sampleModelTranslateY"
+        },
+        {
+          "name": "width"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.image.SampleModel",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "height"
+        },
+        {
+          "name": "width"
+        }
+      ],
+      "methods": [
+        {
+          "name": "getPixels",
+          "parameterTypes": [
+            "int",
+            "int",
+            "int",
+            "int",
+            "int[]",
+            "java.awt.image.DataBuffer"
+          ]
+        },
+        {
+          "name": "setPixels",
+          "parameterTypes": [
+            "int",
+            "int",
+            "int",
+            "int",
+            "int[]",
+            "java.awt.image.DataBuffer"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.awt.image.SinglePixelPackedSampleModel",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "bitMasks"
+        },
+        {
+          "name": "bitOffsets"
+        },
+        {
+          "name": "bitSizes"
+        },
+        {
+          "name": "maxBitSize"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Boolean",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getBoolean",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Boolean[]"
+    },
+    {
+      "type": "java.lang.Byte[]"
+    },
+    {
+      "type": "java.lang.Character[]"
+    },
+    {
+      "type": "java.lang.ClassValue"
+    },
+    {
+      "type": "java.lang.Float[]"
+    },
+    {
+      "type": "java.lang.String[]"
+    },
+    {
+      "type": "java.lang.System",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getProperty",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "load",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.invoke.VarHandle",
+      "methods": [
+        {
+          "name": "releaseFence",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "java.security.AlgorithmParametersSpi"
+    },
+    {
+      "type": "java.security.MessageDigestSpi"
+    },
+    {
+      "type": "java.security.cert.PKIXRevocationChecker"
+    },
+    {
+      "type": "java.security.interfaces.DSAPrivateKey"
+    },
+    {
+      "type": "java.security.interfaces.DSAPublicKey"
+    },
+    {
+      "type": "java.security.interfaces.RSAPrivateKey"
+    },
+    {
+      "type": "java.security.interfaces.RSAPublicKey"
+    },
+    {
+      "type": "java.security.spec.DSAParameterSpec"
+    },
+    {
+      "type": "java.util.ArrayList",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "add",
+          "parameterTypes": [
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.util.concurrent.ConcurrentLinkedQueue[]"
+    },
+    {
+      "type": "java.util.concurrent.atomic.AtomicReference[]"
+    },
+    {
+      "type": "javax.crypto.AEADBadTagException"
+    },
+    {
+      "type": "javax.crypto.spec.GCMParameterSpec"
+    },
+    {
+      "type": "javax.imageio.plugins.jpeg.JPEGHuffmanTable",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "lengths"
+        },
+        {
+          "name": "values"
+        }
+      ]
+    },
+    {
+      "type": "javax.imageio.plugins.jpeg.JPEGQTable",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "qTable"
+        }
+      ]
+    },
+    {
+      "type": "javax.imageio.spi.ImageReaderSpi"
+    },
+    {
+      "type": "javax.imageio.spi.ImageReaderWriterSpi",
+      "methods": [
+        {
+          "name": "getMIMETypes",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "javax.imageio.spi.ImageWriterSpi"
+    },
+    {
+      "type": "javax.xml.XMLConstants",
+      "fields": [
+        {
+          "name": "ACCESS_EXTERNAL_DTD"
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.AsiExtraField",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.JarMarker",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.ResourceAlignmentExtraField",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.UnicodeCommentExtraField",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.UnicodePathExtraField",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.X000A_NTFS",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.X0014_X509Certificates",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.X0015_CertificateIdForFile",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.X0016_CertificateIdForCentralDirectory",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.X0017_StrongEncryptionHeader",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.X0019_EncryptionRecipientCertificateList",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.X5455_ExtendedTimestamp",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.X7875_NewUnix",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.commons.compress.archivers.zip.Zip64ExtendedInformationExtraField",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.logging.log4j.util.EnvironmentPropertySource"
+    },
+    {
+      "type": "org.apache.logging.log4j.util.SystemPropertiesPropertySource"
+    },
+    {
+      "type": "org.apache.logging.slf4j.SLF4JProvider"
+    },
+    {
+      "type": "org.apache.pdfbox.jbig2.JBIG2ImageReaderSpi"
+    },
+    {
+      "type": "org.apache.tika.detect.apple.BPListDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.apple.IWorkDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.gzip.GZipSpecializationDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.microsoft.POIFSContainerDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.microsoft.ooxml.OPCPackageDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.ole.MiscOLEDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.zip.DefaultZipContainerDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.tika.config.ServiceLoader"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.zip.FrictionlessPackageDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.zip.IPADetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.zip.JarDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.zip.KMZDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.zip.OpenDocumentDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.detect.zip.StarOfficeDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.apple.AppleSingleFileParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.apple.PListParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.asm.ClassParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.audio.AudioParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.audio.MidiParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.code.SourceCodeParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.crypto.Pkcs7Parser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.crypto.TSDParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.csv.TextAndCSVParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.dbf.DBFParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.dgn.DGN8Parser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.dif.DIFParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.dwg.DWGParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.epub.EpubParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.executable.ExecutableParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.external.CompositeExternalParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.feed.FeedParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.font.AdobeFontMetricParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.font.TrueTypeParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.html.HtmlEncodingDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.html.HtmlParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.http.HttpParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.hwp.HwpV5Parser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.BPGParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.HeifParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.ICNSParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.ImageParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.JXLParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.JpegParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.PSDParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.TiffParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.image.WebPParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.indesign.IDMLParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.iptc.IptcAnpaParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.iwork.IWorkPackageParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.iwork.iwana.IWork13PackageParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.iwork.iwana.IWork18PackageParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.mail.RFC822Parser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.mat.MatParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.mbox.MboxParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.EMFParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.JackcessParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.MSOwnerFileParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.OfficeParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.OldExcelParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.TNEFParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.WMFParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.activemime.ActiveMimeParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.chm.ChmParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.onenote.OneNoteParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.ooxml.OOXMLParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006.Word2006MLParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.pst.OutlookPSTParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.rtf.RTFParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.xml.SpreadsheetMLParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.microsoft.xml.WordMLParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.mif.MIFParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.mp3.Mp3Parser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.mp4.MP4Parser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.ocr.TesseractOCRParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.odf.FlatOpenDocumentParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.odf.OpenDocumentParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.pdf.PDFParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.pkg.CompressorParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.pkg.PackageParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.pkg.RarParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.prt.PRTParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.sas.SAS7BDATParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.tmx.TMXParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.txt.Icu4jEncodingDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.txt.UniversalEncodingDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.video.FLVParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.wacz.WACZParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.warc.WARCParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.wordperfect.QuattroProParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.wordperfect.WordPerfectParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.xliff.XLIFF12Parser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.xliff.XLZParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.xml.DcXMLParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.xml.FictionBookParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xerces.impl.dv.dtd.DTDDVFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl"
+    },
+    {
+      "type": "org.apache.xerces.jaxp.SAXParserFactoryImpl"
+    },
+    {
+      "type": "org.apache.xerces.parsers.XIncludeAwareParserConfiguration",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xerces.util.SecurityManager",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "setEntityExpansionLimit",
+          "parameterTypes": [
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.brotli.dec.BrotliInputStream"
+    },
+    {
+      "type": "org.gagravarr.tika.FlacParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.gagravarr.tika.OggDetector",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.gagravarr.tika.OggParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.gagravarr.tika.OpusParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.gagravarr.tika.SpeexParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.gagravarr.tika.TheoraParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.gagravarr.tika.VorbisParser",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.osgi.framework.FrameworkUtil"
+    },
+    {
+      "type": "org.slf4j.helpers.Log4jLoggerFactory"
+    },
+    {
+      "type": "sun.awt.AWTAutoShutdown",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "notifyToolkitThreadBusy",
+          "parameterTypes": []
+        },
+        {
+          "name": "notifyToolkitThreadFree",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.SunHints",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "INTVAL_STROKE_PURE"
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.image.BufImgSurfaceData$ICMColorData",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "pData"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.image.ByteComponentRaster",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "data"
+        },
+        {
+          "name": "dataOffsets"
+        },
+        {
+          "name": "pixelStride"
+        },
+        {
+          "name": "scanlineStride"
+        },
+        {
+          "name": "type"
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.image.IntegerComponentRaster",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "data"
+        },
+        {
+          "name": "dataOffsets"
+        },
+        {
+          "name": "pixelStride"
+        },
+        {
+          "name": "scanlineStride"
+        },
+        {
+          "name": "type"
+        }
+      ]
+    },
+    {
+      "type": "sun.font.CFontManager",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "registerFont",
+          "parameterTypes": [
+            "java.lang.String",
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.CharToGlyphMapper",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "charToGlyph",
+          "parameterTypes": [
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.Font2D",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "canDisplay",
+          "parameterTypes": [
+            "char"
+          ]
+        },
+        {
+          "name": "charToGlyphRaw",
+          "parameterTypes": [
+            "int"
+          ]
+        },
+        {
+          "name": "charToVariationGlyphRaw",
+          "parameterTypes": [
+            "int",
+            "int"
+          ]
+        },
+        {
+          "name": "getMapper",
+          "parameterTypes": []
+        },
+        {
+          "name": "getTableBytes",
+          "parameterTypes": [
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.FontConfigManager$FcCompFont",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "allFonts"
+        },
+        {
+          "name": "fcName"
+        },
+        {
+          "name": "firstFont"
+        }
+      ]
+    },
+    {
+      "type": "sun.font.FontConfigManager$FontConfigFont",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "familyName"
+        },
+        {
+          "name": "fontFile"
+        },
+        {
+          "name": "fullName"
+        },
+        {
+          "name": "styleStr"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.font.FontConfigManager$FontConfigFont[]"
+    },
+    {
+      "type": "sun.font.FontConfigManager$FontConfigInfo",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "cacheDirs"
+        },
+        {
+          "name": "fcVersion"
+        }
+      ]
+    },
+    {
+      "type": "sun.font.FontManager"
+    },
+    {
+      "type": "sun.font.FontStrike",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getGlyphMetrics",
+          "parameterTypes": [
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.FontUtilities",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "debugFonts",
+          "parameterTypes": []
+        },
+        {
+          "name": "getFont2D",
+          "parameterTypes": [
+            "java.awt.Font"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.FreetypeFontScaler",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "invalidateScaler",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.font.GlyphList",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "gposx"
+        },
+        {
+          "name": "gposy"
+        },
+        {
+          "name": "images"
+        },
+        {
+          "name": "lcdRGBOrder"
+        },
+        {
+          "name": "lcdSubPixPos"
+        },
+        {
+          "name": "len"
+        },
+        {
+          "name": "positions"
+        },
+        {
+          "name": "usePositions"
+        }
+      ]
+    },
+    {
+      "type": "sun.font.HBShaper",
+      "methods": [
+        {
+          "name": "getFontTableData",
+          "parameterTypes": [
+            "sun.font.Font2D",
+            "int",
+            "java.lang.foreign.MemorySegment"
+          ]
+        },
+        {
+          "name": "get_glyph_contour_point",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
+            "int",
+            "int",
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment"
+          ]
+        },
+        {
+          "name": "get_glyph_h_advance",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
+            "int",
+            "java.lang.foreign.MemorySegment"
+          ]
+        },
+        {
+          "name": "get_glyph_v_advance",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
+            "int",
+            "java.lang.foreign.MemorySegment"
+          ]
+        },
+        {
+          "name": "get_nominal_glyph",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
+            "int",
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment"
+          ]
+        },
+        {
+          "name": "get_variation_glyph",
+          "parameterTypes": [
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment",
+            "int",
+            "int",
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment"
+          ]
+        },
+        {
+          "name": "store_layout_results",
+          "parameterTypes": [
+            "int",
+            "int",
+            "int",
+            "float",
+            "float",
+            "float",
+            "int",
+            "int",
+            "java.lang.foreign.MemorySegment",
+            "java.lang.foreign.MemorySegment"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.PhysicalFont"
+    },
+    {
+      "type": "sun.font.PhysicalStrike",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "pScalerContext"
+        }
+      ],
+      "methods": [
+        {
+          "name": "adjustPoint",
+          "parameterTypes": [
+            "java.awt.geom.Point2D$Float"
+          ]
+        },
+        {
+          "name": "getGlyphPoint",
+          "parameterTypes": [
+            "int",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.StrikeMetrics",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "float",
+            "float",
+            "float",
+            "float",
+            "float",
+            "float",
+            "float",
+            "float",
+            "float",
+            "float"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.TrueTypeFont",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "readBlock",
+          "parameterTypes": [
+            "java.nio.ByteBuffer",
+            "int",
+            "int"
+          ]
+        },
+        {
+          "name": "readBytes",
+          "parameterTypes": [
+            "int",
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.font.Type1Font",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "readFile",
+          "parameterTypes": [
+            "java.nio.ByteBuffer"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.Disposer",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "addRecord",
+          "parameterTypes": [
+            "java.lang.Object",
+            "long",
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.InvalidPipeException",
+      "jniAccessible": true
+    },
+    {
+      "type": "sun.java2d.NullSurfaceData",
+      "jniAccessible": true
+    },
+    {
+      "type": "sun.java2d.SunGraphics2D",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "clipRegion"
+        },
+        {
+          "name": "composite"
+        },
+        {
+          "name": "eargb"
+        },
+        {
+          "name": "lcdTextContrast"
+        },
+        {
+          "name": "pixel"
+        },
+        {
+          "name": "strokeHint"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.SurfaceData",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "pData"
+        },
+        {
+          "name": "valid"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.Blit",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.BlitBg",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.CompositeType",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "AnyAlpha"
+        },
+        {
+          "name": "Src"
+        },
+        {
+          "name": "SrcNoEa"
+        },
+        {
+          "name": "SrcOver"
+        },
+        {
+          "name": "SrcOverNoEa"
+        },
+        {
+          "name": "Xor"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.DrawGlyphList",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.DrawGlyphListAA",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.DrawGlyphListLCD",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.DrawLine",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.DrawParallelogram",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.DrawPath",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.DrawPolygons",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.DrawRect",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.FillParallelogram",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.FillPath",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.FillRect",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.FillSpans",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.GraphicsPrimitive",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "pNativePrim"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.GraphicsPrimitiveMgr",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "register",
+          "parameterTypes": [
+            "sun.java2d.loops.GraphicsPrimitive[]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.GraphicsPrimitive[]"
+    },
+    {
+      "type": "sun.java2d.loops.MaskBlit",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.MaskFill",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.ScaledBlit",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.SurfaceType",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "Any3Byte"
+        },
+        {
+          "name": "Any4Byte"
+        },
+        {
+          "name": "AnyByte"
+        },
+        {
+          "name": "AnyColor"
+        },
+        {
+          "name": "AnyInt"
+        },
+        {
+          "name": "AnyShort"
+        },
+        {
+          "name": "ByteBinary1Bit"
+        },
+        {
+          "name": "ByteBinary2Bit"
+        },
+        {
+          "name": "ByteBinary4Bit"
+        },
+        {
+          "name": "ByteGray"
+        },
+        {
+          "name": "ByteIndexed"
+        },
+        {
+          "name": "ByteIndexedBm"
+        },
+        {
+          "name": "FourByteAbgr"
+        },
+        {
+          "name": "FourByteAbgrPre"
+        },
+        {
+          "name": "Index12Gray"
+        },
+        {
+          "name": "Index8Gray"
+        },
+        {
+          "name": "IntArgb"
+        },
+        {
+          "name": "IntArgbBm"
+        },
+        {
+          "name": "IntArgbPre"
+        },
+        {
+          "name": "IntBgr"
+        },
+        {
+          "name": "IntRgb"
+        },
+        {
+          "name": "IntRgbx"
+        },
+        {
+          "name": "OpaqueColor"
+        },
+        {
+          "name": "ThreeByteBgr"
+        },
+        {
+          "name": "Ushort4444Argb"
+        },
+        {
+          "name": "Ushort555Rgb"
+        },
+        {
+          "name": "Ushort555Rgbx"
+        },
+        {
+          "name": "Ushort565Rgb"
+        },
+        {
+          "name": "UshortGray"
+        },
+        {
+          "name": "UshortIndexed"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.TransformHelper",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "long",
+            "sun.java2d.loops.SurfaceType",
+            "sun.java2d.loops.CompositeType",
+            "sun.java2d.loops.SurfaceType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.loops.XORComposite",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "alphaMask"
+        },
+        {
+          "name": "xorColor"
+        },
+        {
+          "name": "xorPixel"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.marlin.DMarlinRenderingEngine",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.pipe.Region",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "bands"
+        },
+        {
+          "name": "endIndex"
+        },
+        {
+          "name": "hix"
+        },
+        {
+          "name": "hiy"
+        },
+        {
+          "name": "lox"
+        },
+        {
+          "name": "loy"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.pipe.RegionIterator",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "curIndex"
+        },
+        {
+          "name": "numXbands"
+        },
+        {
+          "name": "region"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.pipe.ShapeSpanIterator",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "pData"
+        }
+      ]
+    },
+    {
+      "type": "sun.lwawt.macosx.LWCToolkit",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "installToolkitThreadInJava",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.misc.Unsafe",
+      "fields": [
+        {
+          "name": "theUnsafe"
+        }
+      ],
+      "methods": [
+        {
+          "name": "invokeCleaner",
+          "parameterTypes": [
+            "java.nio.ByteBuffer"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.DSA$SHA256withDSA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.DSAKeyFactory",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.DSAParameters",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.NativePRNG",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.security.SecureRandomParameters"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA2$SHA256",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA5$SHA384",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.X509Factory",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSAKeyFactory$Legacy",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSASignature$SHA1withRSA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSASignature$SHA256withRSA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.rsa.RSASignature$SHA384withRSA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.AuthorityInfoAccessExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.AuthorityKeyIdentifierExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.BasicConstraintsExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.CRLDistributionPointsExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.CertificatePoliciesExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.ExtendedKeyUsageExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.KeyUsageExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.x509.SubjectKeyIdentifierExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.text.resources.CollationData"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData_en"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData_en_US"
+    },
+    {
+      "type": "sun.util.resources.cldr.CalendarData"
+    },
+    {
+      "type": "sun.util.resources.cldr.TimeZoneNames"
+    },
+    {
+      "type": "sun.util.resources.cldr.TimeZoneNames_en"
+    },
+    {
+      "type": "sun.util.resources.cldr.TimeZoneNames_en_US"
+    },
+    {
+      "type": "zio.Chunk$",
+      "fields": [
+        {
+          "name": "Tags$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.ConfigProvider$",
+      "fields": [
+        {
+          "name": "console$lzy1"
+        },
+        {
+          "name": "consoleProvider$lzy1"
+        },
+        {
+          "name": "defaultProvider$lzy1"
+        },
+        {
+          "name": "env$lzy1"
+        },
+        {
+          "name": "envProvider$lzy1"
+        },
+        {
+          "name": "props$lzy1"
+        },
+        {
+          "name": "propsProvider$lzy1"
+        },
+        {
+          "name": "strIndexRegex$lzy1"
+        },
+        {
+          "name": "tag$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.Executor",
+      "fields": [
+        {
+          "name": "asExecutionContext$lzy1"
+        },
+        {
+          "name": "asExecutionContextExecutorService$lzy1"
+        },
+        {
+          "name": "asJava$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.Ref$Atomic",
+      "fields": [
+        {
+          "name": "unsafe$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.System$",
+      "fields": [
+        {
+          "name": "os$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.VersionSpecific$BoxedBool$",
+      "fields": [
+        {
+          "name": "False$lzy1"
+        },
+        {
+          "name": "True$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.ZEnvironment",
+      "fields": [
+        {
+          "name": "hashCode$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.ZIO$",
+      "fields": [
+        {
+          "name": "Parallelism$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.ZLayer",
+      "fields": [
+        {
+          "name": "hashCode$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.internal.FiberRuntime",
+      "fields": [
+        {
+          "name": "scope$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.internal.HeadPadding"
+    },
+    {
+      "type": "zio.internal.RingBuffer[]"
+    },
+    {
+      "type": "zio.internal.TailPadding"
+    },
+    {
+      "type": "zio.internal.UpdateOrderLinkedMap",
+      "fields": [
+        {
+          "name": "iteratorLz$lzy1"
+        },
+        {
+          "name": "reverseIteratorLz$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.internal.UpdateOrderLinkedMap$LzList$Cons",
+      "fields": [
+        {
+          "name": "head$lzy1"
+        },
+        {
+          "name": "tail$lzy1"
+        }
+      ]
+    },
+    {
+      "type": "zio.package$",
+      "fields": [
+        {
+          "name": "EnvironmentTag$lzy1"
+        },
+        {
+          "name": "TagK$lzy1"
+        },
+        {
+          "name": "TagK3$lzy1"
+        },
+        {
+          "name": "TagKK$lzy1"
+        },
+        {
+          "name": "zio$VersionSpecific$$BoxedBool$lzy1"
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "glob": "Aspose.Java.Total.lic"
+    },
+    {
+      "glob": "META-INF/log4j-provider.properties"
+    },
+    {
+      "glob": "META-INF/services/ch.qos.logback.classic.spi.Configurator"
+    },
+    {
+      "glob": "META-INF/services/com.aspose.slides.internal.z9.l7"
+    },
+    {
+      "glob": "META-INF/services/com.aspose.slides.internal.z9.p6"
+    },
+    {
+      "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"
+    },
+    {
+      "glob": "META-INF/services/java.nio.charset.spi.CharsetProvider"
+    },
+    {
+      "glob": "META-INF/services/java.time.zone.ZoneRulesProvider"
+    },
+    {
+      "glob": "META-INF/services/java.util.spi.ResourceBundleControlProvider"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageInputStreamSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageOutputStreamSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageReaderSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageTranscoderSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageWriterSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.parsers.DocumentBuilderFactory"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.parsers.SAXParserFactory"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.xpath.XPathFactory"
+    },
+    {
+      "glob": "META-INF/services/org.apache.logging.log4j.spi.Provider"
+    },
+    {
+      "glob": "META-INF/services/org.apache.logging.log4j.util.PropertySource"
+    },
+    {
+      "glob": "META-INF/services/org.apache.tika.detect.Detector"
+    },
+    {
+      "glob": "META-INF/services/org.apache.tika.detect.EncodingDetector"
+    },
+    {
+      "glob": "META-INF/services/org.apache.tika.detect.zip.ZipContainerDetector"
+    },
+    {
+      "glob": "META-INF/services/org.apache.tika.parser.Parser"
+    },
+    {
+      "glob": "META-INF/services/org.apache.tika.renderer.Renderer"
+    },
+    {
+      "glob": "META-INF/services/org.apache.xerces.xni.parser.XMLParserConfiguration"
+    },
+    {
+      "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
+    },
+    {
+      "glob": "com/aspose/cells/resources/Aspose.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/email/Aspose.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/email/Conholdate.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/email/internal/ms/core/resources/System/Globalization/patterns.dat"
+    },
+    {
+      "glob": "com/aspose/email/tz.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/engine/commondata/text/cmaps/PredefinedCMaps/IDENTITY-H"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/engine/commondata/text/fonts/StandartFonts/DejaVuSerif.ttf"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/engine/commondata/text/fonts/StandartFonts/Helvetica.afm"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/engine/commondata/text/fonts/StandartFonts/OpenSans-Regular.ttf"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/engine/commondata/text/fonts/StandartFonts/djVuDingbats.ttf"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/eps/resources/Helvetica.ttf"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/eps/resources/ZapfDingbats.ttf"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/font/resources/Aspose.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/font/resources/Conholdate.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/foundation/SWOP2006_Coated3v2.icc"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/foundation/sRGB_IEC61966-2-1_black_scaled.icc"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/html/resources/Html/classes.trie.bin"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Globalization/patterns.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/MantissaBitsTable/mantissaBitsTable.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_10001.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_10002.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_10003.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_10008.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_1361.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20000.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20001.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20002.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20003.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20004.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20005.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20261.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20932.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20936.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20949.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_50220.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_50225.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_50227.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_51932.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_51936.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_51949.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_52936.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_932.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_936.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_949.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_950.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_10001.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_10002.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_10003.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_10008.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_1361.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20000.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20001.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20002.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20003.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20004.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20005.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20261.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20932.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20936.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20949.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_50220.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_50225.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_50227.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_51932.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_51936.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_51949.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_52936.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_932.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_936.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_949.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_950.dat"
+    },
+    {
+      "glob": "com/aspose/pdf/resources/Aspose.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/pdf/resources/Conholdate.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/slides/internal/q7v/codepages.nlp"
+    },
+    {
+      "glob": "com/aspose/slides/internal/resources/Aspose.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/slides/internal/resources/templates.zip"
+    },
+    {
+      "glob": "com/aspose/slides/ms/core/resources/System/Globalization/patterns.dat"
+    },
+    {
+      "glob": "com/aspose/words/resources/Aspose.License.BlackList.Real.xml"
+    },
+    {
+      "glob": "com/aspose/words/resources/Conholdate.License.BlackList.Real.xml"
+    },
+    {
+      "glob": "com/aspose/words/resources/CultureInfo.xml"
+    },
+    {
+      "glob": "com/aspose/zip/private_/ms/core/resources/System/Globalization/patterns.dat"
+    },
+    {
+      "glob": "com/aspose/zip/resources/Aspose.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/zip/resources/Conholdate.License.BlackList.Real.xml"
+    },
+    {
+      "glob": "com/aspose/zip/resources/sample.rar"
+    },
+    {
+      "glob": "log4j2.StatusLogger.properties"
+    },
+    {
+      "glob": "log4j2.component.properties"
+    },
+    {
+      "glob": "log4j2.system.properties"
+    },
+    {
+      "glob": "logback-test.scmo"
+    },
+    {
+      "glob": "logback-test.xml"
+    },
+    {
+      "glob": "logback.scmo"
+    },
+    {
+      "glob": "logback.xml"
+    },
+    {
+      "glob": "org/apache/fontbox/cmap/Identity-H"
+    },
+    {
+      "glob": "org/apache/pdfbox/resources/glyphlist/additional.txt"
+    },
+    {
+      "glob": "org/apache/pdfbox/resources/glyphlist/glyphlist.txt"
+    },
+    {
+      "glob": "org/apache/pdfbox/resources/glyphlist/zapfdingbats.txt"
+    },
+    {
+      "glob": "org/apache/pdfbox/resources/text/BidiMirroring.txt"
+    },
+    {
+      "glob": "org/apache/tika/mime/custom-mimetypes.xml"
+    },
+    {
+      "glob": "org/apache/tika/mime/tika-mimetypes.xml"
+    },
+    {
+      "glob": "org/apache/tika/parser/external/tika-external-parsers.xml"
+    },
+    {
+      "glob": "org/apache/tika/parser/html/StandardCharsets_unsupported_by_IANA.txt"
+    },
+    {
+      "glob": "org/apache/xerces/impl/msg/SAXMessages.properties"
+    },
+    {
+      "glob": "org/apache/xerces/impl/msg/SAXMessages_en.properties"
+    },
+    {
+      "glob": "org/apache/xerces/impl/msg/SAXMessages_en_US.properties"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/nfc.nrm"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/ubidi.icu"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "sun/awt/resources/awt_en.properties"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "sun/awt/resources/awt_en_US.properties"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "sun/awt/resources/awtosx_en.properties"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "sun/awt/resources/awtosx_en_US.properties"
+    },
+    {
+      "bundle": "org.apache.xerces.impl.msg.SAXMessages"
+    },
+    {
+      "bundle": "sun.awt.resources.awt"
+    },
+    {
+      "bundle": "sun.awt.resources.awtosx"
+    }
+  ],
+  "foreign": {
+    "downcalls": [
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "jfloat",
+          "void*",
+          "void*",
+          "void*",
+          "jint",
+          "jint",
+          "jint",
+          "jint",
+          "jint",
+          "jfloat",
+          "jfloat",
+          "jint",
+          "jint",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "jlong"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "void*",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void*",
+        "parameterTypes": [
+          "void*"
+        ]
+      },
+      {
+        "returnType": "void",
+        "parameterTypes": [
+          "void*"
+        ]
+      }
+    ],
+    "upcalls": [
+      {
+        "returnType": "jint",
+        "parameterTypes": [
+          "jint",
+          "void*"
+        ]
+      }
+    ],
+    "directUpcalls": [
+      {
+        "class": "sun.font.HBShaper",
+        "method": "get_glyph_contour_point",
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jint",
+          "jint",
+          "void*",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "class": "sun.font.HBShaper",
+        "method": "store_layout_results",
+        "returnType": "void",
+        "parameterTypes": [
+          "jint",
+          "jint",
+          "jint",
+          "jfloat",
+          "jfloat",
+          "jfloat",
+          "jint",
+          "jint",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "class": "sun.font.HBShaper",
+        "method": "get_glyph_h_advance",
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jint",
+          "void*"
+        ]
+      },
+      {
+        "class": "sun.font.HBShaper",
+        "method": "get_variation_glyph",
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jint",
+          "jint",
+          "void*",
+          "void*"
+        ]
+      },
+      {
+        "class": "sun.font.HBShaper",
+        "method": "get_glyph_v_advance",
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jint",
+          "void*"
+        ]
+      },
+      {
+        "class": "sun.font.HBShaper",
+        "method": "get_nominal_glyph",
+        "returnType": "jint",
+        "parameterTypes": [
+          "void*",
+          "void*",
+          "jint",
+          "void*",
+          "void*"
+        ]
+      }
+    ]
+  }
+}

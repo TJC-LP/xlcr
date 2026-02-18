@@ -1,0 +1,56 @@
+# Dockerfile.native
+# Builds an XLCR native binary using GraalVM native-image via Mill.
+# Mill downloads GraalVM CE 25.0.1 automatically - no SDKMAN needed.
+#
+# Usage:
+#   make docker-native
+#
+# Or manually:
+#   docker build -f Dockerfile.native -t xlcr-native-builder .
+#   docker create --name tmp xlcr-native-builder
+#   docker cp tmp:/xlcr/out/xlcr/3.3.4/nativeImage.dest/native-executable ./out/xlcr-native
+#   docker rm tmp
+
+FROM ubuntu:24.04
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    make \
+    openjdk-21-jdk \
+    build-essential \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Mill (same version as .mill-version)
+ARG MILL_VERSION=1.1.2
+RUN curl -fLo /usr/local/bin/mill \
+      "https://repo1.maven.org/maven2/com/lihaoyi/mill-dist/${MILL_VERSION}/mill-dist-${MILL_VERSION}-mill.sh" && \
+    chmod +x /usr/local/bin/mill
+
+WORKDIR /xlcr
+
+# Copy build definitions first for better layer caching
+COPY build.mill .mill-version .mill-jvm-opts .scalafmt.conf ./
+COPY mill ./
+COPY core/package.mill core/package.mill
+COPY core-aspose/package.mill core-aspose/package.mill
+COPY core-libreoffice/package.mill core-libreoffice/package.mill
+COPY core-spark/package.mill core-spark/package.mill
+COPY xlcr/package.mill xlcr/package.mill
+COPY server/package.mill server/package.mill
+
+# Copy source code and resources (includes tracing agent metadata at
+# xlcr/src/main/resources/META-INF/native-image/)
+COPY core/src core/src
+COPY core-aspose/src core-aspose/src
+COPY core-aspose/resources core-aspose/resources
+COPY core-libreoffice/src core-libreoffice/src
+COPY xlcr/src xlcr/src
+
+# Copy Aspose license if available (glob trick: no-op if missing)
+COPY Aspose.Java.Total.li[c] core-aspose/resources/
+
+# Build native binary - Mill downloads GraalVM CE 25.0.1 automatically
+RUN mill 'xlcr[3.3.4].nativeImage'
+
+# Binary is at /xlcr/out/xlcr/3.3.4/nativeImage.dest/native-executable
