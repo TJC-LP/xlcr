@@ -244,10 +244,10 @@ docker-cycle: docker-agent docker-extract-metadata docker-build docker-test
 
 # Extract tracing agent metadata from Docker volume to source tree
 docker-extract-metadata:
-	docker run --rm \
-		-v xlcr_metadata:/m \
+	docker compose run --rm \
+		--entrypoint sh \
 		-v $(PWD)/xlcr/src/main/resources/META-INF/native-image:/out \
-		alpine sh -c 'cp /m/* /out/ 2>/dev/null || echo "No metadata found in volume"'
+		agent -c 'cp /metadata-output/* /out/ 2>/dev/null || echo "No metadata found in volume"'
 
 # Clean up Docker resources
 docker-clean:

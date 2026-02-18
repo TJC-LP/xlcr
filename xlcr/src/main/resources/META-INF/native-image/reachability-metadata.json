@@ -4,6 +4,46 @@
       "type": "Mono.Runtime"
     },
     {
+      "type": "com.aspose.cells.Workbook",
+      "allDeclaredMethods": true,
+      "allPublicMethods": true,
+      "allDeclaredConstructors": true
+    },
+    {
+      "type": "com.aspose.words.Document",
+      "allDeclaredMethods": true,
+      "allPublicMethods": true,
+      "allDeclaredConstructors": true
+    },
+    {
+      "type": "com.aspose.slides.ms.System.x1",
+      "allDeclaredConstructors": true
+    },
+    {
+      "type": "com.aspose.pdf.HtmlSaveOptions",
+      "allDeclaredMethods": true,
+      "allPublicMethods": true,
+      "allDeclaredConstructors": true
+    },
+    {
+      "type": "com.aspose.pdf.HtmlSaveOptions$FontSavingModes",
+      "allDeclaredFields": true
+    },
+    {
+      "type": "com.aspose.pdf.HtmlSaveOptions$PartsEmbeddingModes",
+      "allDeclaredFields": true
+    },
+    {
+      "type": "com.aspose.pdf.HtmlSaveOptions$HtmlImageType",
+      "allDeclaredFields": true
+    },
+    {
+      "type": "com.aspose.pdf.Document",
+      "allDeclaredMethods": true,
+      "allPublicMethods": true,
+      "allDeclaredConstructors": true
+    },
+    {
       "type": "byte[]"
     },
     {
@@ -5890,6 +5930,21 @@
     },
     {
       "glob": "OdfSpreadsheetDocument.ods"
+    },
+    {
+      "glob": "com/aspose/cells/resources/*"
+    },
+    {
+      "glob": "com/aspose/words/resources/*"
+    },
+    {
+      "glob": "com/aspose/slides/internal/resources/*"
+    },
+    {
+      "glob": "com/aspose/pdf/resources/*"
+    },
+    {
+      "glob": "com/aspose/email/**"
     },
     {
       "glob": "com/aspose/cells/resources/Aspose.Cells.Theme1.dat"
