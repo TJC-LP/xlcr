@@ -1,4 +1,5 @@
 # SDKMAN configuration for XLCR project
-# This ensures Java 17 is used (required for Spark module compatibility)
+# GraalVM CE 25.0.2 is the primary JDK for native image builds.
+# Note: Spark module requires Java 17 or 21 — use JAVA_HOME override for Spark tests.
 
-java=17.0.17-tem
+java=25.0.2-graalce

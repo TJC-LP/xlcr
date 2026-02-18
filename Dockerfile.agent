@@ -1,25 +1,30 @@
-# Dockerfile.native
-# Builds an XLCR native binary using GraalVM native-image via Mill.
-# Uses GraalVM CE 25.0.2 as the system JDK — same version Mill downloads
-# for native-image, eliminating JDK version mismatch issues.
+# Dockerfile.agent
+# Builds an XLCR assembly JAR and runs the GraalVM tracing agent
+# to capture native-image metadata for all conversion paths.
+#
+# This does NOT build a native image — it only produces metadata.
+# Use Dockerfile.native (or `make docker-native`) to build the actual binary.
 #
 # Usage:
-#   make docker-native
+#   make docker-native-agent
 #
 # Or manually:
-#   docker build -f Dockerfile.native -t xlcr-native-builder .
-#   docker create --name tmp xlcr-native-builder
-#   docker cp tmp:/xlcr/out/xlcr/3.3.4/nativeImage.dest/native-executable ./out/xlcr-native
-#   docker rm tmp
+#   docker build -f Dockerfile.agent -t xlcr-agent-builder .
+#   docker run --name xlcr-agent-run xlcr-agent-builder
+#   docker cp xlcr-agent-run:/metadata-output/ ./metadata-output/
+#   docker rm xlcr-agent-run
 
 FROM ubuntu:24.04
 
-# Install build tools (no JDK from apt — we use GraalVM below)
+# Install build tools and Python (no JDK from apt — we use GraalVM below)
 RUN apt-get update && apt-get install -y \
     curl \
     make \
     build-essential \
     zlib1g-dev \
+    python3 \
+    python3-pip \
+    && pip3 install --break-system-packages openpyxl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install GraalVM CE as the system JDK (matches jvmId in package.mill)
@@ -51,8 +56,7 @@ COPY core-spark/package.mill core-spark/package.mill
 COPY xlcr/package.mill xlcr/package.mill
 COPY server/package.mill server/package.mill
 
-# Copy source code and resources (includes tracing agent metadata at
-# xlcr/src/main/resources/META-INF/native-image/)
+# Copy source code and resources
 COPY core/src core/src
 COPY core-aspose/src core-aspose/src
 COPY core-aspose/resources core-aspose/resources
@@ -62,7 +66,20 @@ COPY xlcr/src xlcr/src
 # Copy Aspose license if available (glob trick: no-op if missing)
 COPY Aspose.Java.Total.li[c] core-aspose/resources/
 
-# Build native binary - Mill downloads GraalVM CE 25.0.2 automatically
-RUN mill 'xlcr[3.3.4].nativeImage'
+# Build assembly JAR (much faster than native image)
+RUN mill 'xlcr[3.3.4].assembly'
 
-# Binary is at /xlcr/out/xlcr/3.3.4/nativeImage.dest/native-executable
+# Download GraalVM (needed for tracing agent library)
+RUN mill 'xlcr[3.3.4].nativeImageTool'
+
+# Copy test fixtures and runner script
+COPY scripts/testdata/test.html /xlcr/testdata/test.html
+COPY scripts/testdata/gen-test-xlsx.py /xlcr/testdata/gen-test-xlsx.py
+RUN python3 /xlcr/testdata/gen-test-xlsx.py /xlcr/testdata/test.xlsx
+COPY scripts/run-native-agent.sh /xlcr/run-native-agent.sh
+RUN chmod +x /xlcr/run-native-agent.sh
+
+# Create metadata output directory
+RUN mkdir -p /metadata-output
+
+ENTRYPOINT ["/xlcr/run-native-agent.sh"]

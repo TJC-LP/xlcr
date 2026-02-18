@@ -24,7 +24,7 @@ LICENSE_ROOT := Aspose.Java.Total.lic
 .PHONY: all build install install-user install-native install-native-user \
         uninstall uninstall-user uninstall-native uninstall-native-user \
         clean test test-all run help check-license compile assembly \
-        native native-agent docker-native
+        native native-agent docker-native docker-native-agent
 
 all: build
 
@@ -92,6 +92,11 @@ docker-native:
 	@echo "Native binary extracted: out/xlcr-native"
 	@ls -lh out/xlcr-native | awk '{print "Size: " $$5}'
 	@echo "NOTE: This is a Linux binary. For macOS, use 'make native'."
+
+# Run GraalVM tracing agent in Docker to capture native-image metadata
+# for all conversion paths (HTML→PDF, HTML→PPTX, PDF→HTML, PDF→PPTX)
+docker-native-agent:
+	./scripts/docker-native-agent.sh
 
 # Install to system (requires sudo)
 install: build
@@ -225,6 +230,7 @@ help:
 	@echo "    make native         - Build native binary (Mill downloads GraalVM)"
 	@echo "    make native-agent   - Run with tracing agent to generate metadata"
 	@echo "    make docker-native  - Build native binary in Docker (Linux)"
+	@echo "    make docker-native-agent - Run tracing agent in Docker (capture metadata)"
 	@echo ""
 	@echo "  Install (JAR mode - requires Java 17+ at runtime):"
 	@echo "    make install        - Install to /usr/local/bin (requires sudo)"

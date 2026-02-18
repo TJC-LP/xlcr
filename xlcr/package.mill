@@ -27,7 +27,9 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
   override def mvnDeps = Seq.empty
 
   // GraalVM Native Image configuration
-  def jvmId = "graalvm-community:25.0.1"
+  // Index 0.0.4-142 adds GraalVM 25.0.2 (Mill 1.1.2 bundles 0.0.4-125 which only has 25.0.1)
+  def jvmIndexVersion = "0.0.4-142-54b13c"
+  def jvmId = "graalvm-community:25.0.2"
 
   def nativeImageOptions = Seq(
     "--no-fallback",
@@ -106,7 +108,7 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
 
     val cmd: Seq[String] = Seq(
       javaExe.toString,
-      s"-agentlib:native-image-agent=config-output-dir=${outputDir}",
+      s"-agentlib:native-image-agent=config-merge-dir=${outputDir}",
       "-Dsun.misc.unsafe.memory.access=allow",
       "--add-opens=java.base/sun.misc=ALL-UNNAMED",
       "--add-opens=java.base/java.lang=ALL-UNNAMED",

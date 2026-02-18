@@ -1,3 +1,5 @@
+//| mill-jvm-version: system
+
 import mill._
 import mill.scalalib._
 import mill.scalalib.publish._

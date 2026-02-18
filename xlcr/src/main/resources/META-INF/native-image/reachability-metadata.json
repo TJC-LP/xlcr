@@ -24,15 +24,6 @@
       ]
     },
     {
-      "type": "ch.qos.logback.classic.encoder.PatternLayoutEncoder",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "ch.qos.logback.classic.joran.SerializedModelConfigurator",
       "methods": [
         {
@@ -50,102 +41,6 @@
         {
           "name": "<init>",
           "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "ch.qos.logback.core.ConsoleAppender",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "ch.qos.logback.core.FileAppender",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        },
-        {
-          "name": "setAppend",
-          "parameterTypes": [
-            "boolean"
-          ]
-        },
-        {
-          "name": "setFile",
-          "parameterTypes": [
-            "java.lang.String"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "ch.qos.logback.core.OutputStreamAppender",
-      "methods": [
-        {
-          "name": "setEncoder",
-          "parameterTypes": [
-            "ch.qos.logback.core.encoder.Encoder"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "ch.qos.logback.core.encoder.Encoder"
-    },
-    {
-      "type": "ch.qos.logback.core.encoder.LayoutWrappingEncoder",
-      "methods": [
-        {
-          "name": "setParent",
-          "parameterTypes": [
-            "ch.qos.logback.core.spi.ContextAware"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "ch.qos.logback.core.pattern.PatternLayoutEncoderBase",
-      "methods": [
-        {
-          "name": "setPattern",
-          "parameterTypes": [
-            "java.lang.String"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "ch.qos.logback.core.spi.ContextAware"
-    },
-    {
-      "type": "com.apple.eawt._AppEventHandler",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "handleNativeNotification",
-          "parameterTypes": [
-            "int"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "com.apple.eawt._AppMenuBarHandler",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "initMenuStates",
-          "parameterTypes": [
-            "boolean",
-            "boolean",
-            "boolean",
-            "boolean"
-          ]
         }
       ]
     },
@@ -758,6 +653,15 @@
       ]
     },
     {
+      "type": "com.aspose.pdf.internal.l52u.lc$lt",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.aspose.pdf.internal.l52u.lc$lu",
       "methods": [
         {
@@ -881,9 +785,6 @@
       "type": "com.aspose.slides.ShapeType"
     },
     {
-      "type": "com.aspose.slides.i2j"
-    },
-    {
       "type": "com.aspose.slides.internal.a2k.l4"
     },
     {
@@ -918,6 +819,9 @@
     },
     {
       "type": "com.aspose.slides.internal.n1.w0"
+    },
+    {
+      "type": "com.aspose.slides.internal.v1.p6"
     },
     {
       "type": "com.aspose.slides.internal.v3g.p6"
@@ -1052,6 +956,9 @@
       "type": "com.github.luben.zstd.ZstdInputStream"
     },
     {
+      "type": "com.ibm.icu.charset.CharsetICU"
+    },
+    {
       "type": "com.luciad.imageio.webp.WebPImageReaderSpi"
     },
     {
@@ -1094,7 +1001,25 @@
       ]
     },
     {
+      "type": "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault"
+    },
+    {
+      "type": "com.sun.xml.internal.stream.XMLOutputFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "com.tjclp.xlcr.v2.types.Mime$package$Mime$",
@@ -1121,9 +1046,6 @@
     },
     {
       "type": "float[]"
-    },
-    {
-      "type": "int[]"
     },
     {
       "type": "izumi.reflect.internal.fundamentals.platform.console.TrivialLogger$Config$",
@@ -1166,6 +1088,9 @@
       ]
     },
     {
+      "type": "jakarta.servlet.Servlet"
+    },
+    {
       "type": "java.awt.AlphaComposite",
       "jniAccessible": true,
       "fields": [
@@ -1188,36 +1113,11 @@
       ]
     },
     {
-      "type": "java.awt.DisplayMode",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "int",
-            "int",
-            "int",
-            "int"
-          ]
-        }
-      ]
-    },
-    {
       "type": "java.awt.GraphicsEnvironment",
       "jniAccessible": true,
       "methods": [
         {
           "name": "isHeadless",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "java.awt.event.InputEvent",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "getButtonDownMasks",
           "parameterTypes": []
         }
       ]
@@ -1307,21 +1207,6 @@
           "parameterTypes": [
             "float",
             "float"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "java.awt.geom.Rectangle2D$Double",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "double",
-            "double",
-            "double",
-            "double"
           ]
         }
       ]
@@ -1585,12 +1470,6 @@
       "jniAccessible": true,
       "methods": [
         {
-          "name": "getProperty",
-          "parameterTypes": [
-            "java.lang.String"
-          ]
-        },
-        {
           "name": "load",
           "parameterTypes": [
             "java.lang.String"
@@ -1608,19 +1487,10 @@
       ]
     },
     {
-      "type": "java.security.AlgorithmParametersSpi"
-    },
-    {
-      "type": "java.security.MessageDigestSpi"
+      "type": "java.security.AccessController"
     },
     {
       "type": "java.security.cert.PKIXRevocationChecker"
-    },
-    {
-      "type": "java.security.interfaces.DSAPrivateKey"
-    },
-    {
-      "type": "java.security.interfaces.DSAPublicKey"
     },
     {
       "type": "java.security.interfaces.RSAPrivateKey"
@@ -1629,17 +1499,27 @@
       "type": "java.security.interfaces.RSAPublicKey"
     },
     {
-      "type": "java.security.spec.DSAParameterSpec"
+      "type": "java.sql.Date"
     },
     {
-      "type": "java.util.ArrayList",
-      "jniAccessible": true,
+      "type": "java.sql.Time"
+    },
+    {
+      "type": "java.util.Locale",
       "methods": [
         {
-          "name": "add",
+          "name": "getDefault",
           "parameterTypes": [
-            "java.lang.Object"
+            "java.util.Locale$Category"
           ]
+        }
+      ]
+    },
+    {
+      "type": "java.util.Locale$Category",
+      "fields": [
+        {
+          "name": "FORMAT"
         }
       ]
     },
@@ -1690,6 +1570,9 @@
     },
     {
       "type": "javax.imageio.spi.ImageWriterSpi"
+    },
+    {
+      "type": "javax.servlet.Servlet"
     },
     {
       "type": "javax.xml.XMLConstants",
@@ -1836,6 +1719,12 @@
     },
     {
       "type": "org.apache.pdfbox.jbig2.JBIG2ImageReaderSpi"
+    },
+    {
+      "type": "org.apache.poi.hssf.usermodel.HSSFWorkbookFactory"
+    },
+    {
+      "type": "org.apache.poi.xssf.usermodel.XSSFWorkbookFactory"
     },
     {
       "type": "org.apache.tika.detect.apple.BPListDetector",
@@ -2686,10 +2575,22 @@
       ]
     },
     {
+      "type": "org.apache.xerces.impl.dv.xs.SchemaDVFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl"
     },
     {
       "type": "org.apache.xerces.jaxp.SAXParserFactoryImpl"
+    },
+    {
+      "type": "org.apache.xerces.jaxp.datatype.DatatypeFactoryImpl"
     },
     {
       "type": "org.apache.xerces.parsers.XIncludeAwareParserConfiguration",
@@ -2699,6 +2600,9 @@
           "parameterTypes": []
         }
       ]
+    },
+    {
+      "type": "org.apache.xerces.stax.XMLEventFactoryImpl"
     },
     {
       "type": "org.apache.xerces.util.SecurityManager",
@@ -2712,6 +2616,56 @@
           "parameterTypes": [
             "int"
           ]
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xml.serializer.ToXMLStream",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xml.serializer.dom3.LSSerializerImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xmlbeans.metadata.system.sXMLCONFIG.TypeSystemHolder",
+      "fields": [
+        {
+          "name": "typeSystem"
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xmlbeans.metadata.system.sXMLLANG.TypeSystemHolder",
+      "fields": [
+        {
+          "name": "typeSystem"
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xmlbeans.metadata.system.sXMLSCHEMA.TypeSystemHolder",
+      "fields": [
+        {
+          "name": "typeSystem"
+        }
+      ]
+    },
+    {
+      "type": "org.apache.xmlbeans.metadata.system.sXMLTOOLS.TypeSystemHolder",
+      "fields": [
+        {
+          "name": "typeSystem"
         }
       ]
     },
@@ -2782,24 +2736,1840 @@
       ]
     },
     {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoBackgroundColorAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoBorderAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoBreakBeforeAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoColorAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoFontSizeAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoFontStyleAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoFontWeightAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoMarginBottomAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoMarginLeftAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoMarginRightAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoMarginTopAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoMinHeightAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoPaddingAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.fo.FoTextAlignAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.meta.MetaNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.meta.MetaValueTypeAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.number.NumberDecimalPlacesAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.number.NumberGroupingAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.number.NumberMinIntegerDigitsAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.office.OfficeStringValueAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.office.OfficeVersionAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleApplyStyleNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleColumnWidthAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleConditionAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleDataStyleNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleDecimalPlacesAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleDisplayAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleFamilyAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleFontFamilyGenericAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleFontNameAsianAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleFontNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleFontNameComplexAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleFontPitchAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleMasterPageNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StylePageLayoutNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleParentStyleNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleRelColumnWidthAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleRepeatContentAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleRotationAngleAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleRowHeightAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleTabStopDistanceAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleTextAlignSourceAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleTextUnderlineColorAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleTextUnderlineStyleAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleTextUnderlineWidthAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleUseOptimalRowHeightAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleVolatileAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleWidthAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.style.StyleWritingModeAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.svg.SvgFontFamilyAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.table.TableAlignAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.table.TableDefaultCellStyleNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.table.TableDisplayAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.table.TableNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.table.TableNumberColumnsRepeatedAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.table.TablePrintAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.attribute.table.TableStyleNameAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.dc.DcCreatorElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.dc.DcDateElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.meta.MetaCreationDateElement",
+      "fields": [
+        {
+          "name": "ELEMENT_NAME"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.meta.MetaEditingCyclesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.meta.MetaEditingDurationElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.meta.MetaGeneratorElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.meta.MetaUserDefinedElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.number.NumberNumberElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.number.NumberTextElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeAutomaticStylesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeBodyElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeDocumentContentElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeDocumentMetaElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeDocumentStylesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeFontFaceDeclsElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeMasterStylesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeMetaElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeScriptsElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeSpreadsheetElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.office.OfficeStylesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleBackgroundImageElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleFontFaceElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleFooterElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleFooterLeftElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleFooterStyleElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleHeaderElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleHeaderFooterPropertiesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleHeaderLeftElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleHeaderStyleElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleMapElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleMasterPageElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StylePageLayoutPropertiesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleParagraphPropertiesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleRegionLeftElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleRegionRightElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleStyleElement",
+      "fields": [
+        {
+          "name": "ELEMENT_NAME"
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleTableCellPropertiesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleTableColumnPropertiesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleTablePropertiesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleTableRowPropertiesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.style.StyleTextPropertiesElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.table.TableTableCellElement",
+      "fields": [
+        {
+          "name": "ELEMENT_NAME"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.table.TableTableColumnElement",
+      "fields": [
+        {
+          "name": "ELEMENT_NAME"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.table.TableTableElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.table.TableTableRowElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.text.TextPElement",
+      "fields": [
+        {
+          "name": "ELEMENT_NAME"
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.text.TextPageCountElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.text.TextPageNumberElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.text.TextSheetNameElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.dom.element.text.TextTitleElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.incubator.doc.number.OdfNumberCurrencyStyle",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.incubator.doc.number.OdfNumberStyle",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.incubator.doc.style.OdfDefaultStyle",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.incubator.doc.style.OdfStyle",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.incubator.doc.style.OdfStylePageLayout",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.incubator.doc.text.OdfTextParagraph",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.pkg.manifest.FileEntryElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.pkg.manifest.FullPathAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.pkg.manifest.ManifestElement",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.pkg.manifest.MediaTypeAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.odftoolkit.odfdom.pkg.manifest.VersionAttribute",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.odftoolkit.odfdom.pkg.OdfFileDom"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.drawingml.x2006.main.impl.ThemeDocumentImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.officeDocument.x2006.customProperties.impl.CTPropertiesImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.officeDocument.x2006.customProperties.impl.PropertiesDocumentImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.impl.CTPropertiesImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.impl.PropertiesDocumentImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.officeDocument.x2006.relationships.impl.STRelationshipIdImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.officeDocument.x2006.sharedTypes.impl.STXstringImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.STCellFormulaType$Enum",
+      "fields": [
+        {
+          "name": "table"
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.STCellType$Enum",
+      "fields": [
+        {
+          "name": "table"
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTBorderImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTBordersImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTCellFormulaImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTCellImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTCellStyleXfsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTCellXfsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTColorsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTColsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTDefinedNamesImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTFillImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTFillsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTFontImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTFontsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTIndexedColorsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTNumFmtsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTRgbColorImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTRowImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTRstImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTSheetDataImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTSheetImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTSheetsImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTSstImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTStylesheetImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTTableStylesImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTWorkbookImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTWorksheetImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.CTXfImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.STCellFormulaTypeImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.STCellRefImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.STCellStyleXfIdImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.STCellTypeImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.STNumFmtIdImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.STUnsignedIntHexImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.SstDocumentImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.StyleSheetDocumentImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.WorkbookDocumentImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.openxmlformats.schemas.spreadsheetml.x2006.main.impl.WorksheetDocumentImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.apache.xmlbeans.SchemaType"
+          ]
+        }
+      ]
+    },
+    {
       "type": "org.osgi.framework.FrameworkUtil"
     },
     {
       "type": "org.slf4j.helpers.Log4jLoggerFactory"
     },
     {
-      "type": "sun.awt.AWTAutoShutdown",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "notifyToolkitThreadBusy",
-          "parameterTypes": []
-        },
-        {
-          "name": "notifyToolkitThreadFree",
-          "parameterTypes": []
-        }
-      ]
+      "type": "schemaorg_apache_xmlbeans.system.sXMLCONFIG.TypeSystemHolder"
+    },
+    {
+      "type": "schemaorg_apache_xmlbeans.system.sXMLLANG.TypeSystemHolder"
+    },
+    {
+      "type": "schemaorg_apache_xmlbeans.system.sXMLSCHEMA.TypeSystemHolder"
+    },
+    {
+      "type": "schemaorg_apache_xmlbeans.system.sXMLTOOLS.TypeSystemHolder"
     },
     {
       "type": "sun.awt.SunHints",
@@ -2866,19 +4636,6 @@
         },
         {
           "name": "type"
-        }
-      ]
-    },
-    {
-      "type": "sun.font.CFontManager",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "registerFont",
-          "parameterTypes": [
-            "java.lang.String",
-            "java.lang.String"
-          ]
         }
       ]
     },
@@ -3759,16 +5516,6 @@
       ]
     },
     {
-      "type": "sun.lwawt.macosx.LWCToolkit",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "installToolkitThreadInJava",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "sun.misc.Unsafe",
       "fields": [
         {
@@ -3785,25 +5532,10 @@
       ]
     },
     {
-      "type": "sun.security.provider.DSA$SHA256withDSA",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
+      "type": "sun.reflect.Reflection"
     },
     {
-      "type": "sun.security.provider.DSAKeyFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.DSAParameters",
+      "type": "sun.security.provider.MD5",
       "methods": [
         {
           "name": "<init>",
@@ -3841,24 +5573,6 @@
       ]
     },
     {
-      "type": "sun.security.provider.SHA5$SHA384",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.provider.X509Factory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
       "type": "sun.security.rsa.RSAKeyFactory$Legacy",
       "methods": [
         {
@@ -3886,111 +5600,6 @@
       ]
     },
     {
-      "type": "sun.security.rsa.RSASignature$SHA384withRSA",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.AuthorityInfoAccessExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.AuthorityKeyIdentifierExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.BasicConstraintsExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.CRLDistributionPointsExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.CertificatePoliciesExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.ExtendedKeyUsageExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.KeyUsageExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "sun.security.x509.SubjectKeyIdentifierExtension",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "java.lang.Boolean",
-            "java.lang.Object"
-          ]
-        }
-      ]
-    },
-    {
       "type": "sun.text.resources.CollationData"
     },
     {
@@ -4004,6 +5613,15 @@
     },
     {
       "type": "sun.util.resources.cldr.CalendarData"
+    },
+    {
+      "type": "sun.util.resources.cldr.CurrencyNames"
+    },
+    {
+      "type": "sun.util.resources.cldr.CurrencyNames_en"
+    },
+    {
+      "type": "sun.util.resources.cldr.CurrencyNames_en_US"
     },
     {
       "type": "sun.util.resources.cldr.TimeZoneNames"
@@ -4223,19 +5841,31 @@
       "glob": "META-INF/services/javax.imageio.spi.ImageWriterSpi"
     },
     {
+      "glob": "META-INF/services/javax.xml.datatype.DatatypeFactory"
+    },
+    {
       "glob": "META-INF/services/javax.xml.parsers.DocumentBuilderFactory"
     },
     {
       "glob": "META-INF/services/javax.xml.parsers.SAXParserFactory"
     },
     {
-      "glob": "META-INF/services/javax.xml.xpath.XPathFactory"
+      "glob": "META-INF/services/javax.xml.stream.XMLEventFactory"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.stream.XMLOutputFactory"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.transform.TransformerFactory"
     },
     {
       "glob": "META-INF/services/org.apache.logging.log4j.spi.Provider"
     },
     {
       "glob": "META-INF/services/org.apache.logging.log4j.util.PropertySource"
+    },
+    {
+      "glob": "META-INF/services/org.apache.poi.ss.usermodel.WorkbookProvider"
     },
     {
       "glob": "META-INF/services/org.apache.tika.detect.Detector"
@@ -4257,6 +5887,18 @@
     },
     {
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
+    },
+    {
+      "glob": "OdfSpreadsheetDocument.ods"
+    },
+    {
+      "glob": "com/aspose/cells/resources/Aspose.Cells.Theme1.dat"
+    },
+    {
+      "glob": "com/aspose/cells/resources/Aspose.Cells.font.zip"
+    },
+    {
+      "glob": "com/aspose/cells/resources/Aspose.Cells.geo_1.ttf"
     },
     {
       "glob": "com/aspose/cells/resources/Aspose.License.BlackList.xml"
@@ -4284,6 +5926,9 @@
     },
     {
       "glob": "com/aspose/pdf/internal/engine/commondata/text/fonts/StandartFonts/OpenSans-Regular.ttf"
+    },
+    {
+      "glob": "com/aspose/pdf/internal/engine/commondata/text/fonts/StandartFonts/Symbol.afm"
     },
     {
       "glob": "com/aspose/pdf/internal/engine/commondata/text/fonts/StandartFonts/djVuDingbats.ttf"
@@ -4314,162 +5959,6 @@
     },
     {
       "glob": "com/aspose/pdf/internal/ms/core/resources/System/MantissaBitsTable/mantissaBitsTable.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_10001.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_10002.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_10003.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_10008.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_1361.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20000.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20001.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20002.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20003.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20004.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20005.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20261.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20932.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20936.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_20949.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_50220.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_50225.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_50227.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_51932.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_51936.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_51949.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_52936.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_932.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_936.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_949.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/byte2char_950.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_10001.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_10002.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_10003.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_10008.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_1361.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20000.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20001.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20002.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20003.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20004.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20005.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20261.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20932.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20936.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_20949.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_50220.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_50225.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_50227.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_51932.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_51936.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_51949.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_52936.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_932.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_936.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_949.dat"
-    },
-    {
-      "glob": "com/aspose/pdf/internal/ms/core/resources/System/Text/char2byte_950.dat"
     },
     {
       "glob": "com/aspose/pdf/resources/Aspose.License.BlackList.xml"
@@ -4532,19 +6021,139 @@
       "glob": "logback.xml"
     },
     {
-      "glob": "org/apache/fontbox/cmap/Identity-H"
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctborderf935type.xsb"
     },
     {
-      "glob": "org/apache/pdfbox/resources/glyphlist/additional.txt"
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctborders0d66type.xsb"
     },
     {
-      "glob": "org/apache/pdfbox/resources/glyphlist/glyphlist.txt"
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctcell842btype.xsb"
     },
     {
-      "glob": "org/apache/pdfbox/resources/glyphlist/zapfdingbats.txt"
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctcellformula3583type.xsb"
     },
     {
-      "glob": "org/apache/pdfbox/resources/text/BidiMirroring.txt"
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctcellstylexfsa81ftype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctcellxfs1322type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctcolors6579type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctcols627ctype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctdefinednamesce48type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctfill550ctype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctfills2c6ftype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctfont14d8type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctfonts6623type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctindexedcolorsa0a0type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctnumfmtsb58btype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctproperties2c18type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctproperties3f10type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctrgbcolor95dftype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctrowdd39type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctrsta472type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctsheet4dbetype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctsheetdata8408type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctsheets49fdtype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctsst44f3type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctstylesheet4257type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/cttablestyles872ftype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctworkbook83c3type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctworksheet530dtype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/ctxf97f7type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/index.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/properties288cdoctype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/propertiesee84doctype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/sstf81fdoctype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/stcellformulatypee2cdtype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/stcellrefe4e0type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/stcellstylexfid70c7type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/stcelltypebf95type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/stnumfmtid76fbtype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/strelationshipid1e94type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/stunsignedinthex27datype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/stxstringf179type.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/stylesheet5d8bdoctype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/themefd26doctype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/workbookec17doctype.xsb"
+    },
+    {
+      "glob": "org/apache/poi/schemas/ooxml/system/ooxml/worksheetf539doctype.xsb"
     },
     {
       "glob": "org/apache/tika/mime/custom-mimetypes.xml"
@@ -4568,12 +6177,57 @@
       "glob": "org/apache/xerces/impl/msg/SAXMessages_en_US.properties"
     },
     {
-      "module": "java.base",
-      "glob": "jdk/internal/icu/impl/data/icudt76b/nfc.nrm"
+      "glob": "org/apache/xerces/impl/xpath/regex/message.properties"
+    },
+    {
+      "glob": "org/apache/xerces/impl/xpath/regex/message_en.properties"
+    },
+    {
+      "glob": "org/apache/xerces/impl/xpath/regex/message_en_US.properties"
+    },
+    {
+      "glob": "org/apache/xml/serializer/Encodings.properties"
+    },
+    {
+      "glob": "org/apache/xml/serializer/XMLEntities.properties"
+    },
+    {
+      "glob": "org/apache/xml/serializer/XMLEntities_en.properties"
+    },
+    {
+      "glob": "org/apache/xml/serializer/XMLEntities_en_US.properties"
+    },
+    {
+      "glob": "org/apache/xml/serializer/output_xml.properties"
+    },
+    {
+      "glob": "org/apache/xmlbeans/impl/regex/message.properties"
+    },
+    {
+      "glob": "org/apache/xmlbeans/impl/regex/message_en.properties"
+    },
+    {
+      "glob": "org/apache/xmlbeans/impl/regex/message_en_US.properties"
+    },
+    {
+      "glob": "org/apache/xmlbeans/metadata/system/sXMLCONFIG/index.xsb"
+    },
+    {
+      "glob": "org/apache/xmlbeans/metadata/system/sXMLLANG/index.xsb"
+    },
+    {
+      "glob": "org/apache/xmlbeans/metadata/system/sXMLSCHEMA/index.xsb"
+    },
+    {
+      "glob": "org/apache/xmlbeans/metadata/system/sXMLTOOLS/index.xsb"
     },
     {
       "module": "java.base",
-      "glob": "jdk/internal/icu/impl/data/icudt76b/nfkc.nrm"
+      "glob": "java/util/currency.data"
+    },
+    {
+      "module": "java.base",
+      "glob": "jdk/internal/icu/impl/data/icudt76b/nfc.nrm"
     },
     {
       "module": "java.base",
@@ -4588,21 +6242,38 @@
       "glob": "sun/awt/resources/awt_en_US.properties"
     },
     {
-      "module": "java.desktop",
-      "glob": "sun/awt/resources/awtosx_en.properties"
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/Encodings.properties"
     },
     {
-      "module": "java.desktop",
-      "glob": "sun/awt/resources/awtosx_en_US.properties"
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities_en.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities_en_US.properties"
+    },
+    {
+      "bundle": "com.sun.org.apache.xml.internal.serializer.XMLEntities"
     },
     {
       "bundle": "org.apache.xerces.impl.msg.SAXMessages"
     },
     {
-      "bundle": "sun.awt.resources.awt"
+      "bundle": "org.apache.xerces.impl.xpath.regex.message"
     },
     {
-      "bundle": "sun.awt.resources.awtosx"
+      "bundle": "org.apache.xml.serializer.XMLEntities"
+    },
+    {
+      "bundle": "org.apache.xmlbeans.impl.regex.message"
+    },
+    {
+      "bundle": "sun.awt.resources.awt"
     }
   ],
   "foreign": {
