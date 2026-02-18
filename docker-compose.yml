@@ -1,0 +1,39 @@
+# docker-compose.yml
+# Orchestrates XLCR native image workflow.
+#
+# Services:
+#   agent  - Run GraalVM tracing agent to capture native-image metadata
+#   test   - Run test suite (validates file output for JVM + native)
+#   bench  - Run benchmarks (JVM vs native timing comparison)
+#
+# Usage:
+#   docker compose run --rm agent     # Trace → metadata in volume
+#   docker compose run --rm test      # Pass/fail table
+#   docker compose run --rm bench     # Timing comparison
+#   docker compose build runtime      # Build runtime image (includes native binary)
+
+services:
+  agent:
+    build:
+      context: .
+      target: agent
+    mem_limit: 16g
+    volumes:
+      - metadata:/metadata-output
+
+  test:
+    build:
+      context: .
+      target: runtime
+    mem_limit: 16g
+    command: /xlcr/scripts/test-conversions.sh --mode test
+
+  bench:
+    build:
+      context: .
+      target: runtime
+    mem_limit: 16g
+    command: /xlcr/scripts/test-conversions.sh --mode bench
+
+volumes:
+  metadata:

@@ -24,7 +24,9 @@ LICENSE_ROOT := Aspose.Java.Total.lic
 .PHONY: all build install install-user install-native install-native-user \
         uninstall uninstall-user uninstall-native uninstall-native-user \
         clean test test-all run help check-license compile assembly \
-        native native-agent docker-native docker-native-agent
+        native native-agent docker-native docker-native-agent \
+        docker-test docker-bench docker-agent docker-build docker-cycle \
+        docker-extract-metadata docker-clean
 
 all: build
 
@@ -78,14 +80,14 @@ native-agent: check-license
 	@echo "Metadata output: xlcr/src/main/resources/META-INF/native-image/"
 	./mill 'xlcr[$(SCALA_VERSION)].nativeImageAgent' $(ARGS)
 
-# Build native binary inside Docker (no local GraalVM required)
+# Build native binary inside Docker and extract it (no local GraalVM required)
 # NOTE: Produces a Linux binary - for macOS, use 'make native'
 docker-native:
-	@echo "Building native binary in Docker..."
-	docker build --memory=$(DOCKER_MEMORY) -f Dockerfile.native -t $(DOCKER_IMAGE) .
+	@echo "Building native binary in Docker (multi-stage)..."
+	docker build --target native -t xlcr-native .
 	@echo "Extracting native binary from Docker image..."
 	@docker rm $(DOCKER_CONTAINER) 2>/dev/null || true
-	docker create --name $(DOCKER_CONTAINER) $(DOCKER_IMAGE)
+	docker create --name $(DOCKER_CONTAINER) xlcr-native
 	mkdir -p out
 	docker cp $(DOCKER_CONTAINER):/xlcr/out/xlcr/$(SCALA_VERSION)/nativeImage.dest/native-executable out/xlcr-native
 	docker rm $(DOCKER_CONTAINER)
@@ -95,8 +97,7 @@ docker-native:
 
 # Run GraalVM tracing agent in Docker to capture native-image metadata
 # for all conversion paths (HTML→PDF, HTML→PPTX, PDF→HTML, PDF→PPTX)
-docker-native-agent:
-	./scripts/docker-native-agent.sh
+docker-native-agent: docker-agent
 
 # Install to system (requires sudo)
 install: build
@@ -219,6 +220,39 @@ test-all:
 run:
 	./mill 'xlcr[$(SCALA_VERSION)].run'
 
+# ── Docker Compose targets (multi-stage Dockerfile) ──────────────────
+
+# Run test suite in Docker (validates file output for JVM + native)
+docker-test:
+	docker compose run --rm test
+
+# Run benchmarks in Docker (JVM vs native timing comparison)
+docker-bench:
+	docker compose run --rm bench
+
+# Run GraalVM tracing agent in Docker to capture metadata
+docker-agent:
+	docker compose run --rm agent
+
+# Build native image stage in Docker
+docker-build:
+	docker compose build --build-arg BUILDKIT_INLINE_CACHE=1 test
+
+# Full pipeline: agent → extract metadata → build native → test
+docker-cycle: docker-agent docker-extract-metadata docker-build docker-test
+	@echo "Full native image cycle complete."
+
+# Extract tracing agent metadata from Docker volume to source tree
+docker-extract-metadata:
+	docker run --rm \
+		-v xlcr_metadata:/m \
+		-v $(PWD)/xlcr/src/main/resources/META-INF/native-image:/out \
+		alpine sh -c 'cp /m/* /out/ 2>/dev/null || echo "No metadata found in volume"'
+
+# Clean up Docker resources
+docker-clean:
+	docker compose down -v --rmi local
+
 # Show help
 help:
 	@echo "XLCR Makefile targets:"
@@ -231,6 +265,15 @@ help:
 	@echo "    make native-agent   - Run with tracing agent to generate metadata"
 	@echo "    make docker-native  - Build native binary in Docker (Linux)"
 	@echo "    make docker-native-agent - Run tracing agent in Docker (capture metadata)"
+	@echo ""
+	@echo "  Docker Compose (multi-stage):"
+	@echo "    make docker-test    - Run test suite (validates file output)"
+	@echo "    make docker-bench   - Run benchmarks (JVM vs native timing)"
+	@echo "    make docker-agent   - Run tracing agent (capture metadata)"
+	@echo "    make docker-build   - Build all Docker stages"
+	@echo "    make docker-cycle   - Full pipeline: agent → build → test"
+	@echo "    make docker-extract-metadata - Copy metadata from volume to source"
+	@echo "    make docker-clean   - Remove Docker resources"
 	@echo ""
 	@echo "  Install (JAR mode - requires Java 17+ at runtime):"
 	@echo "    make install        - Install to /usr/local/bin (requires sudo)"
