@@ -44,6 +44,12 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
     "--initialize-at-build-time=scala.runtime.Statics",
     "-J--add-opens=java.base/sun.misc=ALL-UNNAMED",
     "-J--add-opens=java.base/java.lang=ALL-UNNAMED",
+    // Aspose libraries use complex internal class initialization that crashes
+    // with SIGSEGV when initialized at build time. Deferring to run time avoids
+    // the segfault — code is still AOT-compiled, only static initializers run lazily.
+    "--initialize-at-run-time=com.aspose.slides",
+    "--initialize-at-run-time=com.aspose.pdf",
+    "--initialize-at-run-time=com.aspose.cells",
     // Exclude auto-discovered native-image features that fail due to missing javax.mail
     "--exclude-config", ".*angus-activation.*", ".*native-image.*",
     "--exclude-config", ".*angus-mail.*", ".*native-image.*"
