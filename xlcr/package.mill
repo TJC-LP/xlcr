@@ -2,11 +2,12 @@ package build.xlcr
 
 import mill._
 import mill.scalalib._
+import mill.javalib.NativeImageModule
 
 // Only build for Scala 3 - this is a unified CLI module
 object `package` extends Cross[XlcrModule](Seq("3.3.4"))
 
-trait XlcrModule extends build.XLCRModule {
+trait XlcrModule extends build.XLCRModule with NativeImageModule {
   override def artifactName = "xlcr"
   override def artifactDescription = "XLCR - Cross-format document conversion CLI"
 
@@ -24,6 +25,111 @@ trait XlcrModule extends build.XLCRModule {
 
   // No additional dependencies - all come from module deps
   override def mvnDeps = Seq.empty
+
+  // GraalVM Native Image configuration
+  // Index 0.0.4-142 adds GraalVM 25.0.2 (Mill 1.1.2 bundles 0.0.4-125 which only has 25.0.1)
+  def jvmIndexVersion = "0.0.4-142-54b13c"
+  def jvmId = "graalvm-community:25.0.2"
+
+  def nativeImageOptions = Seq(
+    "--no-fallback",
+    "-H:+ReportExceptionStackTraces",
+    // AWT/Java2D support - headless mode for document rendering
+    "-Djava.awt.headless=true",
+    "-H:+AddAllCharsets",
+    // Scala 3 LazyVals sun.misc.Unsafe access
+    "-Dsun.misc.unsafe.memory.access=allow",
+    "--initialize-at-build-time=scala.runtime.LazyVals$",
+    "--initialize-at-build-time=scala.runtime.LazyVals",
+    "--initialize-at-build-time=scala.runtime.Statics",
+    "-J--add-opens=java.base/sun.misc=ALL-UNNAMED",
+    "-J--add-opens=java.base/java.lang=ALL-UNNAMED",
+    // Aspose libraries use complex internal class initialization that crashes
+    // with SIGSEGV when initialized at build time. Deferring to run time avoids
+    // the segfault — code is still AOT-compiled, only static initializers run lazily.
+    "--initialize-at-run-time=com.aspose.slides",
+    "--initialize-at-run-time=com.aspose.pdf",
+    "--initialize-at-run-time=com.aspose.cells",
+    "--initialize-at-run-time=com.aspose.words",
+    "--initialize-at-run-time=com.aspose.email",
+    // Exclude auto-discovered native-image features that fail due to missing javax.mail
+    "--exclude-config", ".*angus-activation.*", ".*native-image.*",
+    "--exclude-config", ".*angus-mail.*", ".*native-image.*"
+  )
+
+  // Override nativeImage to use argument file (fixes command line length limit)
+  override def nativeImage: T[PathRef] = Task {
+    val dest = Task.dest
+    val argFile = dest / "native-image.args"
+    val outputPath = dest / "native-executable"
+
+    val nativeImageExe = nativeImageTool().path
+    val classpath = nativeImageClasspath().map(_.path).mkString(java.io.File.pathSeparator)
+
+    // Include native-image metadata config dir if it exists
+    val configDir = moduleDir / "src" / "main" / "resources" / "META-INF" / "native-image"
+    val configArgs =
+      if (os.exists(configDir)) Seq(s"-H:ConfigurationFileDirectories=${configDir}")
+      else Seq.empty
+
+    // Bake in java.home from the build JVM so Aspose can find fonts at runtime.
+    // This captures the JDK that Mill is running under (e.g. /usr/lib/jvm/java-21-openjdk-arm64
+    // in Docker, or the macOS Temurin path locally). Can be overridden at runtime with -Djava.home=...
+    val buildJavaHome = Option(System.getProperty("java.home")).filter(_.nonEmpty)
+    val javaHomeArgs = buildJavaHome.map(h => s"-Djava.home=${h}").toSeq
+
+    val args = Seq(
+      "-cp",
+      classpath,
+      "-o",
+      outputPath.toString
+    ) ++ nativeImageOptions() ++ configArgs ++ javaHomeArgs ++ Seq(
+      finalMainClass()
+    )
+
+    os.write(argFile, args.mkString("\n"))
+    os.proc(nativeImageExe, s"@${argFile}").call(cwd = dest)
+
+    val isWindows = System.getProperty("os.name", "").toLowerCase.contains("windows")
+    val finalPath =
+      if (isWindows) os.Path(outputPath.toString + ".exe")
+      else outputPath
+    PathRef(finalPath)
+  }
+
+  /** Run the app with the GraalVM tracing agent to generate native-image metadata.
+    *
+    * Usage:
+    *   ./mill 'xlcr[3.3.4].nativeImageAgent' --help
+    *   ./mill 'xlcr[3.3.4].nativeImageAgent' -i test.pdf -o test.html
+    *
+    * Generated config goes to xlcr/src/main/resources/META-INF/native-image/
+    * Run with representative workloads for best coverage.
+    */
+  def nativeImageAgent: T[Unit] = Task {
+    val outputDir = moduleDir / "src" / "main" / "resources" / "META-INF" / "native-image"
+    os.makeDir.all(outputDir)
+
+    val classpath = runClasspath().map(_.path).mkString(java.io.File.pathSeparator)
+
+    val javaExe = nativeImageTool().path / os.up / "java"
+
+    val cmd: Seq[String] = Seq(
+      javaExe.toString,
+      s"-agentlib:native-image-agent=config-merge-dir=${outputDir}",
+      "-Dsun.misc.unsafe.memory.access=allow",
+      "--add-opens=java.base/sun.misc=ALL-UNNAMED",
+      "--add-opens=java.base/java.lang=ALL-UNNAMED",
+      "-cp",
+      classpath,
+      finalMainClass()
+    ) ++ Task.args.map(_.toString)
+
+    println(s"Running with tracing agent, config output: ${outputDir}")
+    println(s"Pass representative workloads for best metadata coverage")
+
+    os.proc(cmd).call(cwd = Task.dest)
+  }
 
   // Test source directories
   def testSources = Task.Sources(moduleDir / "test" / "src")

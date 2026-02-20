@@ -74,6 +74,18 @@ object AsposeTransforms:
       case (ODS, PDF) =>
         asposeOdsToPdf.convert(input.asInstanceOf[Content[Mime.Ods]]).map(widen)
 
+      // Excel -> HTML
+      case (XLSX, HTML) =>
+        asposeXlsxToHtml.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+      case (XLS, HTML) =>
+        asposeXlsToHtml.convert(input.asInstanceOf[Content[Mime.Xls]]).map(widen)
+      case (XLSM, HTML) =>
+        asposeXlsmToHtml.convert(input.asInstanceOf[Content[Mime.Xlsm]]).map(widen)
+      case (XLSB, HTML) =>
+        asposeXlsbToHtml.convert(input.asInstanceOf[Content[Mime.Xlsb]]).map(widen)
+      case (ODS, HTML) =>
+        asposeOdsToHtml.convert(input.asInstanceOf[Content[Mime.Ods]]).map(widen)
+
       // PowerPoint -> PDF
       case (PPTX, PDF) =>
         asposePptxToPdf.convert(input.asInstanceOf[Content[Mime.Pptx]]).map(widen)
@@ -141,6 +153,12 @@ object AsposeTransforms:
     (XLSM, PDF),
     (XLSB, PDF),
     (ODS, PDF),
+    // Excel -> HTML
+    (XLSX, HTML),
+    (XLS, HTML),
+    (XLSM, HTML),
+    (XLSB, HTML),
+    (ODS, HTML),
     // PowerPoint -> PDF
     (PPTX, PDF),
     (PPT, PDF),

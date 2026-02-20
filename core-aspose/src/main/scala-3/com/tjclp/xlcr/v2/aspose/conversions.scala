@@ -1,6 +1,7 @@
 package com.tjclp.xlcr.v2.aspose
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import java.nio.file.Files
 
 import scala.util.Using
 
@@ -120,6 +121,63 @@ given asposeOdsToPdf: Conversion[Mime.Ods, Mime.Pdf] with
     }.mapError(TransformError.fromThrowable)
 
 // =============================================================================
+// Excel -> HTML
+// =============================================================================
+
+private def convertWorkbookToHtml[M <: Mime](
+  input: Content[M]
+): ZIO[Any, TransformError, Content[Mime.Html]] =
+  ZIO.attempt {
+    AsposeLicense.initializeIfNeeded()
+    val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
+    val opts     = new com.aspose.cells.HtmlSaveOptions()
+    opts.setExportImagesAsBase64(true)
+    val out = new ByteArrayOutputStream()
+    workbook.save(out, opts)
+    Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
+  }.mapError(TransformError.fromThrowable)
+
+given asposeXlsxToHtml: Conversion[Mime.Xlsx, Mime.Html] with
+  override def name                      = "Aspose.Cells.XlsxToHtml"
+  def convert(input: Content[Mime.Xlsx]) = convertWorkbookToHtml(input)
+
+given asposeXlsToHtml: Conversion[Mime.Xls, Mime.Html] with
+  override def name                     = "Aspose.Cells.XlsToHtml"
+  def convert(input: Content[Mime.Xls]) = convertWorkbookToHtml(input)
+
+given asposeXlsmToHtml: Conversion[Mime.Xlsm, Mime.Html] with
+  override def name                      = "Aspose.Cells.XlsmToHtml"
+  def convert(input: Content[Mime.Xlsm]) = convertWorkbookToHtml(input)
+
+given asposeXlsbToHtml: Conversion[Mime.Xlsb, Mime.Html] with
+  override def name                      = "Aspose.Cells.XlsbToHtml"
+  def convert(input: Content[Mime.Xlsb]) = convertWorkbookToHtml(input)
+
+given asposeOdsToHtml: Conversion[Mime.Ods, Mime.Html] with
+  override def name                     = "Aspose.Cells.OdsToHtml"
+  def convert(input: Content[Mime.Ods]) = convertWorkbookToHtml(input)
+
+private def slidesFileExtension(saveFormat: Int): String =
+  if saveFormat == com.aspose.slides.SaveFormat.Pptx then ".pptx"
+  else if saveFormat == com.aspose.slides.SaveFormat.Ppt then ".ppt"
+  else ".bin"
+
+/**
+ * Aspose.Slides stream saves are unstable in Graal native for some PPT/PPTX paths. Save to a temp
+ * file and read bytes back to keep Aspose fidelity while avoiding that path.
+ */
+private def savePresentationToBytes(
+  presentation: com.aspose.slides.Presentation,
+  saveFormat: Int
+): Array[Byte] =
+  val tempPath = Files.createTempFile("xlcr-aspose-slides-", slidesFileExtension(saveFormat))
+  try
+    presentation.save(tempPath.toString, saveFormat)
+    Files.readAllBytes(tempPath)
+  finally
+    Files.deleteIfExists(tempPath)
+
+// =============================================================================
 // PowerPoint -> PDF
 // =============================================================================
 
@@ -200,9 +258,8 @@ given asposeHtmlToPptx: Conversion[Mime.Html, Mime.Pptx] with
           pres.getSlides.removeAt(0)
         // Add slides from HTML
         pres.getSlides.addFromHtml(new String(input.data.toArray, "UTF-8"))
-        val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Pptx)
-        Content[Mime.Pptx](out.toByteArray, Mime.pptx, input.metadata)
+        val bytes = savePresentationToBytes(pres, com.aspose.slides.SaveFormat.Pptx)
+        Content[Mime.Pptx](bytes, Mime.pptx, input.metadata)
       finally
         pres.dispose()
     }.mapError(TransformError.fromThrowable)
@@ -218,9 +275,8 @@ given asposeHtmlToPpt: Conversion[Mime.Html, Mime.Ppt] with
         if pres.getSlides.size() > 0 then
           pres.getSlides.removeAt(0)
         pres.getSlides.addFromHtml(new String(input.data.toArray, "UTF-8"))
-        val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Ppt)
-        Content[Mime.Ppt](out.toByteArray, Mime.ppt, input.metadata)
+        val bytes = savePresentationToBytes(pres, com.aspose.slides.SaveFormat.Ppt)
+        Content[Mime.Ppt](bytes, Mime.ppt, input.metadata)
       finally
         pres.dispose()
     }.mapError(TransformError.fromThrowable)
@@ -265,9 +321,8 @@ given asposePdfToPptx: Conversion[Mime.Pdf, Mime.Pptx] with
       try
         pres.getSlides.removeAt(0)
         pres.getSlides.addFromPdf(new ByteArrayInputStream(input.data.toArray))
-        val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Pptx)
-        Content[Mime.Pptx](out.toByteArray, Mime.pptx, input.metadata)
+        val bytes = savePresentationToBytes(pres, com.aspose.slides.SaveFormat.Pptx)
+        Content[Mime.Pptx](bytes, Mime.pptx, input.metadata)
       finally
         pres.dispose()
     }.mapError(TransformError.fromThrowable)
@@ -282,9 +337,8 @@ given asposePdfToPpt: Conversion[Mime.Pdf, Mime.Ppt] with
       try
         pres.getSlides.removeAt(0)
         pres.getSlides.addFromPdf(new ByteArrayInputStream(input.data.toArray))
-        val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Ppt)
-        Content[Mime.Ppt](out.toByteArray, Mime.ppt, input.metadata)
+        val bytes = savePresentationToBytes(pres, com.aspose.slides.SaveFormat.Ppt)
+        Content[Mime.Ppt](bytes, Mime.ppt, input.metadata)
       finally
         pres.dispose()
     }.mapError(TransformError.fromThrowable)

@@ -36,11 +36,11 @@ trait CoreAsposeModule extends build.XLCRModule {
     super.scalacOptions() ++ Seq("-Yresolve-term-conflict:package")
 
   override def mvnDeps = Seq(
-    mvn"com.aspose:aspose-cells:25.7",
-    mvn"com.aspose:aspose-words:25.6;classifier=jdk17",
-    mvn"com.aspose:aspose-slides:25.6;classifier=jdk16",
-    mvn"com.aspose:aspose-email:25.6;classifier=jdk16",
-    mvn"com.aspose:aspose-zip:25.6",
+    mvn"com.aspose:aspose-cells:26.2",
+    mvn"com.aspose:aspose-words:26.1;classifier=jdk17",
+    mvn"com.aspose:aspose-slides:26.2;classifier=jdk16",
+    mvn"com.aspose:aspose-email:26.1;classifier=jdk16",
+    mvn"com.aspose:aspose-zip:25.9",
     mvn"com.aspose:aspose-pdf:26.1"
   )
 

@@ -1,6 +1,7 @@
 package com.tjclp.xlcr.v2.aspose
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import java.nio.file.Files
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
@@ -72,6 +73,11 @@ private def splitExcelWorkbook[M <: Mime](
       val srcWb          = new AsposeWorkbook(srcInputStream)
       use(new DisposableWrapper(srcWb))
 
+      // Calculate all formulas while all sheets are present so cross-sheet
+      // references resolve correctly (e.g. =Data!A1 in a Summary sheet).
+      try srcWb.calculateFormula()
+      catch case _: Exception => ()
+
       val sheets = srcWb.getWorksheets
       val total  = sheets.getCount
 
@@ -91,6 +97,15 @@ private def splitExcelWorkbook[M <: Mime](
           destSheet.copy(srcSheet)
           destSheet.setName(sheetName)
           destSheet.setVisible(true)
+
+          // Replace formula cells with their computed values so the split file
+          // is self-contained (no broken cross-sheet references).
+          val cellIter = destSheet.getCells.iterator()
+          while cellIter.hasNext do
+            val cell = cellIter.next().asInstanceOf[com.aspose.cells.Cell]
+            if cell.getFormula != null && cell.getFormula.nonEmpty then
+              try cell.putValue(cell.getValue)
+              catch case _: Exception => ()
 
           val baos = destUse(new ByteArrayOutputStream())
           destWb.save(baos, fileFormatType)
@@ -121,6 +136,26 @@ given asposePptSlideSplitter: Splitter[Mime.Ppt, Mime.Ppt] with
   def split(input: Content[Mime.Ppt]): ZIO[Any, TransformError, Chunk[Fragment[Mime.Ppt]]] =
     splitPowerPointPresentation(input, Mime.ppt, com.aspose.slides.SaveFormat.Ppt)
 
+private def slidesFileExtension(saveFormat: Int): String =
+  if saveFormat == com.aspose.slides.SaveFormat.Pptx then ".pptx"
+  else if saveFormat == com.aspose.slides.SaveFormat.Ppt then ".ppt"
+  else ".bin"
+
+/**
+ * Use a temp file save path for Aspose.Slides outputs in native mode. This avoids the stream-based
+ * save path that has produced native segfaults.
+ */
+private def savePresentationToBytes(
+  presentation: com.aspose.slides.Presentation,
+  saveFormat: Int
+): Array[Byte] =
+  val tempPath = Files.createTempFile("xlcr-aspose-split-slide-", slidesFileExtension(saveFormat))
+  try
+    presentation.save(tempPath.toString, saveFormat)
+    Files.readAllBytes(tempPath)
+  finally
+    Files.deleteIfExists(tempPath)
+
 // Helper function for PowerPoint splitting
 private def splitPowerPointPresentation[M <: Mime](
   input: Content[M],
@@ -146,11 +181,8 @@ private def splitPowerPointPresentation[M <: Mime](
           // Clone the slide
           destPres.getSlides.addClone(srcSlide)
 
-          val out = new ByteArrayOutputStream()
-          destPres.save(out, saveFormat)
-
-          val content =
-            Content.fromChunk(Chunk.fromArray(out.toByteArray), outputMime, input.metadata)
+          val bytes   = savePresentationToBytes(destPres, saveFormat)
+          val content = Content.fromChunk(Chunk.fromArray(bytes), outputMime, input.metadata)
           Fragment(content, idx, Some(s"Slide ${idx + 1}"))
         finally
           destPres.dispose()

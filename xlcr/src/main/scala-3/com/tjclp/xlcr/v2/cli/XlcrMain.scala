@@ -41,6 +41,24 @@ import com.tjclp.xlcr.v2.types.{ Content, Mime }
  */
 object XlcrMain extends ZIOAppDefault:
 
+  // Ensure java.home and java.library.path are set before Aspose initializes
+  // (critical for native images). In GraalVM native images, build-time -Djava.home
+  // is not propagated to runtime. Aspose libraries need java.home for font resolution.
+  // The native binary also needs java.library.path pointing to $JAVA_HOME/lib for AWT
+  // (libawt.so). With both properties set, the native binary works with just JAVA_HOME.
+  locally {
+    if java.lang.System.getProperty("java.home") == null then
+      val envJavaHome = java.lang.System.getenv("JAVA_HOME")
+      if envJavaHome != null then java.lang.System.setProperty("java.home", envJavaHome)
+
+    val javaHome = java.lang.System.getProperty("java.home")
+    if javaHome != null then
+      val libDir   = javaHome + "/lib"
+      val existing = Option(java.lang.System.getProperty("java.library.path")).getOrElse("")
+      if !existing.contains(libDir) then
+        java.lang.System.setProperty("java.library.path", libDir + ":" + existing)
+  }
+
   override def run: ZIO[ZIOAppArgs, Any, ExitCode] =
     for
       // No TransformInit.initialize() - zero startup overhead!
