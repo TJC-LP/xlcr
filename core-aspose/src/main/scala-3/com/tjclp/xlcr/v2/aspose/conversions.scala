@@ -32,10 +32,12 @@ given asposeDocxToPdf: Conversion[Mime.Docx, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val doc = new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(doc.cleanup())
+        import scope.*
+        val doc = allocate(wordDocResource(
+          new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        doc.save(out, com.aspose.words.SaveFormat.PDF)
+        $(doc)(_.save(out, com.aspose.words.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -47,10 +49,12 @@ given asposeDocToPdf: Conversion[Mime.Doc, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val doc = new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(doc.cleanup())
+        import scope.*
+        val doc = allocate(wordDocResource(
+          new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        doc.save(out, com.aspose.words.SaveFormat.PDF)
+        $(doc)(_.save(out, com.aspose.words.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -68,13 +72,14 @@ private[aspose] def convertWordDoc[I <: Mime, O <: Mime](
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
     Scope.global.scoped { scope =>
+      import scope.*
       val loadOpts = new com.aspose.words.LoadOptions()
       options.password.foreach(loadOpts.setPassword)
-      val doc =
+      val doc = allocate(wordDocResource(
         new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray), loadOpts)
-      scope.defer(doc.cleanup())
+      ))
       val out = new ByteArrayOutputStream()
-      doc.save(out, saveFormat)
+      $(doc)(_.save(out, saveFormat))
       Content[O](out.toByteArray, outputMime, input.metadata)
     }
   }.mapError(TransformError.fromThrowable)
@@ -120,10 +125,12 @@ given asposeXlsxToPdf: Conversion[Mime.Xlsx, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(workbook.dispose())
+        import scope.*
+        val workbook = allocate(cellsWorkbookResource(
+          new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        workbook.save(out, com.aspose.cells.SaveFormat.PDF)
+        $(workbook)(_.save(out, com.aspose.cells.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -135,10 +142,12 @@ given asposeXlsToPdf: Conversion[Mime.Xls, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(workbook.dispose())
+        import scope.*
+        val workbook = allocate(cellsWorkbookResource(
+          new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        workbook.save(out, com.aspose.cells.SaveFormat.PDF)
+        $(workbook)(_.save(out, com.aspose.cells.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -150,10 +159,12 @@ given asposeXlsmToPdf: Conversion[Mime.Xlsm, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(workbook.dispose())
+        import scope.*
+        val workbook = allocate(cellsWorkbookResource(
+          new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        workbook.save(out, com.aspose.cells.SaveFormat.PDF)
+        $(workbook)(_.save(out, com.aspose.cells.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -165,10 +176,12 @@ given asposeXlsbToPdf: Conversion[Mime.Xlsb, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(workbook.dispose())
+        import scope.*
+        val workbook = allocate(cellsWorkbookResource(
+          new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        workbook.save(out, com.aspose.cells.SaveFormat.PDF)
+        $(workbook)(_.save(out, com.aspose.cells.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -180,10 +193,12 @@ given asposeOdsToPdf: Conversion[Mime.Ods, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(workbook.dispose())
+        import scope.*
+        val workbook = allocate(cellsWorkbookResource(
+          new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        workbook.save(out, com.aspose.cells.SaveFormat.PDF)
+        $(workbook)(_.save(out, com.aspose.cells.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -199,13 +214,17 @@ private def convertWorkbookToHtml[M <: Mime](
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
     Scope.global.scoped { scope =>
-      val workbook = loadCellsWorkbook(input, options)
-      scope.defer(workbook.dispose())
-      safeCalculateFormulas(workbook, options)
+      import scope.*
+      val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, options)))
+      if options.evaluateFormulas then
+        $(workbook) { wb =>
+          try wb.calculateFormula()
+          catch case _: Exception => ()
+        }
       val opts = new com.aspose.cells.HtmlSaveOptions()
       opts.setExportImagesAsBase64(options.embedResources)
       val out = new ByteArrayOutputStream()
-      workbook.save(out, opts)
+      $(workbook)(_.save(out, opts))
       Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
     }
   }.mapError(TransformError.fromThrowable)
@@ -243,11 +262,15 @@ private[aspose] def convertWorkbook[I <: Mime, O <: Mime](
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
     Scope.global.scoped { scope =>
-      val workbook = loadCellsWorkbook(input, options)
-      scope.defer(workbook.dispose())
-      safeCalculateFormulas(workbook, options)
+      import scope.*
+      val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, options)))
+      if options.evaluateFormulas then
+        $(workbook) { wb =>
+          try wb.calculateFormula()
+          catch case _: Exception => ()
+        }
       val out = new ByteArrayOutputStream()
-      workbook.save(out, saveFormat)
+      $(workbook)(_.save(out, saveFormat))
       Content[O](out.toByteArray, outputMime, input.metadata)
     }
   }.mapError(TransformError.fromThrowable)
@@ -261,34 +284,40 @@ private[aspose] def convertWorkbookToPdf[I <: Mime](
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
     Scope.global.scoped { scope =>
-      val workbook = loadCellsWorkbook(input, options)
-      scope.defer(workbook.dispose())
-      safeCalculateFormulas(workbook, options)
-
-      val sheets = workbook.getWorksheets
-      for i <- 0 until sheets.getCount do
-        val ws        = sheets.get(i)
-        val pageSetup = ws.getPageSetup
-
-        options.paperSize.foreach(ps => pageSetup.setPaperSize(ps.asposeCellsValue))
-        options.landscape.foreach { isLandscape =>
-          pageSetup.setOrientation(
-            if isLandscape then com.aspose.cells.PageOrientationType.LANDSCAPE
-            else com.aspose.cells.PageOrientationType.PORTRAIT
-          )
+      import scope.*
+      val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, options)))
+      if options.evaluateFormulas then
+        $(workbook) { wb =>
+          try wb.calculateFormula()
+          catch case _: Exception => ()
         }
 
-      // Hide sheets not in the selection
-      if options.sheetNames.nonEmpty then
+      $(workbook) { wb =>
+        val sheets = wb.getWorksheets
         for i <- 0 until sheets.getCount do
-          val ws = sheets.get(i)
-          if !options.sheetNames.contains(ws.getName) then ws.setVisible(false)
+          val ws        = sheets.get(i)
+          val pageSetup = ws.getPageSetup
+
+          options.paperSize.foreach(ps => pageSetup.setPaperSize(ps.asposeCellsValue))
+          options.landscape.foreach { isLandscape =>
+            pageSetup.setOrientation(
+              if isLandscape then com.aspose.cells.PageOrientationType.LANDSCAPE
+              else com.aspose.cells.PageOrientationType.PORTRAIT
+            )
+          }
+
+        // Hide sheets not in the selection
+        if options.sheetNames.nonEmpty then
+          for i <- 0 until sheets.getCount do
+            val ws = sheets.get(i)
+            if !options.sheetNames.contains(ws.getName) then ws.setVisible(false)
+      }
 
       val pdfSaveOpts = new com.aspose.cells.PdfSaveOptions()
       if options.oneSheetPerPage then pdfSaveOpts.setOnePagePerSheet(true)
 
       val out = new ByteArrayOutputStream()
-      workbook.save(out, pdfSaveOpts)
+      $(workbook)(_.save(out, pdfSaveOpts))
       Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
     }
   }.mapError(TransformError.fromThrowable)
@@ -301,22 +330,27 @@ private[aspose] def convertPresentationToHtml[I <: Mime](
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
     Scope.global.scoped { scope =>
+      import scope.*
       val loadOpts = new com.aspose.slides.LoadOptions()
       options.password.foreach(loadOpts.setPassword)
-      val pres =
+      val pres = allocate(presentationResource(
         new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray), loadOpts)
-      scope.defer(pres.dispose())
-      val target = if options.stripMasters then
+      ))
+      val out = new ByteArrayOutputStream()
+      if options.stripMasters then
         val blank = new com.aspose.slides.Presentation()
         scope.defer(blank.dispose())
         if blank.getSlides.size() > 0 then blank.getSlides.removeAt(0)
-        for i <- 0 until pres.getSlides.size() do
-          blank.getSlides.addClone(pres.getSlides.get_Item(i))
-        blank
-      else pres
-
-      val out = new ByteArrayOutputStream()
-      target.save(out, com.aspose.slides.SaveFormat.Html)
+        $(pres) { p =>
+          var i     = 0
+          val count = p.getSlides.size()
+          while i < count do
+            blank.getSlides.addClone(p.getSlides.get_Item(i))
+            i += 1
+        }
+        blank.save(out, com.aspose.slides.SaveFormat.Html)
+      else
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Html))
       Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
     }
   }.mapError(TransformError.fromThrowable)
@@ -329,12 +363,13 @@ private[aspose] def convertPdfToHtml(
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
     Scope.global.scoped { scope =>
-      val document = options.password match
-        case Some(pwd) =>
-          new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray), pwd)
-        case None =>
-          new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
-      scope.defer(document.close())
+      import scope.*
+      val stream = new ByteArrayInputStream(input.data.toArray)
+      val document = allocate(pdfDocResource(
+        options.password match
+          case Some(pwd) => new com.aspose.pdf.Document(stream, pwd)
+          case None      => new com.aspose.pdf.Document(stream)
+      ))
       val saveOptions = new com.aspose.pdf.HtmlSaveOptions()
       saveOptions.setFixedLayout(!options.flowingLayout)
       if options.embedResources then
@@ -345,7 +380,7 @@ private[aspose] def convertPdfToHtml(
           com.aspose.pdf.HtmlSaveOptions.RasterImagesSavingModes.AsEmbeddedPartsOfPngPageBackground
         )
       val out = new ByteArrayOutputStream()
-      document.save(out, saveOptions)
+      $(document)(_.save(out, saveOptions))
       Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
     }
   }.mapError(TransformError.fromThrowable)
@@ -401,10 +436,12 @@ given asposePptxToPdf: Conversion[Mime.Pptx, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val pres = new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(pres.dispose())
+        import scope.*
+        val pres = allocate(presentationResource(
+          new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Pdf)
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Pdf))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -416,10 +453,12 @@ given asposePptToPdf: Conversion[Mime.Ppt, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val pres = new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(pres.dispose())
+        import scope.*
+        val pres = allocate(presentationResource(
+          new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Pdf)
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Pdf))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -435,10 +474,12 @@ given asposePptxToHtml: Conversion[Mime.Pptx, Mime.Html] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val pres = new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(pres.dispose())
+        import scope.*
+        val pres = allocate(presentationResource(
+          new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Html)
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Html))
         Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -450,10 +491,12 @@ given asposePptToHtml: Conversion[Mime.Ppt, Mime.Html] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val pres = new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(pres.dispose())
+        import scope.*
+        val pres = allocate(presentationResource(
+          new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
+        ))
         val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Html)
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Html))
         Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -465,15 +508,16 @@ given asposeHtmlToPptx: Conversion[Mime.Html, Mime.Pptx] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val pres = new com.aspose.slides.Presentation()
-        scope.defer(pres.dispose())
-        // Remove default empty slide
-        if pres.getSlides.size() > 0 then
-          pres.getSlides.removeAt(0)
-        // Add slides from HTML
-        pres.getSlides.addFromHtml(new String(input.data.toArray, "UTF-8"))
+        import scope.*
+        val pres = allocate(presentationResource(new com.aspose.slides.Presentation()))
+        $(pres) { p =>
+          // Remove default empty slide
+          if p.getSlides.size() > 0 then p.getSlides.removeAt(0)
+          // Add slides from HTML
+          p.getSlides.addFromHtml(new String(input.data.toArray, "UTF-8"))
+        }
         val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Pptx)
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Pptx))
         Content[Mime.Pptx](out.toByteArray, Mime.pptx, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -485,13 +529,14 @@ given asposeHtmlToPpt: Conversion[Mime.Html, Mime.Ppt] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val pres = new com.aspose.slides.Presentation()
-        scope.defer(pres.dispose())
-        if pres.getSlides.size() > 0 then
-          pres.getSlides.removeAt(0)
-        pres.getSlides.addFromHtml(new String(input.data.toArray, "UTF-8"))
+        import scope.*
+        val pres = allocate(presentationResource(new com.aspose.slides.Presentation()))
+        $(pres) { p =>
+          if p.getSlides.size() > 0 then p.getSlides.removeAt(0)
+          p.getSlides.addFromHtml(new String(input.data.toArray, "UTF-8"))
+        }
         val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Ppt)
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Ppt))
         Content[Mime.Ppt](out.toByteArray, Mime.ppt, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -509,13 +554,14 @@ private def convertPresentation[I <: Mime, O <: Mime](
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
     Scope.global.scoped { scope =>
+      import scope.*
       val loadOpts = new com.aspose.slides.LoadOptions()
       options.password.foreach(loadOpts.setPassword)
-      val pres =
+      val pres = allocate(presentationResource(
         new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray), loadOpts)
-      scope.defer(pres.dispose())
+      ))
       val out = new ByteArrayOutputStream()
-      pres.save(out, saveFormat)
+      $(pres)(_.save(out, saveFormat))
       Content[O](out.toByteArray, outputMime, input.metadata)
     }
   }.mapError(TransformError.fromThrowable)
@@ -551,8 +597,10 @@ given asposePdfToHtml: Conversion[Mime.Pdf, Mime.Html] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val document = new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(document.close())
+        import scope.*
+        val document = allocate(pdfDocResource(
+          new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
+        ))
         val saveOptions = new com.aspose.pdf.HtmlSaveOptions()
         saveOptions.setPartsEmbeddingMode(
           com.aspose.pdf.HtmlSaveOptions.PartsEmbeddingModes.EmbedAllIntoHtml
@@ -561,7 +609,7 @@ given asposePdfToHtml: Conversion[Mime.Pdf, Mime.Html] with
           com.aspose.pdf.HtmlSaveOptions.RasterImagesSavingModes.AsEmbeddedPartsOfPngPageBackground
         )
         val out = new ByteArrayOutputStream()
-        document.save(out, saveOptions)
+        $(document)(_.save(out, saveOptions))
         Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -577,12 +625,14 @@ given asposePdfToPptx: Conversion[Mime.Pdf, Mime.Pptx] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val pres = new com.aspose.slides.Presentation()
-        scope.defer(pres.dispose())
-        pres.getSlides.removeAt(0)
-        pres.getSlides.addFromPdf(new ByteArrayInputStream(input.data.toArray))
+        import scope.*
+        val pres = allocate(presentationResource(new com.aspose.slides.Presentation()))
+        $(pres) { p =>
+          p.getSlides.removeAt(0)
+          p.getSlides.addFromPdf(new ByteArrayInputStream(input.data.toArray))
+        }
         val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Pptx)
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Pptx))
         Content[Mime.Pptx](out.toByteArray, Mime.pptx, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -594,12 +644,14 @@ given asposePdfToPpt: Conversion[Mime.Pdf, Mime.Ppt] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val pres = new com.aspose.slides.Presentation()
-        scope.defer(pres.dispose())
-        pres.getSlides.removeAt(0)
-        pres.getSlides.addFromPdf(new ByteArrayInputStream(input.data.toArray))
+        import scope.*
+        val pres = allocate(presentationResource(new com.aspose.slides.Presentation()))
+        $(pres) { p =>
+          p.getSlides.removeAt(0)
+          p.getSlides.addFromPdf(new ByteArrayInputStream(input.data.toArray))
+        }
         val out = new ByteArrayOutputStream()
-        pres.save(out, com.aspose.slides.SaveFormat.Ppt)
+        $(pres)(_.save(out, com.aspose.slides.SaveFormat.Ppt))
         Content[Mime.Ppt](out.toByteArray, Mime.ppt, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -615,13 +667,17 @@ given asposePdfToPng: Conversion[Mime.Pdf, Mime.Png] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val document = new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(document.close())
+        import scope.*
+        val document = allocate(pdfDocResource(
+          new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
+        ))
         val resolution = new com.aspose.pdf.devices.Resolution(300)
         val pngDevice  = new com.aspose.pdf.devices.PngDevice(resolution)
         val out        = new ByteArrayOutputStream()
         // Convert first page to PNG
-        pngDevice.process(document.getPages.get_Item(1), out)
+        $(document) { d =>
+          pngDevice.process(d.getPages.get_Item(1), out)
+        }
         Content[Mime.Png](out.toByteArray, Mime.png, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -633,12 +689,16 @@ given asposePdfToJpeg: Conversion[Mime.Pdf, Mime.Jpeg] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val document = new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(document.close())
+        import scope.*
+        val document = allocate(pdfDocResource(
+          new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
+        ))
         val resolution = new com.aspose.pdf.devices.Resolution(300)
         val jpegDevice = new com.aspose.pdf.devices.JpegDevice(resolution)
         val out        = new ByteArrayOutputStream()
-        jpegDevice.process(document.getPages.get_Item(1), out)
+        $(document) { d =>
+          jpegDevice.process(d.getPages.get_Item(1), out)
+        }
         Content[Mime.Jpeg](out.toByteArray, Mime.jpeg, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -654,14 +714,16 @@ given asposePngToPdf: Conversion[Mime.Png, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val document = new com.aspose.pdf.Document()
-        scope.defer(document.close())
-        val page  = document.getPages.add()
-        val image = new com.aspose.pdf.Image()
-        image.setImageStream(new ByteArrayInputStream(input.data.toArray))
-        page.getParagraphs.add(image)
+        import scope.*
+        val document = allocate(pdfDocResource(new com.aspose.pdf.Document()))
+        $(document) { d =>
+          val page  = d.getPages.add()
+          val image = new com.aspose.pdf.Image()
+          image.setImageStream(new ByteArrayInputStream(input.data.toArray))
+          page.getParagraphs.add(image)
+        }
         val out = new ByteArrayOutputStream()
-        document.save(out)
+        $(document)(_.save(out))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -673,14 +735,16 @@ given asposeJpegToPdf: Conversion[Mime.Jpeg, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
-        val document = new com.aspose.pdf.Document()
-        scope.defer(document.close())
-        val page  = document.getPages.add()
-        val image = new com.aspose.pdf.Image()
-        image.setImageStream(new ByteArrayInputStream(input.data.toArray))
-        page.getParagraphs.add(image)
+        import scope.*
+        val document = allocate(pdfDocResource(new com.aspose.pdf.Document()))
+        $(document) { d =>
+          val page  = d.getPages.add()
+          val image = new com.aspose.pdf.Image()
+          image.setImageStream(new ByteArrayInputStream(input.data.toArray))
+          page.getParagraphs.add(image)
+        }
         val out = new ByteArrayOutputStream()
-        document.save(out)
+        $(document)(_.save(out))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -696,12 +760,13 @@ given asposeHtmlToPdf: Conversion[Mime.Html, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
+        import scope.*
         val htmlOptions = new com.aspose.pdf.HtmlLoadOptions()
-        val document =
+        val document = allocate(pdfDocResource(
           new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray), htmlOptions)
-        scope.defer(document.close())
+        ))
         val out = new ByteArrayOutputStream()
-        document.save(out)
+        $(document)(_.save(out))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -717,16 +782,18 @@ given asposeEmlToPdf: Conversion[Mime.Eml, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
+        import scope.*
         // Load email message
         val msg = com.aspose.email.MailMessage.load(new ByteArrayInputStream(input.data.toArray))
         // Convert to MHTML first
         val mhtmlStream = new ByteArrayOutputStream()
         msg.save(mhtmlStream, com.aspose.email.SaveOptions.getDefaultMhtml)
         // Then convert MHTML to PDF using Aspose.Words
-        val doc = new com.aspose.words.Document(new ByteArrayInputStream(mhtmlStream.toByteArray))
-        scope.defer(doc.cleanup())
+        val doc = allocate(wordDocResource(
+          new com.aspose.words.Document(new ByteArrayInputStream(mhtmlStream.toByteArray))
+        ))
         val out = new ByteArrayOutputStream()
-        doc.save(out, com.aspose.words.SaveFormat.PDF)
+        $(doc)(_.save(out, com.aspose.words.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
@@ -738,13 +805,15 @@ given asposeMsgToPdf: Conversion[Mime.Msg, Mime.Pdf] with
     ZIO.attempt {
       AsposeLicense.initializeIfNeeded()
       Scope.global.scoped { scope =>
+        import scope.*
         val msg = com.aspose.email.MapiMessage.load(new ByteArrayInputStream(input.data.toArray))
         val mhtmlStream = new ByteArrayOutputStream()
         msg.save(mhtmlStream, com.aspose.email.SaveOptions.getDefaultMhtml)
-        val doc = new com.aspose.words.Document(new ByteArrayInputStream(mhtmlStream.toByteArray))
-        scope.defer(doc.cleanup())
+        val doc = allocate(wordDocResource(
+          new com.aspose.words.Document(new ByteArrayInputStream(mhtmlStream.toByteArray))
+        ))
         val out = new ByteArrayOutputStream()
-        doc.save(out, com.aspose.words.SaveFormat.PDF)
+        $(doc)(_.save(out, com.aspose.words.SaveFormat.PDF))
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)

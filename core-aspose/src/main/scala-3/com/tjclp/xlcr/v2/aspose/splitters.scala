@@ -68,32 +68,35 @@ private[aspose] def splitExcelWorkbook[M <: Mime](
     AsposeLicense.initializeIfNeeded()
 
     Scope.global.scoped { scope =>
-      val srcWb: AsposeWorkbook = loadCellsWorkbook(input, options)
-      scope.defer(srcWb.dispose())
+      import scope.*
+      val srcWb = allocate(cellsWorkbookResource(loadCellsWorkbook(input, options)))
 
       // Calculate all formulas while all sheets are present so cross-sheet
       // references resolve correctly (e.g. =Data!A1 in a Summary sheet).
-      safeCalculateFormulas(srcWb, options)
+      if options.evaluateFormulas then
+        $(srcWb) { wb =>
+          try wb.calculateFormula()
+          catch case _: Exception => ()
+        }
 
-      val sheets = srcWb.getWorksheets
-      val total  = sheets.getCount
-
-      // Filter sheets based on options.
+      // Filter sheets based on options. All worksheet access goes through $ since
+      // WorksheetCollection is a mutable Aspose object tied to workbook lifecycle.
       // Precedence: excludeHidden is applied as a global filter even if a hidden sheet
-      // is explicitly named via sheetNames. This means --sheet "HiddenSheet" --exclude-hidden
-      // will still exclude HiddenSheet.
-      val indicesToSplit = (0 until total).filter { idx =>
-        val ws        = sheets.get(idx)
-        val nameMatch = options.sheetNames.isEmpty || options.sheetNames.contains(ws.getName)
-        val visMatch  = !options.excludeHidden || ws.isVisible
-        nameMatch && visMatch
+      // is explicitly named via sheetNames.
+      val indicesToSplit = $(srcWb) { wb =>
+        val sheets = wb.getWorksheets
+        (0 until sheets.getCount).filter { idx =>
+          val ws        = sheets.get(idx)
+          val nameMatch = options.sheetNames.isEmpty || options.sheetNames.contains(ws.getName)
+          val visMatch  = !options.excludeHidden || ws.isVisible
+          nameMatch && visMatch
+        }
       }
 
       // Fragment indices are 0-based contiguous after filtering; the original sheet name
       // is preserved in Fragment.name for traceability.
       val fragments = indicesToSplit.zipWithIndex.map { case (idx, fragIdx) =>
-        val srcSheet  = sheets.get(idx)
-        val sheetName = srcSheet.getName
+        val sheetName = $(srcWb)(_.getWorksheets.get(idx).getName)
 
         val destWb = new AsposeWorkbook()
         try
@@ -102,7 +105,7 @@ private[aspose] def splitExcelWorkbook[M <: Mime](
 
           val newIdx    = destSheets.add()
           val destSheet = destSheets.get(newIdx)
-          destSheet.copy(srcSheet)
+          $(srcWb)(wb => destSheet.copy(wb.getWorksheets.get(idx)))
           destSheet.setName(sheetName)
           destSheet.setVisible(true)
 
@@ -159,23 +162,20 @@ private def splitPowerPointPresentation[M <: Mime](
     AsposeLicense.initializeIfNeeded()
 
     Scope.global.scoped { scope =>
-      val srcPres =
+      import scope.*
+      val srcPres = allocate(presentationResource(
         new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
-      scope.defer(srcPres.dispose())
-
-      val slides = srcPres.getSlides
-      val total  = slides.size()
+      ))
+      val total = $(srcPres)(_.getSlides.size())
 
       val fragments = (0 until total).map { idx =>
-        val srcSlide = slides.get_Item(idx)
-
         // Create a new presentation with just this slide
         val destPres = new com.aspose.slides.Presentation()
         try
           // Remove default empty slide
           destPres.getSlides.removeAt(0)
-          // Clone the slide
-          destPres.getSlides.addClone(srcSlide)
+          // Clone the slide from scoped source
+          $(srcPres)(s => destPres.getSlides.addClone(s.getSlides.get_Item(idx)))
 
           val out = new ByteArrayOutputStream()
           destPres.save(out, saveFormat)
@@ -202,17 +202,17 @@ given asposePdfPageSplitter: Splitter[Mime.Pdf, Mime.Pdf] with
       AsposeLicense.initializeIfNeeded()
 
       Scope.global.scoped { scope =>
-        val srcDoc = new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(srcDoc.close())
-
-        val pages = srcDoc.getPages
-        val total = pages.size()
+        import scope.*
+        val srcDoc = allocate(pdfDocResource(
+          new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
+        ))
+        val total = $(srcDoc)(_.getPages.size())
 
         val fragments = (1 to total).map { pageNum =>
           // Create a new document with just this page
           val destDoc = new com.aspose.pdf.Document()
           try
-            destDoc.getPages.add(pages.get_Item(pageNum))
+            $(srcDoc)(src => destDoc.getPages.add(src.getPages.get_Item(pageNum)))
 
             val opts = new com.aspose.pdf.optimization.OptimizationOptions()
             opts.setRemoveUnusedStreams(true)
@@ -260,21 +260,21 @@ private def splitWordDocument[M <: Mime](
     AsposeLicense.initializeIfNeeded()
 
     Scope.global.scoped { scope =>
-      val srcDoc = new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
-      scope.defer(srcDoc.cleanup())
-
-      val sections = srcDoc.getSections
-      val total    = sections.getCount
+      import scope.*
+      val srcDoc = allocate(wordDocResource(
+        new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
+      ))
+      val total = $(srcDoc)(_.getSections.getCount)
 
       val fragments = (0 until total).map { idx =>
-        val srcSection = sections.get(idx)
-
         // Create a new document with just this section
         val destDoc = new com.aspose.words.Document()
         try
           destDoc.removeAllChildren()
-          val importedSection = destDoc.importNode(srcSection, true)
-          destDoc.appendChild(importedSection)
+          $(srcDoc) { src =>
+            val importedSection = destDoc.importNode(src.getSections.get(idx), true)
+            destDoc.appendChild(importedSection)
+          }
 
           val out = new ByteArrayOutputStream()
           destDoc.save(out, saveFormat)
@@ -302,25 +302,30 @@ given asposeZipArchiveSplitter: DynamicSplitter[Mime.Zip] with
       AsposeLicense.initializeIfNeeded()
 
       Scope.global.scoped { scope =>
-        val archive = new com.aspose.zip.Archive(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(archive.close())
-        val entries = archive.getEntries
-        val fragments = entries.asScala.zipWithIndex.flatMap { case (entry, idx) =>
-          if !entry.isDirectory then
-            val out = new ByteArrayOutputStream()
-            entry.extract(out)
-            val entryName = entry.getName
-            val mime      = Mime.fromFilename(entryName)
-            val content = Content.fromChunk(
-              Chunk.fromArray(out.toByteArray),
-              mime,
-              Map("filename" -> entryName)
-            )
-            Some(DynamicFragment(content, idx, Some(entryName)))
-          else
-            None
+        import scope.*
+        val archive = allocate(
+          zio.blocks.scope.Resource.acquireRelease(
+            new com.aspose.zip.Archive(new ByteArrayInputStream(input.data.toArray))
+          )(_.close())
+        )
+        $(archive) { arch =>
+          val fragments = arch.getEntries.asScala.zipWithIndex.flatMap { case (entry, idx) =>
+            if !entry.isDirectory then
+              val out = new ByteArrayOutputStream()
+              entry.extract(out)
+              val entryName = entry.getName
+              val mime      = Mime.fromFilename(entryName)
+              val content = Content.fromChunk(
+                Chunk.fromArray(out.toByteArray),
+                mime,
+                Map("filename" -> entryName)
+              )
+              Some(DynamicFragment(content, idx, Some(entryName)))
+            else
+              None
+          }
+          Chunk.fromIterable(fragments.toSeq)
         }
-        Chunk.fromIterable(fragments.toSeq)
       }
     }.mapError(TransformError.fromThrowable)
 
@@ -333,26 +338,30 @@ given asposeSevenZipArchiveSplitter: DynamicSplitter[Mime.SevenZip] with
       AsposeLicense.initializeIfNeeded()
 
       Scope.global.scoped { scope =>
-        val archive =
-          new com.aspose.zip.SevenZipArchive(new ByteArrayInputStream(input.data.toArray))
-        scope.defer(archive.close())
-        val entries = archive.getEntries
-        val fragments = entries.asScala.zipWithIndex.flatMap { case (entry, idx) =>
-          if !entry.isDirectory then
-            val out = new ByteArrayOutputStream()
-            entry.extract(out)
-            val entryName = entry.getName
-            val mime      = Mime.fromFilename(entryName)
-            val content = Content.fromChunk(
-              Chunk.fromArray(out.toByteArray),
-              mime,
-              Map("filename" -> entryName)
-            )
-            Some(DynamicFragment(content, idx, Some(entryName)))
-          else
-            None
+        import scope.*
+        val archive = allocate(
+          zio.blocks.scope.Resource.acquireRelease(
+            new com.aspose.zip.SevenZipArchive(new ByteArrayInputStream(input.data.toArray))
+          )(_.close())
+        )
+        $(archive) { arch =>
+          val fragments = arch.getEntries.asScala.zipWithIndex.flatMap { case (entry, idx) =>
+            if !entry.isDirectory then
+              val out = new ByteArrayOutputStream()
+              entry.extract(out)
+              val entryName = entry.getName
+              val mime      = Mime.fromFilename(entryName)
+              val content = Content.fromChunk(
+                Chunk.fromArray(out.toByteArray),
+                mime,
+                Map("filename" -> entryName)
+              )
+              Some(DynamicFragment(content, idx, Some(entryName)))
+            else
+              None
+          }
+          Chunk.fromIterable(fragments.toSeq)
         }
-        Chunk.fromIterable(fragments.toSeq)
       }
     }.mapError(TransformError.fromThrowable)
 
