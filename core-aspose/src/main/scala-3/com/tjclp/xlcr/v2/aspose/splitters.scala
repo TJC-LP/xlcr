@@ -1,7 +1,6 @@
 package com.tjclp.xlcr.v2.aspose
 
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
-import java.nio.file.Files
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
@@ -152,26 +151,6 @@ given asposePptSlideSplitter: Splitter[Mime.Ppt, Mime.Ppt] with
   def split(input: Content[Mime.Ppt]): ZIO[Any, TransformError, Chunk[Fragment[Mime.Ppt]]] =
     splitPowerPointPresentation(input, Mime.ppt, com.aspose.slides.SaveFormat.Ppt)
 
-private def slidesFileExtension(saveFormat: Int): String =
-  if saveFormat == com.aspose.slides.SaveFormat.Pptx then ".pptx"
-  else if saveFormat == com.aspose.slides.SaveFormat.Ppt then ".ppt"
-  else ".bin"
-
-/**
- * Use a temp file save path for Aspose.Slides outputs in native mode. This avoids the stream-based
- * save path that has produced native segfaults.
- */
-private def savePresentationToBytes(
-  presentation: com.aspose.slides.Presentation,
-  saveFormat: Int
-): Array[Byte] =
-  val tempPath = Files.createTempFile("xlcr-aspose-split-slide-", slidesFileExtension(saveFormat))
-  try
-    presentation.save(tempPath.toString, saveFormat)
-    Files.readAllBytes(tempPath)
-  finally
-    Files.deleteIfExists(tempPath)
-
 // Helper function for PowerPoint splitting
 private def splitPowerPointPresentation[M <: Mime](
   input: Content[M],
@@ -197,8 +176,10 @@ private def splitPowerPointPresentation[M <: Mime](
           // Clone the slide
           destPres.getSlides.addClone(srcSlide)
 
-          val bytes   = savePresentationToBytes(destPres, saveFormat)
-          val content = Content.fromChunk(Chunk.fromArray(bytes), outputMime, input.metadata)
+          val out = new ByteArrayOutputStream()
+          destPres.save(out, saveFormat)
+          val content =
+            Content.fromChunk(Chunk.fromArray(out.toByteArray), outputMime, input.metadata)
           Fragment(content, idx, Some(s"Slide ${idx + 1}"))
         finally
           destPres.dispose()
