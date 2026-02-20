@@ -8,7 +8,7 @@ import scala.util.Using
 import zio.ZIO
 
 import com.tjclp.xlcr.v2.transform.{ Conversion, TransformError }
-import com.tjclp.xlcr.v2.types.{ Content, Mime }
+import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, Mime }
 import com.tjclp.xlcr.utils.aspose.AsposeLicense
 import com.tjclp.xlcr.utils.resource.ResourceWrappers.CleanupWrapper
 
@@ -60,14 +60,17 @@ given asposeDocToPdf: Conversion[Mime.Doc, Mime.Pdf] with
 // Word format conversions (legacy <-> modern)
 // =============================================================================
 
-private def convertWordDoc[I <: Mime, O <: Mime](
+private[aspose] def convertWordDoc[I <: Mime, O <: Mime](
   input: Content[I],
   saveFormat: Int,
-  outputMime: O
+  outputMime: O,
+  options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Content[O]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
-    val doc = new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
+    val loadOpts = new com.aspose.words.LoadOptions()
+    options.password.foreach(loadOpts.setPassword)
+    val doc = new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray), loadOpts)
     Using.resource(new CleanupWrapper(doc)) { wrapper =>
       val out = new ByteArrayOutputStream()
       wrapper.resource.save(out, saveFormat)
@@ -174,13 +177,20 @@ given asposeOdsToPdf: Conversion[Mime.Ods, Mime.Pdf] with
 // =============================================================================
 
 private def convertWorkbookToHtml[M <: Mime](
-  input: Content[M]
+  input: Content[M],
+  options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Content[Mime.Html]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
-    val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-    val opts     = new com.aspose.cells.HtmlSaveOptions()
-    opts.setExportImagesAsBase64(true)
+    val loadOpts = new com.aspose.cells.LoadOptions()
+    options.password.foreach(loadOpts.setPassword)
+    val workbook =
+      new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray), loadOpts)
+    if options.evaluateFormulas then
+      try workbook.calculateFormula()
+      catch case _: Exception => ()
+    val opts = new com.aspose.cells.HtmlSaveOptions()
+    opts.setExportImagesAsBase64(options.embedResources)
     val out = new ByteArrayOutputStream()
     workbook.save(out, opts)
     Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
@@ -210,17 +220,128 @@ given asposeOdsToHtml: Conversion[Mime.Ods, Mime.Html] with
 // Excel format conversions (legacy <-> modern)
 // =============================================================================
 
-private def convertWorkbook[I <: Mime, O <: Mime](
+private[aspose] def convertWorkbook[I <: Mime, O <: Mime](
   input: Content[I],
   saveFormat: Int,
-  outputMime: O
+  outputMime: O,
+  options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Content[O]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
-    val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
-    val out      = new ByteArrayOutputStream()
+    val loadOpts = new com.aspose.cells.LoadOptions()
+    options.password.foreach(loadOpts.setPassword)
+    val workbook =
+      new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray), loadOpts)
+    if options.evaluateFormulas then
+      try workbook.calculateFormula()
+      catch case _: Exception => ()
+    val out = new ByteArrayOutputStream()
     workbook.save(out, saveFormat)
     Content[O](out.toByteArray, outputMime, input.metadata)
+  }.mapError(TransformError.fromThrowable)
+
+// Options-aware Excel -> PDF helper (used by dispatch layer)
+private[aspose] def convertWorkbookToPdf[I <: Mime](
+  input: Content[I],
+  outputMime: Mime.Pdf,
+  options: ConvertOptions
+): ZIO[Any, TransformError, Content[Mime.Pdf]] =
+  ZIO.attempt {
+    AsposeLicense.initializeIfNeeded()
+    val loadOpts = new com.aspose.cells.LoadOptions()
+    options.password.foreach(loadOpts.setPassword)
+    val workbook =
+      new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray), loadOpts)
+
+    if options.evaluateFormulas then
+      try workbook.calculateFormula()
+      catch case _: Exception => ()
+
+    val sheets = workbook.getWorksheets
+    for i <- 0 until sheets.getCount do
+      val ws        = sheets.get(i)
+      val pageSetup = ws.getPageSetup
+
+      options.paperSize.foreach(ps => pageSetup.setPaperSize(ps.asposeCellsValue))
+      options.landscape.foreach { isLandscape =>
+        pageSetup.setOrientation(
+          if isLandscape then com.aspose.cells.PageOrientationType.LANDSCAPE
+          else com.aspose.cells.PageOrientationType.PORTRAIT
+        )
+      }
+
+    // Hide sheets not in the selection
+    if options.sheetNames.nonEmpty then
+      for i <- 0 until sheets.getCount do
+        val ws = sheets.get(i)
+        if !options.sheetNames.contains(ws.getName) then ws.setVisible(false)
+
+    val pdfSaveOpts = new com.aspose.cells.PdfSaveOptions()
+    if options.oneSheetPerPage then pdfSaveOpts.setOnePagePerSheet(true)
+
+    val out = new ByteArrayOutputStream()
+    workbook.save(out, pdfSaveOpts)
+    Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
+  }.mapError(TransformError.fromThrowable)
+
+// Options-aware PowerPoint -> HTML helper (used by dispatch layer)
+private[aspose] def convertPresentationToHtml[I <: Mime](
+  input: Content[I],
+  options: ConvertOptions
+): ZIO[Any, TransformError, Content[Mime.Html]] =
+  ZIO.attempt {
+    AsposeLicense.initializeIfNeeded()
+    val loadOpts = new com.aspose.slides.LoadOptions()
+    options.password.foreach(loadOpts.setPassword)
+    val pres =
+      new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray), loadOpts)
+    var stripped: Option[com.aspose.slides.Presentation] = None
+    try
+      val target = if options.stripMasters then
+        val blank = new com.aspose.slides.Presentation()
+        stripped = Some(blank)
+        if blank.getSlides.size() > 0 then blank.getSlides.removeAt(0)
+        for i <- 0 until pres.getSlides.size() do
+          blank.getSlides.addClone(pres.getSlides.get_Item(i))
+        blank
+      else
+        pres
+
+      val out = new ByteArrayOutputStream()
+      target.save(out, com.aspose.slides.SaveFormat.Html)
+      Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
+    finally
+      stripped.foreach(_.dispose())
+      pres.dispose()
+  }.mapError(TransformError.fromThrowable)
+
+// Options-aware PDF -> HTML helper (used by dispatch layer)
+private[aspose] def convertPdfToHtml(
+  input: Content[Mime.Pdf],
+  options: ConvertOptions
+): ZIO[Any, TransformError, Content[Mime.Html]] =
+  ZIO.attempt {
+    AsposeLicense.initializeIfNeeded()
+    val document = options.password match
+      case Some(pwd) =>
+        new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray), pwd)
+      case None =>
+        new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray))
+    try
+      val saveOptions = new com.aspose.pdf.HtmlSaveOptions()
+      saveOptions.setFixedLayout(!options.flowingLayout)
+      if options.embedResources then
+        saveOptions.setPartsEmbeddingMode(
+          com.aspose.pdf.HtmlSaveOptions.PartsEmbeddingModes.EmbedAllIntoHtml
+        )
+        saveOptions.setRasterImagesSavingMode(
+          com.aspose.pdf.HtmlSaveOptions.RasterImagesSavingModes.AsEmbeddedPartsOfPngPageBackground
+        )
+      val out = new ByteArrayOutputStream()
+      document.save(out, saveOptions)
+      Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
+    finally
+      document.close()
   }.mapError(TransformError.fromThrowable)
 
 given asposeXlsToXlsx: Conversion[Mime.Xls, Mime.Xlsx] with
@@ -394,11 +515,15 @@ given asposeHtmlToPpt: Conversion[Mime.Html, Mime.Ppt] with
 private def convertPresentation[I <: Mime, O <: Mime](
   input: Content[I],
   saveFormat: Int,
-  outputMime: O
+  outputMime: O,
+  options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Content[O]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
-    val pres = new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
+    val loadOpts = new com.aspose.slides.LoadOptions()
+    options.password.foreach(loadOpts.setPassword)
+    val pres =
+      new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray), loadOpts)
     try
       val bytes = savePresentationToBytes(pres, saveFormat)
       Content[O](bytes, outputMime, input.metadata)

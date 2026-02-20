@@ -5,6 +5,8 @@ import java.nio.file.Path
 import cats.syntax.all.*
 import com.monovore.decline.*
 
+import com.tjclp.xlcr.v2.types.{ ConvertOptions, PaperSize }
+
 /**
  * Decline-based CLI commands for XLCR v2.
  *
@@ -22,7 +24,8 @@ object Commands:
     output: Path,
     backend: Option[Backend] = None,
     verbose: Boolean = false,
-    extensionOnly: Boolean = false
+    extensionOnly: Boolean = false,
+    options: ConvertOptions = ConvertOptions()
   )
 
   /** Arguments for the split command */
@@ -32,7 +35,8 @@ object Commands:
     backend: Option[Backend] = None,
     verbose: Boolean = false,
     extensionOnly: Boolean = false,
-    extract: Boolean = false
+    extract: Boolean = false,
+    options: ConvertOptions = ConvertOptions()
   )
 
   /** Arguments for the info command */
@@ -140,11 +144,104 @@ object Commands:
         s"Unknown backend: $other (expected: aspose, libreoffice, xlcr)".invalidNel
 
   // ============================================================================
+  // Conversion Options
+  // ============================================================================
+
+  private val passwordOpt: Opts[Option[String]] =
+    Opts.option[String]("password", help = "Password for encrypted documents").orNone
+
+  private val noEvalFormulasFlag: Opts[Boolean] =
+    Opts.flag("no-evaluate-formulas", help = "Skip formula evaluation before conversion").orFalse
+
+  private val oneSheetPerPageFlag: Opts[Boolean] =
+    Opts.flag("one-sheet-per-page", help = "Output one sheet per page in PDF").orFalse
+
+  private val landscapeFlag: Opts[Option[Boolean]] =
+    Opts
+      .flag("landscape", help = "Force landscape orientation")
+      .map(_ => Some(true))
+      .orElse(
+        Opts.flag("portrait", help = "Force portrait orientation").map(_ => Some(false))
+      )
+      .orElse(Opts(None))
+
+  private val paperSizeOpt: Opts[Option[PaperSize]] =
+    Opts
+      .option[String](
+        "paper-size",
+        help = "Paper size: a4, letter, legal, a3, a5, tabloid"
+      )
+      .mapValidated { s =>
+        PaperSize.fromString(s) match
+          case Some(ps) => ps.validNel
+          case None     => s"Unknown paper size: $s".invalidNel
+      }
+      .orNone
+
+  private val sheetNamesOpt: Opts[List[String]] =
+    Opts.options[String]("sheet", help = "Sheet name to include (repeatable)").orEmpty.map(_.toList)
+
+  private val excludeHiddenFlag: Opts[Boolean] =
+    Opts.flag("exclude-hidden", help = "Exclude hidden sheets").orFalse
+
+  private val stripMastersFlag: Opts[Boolean] =
+    Opts.flag("strip-masters", help = "Strip master/layout slides from PowerPoint").orFalse
+
+  private val fixedLayoutFlag: Opts[Boolean] =
+    Opts.flag("fixed-layout", help = "Use fixed layout for PDF to HTML (default: flowing)").orFalse
+
+  private val noEmbedResourcesFlag: Opts[Boolean] =
+    Opts
+      .flag("no-embed-resources", help = "Don't embed resources into HTML output")
+      .orFalse
+
+  private val convertOptionsOpts: Opts[ConvertOptions] =
+    (
+      passwordOpt,
+      noEvalFormulasFlag,
+      oneSheetPerPageFlag,
+      landscapeFlag,
+      paperSizeOpt,
+      sheetNamesOpt,
+      excludeHiddenFlag,
+      stripMastersFlag,
+      fixedLayoutFlag,
+      noEmbedResourcesFlag
+    ).mapN {
+      (
+        password,
+        noEvalFormulas,
+        oneSheet,
+        landscape,
+        paper,
+        sheets,
+        exclHidden,
+        stripM,
+        fixedLayout,
+        noEmbed
+      ) =>
+        ConvertOptions(
+          password = password,
+          evaluateFormulas = !noEvalFormulas,
+          oneSheetPerPage = oneSheet,
+          landscape = landscape,
+          paperSize = paper,
+          sheetNames = sheets,
+          excludeHidden = exclHidden,
+          stripMasters = stripM,
+          flowingLayout = !fixedLayout,
+          embedResources = !noEmbed
+        )
+    }
+
+  // ============================================================================
   // Subcommands
   // ============================================================================
 
   private val convertOpts: Opts[ConvertArgs] =
-    (inputOpt, outputOpt, backendOpt, verboseFlag, extensionOnlyFlag).mapN(ConvertArgs.apply)
+    (inputOpt, outputOpt, backendOpt, verboseFlag, extensionOnlyFlag, convertOptionsOpts).mapN(
+      ConvertArgs.apply
+    )
 
   val convertCmd: Opts[CliCommand] =
     Opts.subcommand(
@@ -153,9 +250,15 @@ object Commands:
     )(convertOpts.map(CliCommand.Convert.apply))
 
   private val splitOpts: Opts[SplitArgs] =
-    (inputOpt, outputDirOpt, backendOpt, verboseFlag, extensionOnlyFlag, extractFlag).mapN(
-      SplitArgs.apply
-    )
+    (
+      inputOpt,
+      outputDirOpt,
+      backendOpt,
+      verboseFlag,
+      extensionOnlyFlag,
+      extractFlag,
+      convertOptionsOpts
+    ).mapN(SplitArgs.apply)
 
   val splitCmd: Opts[CliCommand] =
     Opts.subcommand(

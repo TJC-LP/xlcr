@@ -9,7 +9,7 @@ import scala.util.Using
 import zio.{ Chunk, ZIO }
 
 import com.tjclp.xlcr.v2.transform.{ DynamicSplitter, Splitter, TransformError }
-import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Fragment, Mime }
+import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Fragment, Mime }
 import com.tjclp.xlcr.utils.aspose.AsposeLicense
 import com.tjclp.xlcr.compat.aspose.AsposeWorkbook
 import com.tjclp.xlcr.utils.resource.ResourceWrappers.DisposableWrapper
@@ -59,29 +59,41 @@ given asposeOdsSheetSplitter: Splitter[Mime.Ods, Mime.Ods] with
   def split(input: Content[Mime.Ods]): ZIO[Any, TransformError, Chunk[Fragment[Mime.Ods]]] =
     splitExcelWorkbook(input, Mime.ods, com.aspose.cells.FileFormatType.ODS)
 
-// Helper function for Excel splitting
-private def splitExcelWorkbook[M <: Mime](
+// Helper function for Excel splitting (options-aware)
+private[aspose] def splitExcelWorkbook[M <: Mime](
   input: Content[M],
   outputMime: M,
-  fileFormatType: Int
+  fileFormatType: Int,
+  options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Chunk[Fragment[M]]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
 
     Using.Manager { use =>
+      val loadOpts = new com.aspose.cells.LoadOptions()
+      options.password.foreach(loadOpts.setPassword)
       val srcInputStream = use(new ByteArrayInputStream(input.data.toArray))
-      val srcWb          = new AsposeWorkbook(srcInputStream)
+      val srcWb          = new AsposeWorkbook(srcInputStream, loadOpts)
       use(new DisposableWrapper(srcWb))
 
       // Calculate all formulas while all sheets are present so cross-sheet
       // references resolve correctly (e.g. =Data!A1 in a Summary sheet).
-      try srcWb.calculateFormula()
-      catch case _: Exception => ()
+      if options.evaluateFormulas then
+        try srcWb.calculateFormula()
+        catch case _: Exception => ()
 
       val sheets = srcWb.getWorksheets
       val total  = sheets.getCount
 
-      val fragments = (0 until total).map { idx =>
+      // Filter sheets based on options
+      val indicesToSplit = (0 until total).filter { idx =>
+        val ws        = sheets.get(idx)
+        val nameMatch = options.sheetNames.isEmpty || options.sheetNames.contains(ws.getName)
+        val visMatch  = !options.excludeHidden || ws.isVisible
+        nameMatch && visMatch
+      }
+
+      val fragments = indicesToSplit.zipWithIndex.map { case (idx, fragIdx) =>
         val srcSheet  = sheets.get(idx)
         val sheetName = srcSheet.getName
 
@@ -112,7 +124,7 @@ private def splitExcelWorkbook[M <: Mime](
 
           val content =
             Content.fromChunk(Chunk.fromArray(baos.toByteArray), outputMime, input.metadata)
-          Fragment(content, idx, Some(sheetName))
+          Fragment(content, fragIdx, Some(sheetName))
         }.get
       }
 
