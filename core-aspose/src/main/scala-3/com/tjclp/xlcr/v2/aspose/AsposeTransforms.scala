@@ -37,6 +37,8 @@ object AsposeTransforms:
   private val JPEG     = "image/jpeg"
   private val EML      = "message/rfc822"
   private val MSG      = "application/vnd.ms-outlook"
+  private val DOCM     = "application/vnd.ms-word.document.macroenabled.12"
+  private val PPTM     = "application/vnd.ms-powerpoint.presentation.macroenabled.12"
   private val ZIP      = "application/zip"
   private val SEVENZIP = "application/x-7z-compressed"
 
@@ -62,6 +64,20 @@ object AsposeTransforms:
       case (DOC, PDF) =>
         asposeDocToPdf.convert(input.asInstanceOf[Content[Mime.Doc]]).map(widen)
 
+      // Word format conversions
+      case (DOC, DOCX) =>
+        asposeDocToDocx.convert(input.asInstanceOf[Content[Mime.Doc]]).map(widen)
+      case (DOCX, DOC) =>
+        asposeDocxToDoc.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+      case (DOCM, DOCX) =>
+        asposeDocmToDocx.convert(input.asInstanceOf[Content[Mime.Docm]]).map(widen)
+      case (DOCM, DOC) =>
+        asposeDocmToDoc.convert(input.asInstanceOf[Content[Mime.Docm]]).map(widen)
+      case (DOC, DOCM) =>
+        asposeDocToDocm.convert(input.asInstanceOf[Content[Mime.Doc]]).map(widen)
+      case (DOCX, DOCM) =>
+        asposeDocxToDocm.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+
       // Excel -> PDF
       case (XLSX, PDF) =>
         asposeXlsxToPdf.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
@@ -86,6 +102,24 @@ object AsposeTransforms:
       case (ODS, HTML) =>
         asposeOdsToHtml.convert(input.asInstanceOf[Content[Mime.Ods]]).map(widen)
 
+      // Excel format conversions
+      case (XLS, XLSX) =>
+        asposeXlsToXlsx.convert(input.asInstanceOf[Content[Mime.Xls]]).map(widen)
+      case (XLSX, XLS) =>
+        asposeXlsxToXls.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+      case (XLSM, XLSX) =>
+        asposeXlsmToXlsx.convert(input.asInstanceOf[Content[Mime.Xlsm]]).map(widen)
+      case (XLSB, XLSX) =>
+        asposeXlsbToXlsx.convert(input.asInstanceOf[Content[Mime.Xlsb]]).map(widen)
+      case (XLSX, XLSM) =>
+        asposeXlsxToXlsm.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+      case (XLSX, XLSB) =>
+        asposeXlsxToXlsb.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+      case (ODS, XLSX) =>
+        asposeOdsToXlsx.convert(input.asInstanceOf[Content[Mime.Ods]]).map(widen)
+      case (XLSX, ODS) =>
+        asposeXlsxToOds.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+
       // PowerPoint -> PDF
       case (PPTX, PDF) =>
         asposePptxToPdf.convert(input.asInstanceOf[Content[Mime.Pptx]]).map(widen)
@@ -101,6 +135,16 @@ object AsposeTransforms:
         asposeHtmlToPptx.convert(input.asInstanceOf[Content[Mime.Html]]).map(widen)
       case (HTML, PPT) =>
         asposeHtmlToPpt.convert(input.asInstanceOf[Content[Mime.Html]]).map(widen)
+
+      // PowerPoint format conversions
+      case (PPT, PPTX) =>
+        asposePptToPptx.convert(input.asInstanceOf[Content[Mime.Ppt]]).map(widen)
+      case (PPTX, PPT) =>
+        asposePptxToPpt.convert(input.asInstanceOf[Content[Mime.Pptx]]).map(widen)
+      case (PPTM, PPTX) =>
+        asposePptmToPptx.convert(input.asInstanceOf[Content[Mime.Pptm]]).map(widen)
+      case (PPTM, PPT) =>
+        asposePptmToPpt.convert(input.asInstanceOf[Content[Mime.Pptm]]).map(widen)
 
       // PDF -> HTML/PowerPoint
       case (PDF, HTML) =>
@@ -147,6 +191,13 @@ object AsposeTransforms:
     // Word -> PDF
     (DOCX, PDF),
     (DOC, PDF),
+    // Word format conversions
+    (DOC, DOCX),
+    (DOCX, DOC),
+    (DOCM, DOCX),
+    (DOCM, DOC),
+    (DOC, DOCM),
+    (DOCX, DOCM),
     // Excel -> PDF
     (XLSX, PDF),
     (XLS, PDF),
@@ -159,6 +210,15 @@ object AsposeTransforms:
     (XLSM, HTML),
     (XLSB, HTML),
     (ODS, HTML),
+    // Excel format conversions
+    (XLS, XLSX),
+    (XLSX, XLS),
+    (XLSM, XLSX),
+    (XLSB, XLSX),
+    (XLSX, XLSM),
+    (XLSX, XLSB),
+    (ODS, XLSX),
+    (XLSX, ODS),
     // PowerPoint -> PDF
     (PPTX, PDF),
     (PPT, PDF),
@@ -167,6 +227,11 @@ object AsposeTransforms:
     (PPT, HTML),
     (HTML, PPTX),
     (HTML, PPT),
+    // PowerPoint format conversions
+    (PPT, PPTX),
+    (PPTX, PPT),
+    (PPTM, PPTX),
+    (PPTM, PPT),
     // PDF -> HTML/PowerPoint
     (PDF, HTML),
     (PDF, PPTX),
