@@ -60,7 +60,7 @@ given asposeDocToPdf: Conversion[Mime.Doc, Mime.Pdf] with
 // Word format conversions (legacy <-> modern)
 // =============================================================================
 
-private def convertWordDoc[I <: Mime, O <: Mime](
+private[aspose] def convertWordDoc[I <: Mime, O <: Mime](
   input: Content[I],
   saveFormat: Int,
   outputMime: O,
@@ -220,7 +220,7 @@ given asposeOdsToHtml: Conversion[Mime.Ods, Mime.Html] with
 // Excel format conversions (legacy <-> modern)
 // =============================================================================
 
-private def convertWorkbook[I <: Mime, O <: Mime](
+private[aspose] def convertWorkbook[I <: Mime, O <: Mime](
   input: Content[I],
   saveFormat: Int,
   outputMime: O,
@@ -295,9 +295,11 @@ private[aspose] def convertPresentationToHtml[I <: Mime](
     options.password.foreach(loadOpts.setPassword)
     val pres =
       new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray), loadOpts)
+    var stripped: Option[com.aspose.slides.Presentation] = None
     try
       val target = if options.stripMasters then
         val blank = new com.aspose.slides.Presentation()
+        stripped = Some(blank)
         if blank.getSlides.size() > 0 then blank.getSlides.removeAt(0)
         for i <- 0 until pres.getSlides.size() do
           blank.getSlides.addClone(pres.getSlides.get_Item(i))
@@ -309,6 +311,7 @@ private[aspose] def convertPresentationToHtml[I <: Mime](
       target.save(out, com.aspose.slides.SaveFormat.Html)
       Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
     finally
+      stripped.foreach(_.dispose())
       pres.dispose()
   }.mapError(TransformError.fromThrowable)
 

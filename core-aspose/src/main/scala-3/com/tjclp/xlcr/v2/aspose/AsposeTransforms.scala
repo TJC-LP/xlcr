@@ -64,9 +64,19 @@ object AsposeTransforms:
     (input.mime.mimeType, to.mimeType) match
       // Word -> PDF
       case (DOCX, PDF) =>
-        asposeDocxToPdf.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+        convertWordDoc(
+          input.asInstanceOf[Content[Mime.Docx]],
+          com.aspose.words.SaveFormat.PDF,
+          Mime.pdf,
+          options
+        ).map(widen)
       case (DOC, PDF) =>
-        asposeDocToPdf.convert(input.asInstanceOf[Content[Mime.Doc]]).map(widen)
+        convertWordDoc(
+          input.asInstanceOf[Content[Mime.Doc]],
+          com.aspose.words.SaveFormat.PDF,
+          Mime.pdf,
+          options
+        ).map(widen)
 
       // Word format conversions
       case (DOC, DOCX) =>
@@ -108,21 +118,61 @@ object AsposeTransforms:
 
       // Excel format conversions
       case (XLS, XLSX) =>
-        asposeXlsToXlsx.convert(input.asInstanceOf[Content[Mime.Xls]]).map(widen)
+        convertWorkbook(
+          input.asInstanceOf[Content[Mime.Xls]],
+          com.aspose.cells.SaveFormat.XLSX,
+          Mime.xlsx,
+          options
+        ).map(widen)
       case (XLSX, XLS) =>
-        asposeXlsxToXls.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+        convertWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsx]],
+          com.aspose.cells.SaveFormat.EXCEL_97_TO_2003,
+          Mime.xls,
+          options
+        ).map(widen)
       case (XLSM, XLSX) =>
-        asposeXlsmToXlsx.convert(input.asInstanceOf[Content[Mime.Xlsm]]).map(widen)
+        convertWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsm]],
+          com.aspose.cells.SaveFormat.XLSX,
+          Mime.xlsx,
+          options
+        ).map(widen)
       case (XLSB, XLSX) =>
-        asposeXlsbToXlsx.convert(input.asInstanceOf[Content[Mime.Xlsb]]).map(widen)
+        convertWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsb]],
+          com.aspose.cells.SaveFormat.XLSX,
+          Mime.xlsx,
+          options
+        ).map(widen)
       case (XLSX, XLSM) =>
-        asposeXlsxToXlsm.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+        convertWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsx]],
+          com.aspose.cells.SaveFormat.XLSM,
+          Mime.xlsm,
+          options
+        ).map(widen)
       case (XLSX, XLSB) =>
-        asposeXlsxToXlsb.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+        convertWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsx]],
+          com.aspose.cells.SaveFormat.XLSB,
+          Mime.xlsb,
+          options
+        ).map(widen)
       case (ODS, XLSX) =>
-        asposeOdsToXlsx.convert(input.asInstanceOf[Content[Mime.Ods]]).map(widen)
+        convertWorkbook(
+          input.asInstanceOf[Content[Mime.Ods]],
+          com.aspose.cells.SaveFormat.XLSX,
+          Mime.xlsx,
+          options
+        ).map(widen)
       case (XLSX, ODS) =>
-        asposeXlsxToOds.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+        convertWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsx]],
+          com.aspose.cells.SaveFormat.ODS,
+          Mime.ods,
+          options
+        ).map(widen)
 
       // PowerPoint -> PDF
       case (PPTX, PDF) =>
