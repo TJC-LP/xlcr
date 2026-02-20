@@ -141,3 +141,58 @@ given libreofficeRtfToPdf: Conversion[Mime.Rtf, Mime.Pdf] with
   def convert(input: Content[Mime.Rtf]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     convertWithLibreOffice(input.data.toArray, "rtf", "pdf")
       .map(bytes => Content[Mime.Pdf](bytes, Mime.pdf, input.metadata))
+
+// =============================================================================
+// Format conversions (legacy <-> modern)
+// =============================================================================
+
+// Word
+given libreofficeDocToDocx: Conversion[Mime.Doc, Mime.Docx] with
+  override def name = "LibreOffice.DocToDocx"
+  def convert(input: Content[Mime.Doc]) =
+    convertWithLibreOffice(input.data.toArray, "doc", "docx")
+      .map(bytes => Content[Mime.Docx](bytes, Mime.docx, input.metadata))
+
+given libreofficeDocxToDoc: Conversion[Mime.Docx, Mime.Doc] with
+  override def name = "LibreOffice.DocxToDoc"
+  def convert(input: Content[Mime.Docx]) =
+    convertWithLibreOffice(input.data.toArray, "docx", "doc")
+      .map(bytes => Content[Mime.Doc](bytes, Mime.doc, input.metadata))
+
+// Excel
+given libreofficeXlsToXlsx: Conversion[Mime.Xls, Mime.Xlsx] with
+  override def name = "LibreOffice.XlsToXlsx"
+  def convert(input: Content[Mime.Xls]) =
+    convertWithLibreOffice(input.data.toArray, "xls", "xlsx")
+      .map(bytes => Content[Mime.Xlsx](bytes, Mime.xlsx, input.metadata))
+
+given libreofficeXlsxToXls: Conversion[Mime.Xlsx, Mime.Xls] with
+  override def name = "LibreOffice.XlsxToXls"
+  def convert(input: Content[Mime.Xlsx]) =
+    convertWithLibreOffice(input.data.toArray, "xlsx", "xls")
+      .map(bytes => Content[Mime.Xls](bytes, Mime.xls, input.metadata))
+
+given libreofficeOdsToXlsx: Conversion[Mime.Ods, Mime.Xlsx] with
+  override def name = "LibreOffice.OdsToXlsx"
+  def convert(input: Content[Mime.Ods]) =
+    convertWithLibreOffice(input.data.toArray, "ods", "xlsx")
+      .map(bytes => Content[Mime.Xlsx](bytes, Mime.xlsx, input.metadata))
+
+given libreofficeXlsxToOds: Conversion[Mime.Xlsx, Mime.Ods] with
+  override def name = "LibreOffice.XlsxToOds"
+  def convert(input: Content[Mime.Xlsx]) =
+    convertWithLibreOffice(input.data.toArray, "xlsx", "ods")
+      .map(bytes => Content[Mime.Ods](bytes, Mime.ods, input.metadata))
+
+// PowerPoint
+given libreofficePptToPptx: Conversion[Mime.Ppt, Mime.Pptx] with
+  override def name = "LibreOffice.PptToPptx"
+  def convert(input: Content[Mime.Ppt]) =
+    convertWithLibreOffice(input.data.toArray, "ppt", "pptx")
+      .map(bytes => Content[Mime.Pptx](bytes, Mime.pptx, input.metadata))
+
+given libreofficePptxToPpt: Conversion[Mime.Pptx, Mime.Ppt] with
+  override def name = "LibreOffice.PptxToPpt"
+  def convert(input: Content[Mime.Pptx]) =
+    convertWithLibreOffice(input.data.toArray, "pptx", "ppt")
+      .map(bytes => Content[Mime.Ppt](bytes, Mime.ppt, input.metadata))

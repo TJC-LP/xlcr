@@ -57,6 +57,55 @@ given asposeDocToPdf: Conversion[Mime.Doc, Mime.Pdf] with
     }.mapError(TransformError.fromThrowable)
 
 // =============================================================================
+// Word format conversions (legacy <-> modern)
+// =============================================================================
+
+private def convertWordDoc[I <: Mime, O <: Mime](
+  input: Content[I],
+  saveFormat: Int,
+  outputMime: O
+): ZIO[Any, TransformError, Content[O]] =
+  ZIO.attempt {
+    AsposeLicense.initializeIfNeeded()
+    val doc = new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray))
+    Using.resource(new CleanupWrapper(doc)) { wrapper =>
+      val out = new ByteArrayOutputStream()
+      wrapper.resource.save(out, saveFormat)
+      Content[O](out.toByteArray, outputMime, input.metadata)
+    }
+  }.mapError(TransformError.fromThrowable)
+
+given asposeDocToDocx: Conversion[Mime.Doc, Mime.Docx] with
+  override def name = "Aspose.Words.DocToDocx"
+  def convert(input: Content[Mime.Doc]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.DOCX, Mime.docx)
+
+given asposeDocxToDoc: Conversion[Mime.Docx, Mime.Doc] with
+  override def name = "Aspose.Words.DocxToDoc"
+  def convert(input: Content[Mime.Docx]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.DOC, Mime.doc)
+
+given asposeDocmToDocx: Conversion[Mime.Docm, Mime.Docx] with
+  override def name = "Aspose.Words.DocmToDocx"
+  def convert(input: Content[Mime.Docm]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.DOCX, Mime.docx)
+
+given asposeDocmToDoc: Conversion[Mime.Docm, Mime.Doc] with
+  override def name = "Aspose.Words.DocmToDoc"
+  def convert(input: Content[Mime.Docm]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.DOC, Mime.doc)
+
+given asposeDocToDocm: Conversion[Mime.Doc, Mime.Docm] with
+  override def name = "Aspose.Words.DocToDocm"
+  def convert(input: Content[Mime.Doc]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.DOCM, Mime.docm)
+
+given asposeDocxToDocm: Conversion[Mime.Docx, Mime.Docm] with
+  override def name = "Aspose.Words.DocxToDocm"
+  def convert(input: Content[Mime.Docx]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.DOCM, Mime.docm)
+
+// =============================================================================
 // Excel -> PDF
 // =============================================================================
 
@@ -156,6 +205,63 @@ given asposeXlsbToHtml: Conversion[Mime.Xlsb, Mime.Html] with
 given asposeOdsToHtml: Conversion[Mime.Ods, Mime.Html] with
   override def name                     = "Aspose.Cells.OdsToHtml"
   def convert(input: Content[Mime.Ods]) = convertWorkbookToHtml(input)
+
+// =============================================================================
+// Excel format conversions (legacy <-> modern)
+// =============================================================================
+
+private def convertWorkbook[I <: Mime, O <: Mime](
+  input: Content[I],
+  saveFormat: Int,
+  outputMime: O
+): ZIO[Any, TransformError, Content[O]] =
+  ZIO.attempt {
+    AsposeLicense.initializeIfNeeded()
+    val workbook = new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray))
+    val out      = new ByteArrayOutputStream()
+    workbook.save(out, saveFormat)
+    Content[O](out.toByteArray, outputMime, input.metadata)
+  }.mapError(TransformError.fromThrowable)
+
+given asposeXlsToXlsx: Conversion[Mime.Xls, Mime.Xlsx] with
+  override def name = "Aspose.Cells.XlsToXlsx"
+  def convert(input: Content[Mime.Xls]) =
+    convertWorkbook(input, com.aspose.cells.SaveFormat.XLSX, Mime.xlsx)
+
+given asposeXlsxToXls: Conversion[Mime.Xlsx, Mime.Xls] with
+  override def name = "Aspose.Cells.XlsxToXls"
+  def convert(input: Content[Mime.Xlsx]) =
+    convertWorkbook(input, com.aspose.cells.SaveFormat.EXCEL_97_TO_2003, Mime.xls)
+
+given asposeXlsmToXlsx: Conversion[Mime.Xlsm, Mime.Xlsx] with
+  override def name = "Aspose.Cells.XlsmToXlsx"
+  def convert(input: Content[Mime.Xlsm]) =
+    convertWorkbook(input, com.aspose.cells.SaveFormat.XLSX, Mime.xlsx)
+
+given asposeXlsbToXlsx: Conversion[Mime.Xlsb, Mime.Xlsx] with
+  override def name = "Aspose.Cells.XlsbToXlsx"
+  def convert(input: Content[Mime.Xlsb]) =
+    convertWorkbook(input, com.aspose.cells.SaveFormat.XLSX, Mime.xlsx)
+
+given asposeXlsxToXlsm: Conversion[Mime.Xlsx, Mime.Xlsm] with
+  override def name = "Aspose.Cells.XlsxToXlsm"
+  def convert(input: Content[Mime.Xlsx]) =
+    convertWorkbook(input, com.aspose.cells.SaveFormat.XLSM, Mime.xlsm)
+
+given asposeXlsxToXlsb: Conversion[Mime.Xlsx, Mime.Xlsb] with
+  override def name = "Aspose.Cells.XlsxToXlsb"
+  def convert(input: Content[Mime.Xlsx]) =
+    convertWorkbook(input, com.aspose.cells.SaveFormat.XLSB, Mime.xlsb)
+
+given asposeOdsToXlsx: Conversion[Mime.Ods, Mime.Xlsx] with
+  override def name = "Aspose.Cells.OdsToXlsx"
+  def convert(input: Content[Mime.Ods]) =
+    convertWorkbook(input, com.aspose.cells.SaveFormat.XLSX, Mime.xlsx)
+
+given asposeXlsxToOds: Conversion[Mime.Xlsx, Mime.Ods] with
+  override def name = "Aspose.Cells.XlsxToOds"
+  def convert(input: Content[Mime.Xlsx]) =
+    convertWorkbook(input, com.aspose.cells.SaveFormat.ODS, Mime.ods)
 
 private def slidesFileExtension(saveFormat: Int): String =
   if saveFormat == com.aspose.slides.SaveFormat.Pptx then ".pptx"
@@ -280,6 +386,45 @@ given asposeHtmlToPpt: Conversion[Mime.Html, Mime.Ppt] with
       finally
         pres.dispose()
     }.mapError(TransformError.fromThrowable)
+
+// =============================================================================
+// PowerPoint format conversions (legacy <-> modern)
+// =============================================================================
+
+private def convertPresentation[I <: Mime, O <: Mime](
+  input: Content[I],
+  saveFormat: Int,
+  outputMime: O
+): ZIO[Any, TransformError, Content[O]] =
+  ZIO.attempt {
+    AsposeLicense.initializeIfNeeded()
+    val pres = new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray))
+    try
+      val bytes = savePresentationToBytes(pres, saveFormat)
+      Content[O](bytes, outputMime, input.metadata)
+    finally
+      pres.dispose()
+  }.mapError(TransformError.fromThrowable)
+
+given asposePptToPptx: Conversion[Mime.Ppt, Mime.Pptx] with
+  override def name = "Aspose.Slides.PptToPptx"
+  def convert(input: Content[Mime.Ppt]) =
+    convertPresentation(input, com.aspose.slides.SaveFormat.Pptx, Mime.pptx)
+
+given asposePptxToPpt: Conversion[Mime.Pptx, Mime.Ppt] with
+  override def name = "Aspose.Slides.PptxToPpt"
+  def convert(input: Content[Mime.Pptx]) =
+    convertPresentation(input, com.aspose.slides.SaveFormat.Ppt, Mime.ppt)
+
+given asposePptmToPptx: Conversion[Mime.Pptm, Mime.Pptx] with
+  override def name = "Aspose.Slides.PptmToPptx"
+  def convert(input: Content[Mime.Pptm]) =
+    convertPresentation(input, com.aspose.slides.SaveFormat.Pptx, Mime.pptx)
+
+given asposePptmToPpt: Conversion[Mime.Pptm, Mime.Ppt] with
+  override def name = "Aspose.Slides.PptmToPpt"
+  def convert(input: Content[Mime.Pptm]) =
+    convertPresentation(input, com.aspose.slides.SaveFormat.Ppt, Mime.ppt)
 
 // =============================================================================
 // PDF -> HTML

@@ -84,6 +84,28 @@ object LibreOfficeTransforms:
       case (RTF, PDF) =>
         libreofficeRtfToPdf.convert(input.asInstanceOf[Content[Mime.Rtf]]).map(widen)
 
+      // Word format conversions
+      case (DOC, DOCX) =>
+        libreofficeDocToDocx.convert(input.asInstanceOf[Content[Mime.Doc]]).map(widen)
+      case (DOCX, DOC) =>
+        libreofficeDocxToDoc.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+
+      // Excel format conversions
+      case (XLS, XLSX) =>
+        libreofficeXlsToXlsx.convert(input.asInstanceOf[Content[Mime.Xls]]).map(widen)
+      case (XLSX, XLS) =>
+        libreofficeXlsxToXls.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+      case (ODS, XLSX) =>
+        libreofficeOdsToXlsx.convert(input.asInstanceOf[Content[Mime.Ods]]).map(widen)
+      case (XLSX, ODS) =>
+        libreofficeXlsxToOds.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+
+      // PowerPoint format conversions
+      case (PPT, PPTX) =>
+        libreofficePptToPptx.convert(input.asInstanceOf[Content[Mime.Ppt]]).map(widen)
+      case (PPTX, PPT) =>
+        libreofficePptxToPpt.convert(input.asInstanceOf[Content[Mime.Pptx]]).map(widen)
+
       case _ =>
         ZIO.fail(UnsupportedConversion(input.mime, to))
 
@@ -113,7 +135,18 @@ object LibreOfficeTransforms:
     (ODT, PDF),
     (ODP, PDF),
     // RTF -> PDF
-    (RTF, PDF)
+    (RTF, PDF),
+    // Word format conversions
+    (DOC, DOCX),
+    (DOCX, DOC),
+    // Excel format conversions
+    (XLS, XLSX),
+    (XLSX, XLS),
+    (ODS, XLSX),
+    (XLSX, ODS),
+    // PowerPoint format conversions
+    (PPT, PPTX),
+    (PPTX, PPT)
   )
 
   // ===========================================================================
