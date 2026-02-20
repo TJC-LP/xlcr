@@ -12,7 +12,6 @@ import scala.util.Using
 
 import zio.*
 
-import com.tjclp.xlcr.v2.aspose.AsposeTransforms
 import com.tjclp.xlcr.v2.cli.Commands.*
 import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
@@ -323,21 +322,7 @@ object XlcrMain extends ZIOAppDefault:
 
   private def checkAsposeStatus(): ZIO[Any, Throwable, Unit] =
     ZIO.attempt {
-      // Check if license env var is set
-      val envVarSet = Option(java.lang.System.getenv("ASPOSE_TOTAL_LICENSE_B64")).exists(_.nonEmpty)
-      val licFileExists = java.nio.file.Files.exists(
-        java.nio.file.Paths.get("Aspose.Java.Total.lic")
-      )
-      if envVarSet then
-        println("    License: Found (env ASPOSE_TOTAL_LICENSE_B64)")
-      else if licFileExists then
-        println("    License: Found (local file)")
-      else
-        println("    License: Evaluation mode (no license found)")
-
-      // List supported conversions
-      println("    Supported conversions: DOCX/DOC/XLSX/XLS/PPTX/PPT -> PDF, PDF <-> HTML, etc.")
-      println("    Supported splits: XLSX/XLS sheets, PPTX/PPT slides, PDF pages, DOCX sections")
+      BackendWiring.checkAsposeStatus()
     }.unit
 
   private def checkLibreOfficeStatus(): ZIO[Any, Throwable, Unit] =
@@ -396,9 +381,9 @@ object XlcrMain extends ZIOAppDefault:
 
   private object AsposeBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
-      AsposeTransforms.convert(input, to, options)
+      BackendWiring.asposeConvert(input, to, options)
     def split(input: Content[Mime], options: ConvertOptions) =
-      AsposeTransforms.split(input, options)
+      BackendWiring.asposeSplit(input, options)
 
   private object LibreOfficeBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =

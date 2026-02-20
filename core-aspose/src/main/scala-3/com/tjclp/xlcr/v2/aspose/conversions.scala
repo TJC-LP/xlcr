@@ -7,7 +7,6 @@ import zio.blocks.scope.Scope
 
 import com.tjclp.xlcr.v2.transform.{ Conversion, TransformError }
 import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, Mime }
-import com.tjclp.xlcr.utils.aspose.AsposeLicense
 
 /**
  * Pure given instances for Aspose-based document conversions.
@@ -30,7 +29,7 @@ given asposeDocxToPdf: Conversion[Mime.Docx, Mime.Pdf] with
 
   def convert(input: Content[Mime.Docx]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Words]
       Scope.global.scoped { scope =>
         import scope.*
         val doc = allocate(wordDocResource(
@@ -47,7 +46,7 @@ given asposeDocToPdf: Conversion[Mime.Doc, Mime.Pdf] with
 
   def convert(input: Content[Mime.Doc]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Words]
       Scope.global.scoped { scope =>
         import scope.*
         val doc = allocate(wordDocResource(
@@ -70,7 +69,7 @@ private[aspose] def convertWordDoc[I <: Mime, O <: Mime](
   options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Content[O]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Words]
     Scope.global.scoped { scope =>
       import scope.*
       val loadOpts = new com.aspose.words.LoadOptions()
@@ -123,7 +122,7 @@ given asposeXlsxToPdf: Conversion[Mime.Xlsx, Mime.Pdf] with
 
   def convert(input: Content[Mime.Xlsx]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Cells]
       Scope.global.scoped { scope =>
         import scope.*
         val workbook = allocate(cellsWorkbookResource(
@@ -140,7 +139,7 @@ given asposeXlsToPdf: Conversion[Mime.Xls, Mime.Pdf] with
 
   def convert(input: Content[Mime.Xls]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Cells]
       Scope.global.scoped { scope =>
         import scope.*
         val workbook = allocate(cellsWorkbookResource(
@@ -157,7 +156,7 @@ given asposeXlsmToPdf: Conversion[Mime.Xlsm, Mime.Pdf] with
 
   def convert(input: Content[Mime.Xlsm]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Cells]
       Scope.global.scoped { scope =>
         import scope.*
         val workbook = allocate(cellsWorkbookResource(
@@ -174,7 +173,7 @@ given asposeXlsbToPdf: Conversion[Mime.Xlsb, Mime.Pdf] with
 
   def convert(input: Content[Mime.Xlsb]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Cells]
       Scope.global.scoped { scope =>
         import scope.*
         val workbook = allocate(cellsWorkbookResource(
@@ -191,7 +190,7 @@ given asposeOdsToPdf: Conversion[Mime.Ods, Mime.Pdf] with
 
   def convert(input: Content[Mime.Ods]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Cells]
       Scope.global.scoped { scope =>
         import scope.*
         val workbook = allocate(cellsWorkbookResource(
@@ -212,7 +211,7 @@ private def convertWorkbookToHtml[M <: Mime](
   options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Content[Mime.Html]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Cells]
     Scope.global.scoped { scope =>
       import scope.*
       val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, options)))
@@ -260,7 +259,7 @@ private[aspose] def convertWorkbook[I <: Mime, O <: Mime](
   options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Content[O]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Cells]
     Scope.global.scoped { scope =>
       import scope.*
       val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, options)))
@@ -282,7 +281,7 @@ private[aspose] def convertWorkbookToPdf[I <: Mime](
   options: ConvertOptions
 ): ZIO[Any, TransformError, Content[Mime.Pdf]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Cells]
     Scope.global.scoped { scope =>
       import scope.*
       val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, options)))
@@ -328,7 +327,7 @@ private[aspose] def convertPresentationToHtml[I <: Mime](
   options: ConvertOptions
 ): ZIO[Any, TransformError, Content[Mime.Html]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Slides]
     Scope.global.scoped { scope =>
       import scope.*
       val loadOpts = new com.aspose.slides.LoadOptions()
@@ -361,7 +360,7 @@ private[aspose] def convertPdfToHtml(
   options: ConvertOptions
 ): ZIO[Any, TransformError, Content[Mime.Html]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Pdf]
     Scope.global.scoped { scope =>
       import scope.*
       val stream = new ByteArrayInputStream(input.data.toArray)
@@ -434,7 +433,7 @@ given asposePptxToPdf: Conversion[Mime.Pptx, Mime.Pdf] with
 
   def convert(input: Content[Mime.Pptx]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Slides]
       Scope.global.scoped { scope =>
         import scope.*
         val pres = allocate(presentationResource(
@@ -451,7 +450,7 @@ given asposePptToPdf: Conversion[Mime.Ppt, Mime.Pdf] with
 
   def convert(input: Content[Mime.Ppt]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Slides]
       Scope.global.scoped { scope =>
         import scope.*
         val pres = allocate(presentationResource(
@@ -472,7 +471,7 @@ given asposePptxToHtml: Conversion[Mime.Pptx, Mime.Html] with
 
   def convert(input: Content[Mime.Pptx]): ZIO[Any, TransformError, Content[Mime.Html]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Slides]
       Scope.global.scoped { scope =>
         import scope.*
         val pres = allocate(presentationResource(
@@ -489,7 +488,7 @@ given asposePptToHtml: Conversion[Mime.Ppt, Mime.Html] with
 
   def convert(input: Content[Mime.Ppt]): ZIO[Any, TransformError, Content[Mime.Html]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Slides]
       Scope.global.scoped { scope =>
         import scope.*
         val pres = allocate(presentationResource(
@@ -506,7 +505,7 @@ given asposeHtmlToPptx: Conversion[Mime.Html, Mime.Pptx] with
 
   def convert(input: Content[Mime.Html]): ZIO[Any, TransformError, Content[Mime.Pptx]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Slides]
       Scope.global.scoped { scope =>
         import scope.*
         val pres = allocate(presentationResource(new com.aspose.slides.Presentation()))
@@ -527,7 +526,7 @@ given asposeHtmlToPpt: Conversion[Mime.Html, Mime.Ppt] with
 
   def convert(input: Content[Mime.Html]): ZIO[Any, TransformError, Content[Mime.Ppt]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Slides]
       Scope.global.scoped { scope =>
         import scope.*
         val pres = allocate(presentationResource(new com.aspose.slides.Presentation()))
@@ -552,7 +551,7 @@ private def convertPresentation[I <: Mime, O <: Mime](
   options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Content[O]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Slides]
     Scope.global.scoped { scope =>
       import scope.*
       val loadOpts = new com.aspose.slides.LoadOptions()
@@ -595,7 +594,7 @@ given asposePdfToHtml: Conversion[Mime.Pdf, Mime.Html] with
 
   def convert(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Content[Mime.Html]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Pdf]
       Scope.global.scoped { scope =>
         import scope.*
         val document = allocate(pdfDocResource(
@@ -623,7 +622,7 @@ given asposePdfToPptx: Conversion[Mime.Pdf, Mime.Pptx] with
 
   def convert(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Content[Mime.Pptx]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Slides]
       Scope.global.scoped { scope =>
         import scope.*
         val pres = allocate(presentationResource(new com.aspose.slides.Presentation()))
@@ -642,7 +641,7 @@ given asposePdfToPpt: Conversion[Mime.Pdf, Mime.Ppt] with
 
   def convert(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Content[Mime.Ppt]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Slides]
       Scope.global.scoped { scope =>
         import scope.*
         val pres = allocate(presentationResource(new com.aspose.slides.Presentation()))
@@ -665,7 +664,7 @@ given asposePdfToPng: Conversion[Mime.Pdf, Mime.Png] with
 
   def convert(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Content[Mime.Png]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Pdf]
       Scope.global.scoped { scope =>
         import scope.*
         val document = allocate(pdfDocResource(
@@ -687,7 +686,7 @@ given asposePdfToJpeg: Conversion[Mime.Pdf, Mime.Jpeg] with
 
   def convert(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Content[Mime.Jpeg]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Pdf]
       Scope.global.scoped { scope =>
         import scope.*
         val document = allocate(pdfDocResource(
@@ -712,7 +711,7 @@ given asposePngToPdf: Conversion[Mime.Png, Mime.Pdf] with
 
   def convert(input: Content[Mime.Png]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Pdf]
       Scope.global.scoped { scope =>
         import scope.*
         val document = allocate(pdfDocResource(new com.aspose.pdf.Document()))
@@ -733,7 +732,7 @@ given asposeJpegToPdf: Conversion[Mime.Jpeg, Mime.Pdf] with
 
   def convert(input: Content[Mime.Jpeg]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Pdf]
       Scope.global.scoped { scope =>
         import scope.*
         val document = allocate(pdfDocResource(new com.aspose.pdf.Document()))
@@ -758,7 +757,7 @@ given asposeHtmlToPdf: Conversion[Mime.Html, Mime.Pdf] with
 
   def convert(input: Content[Mime.Html]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Pdf]
       Scope.global.scoped { scope =>
         import scope.*
         val htmlOptions = new com.aspose.pdf.HtmlLoadOptions()
@@ -780,7 +779,7 @@ given asposeEmlToPdf: Conversion[Mime.Eml, Mime.Pdf] with
 
   def convert(input: Content[Mime.Eml]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.requireAll[(Email, Words)]
       Scope.global.scoped { scope =>
         import scope.*
         // Load email message
@@ -803,7 +802,7 @@ given asposeMsgToPdf: Conversion[Mime.Msg, Mime.Pdf] with
 
   def convert(input: Content[Mime.Msg]): ZIO[Any, TransformError, Content[Mime.Pdf]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.requireAll[(Email, Words)]
       Scope.global.scoped { scope =>
         import scope.*
         val msg = com.aspose.email.MapiMessage.load(new ByteArrayInputStream(input.data.toArray))

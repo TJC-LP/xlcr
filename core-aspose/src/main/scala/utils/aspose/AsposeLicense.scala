@@ -20,7 +20,7 @@ object AsposeLicense {
   private val logger      = LoggerFactory.getLogger(getClass)
   private val initialized = new AtomicBoolean(false)
 
-  private final val TotalLicFile = "Aspose.Java.Total.lic"
+  private final val TotalLicFile = "Aspose.Total.Java.lic"
   private final val TotalEnvVar  = "ASPOSE_TOTAL_LICENSE_B64"
 
   /* ------------------------------ Products ------------------------------------ */
@@ -31,30 +31,30 @@ object AsposeLicense {
 
   object Product {
     case object Words
-        extends Product("Words", "Aspose.Java.Words.lic", "ASPOSE_WORDS_LICENSE_B64") {
+        extends Product("Words", "Aspose.Words.Java.lic", "ASPOSE_WORDS_LICENSE_B64") {
       def apply(b: Array[Byte]): Unit =
         new com.aspose.words.License().setLicense(new java.io.ByteArrayInputStream(b))
     }
     case object Cells
-        extends Product("Cells", "Aspose.Java.Cells.lic", "ASPOSE_CELLS_LICENSE_B64") {
+        extends Product("Cells", "Aspose.Cells.Java.lic", "ASPOSE_CELLS_LICENSE_B64") {
       def apply(b: Array[Byte]): Unit =
         new com.aspose.cells.License().setLicense(new java.io.ByteArrayInputStream(b))
     }
     case object Email
-        extends Product("Email", "Aspose.Java.Email.lic", "ASPOSE_EMAIL_LICENSE_B64") {
+        extends Product("Email", "Aspose.Email.Java.lic", "ASPOSE_EMAIL_LICENSE_B64") {
       def apply(b: Array[Byte]): Unit =
         new com.aspose.email.License().setLicense(new java.io.ByteArrayInputStream(b))
     }
     case object Slides
-        extends Product("Slides", "Aspose.Java.Slides.lic", "ASPOSE_SLIDES_LICENSE_B64") {
+        extends Product("Slides", "Aspose.Slides.Java.lic", "ASPOSE_SLIDES_LICENSE_B64") {
       def apply(b: Array[Byte]): Unit =
         new com.aspose.slides.License().setLicense(new java.io.ByteArrayInputStream(b))
     }
-    case object Pdf extends Product("Pdf", "Aspose.Java.Pdf.lic", "ASPOSE_PDF_LICENSE_B64") {
+    case object Pdf extends Product("Pdf", "Aspose.Pdf.Java.lic", "ASPOSE_PDF_LICENSE_B64") {
       def apply(b: Array[Byte]): Unit =
         new com.aspose.pdf.License().setLicense(new java.io.ByteArrayInputStream(b))
     }
-    case object Zip extends Product("Zip", "Aspose.Java.Zip.lic", "ASPOSE_ZIP_LICENSE_B64") {
+    case object Zip extends Product("Zip", "Aspose.Zip.Java.lic", "ASPOSE_ZIP_LICENSE_B64") {
       def apply(b: Array[Byte]): Unit =
         new com.aspose.zip.License().setLicense(new java.io.ByteArrayInputStream(b))
     }
