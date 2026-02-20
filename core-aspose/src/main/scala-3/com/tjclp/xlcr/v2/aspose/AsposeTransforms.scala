@@ -3,7 +3,7 @@ package com.tjclp.xlcr.v2.aspose
 import zio.{ Chunk, ZIO }
 
 import com.tjclp.xlcr.v2.transform.{ TransformError, UnsupportedConversion }
-import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Mime }
+import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Mime }
 
 /**
  * Stateless dispatch object for Aspose-based transforms.
@@ -56,7 +56,11 @@ object AsposeTransforms:
    * @return
    *   The converted content or UnsupportedConversion error
    */
-  def convert(input: Content[Mime], to: Mime): ZIO[Any, TransformError, Content[Mime]] =
+  def convert(
+    input: Content[Mime],
+    to: Mime,
+    options: ConvertOptions = ConvertOptions()
+  ): ZIO[Any, TransformError, Content[Mime]] =
     (input.mime.mimeType, to.mimeType) match
       // Word -> PDF
       case (DOCX, PDF) =>
@@ -78,29 +82,29 @@ object AsposeTransforms:
       case (DOCX, DOCM) =>
         asposeDocxToDocm.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
 
-      // Excel -> PDF
+      // Excel -> PDF (options-aware)
       case (XLSX, PDF) =>
-        asposeXlsxToPdf.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+        convertWorkbookToPdf(input.asInstanceOf[Content[Mime.Xlsx]], Mime.pdf, options).map(widen)
       case (XLS, PDF) =>
-        asposeXlsToPdf.convert(input.asInstanceOf[Content[Mime.Xls]]).map(widen)
+        convertWorkbookToPdf(input.asInstanceOf[Content[Mime.Xls]], Mime.pdf, options).map(widen)
       case (XLSM, PDF) =>
-        asposeXlsmToPdf.convert(input.asInstanceOf[Content[Mime.Xlsm]]).map(widen)
+        convertWorkbookToPdf(input.asInstanceOf[Content[Mime.Xlsm]], Mime.pdf, options).map(widen)
       case (XLSB, PDF) =>
-        asposeXlsbToPdf.convert(input.asInstanceOf[Content[Mime.Xlsb]]).map(widen)
+        convertWorkbookToPdf(input.asInstanceOf[Content[Mime.Xlsb]], Mime.pdf, options).map(widen)
       case (ODS, PDF) =>
-        asposeOdsToPdf.convert(input.asInstanceOf[Content[Mime.Ods]]).map(widen)
+        convertWorkbookToPdf(input.asInstanceOf[Content[Mime.Ods]], Mime.pdf, options).map(widen)
 
-      // Excel -> HTML
+      // Excel -> HTML (options-aware)
       case (XLSX, HTML) =>
-        asposeXlsxToHtml.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+        convertWorkbookToHtml(input.asInstanceOf[Content[Mime.Xlsx]], options).map(widen)
       case (XLS, HTML) =>
-        asposeXlsToHtml.convert(input.asInstanceOf[Content[Mime.Xls]]).map(widen)
+        convertWorkbookToHtml(input.asInstanceOf[Content[Mime.Xls]], options).map(widen)
       case (XLSM, HTML) =>
-        asposeXlsmToHtml.convert(input.asInstanceOf[Content[Mime.Xlsm]]).map(widen)
+        convertWorkbookToHtml(input.asInstanceOf[Content[Mime.Xlsm]], options).map(widen)
       case (XLSB, HTML) =>
-        asposeXlsbToHtml.convert(input.asInstanceOf[Content[Mime.Xlsb]]).map(widen)
+        convertWorkbookToHtml(input.asInstanceOf[Content[Mime.Xlsb]], options).map(widen)
       case (ODS, HTML) =>
-        asposeOdsToHtml.convert(input.asInstanceOf[Content[Mime.Ods]]).map(widen)
+        convertWorkbookToHtml(input.asInstanceOf[Content[Mime.Ods]], options).map(widen)
 
       // Excel format conversions
       case (XLS, XLSX) =>
@@ -126,11 +130,11 @@ object AsposeTransforms:
       case (PPT, PDF) =>
         asposePptToPdf.convert(input.asInstanceOf[Content[Mime.Ppt]]).map(widen)
 
-      // PowerPoint <-> HTML
+      // PowerPoint -> HTML (options-aware: strip-masters)
       case (PPTX, HTML) =>
-        asposePptxToHtml.convert(input.asInstanceOf[Content[Mime.Pptx]]).map(widen)
+        convertPresentationToHtml(input.asInstanceOf[Content[Mime.Pptx]], options).map(widen)
       case (PPT, HTML) =>
-        asposePptToHtml.convert(input.asInstanceOf[Content[Mime.Ppt]]).map(widen)
+        convertPresentationToHtml(input.asInstanceOf[Content[Mime.Ppt]], options).map(widen)
       case (HTML, PPTX) =>
         asposeHtmlToPptx.convert(input.asInstanceOf[Content[Mime.Html]]).map(widen)
       case (HTML, PPT) =>
@@ -146,9 +150,9 @@ object AsposeTransforms:
       case (PPTM, PPT) =>
         asposePptmToPpt.convert(input.asInstanceOf[Content[Mime.Pptm]]).map(widen)
 
-      // PDF -> HTML/PowerPoint
+      // PDF -> HTML/PowerPoint (options-aware)
       case (PDF, HTML) =>
-        asposePdfToHtml.convert(input.asInstanceOf[Content[Mime.Pdf]]).map(widen)
+        convertPdfToHtml(input.asInstanceOf[Content[Mime.Pdf]], options).map(widen)
       case (PDF, PPTX) =>
         asposePdfToPptx.convert(input.asInstanceOf[Content[Mime.Pdf]]).map(widen)
       case (PDF, PPT) =>
@@ -260,24 +264,47 @@ object AsposeTransforms:
    * @return
    *   Chunks of dynamic fragments or UnsupportedConversion error
    */
-  def split(input: Content[Mime]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
+  def split(
+    input: Content[Mime],
+    options: ConvertOptions = ConvertOptions()
+  ): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     input.mime.mimeType match
-      // Excel sheets
+      // Excel sheets (options-aware: sheetNames, excludeHidden, password)
       case XLSX =>
-        asposeXlsxSheetSplitter.split(input.asInstanceOf[Content[Mime.Xlsx]])
-          .map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
+        splitExcelWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsx]],
+          Mime.xlsx,
+          com.aspose.cells.FileFormatType.XLSX,
+          options
+        ).map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
       case XLS =>
-        asposeXlsSheetSplitter.split(input.asInstanceOf[Content[Mime.Xls]])
-          .map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
+        splitExcelWorkbook(
+          input.asInstanceOf[Content[Mime.Xls]],
+          Mime.xls,
+          com.aspose.cells.FileFormatType.EXCEL_97_TO_2003,
+          options
+        ).map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
       case XLSM =>
-        asposeXlsmSheetSplitter.split(input.asInstanceOf[Content[Mime.Xlsm]])
-          .map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
+        splitExcelWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsm]],
+          Mime.xlsm,
+          com.aspose.cells.FileFormatType.XLSM,
+          options
+        ).map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
       case XLSB =>
-        asposeXlsbSheetSplitter.split(input.asInstanceOf[Content[Mime.Xlsb]])
-          .map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
+        splitExcelWorkbook(
+          input.asInstanceOf[Content[Mime.Xlsb]],
+          Mime.xlsb,
+          com.aspose.cells.FileFormatType.XLSB,
+          options
+        ).map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
       case ODS =>
-        asposeOdsSheetSplitter.split(input.asInstanceOf[Content[Mime.Ods]])
-          .map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
+        splitExcelWorkbook(
+          input.asInstanceOf[Content[Mime.Ods]],
+          Mime.ods,
+          com.aspose.cells.FileFormatType.ODS,
+          options
+        ).map(_.map(f => DynamicFragment(widen(f.content), f.index, f.name)))
 
       // PowerPoint slides
       case PPTX =>

@@ -3,7 +3,7 @@ package com.tjclp.xlcr.v2.libreoffice
 import zio.{ Chunk, ZIO }
 
 import com.tjclp.xlcr.v2.transform.{ TransformError, UnsupportedConversion }
-import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Mime }
+import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Mime }
 
 /**
  * Stateless dispatch object for LibreOffice-based transforms.
@@ -50,7 +50,11 @@ object LibreOfficeTransforms:
    * @return
    *   The converted content or UnsupportedConversion error
    */
-  def convert(input: Content[Mime], to: Mime): ZIO[Any, TransformError, Content[Mime]] =
+  def convert(
+    input: Content[Mime],
+    to: Mime,
+    options: ConvertOptions = ConvertOptions()
+  ): ZIO[Any, TransformError, Content[Mime]] =
     (input.mime.mimeType, to.mimeType) match
       // Word -> PDF
       case (DOCX, PDF) =>

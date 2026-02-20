@@ -6,7 +6,7 @@ import com.tjclp.xlcr.v2.aspose.AsposeTransforms
 import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.v2.transform.{ TransformError, UnsupportedConversion }
-import com.tjclp.xlcr.v2.types.{ Content, DynamicFragment, Mime }
+import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Mime }
 
 /**
  * Unified transform dispatcher with automatic fallback.
@@ -47,10 +47,14 @@ object UnifiedTransforms:
    * @return
    *   The converted content or UnsupportedConversion error
    */
-  def convert(input: Content[Mime], to: Mime): ZIO[Any, TransformError, Content[Mime]] =
-    AsposeTransforms.convert(input, to).catchSome {
+  def convert(
+    input: Content[Mime],
+    to: Mime,
+    options: ConvertOptions = ConvertOptions()
+  ): ZIO[Any, TransformError, Content[Mime]] =
+    AsposeTransforms.convert(input, to, options).catchSome {
       case _: UnsupportedConversion =>
-        LibreOfficeTransforms.convert(input, to)
+        LibreOfficeTransforms.convert(input, to, options)
     }.catchSome {
       case _: UnsupportedConversion =>
         XlcrTransforms.convert(input, to)
@@ -79,8 +83,11 @@ object UnifiedTransforms:
    * @return
    *   Chunk of dynamic fragments or UnsupportedConversion error
    */
-  def split(input: Content[Mime]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
-    AsposeTransforms.split(input).catchSome {
+  def split(
+    input: Content[Mime],
+    options: ConvertOptions = ConvertOptions()
+  ): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
+    AsposeTransforms.split(input, options).catchSome {
       case _: UnsupportedConversion =>
         LibreOfficeTransforms.split(input)
     }.catchSome {

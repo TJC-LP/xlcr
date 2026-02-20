@@ -17,7 +17,7 @@ import com.tjclp.xlcr.v2.cli.Commands.*
 import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.v2.output.{ FragmentNaming, MimeExtensions, ZipBuilder }
-import com.tjclp.xlcr.v2.types.{ Content, Mime }
+import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, Mime }
 
 /**
  * XLCR CLI entry point with compile-time transform discovery.
@@ -129,8 +129,9 @@ object XlcrMain extends ZIOAppDefault:
       }
 
       // Perform conversion using selected backend
-      result <- selectBackend(args.backend).convert(content, outputMime).mapError { err =>
-        new RuntimeException(s"Conversion failed: ${err.message}")
+      result <- selectBackend(args.backend).convert(content, outputMime, args.options).mapError {
+        err =>
+          new RuntimeException(s"Conversion failed: ${err.message}")
       }
 
       // Write output file
@@ -179,7 +180,7 @@ object XlcrMain extends ZIOAppDefault:
       }
 
       // Perform split using selected backend
-      fragments <- selectBackend(args.backend).split(content).mapError { err =>
+      fragments <- selectBackend(args.backend).split(content, args.options).mapError { err =>
         new RuntimeException(s"Split failed: ${err.message}")
       }
 
@@ -381,29 +382,41 @@ object XlcrMain extends ZIOAppDefault:
   private trait BackendDispatch:
     def convert(
       input: Content[Mime],
-      to: Mime
+      to: Mime,
+      options: ConvertOptions = ConvertOptions()
     ): ZIO[Any, com.tjclp.xlcr.v2.transform.TransformError, Content[Mime]]
-    def split(input: Content[Mime]): ZIO[
+    def split(
+      input: Content[Mime],
+      options: ConvertOptions = ConvertOptions()
+    ): ZIO[
       Any,
       com.tjclp.xlcr.v2.transform.TransformError,
       Chunk[com.tjclp.xlcr.v2.types.DynamicFragment]
     ]
 
   private object AsposeBackend extends BackendDispatch:
-    def convert(input: Content[Mime], to: Mime) = AsposeTransforms.convert(input, to)
-    def split(input: Content[Mime])             = AsposeTransforms.split(input)
+    def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
+      AsposeTransforms.convert(input, to, options)
+    def split(input: Content[Mime], options: ConvertOptions) =
+      AsposeTransforms.split(input, options)
 
   private object LibreOfficeBackend extends BackendDispatch:
-    def convert(input: Content[Mime], to: Mime) = LibreOfficeTransforms.convert(input, to)
-    def split(input: Content[Mime])             = LibreOfficeTransforms.split(input)
+    def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
+      LibreOfficeTransforms.convert(input, to, options)
+    def split(input: Content[Mime], options: ConvertOptions) =
+      LibreOfficeTransforms.split(input)
 
   private object XlcrBackend extends BackendDispatch:
-    def convert(input: Content[Mime], to: Mime) = XlcrTransforms.convert(input, to)
-    def split(input: Content[Mime])             = XlcrTransforms.split(input)
+    def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
+      XlcrTransforms.convert(input, to)
+    def split(input: Content[Mime], options: ConvertOptions) =
+      XlcrTransforms.split(input)
 
   private object UnifiedBackend extends BackendDispatch:
-    def convert(input: Content[Mime], to: Mime) = UnifiedTransforms.convert(input, to)
-    def split(input: Content[Mime])             = UnifiedTransforms.split(input)
+    def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
+      UnifiedTransforms.convert(input, to, options)
+    def split(input: Content[Mime], options: ConvertOptions) =
+      UnifiedTransforms.split(input, options)
 
   // ============================================================================
   // Utility Functions
