@@ -43,10 +43,17 @@ object LibreOfficeTransforms:
   /**
    * Convert content to a target MIME type using LibreOffice.
    *
+   * The `options` parameter is accepted for interface compatibility with BackendDispatch but is not
+   * used by LibreOffice conversions. JODConverter's headless mode does not support fine-grained
+   * options like password, sheet selection, or paper size. Non-default options are logged as
+   * warnings at the dispatch layer.
+   *
    * @param input
    *   The input content to convert
    * @param to
    *   The target MIME type
+   * @param options
+   *   Conversion options (unused — present for API compatibility)
    * @return
    *   The converted content or UnsupportedConversion error
    */

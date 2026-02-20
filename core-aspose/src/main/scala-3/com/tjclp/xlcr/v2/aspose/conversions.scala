@@ -182,13 +182,8 @@ private def convertWorkbookToHtml[M <: Mime](
 ): ZIO[Any, TransformError, Content[Mime.Html]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
-    val loadOpts = new com.aspose.cells.LoadOptions()
-    options.password.foreach(loadOpts.setPassword)
-    val workbook =
-      new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray), loadOpts)
-    if options.evaluateFormulas then
-      try workbook.calculateFormula()
-      catch case _: Exception => ()
+    val workbook = loadCellsWorkbook(input, options)
+    safeCalculateFormulas(workbook, options)
     val opts = new com.aspose.cells.HtmlSaveOptions()
     opts.setExportImagesAsBase64(options.embedResources)
     val out = new ByteArrayOutputStream()
@@ -228,13 +223,8 @@ private[aspose] def convertWorkbook[I <: Mime, O <: Mime](
 ): ZIO[Any, TransformError, Content[O]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
-    val loadOpts = new com.aspose.cells.LoadOptions()
-    options.password.foreach(loadOpts.setPassword)
-    val workbook =
-      new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray), loadOpts)
-    if options.evaluateFormulas then
-      try workbook.calculateFormula()
-      catch case _: Exception => ()
+    val workbook = loadCellsWorkbook(input, options)
+    safeCalculateFormulas(workbook, options)
     val out = new ByteArrayOutputStream()
     workbook.save(out, saveFormat)
     Content[O](out.toByteArray, outputMime, input.metadata)
@@ -248,14 +238,8 @@ private[aspose] def convertWorkbookToPdf[I <: Mime](
 ): ZIO[Any, TransformError, Content[Mime.Pdf]] =
   ZIO.attempt {
     AsposeLicense.initializeIfNeeded()
-    val loadOpts = new com.aspose.cells.LoadOptions()
-    options.password.foreach(loadOpts.setPassword)
-    val workbook =
-      new com.aspose.cells.Workbook(new ByteArrayInputStream(input.data.toArray), loadOpts)
-
-    if options.evaluateFormulas then
-      try workbook.calculateFormula()
-      catch case _: Exception => ()
+    val workbook = loadCellsWorkbook(input, options)
+    safeCalculateFormulas(workbook, options)
 
     val sheets = workbook.getWorksheets
     for i <- 0 until sheets.getCount do
