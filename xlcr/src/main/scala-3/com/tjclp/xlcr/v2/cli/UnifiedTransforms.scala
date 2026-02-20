@@ -54,10 +54,18 @@ object UnifiedTransforms:
   ): ZIO[Any, TransformError, Content[Mime]] =
     AsposeTransforms.convert(input, to, options).catchSome {
       case _: UnsupportedConversion =>
-        LibreOfficeTransforms.convert(input, to, options)
+        ZIO.when(!options.isDefault)(
+          ZIO.logWarning(
+            s"Falling back to LibreOffice which ignores options: ${options.nonDefaultSummary}"
+          )
+        ) *> LibreOfficeTransforms.convert(input, to, options)
     }.catchSome {
       case _: UnsupportedConversion =>
-        XlcrTransforms.convert(input, to)
+        ZIO.when(!options.isDefault)(
+          ZIO.logWarning(
+            s"Falling back to XLCR Core which ignores options: ${options.nonDefaultSummary}"
+          )
+        ) *> XlcrTransforms.convert(input, to)
     }
 
   /**
@@ -89,10 +97,18 @@ object UnifiedTransforms:
   ): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     AsposeTransforms.split(input, options).catchSome {
       case _: UnsupportedConversion =>
-        LibreOfficeTransforms.split(input)
+        ZIO.when(!options.isDefault)(
+          ZIO.logWarning(
+            s"Falling back to LibreOffice which ignores split options: ${options.nonDefaultSummary}"
+          )
+        ) *> LibreOfficeTransforms.split(input)
     }.catchSome {
       case _: UnsupportedConversion =>
-        XlcrTransforms.split(input)
+        ZIO.when(!options.isDefault)(
+          ZIO.logWarning(
+            s"Falling back to XLCR Core which ignores split options: ${options.nonDefaultSummary}"
+          )
+        ) *> XlcrTransforms.split(input)
     }
 
   /**

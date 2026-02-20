@@ -402,15 +402,31 @@ object XlcrMain extends ZIOAppDefault:
 
   private object LibreOfficeBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
-      LibreOfficeTransforms.convert(input, to, options)
+      ZIO.when(!options.isDefault)(
+        ZIO.logWarning(
+          s"LibreOffice backend ignoring unsupported options: ${options.nonDefaultSummary}"
+        )
+      ) *> LibreOfficeTransforms.convert(input, to, options)
     def split(input: Content[Mime], options: ConvertOptions) =
-      LibreOfficeTransforms.split(input)
+      ZIO.when(!options.isDefault)(
+        ZIO.logWarning(
+          s"LibreOffice backend ignoring unsupported options: ${options.nonDefaultSummary}"
+        )
+      ) *> LibreOfficeTransforms.split(input)
 
   private object XlcrBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
-      XlcrTransforms.convert(input, to)
+      ZIO.when(!options.isDefault)(
+        ZIO.logWarning(
+          s"XLCR Core backend ignoring unsupported options: ${options.nonDefaultSummary}"
+        )
+      ) *> XlcrTransforms.convert(input, to)
     def split(input: Content[Mime], options: ConvertOptions) =
-      XlcrTransforms.split(input)
+      ZIO.when(!options.isDefault)(
+        ZIO.logWarning(
+          s"XLCR Core backend ignoring unsupported options: ${options.nonDefaultSummary}"
+        )
+      ) *> XlcrTransforms.split(input)
 
   private object UnifiedBackend extends BackendDispatch:
     def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =

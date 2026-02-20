@@ -70,22 +70,20 @@ private[aspose] def splitExcelWorkbook[M <: Mime](
     AsposeLicense.initializeIfNeeded()
 
     Using.Manager { use =>
-      val loadOpts = new com.aspose.cells.LoadOptions()
-      options.password.foreach(loadOpts.setPassword)
-      val srcInputStream = use(new ByteArrayInputStream(input.data.toArray))
-      val srcWb          = new AsposeWorkbook(srcInputStream, loadOpts)
+      val srcWb: AsposeWorkbook = loadCellsWorkbook(input, options)
       use(new DisposableWrapper(srcWb))
 
       // Calculate all formulas while all sheets are present so cross-sheet
       // references resolve correctly (e.g. =Data!A1 in a Summary sheet).
-      if options.evaluateFormulas then
-        try srcWb.calculateFormula()
-        catch case _: Exception => ()
+      safeCalculateFormulas(srcWb, options)
 
       val sheets = srcWb.getWorksheets
       val total  = sheets.getCount
 
-      // Filter sheets based on options
+      // Filter sheets based on options.
+      // Precedence: excludeHidden is applied as a global filter even if a hidden sheet
+      // is explicitly named via sheetNames. This means --sheet "HiddenSheet" --exclude-hidden
+      // will still exclude HiddenSheet.
       val indicesToSplit = (0 until total).filter { idx =>
         val ws        = sheets.get(idx)
         val nameMatch = options.sheetNames.isEmpty || options.sheetNames.contains(ws.getName)
@@ -93,6 +91,8 @@ private[aspose] def splitExcelWorkbook[M <: Mime](
         nameMatch && visMatch
       }
 
+      // Fragment indices are 0-based contiguous after filtering; the original sheet name
+      // is preserved in Fragment.name for traceability.
       val fragments = indicesToSplit.zipWithIndex.map { case (idx, fragIdx) =>
         val srcSheet  = sheets.get(idx)
         val sheetName = srcSheet.getName
@@ -118,6 +118,10 @@ private[aspose] def splitExcelWorkbook[M <: Mime](
             if cell.getFormula != null && cell.getFormula.nonEmpty then
               try cell.putValue(cell.getValue)
               catch case _: Exception => ()
+
+          // Strip styles inherited from the source workbook that aren't used by this
+          // single sheet — significantly reduces split file sizes.
+          destWb.removeUnusedStyles()
 
           val baos = destUse(new ByteArrayOutputStream())
           destWb.save(baos, fileFormatType)

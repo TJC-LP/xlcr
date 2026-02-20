@@ -25,18 +25,40 @@ final case class ConvertOptions(
   // --- PDF -> HTML options (Aspose.PDF) ---
   flowingLayout: Boolean = true,
   embedResources: Boolean = true
-)
+):
+
+  /** True when every field matches the default `ConvertOptions()`. */
+  def isDefault: Boolean = this == ConvertOptions()
+
+  /** Human-readable summary of non-default options, useful for log messages. */
+  def nonDefaultSummary: String =
+    val parts = List.newBuilder[String]
+    password.foreach(_ => parts += "password")
+    if !evaluateFormulas then parts += "no-evaluate-formulas"
+    if oneSheetPerPage then parts += "one-sheet-per-page"
+    landscape.foreach(l => parts += (if l then "landscape" else "portrait"))
+    paperSize.foreach(ps => parts += s"paper-size=$ps")
+    if sheetNames.nonEmpty then parts += s"sheet=${sheetNames.mkString(",")}"
+    if excludeHidden then parts += "exclude-hidden"
+    if stripMasters then parts += "strip-masters"
+    if !flowingLayout then parts += "fixed-layout"
+    if !embedResources then parts += "no-embed-resources"
+    parts.result().mkString(", ")
 
 /**
- * Standard paper sizes. Values correspond to com.aspose.cells.PaperSizeType constants.
+ * Standard paper sizes.
+ *
+ * Values are hard-coded integers rather than Aspose constant references because this enum lives in
+ * the `core` module, which has no dependency on `core-aspose`. The values correspond to stable
+ * Windows DMPAPER_* constants and are unchanged across Aspose versions.
  */
 enum PaperSize(val asposeCellsValue: Int):
-  case Letter  extends PaperSize(1)
-  case Legal   extends PaperSize(5)
-  case A3      extends PaperSize(8)
-  case A4      extends PaperSize(9)
-  case A5      extends PaperSize(11)
-  case Tabloid extends PaperSize(3)
+  case Letter  extends PaperSize(1)  // PaperSizeType.PAPER_LETTER
+  case Legal   extends PaperSize(5)  // PaperSizeType.PAPER_LEGAL
+  case A3      extends PaperSize(8)  // PaperSizeType.PAPER_A_3
+  case A4      extends PaperSize(9)  // PaperSizeType.PAPER_A_4
+  case A5      extends PaperSize(11) // PaperSizeType.PAPER_A_5
+  case Tabloid extends PaperSize(3)  // PaperSizeType.PAPER_TABLOID
 
 object PaperSize:
   def fromString(s: String): Option[PaperSize] =
