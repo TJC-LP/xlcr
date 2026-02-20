@@ -6,7 +6,7 @@ import mill.scalalib.publish._
 import mill.scalalib.scalafmt._
 import mill.scalalib.Assembly._
 
-val scalaVersions = Seq("3.3.4", "2.13.14")
+val scalaVersions = Seq("3.3.4", "2.13.17")
 val organization = "com.tjclp"
 
 /** Shared build configuration constants */
