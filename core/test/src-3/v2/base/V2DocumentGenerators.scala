@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 
 import org.apache.pdfbox.pdmodel.{PDDocument, PDPage, PDPageContentStream}
 import org.apache.pdfbox.pdmodel.common.PDRectangle
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.poi.ss.usermodel.{Row, Sheet, Workbook}
 import org.apache.poi.xslf.usermodel.{XMLSlideShow, XSLFTextBox}
@@ -115,7 +116,7 @@ object V2DocumentGenerators:
         val contentStream = new PDPageContentStream(document, page)
         try
           contentStream.beginText()
-          contentStream.setFont(PDType1Font.HELVETICA, 12)
+          contentStream.setFont(new PDType1Font(FontName.HELVETICA), 12)
           contentStream.newLineAtOffset(100, 700)
           contentStream.showText(s"Page $i content")
           contentStream.endText()

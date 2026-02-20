@@ -73,7 +73,7 @@ class FileUtilsSpec extends AnyFlatSpec with Matchers {
     }
   }
 
-  // Commented out as `application/octet-stream` should be expected for Tika 2.9.1
+  // Commented out as `application/octet-stream` is expected by current Tika behavior
 //  it should "fall back to extension-based detection when Tika fails" in {
 //    FileUtils.withTempFile("test", ".xlsx") { path =>
 //      // Create an empty file with Excel extension

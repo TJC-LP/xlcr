@@ -470,6 +470,17 @@ object Mime:
       tikaResult
 
   /**
+   * Detect MIME type using extension-first strategy:
+   *   1. Try extension-based detection 2. Only invoke Tika if extension is unknown (octet-stream)
+   *
+   * This avoids initializing Tika for common, well-known file extensions.
+   */
+  def detectLazily(data: zio.Chunk[Byte], filename: String): Mime =
+    val extensionResult = fromFilename(filename)
+    if extensionResult != octet then extensionResult
+    else detectFromContent(data, Some(filename))
+
+  /**
    * Detect MIME type from a file path.
    *
    * @param path

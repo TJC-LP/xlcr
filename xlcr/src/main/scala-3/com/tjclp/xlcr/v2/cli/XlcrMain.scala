@@ -110,7 +110,7 @@ object XlcrMain extends ZIOAppDefault:
       inputMime = if args.extensionOnly then
         Mime.fromFilename(args.input.getFileName.toString)
       else
-        Mime.detect(inputChunk, args.input.getFileName.toString)
+        Mime.detectLazily(inputChunk, args.input.getFileName.toString)
       outputMime = Mime.fromFilename(args.output.getFileName.toString)
       content    = Content.fromChunk(inputChunk, inputMime)
 
@@ -162,7 +162,7 @@ object XlcrMain extends ZIOAppDefault:
       inputMime = if args.extensionOnly then
         Mime.fromFilename(args.input.getFileName.toString)
       else
-        Mime.detect(inputChunk, args.input.getFileName.toString)
+        Mime.detectLazily(inputChunk, args.input.getFileName.toString)
       content = Content.fromChunk(inputChunk, inputMime)
 
       _ <- ZIO.when(args.verbose)(
@@ -279,7 +279,7 @@ object XlcrMain extends ZIOAppDefault:
       inputMime = if args.extensionOnly then
         Mime.fromFilename(args.input.getFileName.toString)
       else
-        Mime.detect(inputChunk, args.input.getFileName.toString)
+        Mime.detectLazily(inputChunk, args.input.getFileName.toString)
 
       // Extract Tika metadata (skip if extension-only mode for speed)
       metadata <- if args.extensionOnly then

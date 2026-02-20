@@ -21,25 +21,21 @@ trait CoreSparkModule extends build.XLCRModule {
   def testSources = Task.Sources(moduleDir / "test" / "src")
   def testResources = Task.Sources(moduleDir / "test" / "resources")
 
-  // Spark 3.x doesn't have native Scala 3 artifacts, use 2.13 artifacts
-  // Scala 3 is binary compatible with Scala 2.13
+  // Spark 4.x is Scala 2.13 only; Scala 3 is binary compatible with 2.13
   override def mvnDeps = {
-    val sparkVersion = "3.5.2"
-    val compatVersion = "2.13.0"
-    val xmlVersion = "2.3.0"
+    val sparkVersion = "4.1.1"
+    val xmlVersion = "2.4.0"
 
     if (crossScalaVersion.startsWith("3.")) {
       Seq(
         mvn"org.apache.spark:spark-sql_2.13:${sparkVersion}",
         mvn"org.apache.spark:spark-sql-kafka-0-10_2.13:${sparkVersion}",
-        mvn"org.scala-lang.modules:scala-collection-compat_2.13:${compatVersion}",
         mvn"org.scala-lang.modules:scala-xml_2.13:${xmlVersion}"
       )
     } else {
       Seq(
         mvn"org.apache.spark::spark-sql:${sparkVersion}",
         mvn"org.apache.spark::spark-sql-kafka-0-10:${sparkVersion}",
-        mvn"org.scala-lang.modules::scala-collection-compat:${compatVersion}",
         mvn"org.scala-lang.modules::scala-xml:${xmlVersion}"
       )
     }
