@@ -119,6 +119,10 @@ private[aspose] def splitExcelWorkbook[M <: Mime](
               try cell.putValue(cell.getValue)
               catch case _: Exception => ()
 
+          // Strip styles inherited from the source workbook that aren't used by this
+          // single sheet — significantly reduces split file sizes.
+          destWb.removeUnusedStyles()
+
           val baos = destUse(new ByteArrayOutputStream())
           destWb.save(baos, fileFormatType)
 
