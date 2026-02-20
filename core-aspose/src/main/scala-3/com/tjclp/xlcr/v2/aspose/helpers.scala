@@ -2,7 +2,16 @@ package com.tjclp.xlcr.v2.aspose
 
 import java.io.ByteArrayInputStream
 
-import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, Mime }
+import zio.blocks.scope.Unscoped
+
+import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Fragment, Mime }
+
+// Unscoped instances so Content/Fragment can escape Scope.global.scoped blocks
+given unscopedMime[M <: Mime]: Unscoped[M] with               {}
+given unscopedChunk[A: Unscoped]: Unscoped[zio.Chunk[A]] with {}
+given unscopedContent[M <: Mime]: Unscoped[Content[M]] with   {}
+given unscopedFragment[M <: Mime]: Unscoped[Fragment[M]] with {}
+given Unscoped[DynamicFragment] with                          {}
 
 /**
  * Load an Aspose Cells Workbook from Content bytes, applying password from ConvertOptions.
