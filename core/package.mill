@@ -45,9 +45,9 @@ trait CoreModule extends build.XLCRModule {
     // Scala compatibility
     mvn"org.scala-lang.modules::scala-collection-compat:2.13.0",
     // Apache Tika
-    mvn"org.apache.tika:tika-core:2.9.1",
-    mvn"org.apache.tika:tika-parsers:2.9.1",
-    mvn"org.apache.tika:tika-parsers-standard-package:2.9.1",
+    mvn"org.apache.tika:tika-core:3.2.3",
+    mvn"org.apache.tika:tika-parsers:3.2.3",
+    mvn"org.apache.tika:tika-parsers-standard-package:3.2.3",
     // Apache Commons Compress for archive formats
     mvn"org.apache.commons:commons-compress:1.23.0",
     // Jakarta Mail for email parsing

@@ -13,7 +13,7 @@ class FileContent[+T <: MimeType](
 ) extends Model
 
 object FileContent {
-  private val tika = new Tika()
+  private lazy val tika = new Tika()
 
   def apply[T <: MimeType](data: Array[Byte], mimeType: T): FileContent[T] =
     new FileContent[T](data, mimeType)

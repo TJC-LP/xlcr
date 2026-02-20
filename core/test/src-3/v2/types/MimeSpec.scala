@@ -225,6 +225,17 @@ class MimeSpec extends AnyFlatSpec with Matchers:
   }
 
   // ============================================================================
+  // Lazy Detection Tests
+  // ============================================================================
+
+  "Mime.detectLazily" should "prefer extension-based detection for known filenames" in {
+    val pdfHeader = zio.Chunk.fromArray("%PDF-1.7\n".getBytes("UTF-8"))
+
+    // Even with PDF-like bytes, a known extension should short-circuit content detection.
+    Mime.detectLazily(pdfHeader, "renamed.txt") shouldBe Mime.plain
+  }
+
+  // ============================================================================
   // String Parsing Tests
   // ============================================================================
 

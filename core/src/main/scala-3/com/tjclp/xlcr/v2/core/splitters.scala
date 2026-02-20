@@ -14,6 +14,7 @@ import scala.jdk.CollectionConverters.*
 
 import zio.{ Chunk, ZIO }
 
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.poi.hsmf.MAPIMessage
 import org.apache.poi.openxml4j.util.ZipSecureFile
@@ -283,7 +284,7 @@ object XlcrSplitters:
     }
 
   private def splitPdfDocument(data: Array[Byte]): Chunk[Fragment[Mime.Pdf]] =
-    val original = PDDocument.load(data)
+    val original = Loader.loadPDF(data)
     try
       val total = original.getNumberOfPages
 

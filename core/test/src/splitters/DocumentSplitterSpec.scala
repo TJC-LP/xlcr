@@ -3,6 +3,7 @@ package splitters
 
 import java.io.ByteArrayOutputStream
 
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.{ PDDocument, PDPage }
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -37,7 +38,7 @@ class DocumentSplitterSpec extends AnyFlatSpec with Matchers {
     all(chunks.map(_.content.mimeType)) shouldBe MimeType.ApplicationPdf
 
     chunks.foreach { chunk =>
-      val doc = PDDocument.load(chunk.content.data)
+      val doc = Loader.loadPDF(chunk.content.data)
       try doc.getNumberOfPages shouldBe 1
       finally doc.close()
     }

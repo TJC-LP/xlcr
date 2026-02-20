@@ -4,6 +4,7 @@ package pdf
 
 import java.io.ByteArrayOutputStream
 
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.slf4j.LoggerFactory
 
@@ -51,7 +52,7 @@ object PdfPageSplitter extends DocumentSplitter[MimeType.ApplicationPdf.type]
       // Load the PDF document
       val original =
         try
-          PDDocument.load(content.data)
+          Loader.loadPDF(content.data)
         catch {
           case e: java.io.IOException =>
             throw new CorruptedDocumentException(

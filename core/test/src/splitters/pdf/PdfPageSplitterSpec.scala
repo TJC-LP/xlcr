@@ -4,6 +4,8 @@ package pdf
 
 import java.io.ByteArrayOutputStream
 
+import org.apache.pdfbox.Loader
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.{ PDDocument, PDPage, PDPageContentStream }
 import org.scalatest.flatspec.AnyFlatSpec
@@ -24,7 +26,7 @@ class PdfPageSplitterSpec extends AnyFlatSpec with Matchers {
       // Add some content to each page
       val contentStream = new PDPageContentStream(doc, page)
       contentStream.beginText()
-      contentStream.setFont(PDType1Font.HELVETICA, 12)
+      contentStream.setFont(new PDType1Font(FontName.HELVETICA), 12)
       contentStream.newLineAtOffset(100, 700)
       contentStream.showText(s"Page $pageNum of $pageCount")
       contentStream.endText()
@@ -49,7 +51,7 @@ class PdfPageSplitterSpec extends AnyFlatSpec with Matchers {
 
     // Verify each chunk is a valid PDF
     chunks.foreach { chunk =>
-      val doc = PDDocument.load(chunk.content.data)
+      val doc = Loader.loadPDF(chunk.content.data)
       doc.getNumberOfPages shouldBe 1
       doc.close()
     }
@@ -104,7 +106,7 @@ class PdfPageSplitterSpec extends AnyFlatSpec with Matchers {
     chunks.head.total shouldBe 5 // Original total preserved
 
     // Verify it's the correct page
-    val doc = PDDocument.load(chunks.head.content.data)
+    val doc = Loader.loadPDF(chunks.head.content.data)
     doc.getNumberOfPages shouldBe 1
     doc.close()
   }

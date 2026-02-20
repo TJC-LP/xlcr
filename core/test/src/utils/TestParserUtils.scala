@@ -3,6 +3,7 @@ package utils
 
 import java.nio.file.{ Files, Path }
 
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.{ PDDocument, PDPage, PDPageContentStream }
 
@@ -15,7 +16,7 @@ object TestParserUtils {
 
     val contentStream = new PDPageContentStream(doc, page)
     contentStream.beginText()
-    contentStream.setFont(PDType1Font.HELVETICA, 12)
+    contentStream.setFont(new PDType1Font(FontName.HELVETICA), 12)
     contentStream.newLineAtOffset(100, 700)
     contentStream.showText("Test PDF Content")
     contentStream.endText()
