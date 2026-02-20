@@ -60,6 +60,14 @@ final case class Content[M <: Mime](
   /** Convert to a byte array (allocates new array) */
   def toArray: Array[Byte] = data.toArray
 
+  /** Write content bytes to a file path. */
+  def writeTo(path: java.nio.file.Path): Unit =
+    java.nio.file.Files.write(path, data.toArray)
+
+  /** Write content bytes to an OutputStream. */
+  def writeToStream(out: java.io.OutputStream): Unit =
+    out.write(data.toArray)
+
   /** Create a copy with different data but same MIME type and metadata */
   def withData(newData: Chunk[Byte]): Content[M] =
     copy(data = newData)

@@ -41,7 +41,8 @@ trait CoreAsposeModule extends build.XLCRModule {
     mvn"com.aspose:aspose-slides:26.2;classifier=jdk16",
     mvn"com.aspose:aspose-email:26.1;classifier=jdk16",
     mvn"com.aspose:aspose-zip:25.9",
-    mvn"com.aspose:aspose-pdf:26.1"
+    mvn"com.aspose:aspose-pdf:26.1",
+    mvn"dev.zio::zio-blocks-scope:0.0.25"
   )
 
   object test extends ScalaTests with build.XLCRSerialTestModule {

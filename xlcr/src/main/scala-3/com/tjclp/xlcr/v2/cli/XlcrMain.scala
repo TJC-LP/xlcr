@@ -135,7 +135,7 @@ object XlcrMain extends ZIOAppDefault:
       }
 
       // Write output file
-      _ <- ZIO.attemptBlocking(Files.write(args.output, result.data.toArray))
+      _ <- ZIO.attemptBlocking(result.writeTo(args.output))
 
       _ <- ZIO.when(args.verbose)(
         Console.printLine(s"Wrote ${result.size} bytes to ${args.output}")
@@ -223,7 +223,7 @@ object XlcrMain extends ZIOAppDefault:
         val outputPath = outputDir.resolve(filename)
 
         for
-          _ <- ZIO.attemptBlocking(Files.write(outputPath, fragment.content.data.toArray))
+          _ <- ZIO.attemptBlocking(fragment.content.writeTo(outputPath))
           _ <- ZIO.when(verbose)(
             Console.printLine(s"  Wrote fragment: $outputPath")
           )
