@@ -13,6 +13,7 @@ import java.util.zip.{ ZipEntry, ZipInputStream }
 import scala.jdk.CollectionConverters.*
 
 import zio.{ Chunk, ZIO }
+import zio.blocks.scope.Scope
 
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -429,36 +430,44 @@ object XlcrSplitters:
     }
 
   private def splitMsgMessage(data: Array[Byte]): Chunk[DynamicFragment] =
-    val msg       = new MAPIMessage(new ByteArrayInputStream(data))
-    val fragments = scala.collection.mutable.ListBuffer.empty[DynamicFragment]
+    Scope.global.scoped { scope =>
+      import scope.*
+      val msg = allocate(mapiMessageResource(
+        new MAPIMessage(new ByteArrayInputStream(data))
+      ))
 
-    // Extract body
-    val bodyText = Option(msg.getTextBody).orElse(Option(msg.getHtmlBody)).getOrElse("")
-    val hasBody  = bodyText.nonEmpty
+      $(msg) { m =>
+        val fragments = scala.collection.mutable.ListBuffer.empty[DynamicFragment]
 
-    if hasBody then
-      val mime    = if msg.getHtmlBody != null then Mime.html else Mime.plain
-      val subj    = Option(msg.getSubject).getOrElse("body")
-      val content = Content.fromString(bodyText, mime)
-      fragments += DynamicFragment(content, fragments.size, Some(subj))
+        // Extract body
+        val bodyText = Option(m.getTextBody).orElse(Option(m.getHtmlBody)).getOrElse("")
+        val hasBody  = bodyText.nonEmpty
 
-    // Extract attachments
-    val atts = Option(msg.getAttachmentFiles).map(_.toIndexedSeq).getOrElse(IndexedSeq.empty)
-    atts.foreach { att =>
-      val name = Option(att.getAttachLongFileName)
-        .map(_.toString).filter(_.nonEmpty)
-        .orElse(Option(att.getAttachFileName).map(_.toString))
-        .getOrElse(s"attachment_${fragments.size}")
-      val bytes = Option(att.getEmbeddedAttachmentObject)
-        .collect { case arr: Array[Byte] => arr }
-        .getOrElse(Array.emptyByteArray)
-      val ext     = name.split("\\.").lastOption.getOrElse("").toLowerCase
-      val mime    = Mime.fromExtension(ext)
-      val content = Content.fromChunk(Chunk.fromArray(bytes), mime)
-      fragments += DynamicFragment(content, fragments.size, Some(name))
+        if hasBody then
+          val mime    = if m.getHtmlBody != null then Mime.html else Mime.plain
+          val subj    = Option(m.getSubject).getOrElse("body")
+          val content = Content.fromString(bodyText, mime)
+          fragments += DynamicFragment(content, fragments.size, Some(subj))
+
+        // Extract attachments
+        val atts = Option(m.getAttachmentFiles).map(_.toIndexedSeq).getOrElse(IndexedSeq.empty)
+        atts.foreach { att =>
+          val name = Option(att.getAttachLongFileName)
+            .map(_.toString).filter(_.nonEmpty)
+            .orElse(Option(att.getAttachFileName).map(_.toString))
+            .getOrElse(s"attachment_${fragments.size}")
+          val bytes = Option(att.getEmbeddedAttachmentObject)
+            .collect { case arr: Array[Byte] => arr }
+            .getOrElse(Array.emptyByteArray)
+          val ext     = name.split("\\.").lastOption.getOrElse("").toLowerCase
+          val mime    = Mime.fromExtension(ext)
+          val content = Content.fromChunk(Chunk.fromArray(bytes), mime)
+          fragments += DynamicFragment(content, fragments.size, Some(name))
+        }
+
+        Chunk.fromIterable(fragments)
+      }
     }
-
-    Chunk.fromIterable(fragments)
 
   // ============================================================================
   // Archive Splitter (java.util.zip)

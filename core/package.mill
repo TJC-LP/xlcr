@@ -61,15 +61,17 @@ trait CoreModule extends build.XLCRModule {
     // ODFDOM for OpenDocument files
     mvn"org.odftoolkit:odfdom-java:0.12.0",
     // Apache POI for Excel handling
-    mvn"org.apache.poi:poi:5.2.5",
-    mvn"org.apache.poi:poi-ooxml:5.2.5"
+    mvn"org.apache.poi:poi:5.5.1",
+    mvn"org.apache.poi:poi-ooxml:5.5.1"
   ) ++ (
     if (crossScalaVersion.startsWith("2.")) {
       Seq(
         mvn"org.scala-lang:scala-reflect:${crossScalaVersion}"
       )
     } else {
-      Seq.empty
+      Seq(
+        mvn"dev.zio::zio-blocks-scope:0.0.25"
+      )
     }
   )
 
