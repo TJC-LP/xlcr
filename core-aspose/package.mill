@@ -33,7 +33,12 @@ trait CoreAsposeModule extends build.XLCRModule {
   }
 
   override def scalacOptions: T[Seq[String]] =
-    super.scalacOptions() ++ Seq("-Yresolve-term-conflict:package")
+    super.scalacOptions() ++ Seq(
+      "-Yresolve-term-conflict:package",
+      // Suppress deprecation warnings for v1 AsposeLicense usage in legacy bridges/splitters.
+      // These will be removed when v1 is fully migrated to AsposeLicenseV2.
+      "-Wconf:msg=Use AsposeLicenseV2:s"
+    )
 
   override def mvnDeps = Seq(
     mvn"com.aspose:aspose-cells:26.2",

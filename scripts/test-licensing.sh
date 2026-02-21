@@ -162,6 +162,15 @@ assert_contains "XLSX->PDF uses Aspose.Cells" "$OUT" "Aspose.Cells license appli
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════
+echo "--- Scenario 8: --backend aspose with no license ---"
+echo "    Expect: Clear error message (no silent fallback)"
+rm -f "$WORKDIR"/*.lic
+OUT=$(cd "$WORKDIR" && env "${UNSET_ALL[@]}" XLCR_NO_ASPOSE_LICENSE=1 \
+  xlcr convert --backend aspose -i "$XLSX" -o "$WORKDIR/s8.pdf" 2>&1) || true
+assert_contains "Error message" "$OUT" "License not found"
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════
 echo "================================================================"
 echo " Results: $PASS passed, $FAIL failed"
 echo "================================================================"

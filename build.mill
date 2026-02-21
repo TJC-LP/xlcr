@@ -17,6 +17,10 @@ object BuildConfig {
   /** Detect Aspose license availability at build time (core-aspose/resources or env vars only).
     * Current working directory license files are runtime-only and do not control module inclusion.
     * When false and no XLCR_ASPOSE_ENABLED override, the xlcr module excludes core-aspose.
+    *
+    * NOTE: This val is evaluated once when the build definition compiles.
+    * If you add/remove license files, run: ./mill shutdown && ./mill clean
+    * to force re-evaluation.
     */
   val asposeEnabled: Boolean = {
     val hasTotal = os.exists(os.pwd / "core-aspose" / "resources" / "Aspose.Total.Java.lic") ||

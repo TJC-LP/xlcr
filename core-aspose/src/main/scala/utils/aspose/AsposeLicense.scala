@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
  * Compile‑error fixes: remove `Using` on `Array[Byte]` (no Releasable) and use pattern‑matching
  * `fold` instead of `recover` for `Try`.
  */
+@deprecated("Use AsposeLicenseV2 (v2 per-product licensing) instead", "0.3.0")
 object AsposeLicense {
 
   private val logger      = LoggerFactory.getLogger(getClass)
@@ -22,6 +23,14 @@ object AsposeLicense {
 
   private final val TotalLicFile = "Aspose.Total.Java.lic"
   private final val TotalEnvVar  = "ASPOSE_TOTAL_LICENSE_B64"
+
+  // ── Testing overrides (mirrors AsposeLicenseV2) ──────────────────
+  // XLCR_NO_ASPOSE_LICENSE=1     — suppress ALL license resolution (complete kill switch)
+  // XLCR_NO_CLASSPATH_LICENSE=1  — suppress classpath/JAR-bundled licenses only (CWD + env still work)
+  private lazy val forceNoLicense: Boolean =
+    Option(System.getenv("XLCR_NO_ASPOSE_LICENSE")).exists(_.nonEmpty)
+  private lazy val skipClasspath: Boolean =
+    forceNoLicense || Option(System.getenv("XLCR_NO_CLASSPATH_LICENSE")).exists(_.nonEmpty)
 
   /* ------------------------------ Products ------------------------------------ */
 
@@ -66,7 +75,9 @@ object AsposeLicense {
 
   def initializeIfNeeded(): Unit =
     if (initialized.compareAndSet(false, true)) {
-      if (!loadFromEnv()) {
+      if (forceNoLicense) {
+        logger.info("XLCR_NO_ASPOSE_LICENSE set – skipping all Aspose license resolution (v1).")
+      } else if (!loadFromEnv()) {
         findLicenseStream(TotalLicFile) match {
           case Some(is) =>
             Using(is) { stream =>
@@ -104,6 +115,7 @@ object AsposeLicense {
   /* ------------------------------ Env‑var support ----------------------------- */
 
   private def loadFromEnv(): Boolean = {
+    if (forceNoLicense) return false
     def env(n: String) = Option(System.getenv(n)).filter(_.nonEmpty)
 
     env(TotalEnvVar) match {
@@ -141,8 +153,10 @@ object AsposeLicense {
     }
 
   private def findLicenseStream(fileName: String): Option[InputStream] = {
+    if (forceNoLicense) return None
     val file = new File(System.getProperty("user.dir"), fileName)
     if (file.isFile && file.canRead) Some(Files.newInputStream(file.toPath))
+    else if (skipClasspath) None
     else Option(getClass.getResourceAsStream(s"/$fileName"))
   }
 

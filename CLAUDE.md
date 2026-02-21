@@ -39,6 +39,30 @@ export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Total.Java.lic)
 
 The license file in `core-aspose/resources/` is gitignored (`*.lic` pattern).
 
+### Mill Daemon Caching
+
+The `asposeEnabled` build flag is evaluated once when the Mill daemon compiles `build.mill`. If you add or remove license files from `core-aspose/resources/`, the daemon won't notice:
+```bash
+./mill shutdown && ./mill clean   # Force re-evaluation of asposeEnabled
+```
+
+### Aspose License Override Hierarchy
+
+Environment variables control license resolution at runtime (precedence order):
+
+| Variable | Effect |
+|---|---|
+| `XLCR_NO_ASPOSE_LICENSE=1` | Kill ALL license resolution — complete blackout (highest priority) |
+| `XLCR_NO_CLASSPATH_LICENSE=1` | Skip JAR-bundled licenses; CWD files + env vars still work |
+| `ASPOSE_TOTAL_LICENSE_B64` | Base64-encoded total license (all products) |
+| `ASPOSE_WORDS_LICENSE_B64` | Per-product: Words only |
+| `ASPOSE_CELLS_LICENSE_B64` | Per-product: Cells only |
+| `ASPOSE_SLIDES_LICENSE_B64` | Per-product: Slides only |
+| `ASPOSE_PDF_LICENSE_B64` | Per-product: Pdf only |
+| `ASPOSE_EMAIL_LICENSE_B64` | Per-product: Email only |
+| `ASPOSE_ZIP_LICENSE_B64` | Per-product: Zip only |
+| `XLCR_ASPOSE_ENABLED=1` | Build-time override: include core-aspose even without a detected license |
+
 ## Build Commands
 - `./mill __.compile` - Compile all modules for all Scala versions
 - `./mill __[3.3.4].compile` - Compile all modules with Scala 3.3.4

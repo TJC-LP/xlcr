@@ -2,7 +2,7 @@ package com.tjclp.xlcr.v2.cli
 
 import zio.{ Chunk, ZIO }
 
-import com.tjclp.xlcr.v2.aspose.{ AsposeTransforms, AsposeLicenseV2 }
+import com.tjclp.xlcr.v2.aspose.{ AsposeTransforms, AsposeLicenseV2, Words, Cells, Email, Slides, Pdf, Zip }
 import com.tjclp.xlcr.v2.transform.TransformError
 import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Mime }
 
@@ -38,6 +38,18 @@ object BackendWiring:
     if AsposeLicenseV2.licenseAvailable then
       println("    License: Found (total)")
     else
-      println("    License: Not found (per-product or env-var licenses may apply at runtime)")
+      // Probe each product to check individual per-product licenses
+      val products = Seq(
+        ("Words", () => { AsposeLicenseV2.initWords(); AsposeLicenseV2.isLicensed[Words] }),
+        ("Cells", () => { AsposeLicenseV2.initCells(); AsposeLicenseV2.isLicensed[Cells] }),
+        ("Email", () => { AsposeLicenseV2.initEmail(); AsposeLicenseV2.isLicensed[Email] }),
+        ("Slides", () => { AsposeLicenseV2.initSlides(); AsposeLicenseV2.isLicensed[Slides] }),
+        ("Pdf", () => { AsposeLicenseV2.initPdf(); AsposeLicenseV2.isLicensed[Pdf] }),
+        ("Zip", () => { AsposeLicenseV2.initZip(); AsposeLicenseV2.isLicensed[Zip] })
+      )
+      val licensed = products.filter(_._2()).map(_._1)
+      if licensed.nonEmpty then
+        println(s"    License: Per-product (${licensed.mkString(", ")})")
+      else println("    License: Not found (conversions will fall back to LibreOffice)")
     println("    Supported conversions: DOCX/DOC/XLSX/XLS/PPTX/PPT -> PDF, PDF <-> HTML, etc.")
     println("    Supported splits: XLSX/XLS sheets, PPTX/PPT slides, PDF pages, DOCX sections")
