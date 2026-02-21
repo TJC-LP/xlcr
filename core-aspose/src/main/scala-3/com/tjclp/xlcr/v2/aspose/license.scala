@@ -49,25 +49,41 @@ object AsposeLicenseV2:
   private final val TotalLicFile = "Aspose.Total.Java.lic"
   private final val TotalEnvVar  = "ASPOSE_TOTAL_LICENSE_B64"
 
+  // ── Testing overrides ──────────────────────────────────────────
+  // XLCR_NO_ASPOSE_LICENSE=1     — suppress ALL license resolution (complete kill switch)
+  // XLCR_NO_CLASSPATH_LICENSE=1  — suppress classpath/JAR-bundled licenses only (CWD + env still work)
+  private lazy val forceNoLicense: Boolean =
+    Option(System.getenv("XLCR_NO_ASPOSE_LICENSE")).exists(_.nonEmpty)
+
+  private lazy val skipClasspath: Boolean =
+    forceNoLicense || Option(System.getenv("XLCR_NO_CLASSPATH_LICENSE")).exists(_.nonEmpty)
+
   // ── Total license bytes (resolved once, cached by JVM lazy val) ──
   private lazy val licenseBytes: Option[Array[Byte]] =
-    envBytes(TotalEnvVar).orElse(fileOrClasspathBytes(TotalLicFile))
+    if forceNoLicense then None
+    else envBytes(TotalEnvVar).orElse(fileOrClasspathBytes(TotalLicFile))
 
   /** Fast check: does any total license source exist? (no side effects, no per-product check) */
   lazy val licenseAvailable: Boolean = licenseBytes.isDefined
 
   // ── Shared helpers ───────────────────────────────────────────────
   private def envBytes(varName: String): Option[Array[Byte]] =
-    Option(System.getenv(varName))
-      .filter(_.nonEmpty)
-      .flatMap(b64 => Try(Base64.getDecoder.decode(b64)).toOption)
+    if forceNoLicense then None
+    else
+      Option(System.getenv(varName))
+        .filter(_.nonEmpty)
+        .flatMap(b64 => Try(Base64.getDecoder.decode(b64)).toOption)
 
   private def fileOrClasspathBytes(fileName: String): Option[Array[Byte]] =
-    val file = new File(System.getProperty("user.dir"), fileName)
-    val stream: Option[InputStream] =
-      if file.isFile && file.canRead then Some(Files.newInputStream(file.toPath))
-      else Option(getClass.getResourceAsStream(s"/$fileName"))
-    stream.flatMap(is => Using(is)(_.readAllBytes()).toOption)
+    if forceNoLicense then None
+    else
+      val file = new File(System.getProperty("user.dir"), fileName)
+      if file.isFile && file.canRead then
+        Using(Files.newInputStream(file.toPath))(_.readAllBytes()).toOption
+      else if skipClasspath then None
+      else
+        Option(getClass.getResourceAsStream(s"/$fileName"))
+          .flatMap(is => Using(is)(_.readAllBytes()).toOption)
 
   // ── Per-product init guards + licensed state ─────────────────────
   private val wordsInit  = new AtomicBoolean(false)
