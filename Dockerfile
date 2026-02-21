@@ -76,7 +76,7 @@ COPY core-libreoffice/src core-libreoffice/src
 COPY xlcr/src xlcr/src
 
 # Copy Aspose license if available (glob trick: no-op if missing)
-COPY Aspose.Java.Total.li[c] core-aspose/resources/
+COPY Aspose.Total.Java.li[c] core-aspose/resources/
 
 # Generate test fixtures
 COPY scripts/testdata/test.html /xlcr/testdata/test.html

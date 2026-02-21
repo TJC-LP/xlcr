@@ -14,12 +14,12 @@ object BuildConfig {
   /** Aspose Maven repository URL */
   val asposeRepoUrl = "https://releases.aspose.com/java/repo/"
 
-  /** Detect Aspose license availability at build time (resource files or env vars).
+  /** Detect Aspose license availability at build time (core-aspose/resources or env vars only).
+    * Current working directory license files are runtime-only and do not control module inclusion.
     * When false and no XLCR_ASPOSE_ENABLED override, the xlcr module excludes core-aspose.
     */
   val asposeEnabled: Boolean = {
     val hasTotal = os.exists(os.pwd / "core-aspose" / "resources" / "Aspose.Total.Java.lic") ||
-      os.exists(os.pwd / "Aspose.Total.Java.lic") ||
       sys.env.contains("ASPOSE_TOTAL_LICENSE_B64")
     val individualLicFiles = Seq(
       ("Aspose.Words.Java.lic", "ASPOSE_WORDS_LICENSE_B64"),

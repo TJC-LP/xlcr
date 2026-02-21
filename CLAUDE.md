@@ -28,12 +28,12 @@ The `core-aspose` tests require a valid Aspose license to run without evaluation
 
 **Option 1: Copy license to resources** (recommended)
 ```bash
-cp Aspose.Java.Total.lic core-aspose/resources/
+cp Aspose.Total.Java.lic core-aspose/resources/
 ```
 
 **Option 2: Set environment variable**
 ```bash
-export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Java.Total.lic)
+export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Total.Java.lic)
 ./mill 'core-aspose[3.3.4].test'
 ```
 
