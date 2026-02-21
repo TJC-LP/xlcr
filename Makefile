@@ -18,8 +18,8 @@ DOCKER_CONTAINER := xlcr-native-build
 DOCKER_MEMORY := 24g
 
 # License locations to check
-LICENSE_ASPOSE_RESOURCES := core-aspose/resources/Aspose.Java.Total.lic
-LICENSE_ROOT := Aspose.Java.Total.lic
+LICENSE_ASPOSE_RESOURCES := core-aspose/resources/Aspose.Total.Java.lic
+LICENSE_ROOT := Aspose.Total.Java.lic
 
 .PHONY: all build install install-user install-native install-native-user \
         uninstall uninstall-user uninstall-native uninstall-native-user \

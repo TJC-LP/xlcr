@@ -1,5 +1,6 @@
 package com.tjclp.xlcr
 
+import scala.annotation.nowarn
 import scala.util.Try
 
 import scopt.OParser
@@ -19,6 +20,7 @@ import utils.aspose.AsposeLicense.Product
  * Backend selection is automatic based on priority system. The SPI (Service Provider Interface)
  * system discovers all available bridges at runtime.
  */
+@nowarn("cat=deprecation")
 object Main extends AbstractMain[AsposeConfig] {
 
   override protected def programName: String       = "xlcr"

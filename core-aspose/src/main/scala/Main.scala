@@ -1,5 +1,6 @@
 package com.tjclp.xlcr
 
+import scala.annotation.nowarn
 import scala.util.Try
 
 import scopt.OParser
@@ -12,6 +13,7 @@ import utils.aspose.AsposeLicense.Product
  * Entry point for the Aspose-based conversion pipeline. Extends AbstractMain to leverage common CLI
  * parsing and execution logic while adding Aspose-specific license handling.
  */
+@nowarn("cat=deprecation")
 object Main extends AbstractMain[AsposeConfig] {
 
   override protected def programName: String       = "xlcr-aspose"

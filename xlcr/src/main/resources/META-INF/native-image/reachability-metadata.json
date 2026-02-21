@@ -19226,7 +19226,7 @@
   ],
   "resources": [
     {
-      "glob": "Aspose.Java.Total.lic"
+      "glob": "Aspose.Total.Java.lic"
     },
     {
       "glob": "META-INF/log4j-provider.properties"

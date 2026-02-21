@@ -1,6 +1,8 @@
 package com.tjclp.xlcr
 package bridges
 
+import scala.annotation.nowarn
+
 // No need to import SimpleBridge since we're in the same package
 // (avoids warning about hidden imports)
 import types.{ MimeType, Prioritized, Priority }
@@ -16,6 +18,7 @@ import utils.aspose.AsposeLicense
  * @tparam O
  *   The output MimeType
  */
+@nowarn("cat=deprecation")
 trait HighPrioritySimpleBridge[I <: MimeType, O <: MimeType]
     extends SimpleBridge[I, O]
     with Prioritized {

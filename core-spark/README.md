@@ -107,7 +107,7 @@ val timedOut = processed.filter(
 )
 
 // Retry with longer timeout
-val retryPipeline = pipeline.map(step => 
+val retryPipeline = pipeline.map(step =>
   SparkStep.withUdfTimeout(step, Duration(5, "minutes"))
 )
 val retryResults = retryPipeline(timedOut)
@@ -153,7 +153,7 @@ val query = input.writeStream.foreachBatch { (batch, _) =>
   // Write to appropriate destinations
   ok.write.mode("append").parquet("/mnt/processed/success")
   ko.write.mode("append").parquet("/mnt/processed/failed")
-  
+
   // Optional: collect metrics
   processed.groupBy("step_name")
     .agg(
@@ -177,7 +177,7 @@ import scala.concurrent.duration._
 // Basic implementation
 case class MyCustomStep() extends SparkStep {
   override val name: String = "myCustomStep"
-  
+
   override protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
     // Your transformation logic here
     df.withColumn("custom_field", lit("my value"))
@@ -187,18 +187,18 @@ case class MyCustomStep() extends SparkStep {
 // Step with UDF and timing metrics
 case class MyAdvancedStep() extends SparkStep {
   override val name: String = "myAdvancedStep"
-  
+
   // Define UDF with timeout using UdfHelpers
   import UdfHelpers._
   private val customUdf = wrapUdf(30.seconds) { input: String =>
     // Complex processing with automatic timeout handling
     input.toUpperCase
   }
-  
+
   override protected def doTransform(df: DataFrame)(implicit spark: SparkSession): DataFrame = {
     // Apply UDF and get StepResult with timing metrics
     val withResult = df.withColumn("result", customUdf(col("text")))
-    
+
     // Unpack the StepResult into standard columns
     UdfHelpers.unpackResult(withResult, dataCol = "processed_text")
   }
@@ -226,12 +226,12 @@ The system automatically detects Aspose licenses from:
    - `ASPOSE_ZIP_LICENSE_B64` - For archives
 
 2. License files in the current working directory or classpath:
-   - `Aspose.Java.Total.lic` - For all Aspose products
-   - `Aspose.Java.Words.lic` - For Word documents
-   - `Aspose.Java.Cells.lic` - For Excel spreadsheets
-   - `Aspose.Java.Slides.lic` - For PowerPoint presentations
-   - `Aspose.Java.Email.lic` - For email formats
-   - `Aspose.Java.Zip.lic` - For archives
+   - `Aspose.Total.Java.lic` - For all Aspose products
+   - `Aspose.Words.Java.lic` - For Word documents
+   - `Aspose.Cells.Java.lic` - For Excel spreadsheets
+   - `Aspose.Slides.Java.lic` - For PowerPoint presentations
+   - `Aspose.Email.Java.lic` - For email formats
+   - `Aspose.Zip.Java.lic` - For archives
 
 ### Explicit Enablement
 
@@ -241,7 +241,7 @@ You can also explicitly enable Aspose:
 export XLCR_ASPOSE_ENABLED=true
 ```
 
-This enables high-fidelity document processing for Office formats. 
+This enables high-fidelity document processing for Office formats.
 
 ### Running Without a License
 

@@ -1,6 +1,8 @@
 package com.tjclp.xlcr
 package bridges
 
+import scala.annotation.nowarn
+
 // No need to import Bridge since we're in the same package
 // (avoids warning about hidden imports)
 import models.Model
@@ -18,6 +20,7 @@ import utils.aspose.AsposeLicense
  * @tparam O
  *   The output MimeType
  */
+@nowarn("cat=deprecation")
 trait HighPriorityBridge[M <: Model, I <: MimeType, O <: MimeType]
     extends Bridge[M, I, O]
     with Prioritized {

@@ -14,6 +14,13 @@ object BuildConfig {
   /** Aspose Maven repository URL */
   val asposeRepoUrl = "https://releases.aspose.com/java/repo/"
 
+  /** Include Aspose module by default. Set XLCR_NO_ASPOSE=1 to exclude
+    * (produces a smaller JAR without Aspose dependencies).
+    * Runtime license checks (AsposeLicenseV2) handle the unlicensed case
+    * by falling back to LibreOffice/Core backends.
+    */
+  val asposeEnabled: Boolean = !sys.env.contains("XLCR_NO_ASPOSE")
+
   /** JVM options to silence Scala 3 LazyVals sun.misc.Unsafe deprecation warnings (JDK 21+) */
   val lazyValsJvmArgs: Seq[String] = Seq(
     "--add-opens=java.base/sun.misc=ALL-UNNAMED",

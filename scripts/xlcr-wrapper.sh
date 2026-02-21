@@ -52,11 +52,11 @@ if [[ "$1" == "--backend-info" ]]; then
     echo ""
 
     # Check for bundled license in JAR
-    if unzip -l "$XLCR_JAR" 2>/dev/null | grep -q "Aspose.Java.Total.lic"; then
+    if unzip -l "$XLCR_JAR" 2>/dev/null | grep -q "Aspose.Total.Java.lic"; then
         echo "  Aspose: Licensed (bundled in JAR)"
     elif [[ -n "$ASPOSE_TOTAL_LICENSE_B64" ]]; then
         echo "  Aspose: Licensed (env ASPOSE_TOTAL_LICENSE_B64)"
-    elif [[ -f "Aspose.Java.Total.lic" ]]; then
+    elif [[ -f "Aspose.Total.Java.lic" ]]; then
         echo "  Aspose: Licensed (local file)"
     else
         echo "  Aspose: Evaluation mode (no license found)"

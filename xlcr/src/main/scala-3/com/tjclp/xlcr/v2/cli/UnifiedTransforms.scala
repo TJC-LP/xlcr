@@ -2,10 +2,9 @@ package com.tjclp.xlcr.v2.cli
 
 import zio.{ Chunk, ZIO }
 
-import com.tjclp.xlcr.v2.aspose.AsposeTransforms
 import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
-import com.tjclp.xlcr.v2.transform.{ TransformError, UnsupportedConversion }
+import com.tjclp.xlcr.v2.transform.{ ResourceError, TransformError, UnsupportedConversion }
 import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Mime }
 
 /**
@@ -14,6 +13,10 @@ import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Mime 
  * This object provides the default behavior for the xlcr CLI: it tries Aspose first (higher
  * quality, more features), then falls back to LibreOffice, and finally falls back to XLCR Core
  * (built-in POI/Tika transforms).
+ *
+ * If Aspose is not included at build time (no license detected), BackendWiring stubs immediately
+ * return UnsupportedConversion, so the fallback is instant. If Aspose IS included but a specific
+ * product isn't licensed at runtime, ResourceError triggers the same fallback.
  *
  * Priority order:
  *   1. Aspose (preferred - better quality, more conversions) 2. LibreOffice (fallback - open
@@ -37,8 +40,9 @@ object UnifiedTransforms:
   /**
    * Convert content to a target MIME type.
    *
-   * Tries Aspose first, falls back to LibreOffice if Aspose doesn't support the conversion, then
-   * falls back to XLCR Core if LibreOffice doesn't support it.
+   * Tries Aspose first, falls back to LibreOffice if Aspose doesn't support the conversion or lacks
+   * a license for the required product, then falls back to XLCR Core if LibreOffice doesn't support
+   * it.
    *
    * @param input
    *   The input content to convert
@@ -52,8 +56,8 @@ object UnifiedTransforms:
     to: Mime,
     options: ConvertOptions = ConvertOptions()
   ): ZIO[Any, TransformError, Content[Mime]] =
-    AsposeTransforms.convert(input, to, options).catchSome {
-      case _: UnsupportedConversion =>
+    BackendWiring.asposeConvert(input, to, options).catchSome {
+      case _: UnsupportedConversion | _: ResourceError =>
         ZIO.when(!options.isDefault)(
           ZIO.logWarning(
             s"Falling back to LibreOffice which ignores options: ${options.nonDefaultSummary}"
@@ -72,7 +76,7 @@ object UnifiedTransforms:
    * Check if a conversion is supported by any backend.
    */
   def canConvert(from: Mime, to: Mime): Boolean =
-    AsposeTransforms.canConvert(from, to) ||
+    BackendWiring.asposeCanConvert(from, to) ||
       LibreOfficeTransforms.canConvert(from, to) ||
       XlcrTransforms.canConvert(from, to)
 
@@ -84,7 +88,7 @@ object UnifiedTransforms:
    * Split content into fragments.
    *
    * Tries Aspose first, falls back to LibreOffice if Aspose doesn't support splitting for this MIME
-   * type, then falls back to XLCR Core.
+   * type or lacks a license, then falls back to XLCR Core.
    *
    * @param input
    *   The input content to split
@@ -95,8 +99,8 @@ object UnifiedTransforms:
     input: Content[Mime],
     options: ConvertOptions = ConvertOptions()
   ): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
-    AsposeTransforms.split(input, options).catchSome {
-      case _: UnsupportedConversion =>
+    BackendWiring.asposeSplit(input, options).catchSome {
+      case _: UnsupportedConversion | _: ResourceError =>
         ZIO.when(!options.isDefault)(
           ZIO.logWarning(
             s"Falling back to LibreOffice which ignores split options: ${options.nonDefaultSummary}"
@@ -115,6 +119,6 @@ object UnifiedTransforms:
    * Check if splitting is supported by any backend.
    */
   def canSplit(mime: Mime): Boolean =
-    AsposeTransforms.canSplit(mime) ||
+    BackendWiring.asposeCanSplit(mime) ||
       LibreOfficeTransforms.canSplit(mime) ||
       XlcrTransforms.canSplit(mime)
