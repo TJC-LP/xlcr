@@ -14,30 +14,12 @@ object BuildConfig {
   /** Aspose Maven repository URL */
   val asposeRepoUrl = "https://releases.aspose.com/java/repo/"
 
-  /** Detect Aspose license availability at build time (core-aspose/resources or env vars only).
-    * Current working directory license files are runtime-only and do not control module inclusion.
-    * When false and no XLCR_ASPOSE_ENABLED override, the xlcr module excludes core-aspose.
-    *
-    * NOTE: This val is evaluated once when the build definition compiles.
-    * If you add/remove license files, run: ./mill shutdown && ./mill clean
-    * to force re-evaluation.
+  /** Include Aspose module by default. Set XLCR_NO_ASPOSE=1 to exclude
+    * (produces a smaller JAR without Aspose dependencies).
+    * Runtime license checks (AsposeLicenseV2) handle the unlicensed case
+    * by falling back to LibreOffice/Core backends.
     */
-  val asposeEnabled: Boolean = {
-    val hasTotal = os.exists(os.pwd / "core-aspose" / "resources" / "Aspose.Total.Java.lic") ||
-      sys.env.contains("ASPOSE_TOTAL_LICENSE_B64")
-    val individualLicFiles = Seq(
-      ("Aspose.Words.Java.lic", "ASPOSE_WORDS_LICENSE_B64"),
-      ("Aspose.Cells.Java.lic", "ASPOSE_CELLS_LICENSE_B64"),
-      ("Aspose.Email.Java.lic", "ASPOSE_EMAIL_LICENSE_B64"),
-      ("Aspose.Slides.Java.lic", "ASPOSE_SLIDES_LICENSE_B64"),
-      ("Aspose.Pdf.Java.lic", "ASPOSE_PDF_LICENSE_B64"),
-      ("Aspose.Zip.Java.lic", "ASPOSE_ZIP_LICENSE_B64")
-    )
-    val hasIndividual = individualLicFiles.exists { case (file, envVar) =>
-      os.exists(os.pwd / "core-aspose" / "resources" / file) || sys.env.contains(envVar)
-    }
-    hasTotal || hasIndividual || sys.env.contains("XLCR_ASPOSE_ENABLED")
-  }
+  val asposeEnabled: Boolean = !sys.env.contains("XLCR_NO_ASPOSE")
 
   /** JVM options to silence Scala 3 LazyVals sun.misc.Unsafe deprecation warnings (JDK 21+) */
   val lazyValsJvmArgs: Seq[String] = Seq(

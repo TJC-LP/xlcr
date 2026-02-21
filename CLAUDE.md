@@ -39,16 +39,17 @@ export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Total.Java.lic)
 
 The license file in `core-aspose/resources/` is gitignored (`*.lic` pattern).
 
-### Mill Daemon Caching
+### Aspose Build & License Environment Variables
 
-The `asposeEnabled` build flag is evaluated once when the Mill daemon compiles `build.mill`. If you add or remove license files from `core-aspose/resources/`, the daemon won't notice:
-```bash
-./mill shutdown && ./mill clean   # Force re-evaluation of asposeEnabled
-```
+**Build-time** (controls module inclusion in JAR):
 
-### Aspose License Override Hierarchy
+| Variable | Effect |
+|---|---|
+| `XLCR_NO_ASPOSE=1` | Exclude core-aspose from build (smaller JAR, no Aspose deps) |
 
-Environment variables control license resolution at runtime (precedence order):
+Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deployments.
+
+**Runtime** (controls license resolution, precedence order):
 
 | Variable | Effect |
 |---|---|
@@ -61,7 +62,6 @@ Environment variables control license resolution at runtime (precedence order):
 | `ASPOSE_PDF_LICENSE_B64` | Per-product: Pdf only |
 | `ASPOSE_EMAIL_LICENSE_B64` | Per-product: Email only |
 | `ASPOSE_ZIP_LICENSE_B64` | Per-product: Zip only |
-| `XLCR_ASPOSE_ENABLED=1` | Build-time override: include core-aspose even without a detected license |
 
 ## Build Commands
 - `./mill __.compile` - Compile all modules for all Scala versions
