@@ -119,13 +119,14 @@ RUN mill 'xlcr[3.3.4].nativeImageTool'
 # ============================================================================
 FROM assembly AS agent
 
-COPY scripts/run-native-agent.sh /xlcr/run-native-agent.sh
-RUN chmod +x /xlcr/run-native-agent.sh
+COPY scripts/test-conversions.sh /xlcr/scripts/test-conversions.sh
+RUN chmod +x /xlcr/scripts/test-conversions.sh
 
 # Create metadata output directory
 RUN mkdir -p /metadata-output
+ENV METADATA_DIR=/metadata-output
 
-ENTRYPOINT ["/xlcr/run-native-agent.sh"]
+ENTRYPOINT ["/xlcr/scripts/test-conversions.sh", "--mode", "agent"]
 
 # ============================================================================
 # Stage 4: native — build native binary

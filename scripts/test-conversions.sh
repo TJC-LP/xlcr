@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-conversions.sh
-# Comprehensive test and benchmark script for XLCR native image workflow.
+# Unified test, benchmark, and tracing agent script for XLCR native image workflow.
 #
 # Validates file output (size > 0, correct MIME type via `file`), never exit codes.
 # Tests all three backends: Aspose, LibreOffice, and Core (POI/PDFBox/Tika).
@@ -9,6 +9,7 @@
 #   --mode test   Pass/fail table (default)
 #   --mode bench  Timing comparison table
 #   --mode both   Both test and benchmark
+#   --mode agent  GraalVM tracing agent (captures native-image metadata)
 #
 # Runners:
 #   --runner jvm     JVM only
@@ -19,6 +20,7 @@
 #   ./scripts/test-conversions.sh --mode test
 #   ./scripts/test-conversions.sh --mode test --runner native
 #   ./scripts/test-conversions.sh --mode bench --runner native
+#   ./scripts/test-conversions.sh --mode agent  # GraalVM tracing (JVM only)
 
 set -uo pipefail
 
@@ -28,6 +30,7 @@ RUNNER="both"
 WORK_DIR="/tmp/xlcr-test"
 TESTDATA="/xlcr/testdata"
 NATIVE_BIN="/xlcr/xlcr-native"
+METADATA_DIR="${METADATA_DIR:-}"  # Set via env for agent mode
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -38,7 +41,31 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# ── Agent mode setup ─────────────────────────────────────────────────
+if [[ "$MODE" == "agent" ]]; then
+    RUNNER="jvm"  # Agent mode is always JVM-only
+    METADATA_DIR="${METADATA_DIR:-/metadata-output}"
+    mkdir -p "$METADATA_DIR"
+fi
+
 # ── Find JVM components ──────────────────────────────────────────────
+JAVA_CMD="java"
+
+if [[ "$MODE" == "agent" ]]; then
+    # Agent mode needs GraalVM java for the -agentlib: flag
+    JAVA_CMD=$(find /root/.cache/coursier -path '*/graalvm*/bin/java' -type f 2>/dev/null | head -1)
+    if [[ -z "$JAVA_CMD" ]]; then
+        JAVA_CMD=$(find /xlcr/out -path '*/graalvm*/bin/java' -type f 2>/dev/null | head -1)
+    fi
+    if [[ -z "$JAVA_CMD" ]]; then
+        echo "ERROR: Could not find GraalVM java binary for tracing agent"
+        echo "Searched: /root/.cache/coursier/ and /xlcr/out/"
+        echo "Ensure 'mill xlcr[3.3.4].nativeImageTool' was run during build."
+        exit 1
+    fi
+    echo "Found GraalVM java: $JAVA_CMD"
+fi
+
 ASSEMBLY_JAR=$(find /xlcr/out -path '*/assembly.dest/out.jar' -type f 2>/dev/null | head -1)
 
 if [[ -z "$ASSEMBLY_JAR" ]] && [[ "$RUNNER" != "native" ]]; then
@@ -47,7 +74,7 @@ if [[ -z "$ASSEMBLY_JAR" ]] && [[ "$RUNNER" != "native" ]]; then
     exit 1
 fi
 
-if [[ ! -f "$NATIVE_BIN" ]] && [[ "$RUNNER" != "jvm" ]]; then
+if [[ "$MODE" != "agent" ]] && [[ ! -f "$NATIVE_BIN" ]] && [[ "$RUNNER" != "jvm" ]]; then
     echo "WARNING: Native binary not found at $NATIVE_BIN"
     if [[ "$RUNNER" == "native" ]]; then
         echo "ERROR: --runner native but no native binary found"
@@ -132,7 +159,12 @@ validate_backend_info() {
 # ── Runner functions ─────────────────────────────────────────────────
 
 run_jvm() {
-    java \
+    local agent_flag=""
+    if [[ "$MODE" == "agent" && -n "$METADATA_DIR" ]]; then
+        agent_flag="-agentlib:native-image-agent=config-merge-dir=${METADATA_DIR}"
+    fi
+    "$JAVA_CMD" \
+        $agent_flag \
         -Dsun.misc.unsafe.memory.access=allow \
         --add-opens=java.base/sun.misc=ALL-UNNAMED \
         --add-opens=java.base/java.lang=ALL-UNNAMED \
@@ -159,6 +191,25 @@ run_test() {
     local jvm_result="-" native_result="-"
     local jvm_time="-" native_time="-"
     local jvm_out="" native_out=""
+
+    # Agent mode: run JVM with tracing, skip validation
+    if [[ "$MODE" == "agent" ]]; then
+        local agent_work="$WORK_DIR/agent"
+        mkdir -p "$agent_work"
+
+        local agent_args=()
+        for arg in "$@"; do
+            agent_args+=("${arg//__WORK__/$agent_work}")
+        done
+
+        run_jvm "${agent_args[@]}" >/dev/null 2>&1 || true
+        JVM_RESULTS+=("OK")
+        NATIVE_RESULTS+=("-")
+        JVM_TIMES+=("-")
+        NATIVE_TIMES+=("-")
+        printf "."
+        return
+    fi
 
     # JVM run
     if [[ "$RUNNER" == "jvm" || "$RUNNER" == "both" ]]; then
@@ -235,6 +286,27 @@ run_test() {
 print_results() {
     echo ""
     echo ""
+
+    # Agent mode: print metadata summary instead of pass/fail table
+    if [[ "$MODE" == "agent" ]]; then
+        echo "XLCR Tracing Agent Results"
+        echo "========================="
+        echo ""
+        echo "Traced ${#TEST_NAMES[@]} operations"
+        echo ""
+        echo "Metadata files in $METADATA_DIR:"
+        ls -la "$METADATA_DIR/" 2>/dev/null || echo "  (no files)"
+        echo ""
+        if [[ -f "$METADATA_DIR/reachability-metadata.json" ]]; then
+            local entry_count
+            entry_count=$(grep -c '"type"' "$METADATA_DIR/reachability-metadata.json" 2>/dev/null || echo "0")
+            echo "Reflection entries: $entry_count"
+        fi
+        echo ""
+        echo "Done. Extract with: docker cp <container>:$METADATA_DIR/ ./metadata-output/"
+        return 0
+    fi
+
     echo "XLCR Test Results"
     echo "================="
     echo ""
@@ -297,9 +369,15 @@ print_results() {
 # ── Main test matrix ─────────────────────────────────────────────────
 
 main() {
-    echo "XLCR Conversion Test Suite"
-    echo "=========================="
-    echo "Mode: $MODE | Runner: $RUNNER"
+    if [[ "$MODE" == "agent" ]]; then
+        echo "XLCR Tracing Agent"
+        echo "=================="
+        echo "Metadata output: $METADATA_DIR"
+    else
+        echo "XLCR Conversion Test Suite"
+        echo "=========================="
+        echo "Mode: $MODE | Runner: $RUNNER"
+    fi
     echo ""
 
     # Clean work directory

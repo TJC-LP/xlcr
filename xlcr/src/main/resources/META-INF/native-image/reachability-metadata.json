@@ -71,6 +71,228 @@
       ]
     },
     {
+      "type": "com.aspose.email.CodePageMapData$CodePage"
+    },
+    {
+      "type": "com.aspose.email.CodePageMapData$CodePage[]"
+    },
+    {
+      "type": "com.aspose.email.DayOfWeek"
+    },
+    {
+      "type": "com.aspose.email.FormatOutput$OutputStackEntry"
+    },
+    {
+      "type": "com.aspose.email.FormatOutput$OutputStackEntry[]"
+    },
+    {
+      "type": "com.aspose.email.MhtTemplateName",
+      "fields": [
+        {
+          "name": "ATTACHMENTS"
+        },
+        {
+          "name": "BCC"
+        },
+        {
+          "name": "CATEGORIES"
+        },
+        {
+          "name": "CC"
+        },
+        {
+          "name": "END"
+        },
+        {
+          "name": "FROM"
+        },
+        {
+          "name": "IMPORTANCE"
+        },
+        {
+          "name": "LOCATION"
+        },
+        {
+          "name": "OPTIONAL_ATTENDEES"
+        },
+        {
+          "name": "ORGANIZER"
+        },
+        {
+          "name": "PAGE_HEADER"
+        },
+        {
+          "name": "RECURRENCE"
+        },
+        {
+          "name": "RECURRENCE_PATTERN"
+        },
+        {
+          "name": "REQUIRED_ATTENDEES"
+        },
+        {
+          "name": "SENT"
+        },
+        {
+          "name": "SHOW_TIME_AS"
+        },
+        {
+          "name": "START"
+        },
+        {
+          "name": "SUBJECT"
+        },
+        {
+          "name": "TO"
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.email.MhtTemplateName$Contact",
+      "fields": [
+        {
+          "name": "ANNIVERSARY"
+        },
+        {
+          "name": "BIRTHDAY"
+        },
+        {
+          "name": "BUSINESS"
+        },
+        {
+          "name": "BUSINESS_ADDRESS"
+        },
+        {
+          "name": "BUSINESS_FAX"
+        },
+        {
+          "name": "BUSINESS_HOME_PAGE"
+        },
+        {
+          "name": "COMPANY"
+        },
+        {
+          "name": "DEPARTMENT"
+        },
+        {
+          "name": "EMAIL"
+        },
+        {
+          "name": "EMAIL_2"
+        },
+        {
+          "name": "EMAIL_2_DISPLAY_AS"
+        },
+        {
+          "name": "EMAIL_3"
+        },
+        {
+          "name": "EMAIL_3_DISPLAY_AS"
+        },
+        {
+          "name": "EMAIL_DISPLAY_AS"
+        },
+        {
+          "name": "FIRST_NAME"
+        },
+        {
+          "name": "FULL_NAME"
+        },
+        {
+          "name": "GENDER"
+        },
+        {
+          "name": "HOBBIES"
+        },
+        {
+          "name": "HOME"
+        },
+        {
+          "name": "HOME_ADDRESS"
+        },
+        {
+          "name": "JOB_TITLE"
+        },
+        {
+          "name": "LAST_NAME"
+        },
+        {
+          "name": "MIDDLE_NAME"
+        },
+        {
+          "name": "MOBILE"
+        },
+        {
+          "name": "OTHER_ADDRESS"
+        },
+        {
+          "name": "PERSONAL_HOME_PAGE"
+        },
+        {
+          "name": "PROFESSION"
+        },
+        {
+          "name": "SPOUSE_PARTNER"
+        },
+        {
+          "name": "USER_FIELD_1"
+        },
+        {
+          "name": "USER_FIELD_2"
+        },
+        {
+          "name": "USER_FIELD_3"
+        },
+        {
+          "name": "USER_FIELD_4"
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.email.MhtTemplateName$Task",
+      "fields": [
+        {
+          "name": "ACTUAL_WORK"
+        },
+        {
+          "name": "BILLING_INFORMATION"
+        },
+        {
+          "name": "CATEGORIES"
+        },
+        {
+          "name": "COMPANY"
+        },
+        {
+          "name": "COMPLETE"
+        },
+        {
+          "name": "DUE_DATE"
+        },
+        {
+          "name": "MILEAGE"
+        },
+        {
+          "name": "OWNER"
+        },
+        {
+          "name": "PRIORITY"
+        },
+        {
+          "name": "START_DATE"
+        },
+        {
+          "name": "STATUS"
+        },
+        {
+          "name": "SUBJECT"
+        },
+        {
+          "name": "TOTAL_WORK"
+        }
+      ]
+    },
+    {
       "type": "com.aspose.email.internal.ah.zdx$za"
     },
     {
@@ -87,6 +309,60 @@
     },
     {
       "type": "com.aspose.email.internal.ah.zez$zb[]"
+    },
+    {
+      "type": "com.aspose.email.system.collections.generic.KeyValuePair",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.aspose.email.zakh"
+    },
+    {
+      "type": "com.aspose.email.zbjz$ze"
+    },
+    {
+      "type": "com.aspose.email.zbjz$ze[]"
+    },
+    {
+      "type": "com.aspose.email.zgm"
+    },
+    {
+      "type": "com.aspose.email.zgm[]"
+    },
+    {
+      "type": "com.aspose.email.zuz$za"
+    },
+    {
+      "type": "com.aspose.email.zuz$za[]"
+    },
+    {
+      "type": "com.aspose.email.zvf$za"
+    },
+    {
+      "type": "com.aspose.email.zvf$za[]"
+    },
+    {
+      "type": "com.aspose.email.zvf$zb"
+    },
+    {
+      "type": "com.aspose.email.zvf$zb[]"
+    },
+    {
+      "type": "com.aspose.email.zvf$zc"
+    },
+    {
+      "type": "com.aspose.email.zvf$zc[]"
+    },
+    {
+      "type": "com.aspose.email.zvf$zd"
+    },
+    {
+      "type": "com.aspose.email.zvf$zd[]"
     },
     {
       "type": "com.aspose.pdf.AbsorbedCell"
@@ -12350,6 +12626,12 @@
       ]
     },
     {
+      "type": "sun.util.resources.LocaleNames"
+    },
+    {
+      "type": "sun.util.resources.LocaleNames_en"
+    },
+    {
       "type": "sun.util.resources.cldr.CalendarData",
       "unsafeAllocated": true,
       "methods": [
@@ -12367,6 +12649,15 @@
     },
     {
       "type": "sun.util.resources.cldr.CurrencyNames_en_US"
+    },
+    {
+      "type": "sun.util.resources.cldr.LocaleNames"
+    },
+    {
+      "type": "sun.util.resources.cldr.LocaleNames_en"
+    },
+    {
+      "type": "sun.util.resources.cldr.LocaleNames_en_US"
     },
     {
       "type": "sun.util.resources.cldr.TimeZoneNames",
@@ -21333,7 +21624,16 @@
       "glob": "com/aspose/email/Aspose.License.BlackList.xml"
     },
     {
+      "glob": "com/aspose/email/CodePageMapData_Bitmap.dat"
+    },
+    {
       "glob": "com/aspose/email/Conholdate.License.BlackList.xml"
+    },
+    {
+      "glob": "com/aspose/email/MhtExport.css"
+    },
+    {
+      "glob": "com/aspose/email/internal/ad/codepages.nlp"
     },
     {
       "glob": "com/aspose/email/internal/ms/core/resources/System/Globalization/patterns.dat"
@@ -21408,6 +21708,15 @@
       "glob": "com/aspose/slides/ms/core/resources/System/Globalization/patterns.dat"
     },
     {
+      "glob": "com/aspose/words/resources/AllStyles2003.docx"
+    },
+    {
+      "glob": "com/aspose/words/resources/AllStyles2007.docx"
+    },
+    {
+      "glob": "com/aspose/words/resources/AllStyles2013.docx"
+    },
+    {
       "glob": "com/aspose/words/resources/Aspose.License.BlackList.Real.xml"
     },
     {
@@ -21424,6 +21733,9 @@
     },
     {
       "glob": "com/aspose/words/resources/TableSubstitutionLinux.xml"
+    },
+    {
+      "glob": "com/aspose/zip/private_/ms/System/Text/codepages.nlp"
     },
     {
       "glob": "com/aspose/zip/private_/ms/core/resources/System/Globalization/patterns.dat"
