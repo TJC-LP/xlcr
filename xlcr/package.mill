@@ -37,7 +37,7 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
       )
 
   // Set main class for executable JAR
-  override def mainClass = Some("com.tjclp.xlcr.v2.cli.XlcrMain")
+  override def mainClass = Some("com.tjclp.xlcr.cli.XlcrMain")
 
   // Disable prepended shell script - JAR has >65535 entries
   override def prependShellScript = ""

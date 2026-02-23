@@ -64,7 +64,6 @@ COPY mill ./
 COPY core/package.mill core/package.mill
 COPY core-aspose/package.mill core-aspose/package.mill
 COPY core-libreoffice/package.mill core-libreoffice/package.mill
-COPY core-spark/package.mill core-spark/package.mill
 COPY xlcr/package.mill xlcr/package.mill
 COPY server/package.mill server/package.mill
 

@@ -3,24 +3,19 @@ package build.`core-aspose`
 import mill._
 import mill.scalalib._
 
-object `package` extends Cross[CoreAsposeModule](build.scalaVersions)
+object `package` extends Cross[CoreAsposeModule](Seq("3.3.4"))
 
 trait CoreAsposeModule extends build.XLCRModule {
   override def artifactName = "xlcr-core-aspose"
   override def artifactDescription =
     "XLCR Aspose - Aspose-based document conversion bridges"
 
-  override def moduleDeps = Seq(build.core(crossScalaVersion))
+  override def moduleDeps = Seq(build.core("3.3.4"))
 
   // Test source directories
-  def testScala3Sources = Task.Sources(
+  def testSources = Task.Sources(
     moduleDir / "test" / "src",
     moduleDir / "test" / "src-3"
-  )
-
-  def testScala2Sources = Task.Sources(
-    moduleDir / "test" / "src",
-    moduleDir / "test" / "src-2"
   )
 
   // Disable Scala 3 doc generation due to Aspose term conflicts
@@ -34,10 +29,7 @@ trait CoreAsposeModule extends build.XLCRModule {
 
   override def scalacOptions: T[Seq[String]] =
     super.scalacOptions() ++ Seq(
-      "-Yresolve-term-conflict:package",
-      // Suppress deprecation warnings for v1 AsposeLicense usage in legacy bridges/splitters.
-      // These will be removed when v1 is fully migrated to AsposeLicenseV2.
-      "-Wconf:msg=Use AsposeLicenseV2:s"
+      "-Yresolve-term-conflict:package"
     )
 
   override def mvnDeps = Seq(
@@ -51,7 +43,6 @@ trait CoreAsposeModule extends build.XLCRModule {
   )
 
   object test extends ScalaTests with build.XLCRSerialTestModule {
-    override def sources =
-      if (crossScalaVersion.startsWith("3.")) testScala3Sources else testScala2Sources
+    override def sources = testSources
   }
 }

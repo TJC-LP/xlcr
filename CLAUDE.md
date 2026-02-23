@@ -3,24 +3,7 @@
 ## Java Version Requirements
 
 XLCR modules have different Java version requirements:
-- **Core, Aspose, LibreOffice**: Java 17+ (tested with Java 17, 21, 25)
-- **Spark Module**: Java 17 or 21 only (Spark 3.x limitation - Java 25 not supported)
-
-### Running Tests with Java 25
-
-If you're using Java 25 locally, you have two options:
-
-**Option 1: Skip Spark tests** (recommended for LibreOffice/core development)
-```bash
-./mill core[3.3.4].test core-aspose[3.3.4].test core-libreoffice[3.3.4].test
-```
-
-**Option 2: Use Java 17 for Spark tests**
-```bash
-# Set Java 17 for this session
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
-./mill __.test
-```
+- **Core, Aspose, LibreOffice, CLI, Server**: Java 17+ (tested with Java 17, 21, 25)
 
 ### Aspose License for Local Testing
 
@@ -66,7 +49,6 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 ## Build Commands
 - `./mill __.compile` - Compile all modules for all Scala versions
 - `./mill __[3.3.4].compile` - Compile all modules with Scala 3.3.4
-- `./mill __[2.13.17].compile` - Compile all modules with Scala 2.13.17
 - `./mill core[3.3.4].compile` - Compile a specific module with a specific Scala version
 - `./mill __.assembly` - Create executable JAR files
 - `./mill core[3.3.4].run` - Run the core application
@@ -74,16 +56,14 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 ## Test Commands
 - `./mill __.test` - Run all tests for all modules and Scala versions
 - `./mill __[3.3.4].test` - Run all tests with Scala 3.3.4
-- `./mill __[2.13.17].test` - Run all tests with Scala 2.13.17
 - `./mill core[3.3.4].test` - Run tests for a specific module
 - `./mill core[3.3.4].test.testOnly com.tjclp.xlcr.ConfigSpec` - Run a single test class
 - `./mill __.checkFormat` - Check code formatting
 - `./mill __.reformat` - Reformat code
 
 ## Scala Versions
-XLCR supports cross-building for:
-- **Scala 3.3.4** (primary version)
-- **Scala 2.13.17** (cross-build support)
+XLCR currently builds with:
+- **Scala 3.3.4**
 
 ## Code Style
 - Scala 3 with functional programming principles
@@ -101,7 +81,6 @@ The project is organized into these main modules:
 - `core` - Core functionality: Tika text extraction, splitters (PDF/Excel/PowerPoint/Word/Email/Archives), XLSX→ODS conversion
 - `core-aspose` - Integration with Aspose for PDF conversion and document transformations (HIGH priority)
 - `core-libreoffice` - Integration with LibreOffice for open-source document conversions (DEFAULT priority fallback)
-- `core-spark` - Spark DataFrame integration for document processing
 - `data` - Directory containing sample Excel files for testing
 
 ### Core Module Capabilities

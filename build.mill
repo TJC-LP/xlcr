@@ -6,7 +6,7 @@ import mill.scalalib.publish._
 import mill.scalalib.scalafmt._
 import mill.scalalib.Assembly._
 
-val scalaVersions = Seq("3.3.4", "2.13.17")
+val scalaVersions = Seq("3.3.4")
 val organization = "com.tjclp"
 
 /** Shared build configuration constants */
@@ -27,22 +27,6 @@ object BuildConfig {
     "-XX:+IgnoreUnrecognizedVMOptions"
   )
 
-  /** Spark-required JVM args for Java 17+ */
-  val sparkJvmArgs: Seq[String] = Seq(
-    "--add-opens=java.base/java.lang=ALL-UNNAMED",
-    "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
-    "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
-    "--add-opens=java.base/java.io=ALL-UNNAMED",
-    "--add-opens=java.base/java.net=ALL-UNNAMED",
-    "--add-opens=java.base/java.nio=ALL-UNNAMED",
-    "--add-opens=java.base/java.util=ALL-UNNAMED",
-    "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
-    "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
-    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-    "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
-    "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
-    "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
-  ) ++ lazyValsJvmArgs
 }
 
 /** Base trait for all XLCR modules - shared compiler settings and formatting */
@@ -97,7 +81,7 @@ trait XLCRModule extends XLCRModuleBase with PublishModule {
 
   /** Version derived from PUBLISH_VERSION env var (set by CI), or default for local dev */
   override def publishVersion: T[String] =
-    sys.env.getOrElse("PUBLISH_VERSION", "0.2.1-SNAPSHOT")
+    sys.env.getOrElse("PUBLISH_VERSION", "0.3.0-SNAPSHOT")
 
   override def pomSettings: T[PomSettings] = PomSettings(
     description = artifactDescription,
@@ -157,9 +141,4 @@ trait XLCRLibreOfficeTestModule extends XLCRTestModule {
 
   /** Disable parallel test execution within the fork - LibreOffice can only handle one conversion at a time */
   override def testParallelism: T[Boolean] = false
-}
-
-/** Trait for Spark test modules with additional JVM args */
-trait XLCRSparkTestModule extends XLCRTestModule {
-  override def forkArgs: T[Seq[String]] = BuildConfig.sparkJvmArgs
 }

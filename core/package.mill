@@ -3,7 +3,7 @@ package build.core
 import mill._
 import mill.scalalib._
 
-object `package` extends Cross[CoreModule](build.scalaVersions)
+object `package` extends Cross[CoreModule](Seq("3.3.4"))
 
 trait CoreModule extends build.XLCRModule {
   override def artifactName = "xlcr-core"
@@ -11,13 +11,9 @@ trait CoreModule extends build.XLCRModule {
     "XLCR Core - Cross-format document conversion library"
 
   // Test source directories (defined at module level where moduleDir is accessible)
-  def testScala3Sources = Task.Sources(
+  def testSources = Task.Sources(
     moduleDir / "test" / "src",
     moduleDir / "test" / "src-3"
-  )
-
-  def testScala2Sources = Task.Sources(
-    moduleDir / "test" / "src"
   )
 
   def testResources = Task.Sources(moduleDir / "test" / "resources")
@@ -33,8 +29,7 @@ trait CoreModule extends build.XLCRModule {
     mvn"dev.zio::zio-config:4.0.1",
     mvn"dev.zio::zio-config-magnolia:4.0.1",
     mvn"dev.zio::zio-config-typesafe:4.0.1",
-    // CLI - Legacy (scopt) and v2 (Decline)
-    mvn"com.github.scopt::scopt:4.1.0",
+    // CLI
     mvn"com.monovore::decline:2.4.1",
     mvn"com.monovore::decline-effect:2.4.1",
     // Cats (required by Decline)
@@ -42,8 +37,6 @@ trait CoreModule extends build.XLCRModule {
     mvn"org.typelevel::cats-effect:3.5.7",
     // ZIO-Cats interop (for bridging ZIO with Cats-based libraries like Decline)
     mvn"dev.zio::zio-interop-cats:23.1.0.3",
-    // Scala compatibility
-    mvn"org.scala-lang.modules::scala-collection-compat:2.13.0",
     // Apache Tika
     mvn"org.apache.tika:tika-core:3.2.3",
     mvn"org.apache.tika:tika-parsers:3.2.3",
@@ -62,22 +55,12 @@ trait CoreModule extends build.XLCRModule {
     mvn"org.odftoolkit:odfdom-java:0.12.0",
     // Apache POI for Excel handling
     mvn"org.apache.poi:poi:5.5.1",
-    mvn"org.apache.poi:poi-ooxml:5.5.1"
-  ) ++ (
-    if (crossScalaVersion.startsWith("2.")) {
-      Seq(
-        mvn"org.scala-lang:scala-reflect:${crossScalaVersion}"
-      )
-    } else {
-      Seq(
-        mvn"dev.zio::zio-blocks-scope:0.0.25"
-      )
-    }
+    mvn"org.apache.poi:poi-ooxml:5.5.1",
+    mvn"dev.zio::zio-blocks-scope:0.0.25"
   )
 
   object test extends ScalaTests with build.XLCRTestModule {
-    override def sources =
-      if (crossScalaVersion.startsWith("3.")) testScala3Sources else testScala2Sources
+    override def sources = testSources
 
     override def resources = testResources
 

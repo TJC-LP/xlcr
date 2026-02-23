@@ -5,6 +5,14 @@ All notable changes to XLCR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- `core-spark` module and all Spark pipeline sources/tests/docs.
+
+### Changed
+- Project now targets Scala 3.3.4 only.
+
 ## [0.2.0] - 2026-02-23
 
 ### Added

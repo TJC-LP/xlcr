@@ -15,7 +15,6 @@ XLCR converts between document formats (PDF, DOCX, XLSX, PPTX, HTML, ODS, and mo
 | **core** | `xlcr-core` | Tika text extraction, document splitters (PDF/Excel/PowerPoint/Word/Email/Archive), XLSX-to-ODS conversion |
 | **core-aspose** | `xlcr-core-aspose` | Aspose-powered conversions: PDF/DOCX/XLSX/PPTX/HTML with HIGH priority (commercial license required) |
 | **core-libreoffice** | `xlcr-core-libreoffice` | LibreOffice-powered conversions: DOC/XLS/PPT/ODS to PDF as open-source fallback |
-| **core-spark** | `xlcr-core-spark` | Spark DataFrame integration for batch document processing |
 | **xlcr** | `xlcr` | Unified CLI with compile-time transform discovery and automatic backend fallback (Scala 3 only) |
 | **server** | `xlcr-server` | HTTP REST API for document conversion and splitting (Scala 3 only) |
 
@@ -61,7 +60,7 @@ libraryDependencies ++= Seq(
 )
 ```
 
-Cross-published for **Scala 3.3.4** and **Scala 2.13.17**.
+Published for **Scala 3.3.4**.
 
 ## CLI Usage
 
@@ -167,7 +166,6 @@ curl http://localhost:8080/capabilities
 ```bash
 ./mill __.compile                    # Compile all modules
 ./mill __[3.3.4].test                # Run all tests (Scala 3)
-./mill __[2.13.17].test              # Run all tests (Scala 2.13)
 ./mill core[3.3.4].test              # Run tests for a specific module
 ./mill __.checkFormat                # Check code formatting
 ./mill __.reformat                   # Fix formatting

@@ -3,12 +3,12 @@ package build.server
 import mill._
 import mill.scalalib._
 
-// Only build for Scala 3 - this is a v2 server module
+// Only build for Scala 3 - this is the stable server module
 object `package` extends Cross[ServerModule](Seq("3.3.4"))
 
 trait ServerModule extends build.XLCRModule {
   override def artifactName = "xlcr-server"
-  override def artifactDescription = "XLCR v2 HTTP Server - REST API for document conversion"
+  override def artifactDescription = "XLCR HTTP Server - REST API for document conversion"
 
   // Depend on xlcr module which includes all backends with fallback
   override def moduleDeps = Seq(
@@ -22,7 +22,7 @@ trait ServerModule extends build.XLCRModule {
   )
 
   // Set main class for executable JAR
-  override def mainClass = Some("com.tjclp.xlcr.v2.server.Server")
+  override def mainClass = Some("com.tjclp.xlcr.server.Server")
 
   // Disable prepended shell script - JAR may have many entries
   override def prependShellScript = ""
