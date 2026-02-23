@@ -120,12 +120,13 @@ validate_split_dir() {
 
 validate_info_output() {
     local output="$1"
-    echo "$output" | grep -qi "MIME Type\|mimeType"
+    # Use bash pattern match to avoid piping large debug outputs through echo
+    [[ "${output,,}" == *"mime type"* || "${output,,}" == *"mimetype"* ]]
 }
 
 validate_backend_info() {
     local output="$1"
-    echo "$output" | grep -qi "Backend Status\|Aspose Backend\|backend"
+    [[ "${output,,}" == *"backend status"* || "${output,,}" == *"aspose backend"* ]]
 }
 
 # ── Runner functions ─────────────────────────────────────────────────
