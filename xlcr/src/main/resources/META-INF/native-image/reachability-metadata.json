@@ -9831,6 +9831,33 @@
       ]
     },
     {
+      "type": "sun.font.GlyphLayout$GVData",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "_count"
+        },
+        {
+          "name": "_flags"
+        },
+        {
+          "name": "_glyphs"
+        },
+        {
+          "name": "_indices"
+        },
+        {
+          "name": "_positions"
+        }
+      ],
+      "methods": [
+        {
+          "name": "grow",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "sun.font.GlyphList",
       "jniAccessible": true,
       "fields": [

@@ -40,6 +40,15 @@ import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, Mime }
  */
 object XlcrMain extends ZIOAppDefault:
 
+  // JDK 22+ defaults to Panama FFM for HarfBuzz font shaping (HBShaper).
+  // GraalVM CE 25 segfaults on aarch64 when creating Panama upcall stubs
+  // in TrampolineSet.prepareTrampolines(). Disabling FFM falls back to the
+  // JNI-based HarfBuzz path (identical to JDK 21), avoiding the crash.
+  // Must be set before sun.font.SunLayoutEngine's static initializer runs.
+  locally {
+    java.lang.System.setProperty("sun.font.layout.ffm", "false")
+  }
+
   // Ensure java.home and java.library.path are set before Aspose initializes
   // (critical for native images). In GraalVM native images, build-time -Djava.home
   // is not propagated to runtime. Aspose libraries need java.home for font resolution.
