@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test-conversions.sh
-# Unified test and benchmark script for XLCR native image workflow.
+# Comprehensive test and benchmark script for XLCR native image workflow.
 #
 # Validates file output (size > 0, correct MIME type via `file`), never exit codes.
-# Runs both JVM and native in the same container with the same fixtures.
+# Tests all three backends: Aspose, LibreOffice, and Core (POI/PDFBox/Tika).
 #
 # Modes:
 #   --mode test   Pass/fail table (default)
@@ -17,8 +17,8 @@
 #
 # Usage:
 #   ./scripts/test-conversions.sh --mode test
+#   ./scripts/test-conversions.sh --mode test --runner native
 #   ./scripts/test-conversions.sh --mode bench --runner native
-#   ./scripts/test-conversions.sh --mode both
 
 set -uo pipefail
 
@@ -87,10 +87,30 @@ validate_png() {
     [[ -f "$f" ]] && [[ -s "$f" ]] && file "$f" | grep -qi "PNG image"
 }
 
+validate_jpeg() {
+    local f="$1"
+    [[ -f "$f" ]] && [[ -s "$f" ]] && file "$f" | grep -qi "JPEG image"
+}
+
 validate_ods() {
-    # ODS is a ZIP-based OpenDocument format
     local f="$1"
     [[ -f "$f" ]] && [[ -s "$f" ]] && file "$f" | grep -qiE "Zip archive|OpenDocument"
+}
+
+validate_text() {
+    local f="$1"
+    [[ -f "$f" ]] && [[ -s "$f" ]]
+}
+
+validate_xml() {
+    local f="$1"
+    [[ -f "$f" ]] && [[ -s "$f" ]] && grep -qiE "<?xml|<html" "$f"
+}
+
+validate_cdf() {
+    # CDF = Compound Document Format (DOC, XLS, PPT legacy formats)
+    local f="$1"
+    [[ -f "$f" ]] && [[ -s "$f" ]] && file "$f" | grep -qiE "Composite Document|CDF|Microsoft"
 }
 
 validate_split_dir() {
@@ -111,7 +131,6 @@ validate_backend_info() {
 # ── Runner functions ─────────────────────────────────────────────────
 
 run_jvm() {
-    # Run XLCR via JVM (assembly JAR)
     java \
         -Dsun.misc.unsafe.memory.access=allow \
         --add-opens=java.base/sun.misc=ALL-UNNAMED \
@@ -122,19 +141,7 @@ run_jvm() {
 }
 
 run_native() {
-    # Run XLCR via native binary
     JAVA_HOME="${JAVA_HOME:-/opt/graalvm}" "$NATIVE_BIN" "$@" 2>&1
-}
-
-# ── Timing helper ────────────────────────────────────────────────────
-
-time_ms() {
-    # Returns wall-clock milliseconds for a command
-    local start end
-    start=$(date +%s%N 2>/dev/null || python3 -c 'import time; print(int(time.time()*1e9))')
-    "$@" >/dev/null 2>&1
-    end=$(date +%s%N 2>/dev/null || python3 -c 'import time; print(int(time.time()*1e9))')
-    echo $(( (end - start) / 1000000 ))
 }
 
 # ── Test execution ───────────────────────────────────────────────────
@@ -157,7 +164,6 @@ run_test() {
         local jvm_work="$WORK_DIR/jvm"
         mkdir -p "$jvm_work"
 
-        # Replace WORK placeholder with jvm work dir
         local jvm_args=()
         for arg in "$@"; do
             jvm_args+=("${arg//__WORK__/$jvm_work}")
@@ -175,19 +181,10 @@ run_test() {
             jvm_out=$(run_jvm "${jvm_args[@]}")
         fi
 
-        # Validate
         if [[ "$validator_arg" == "stdout" ]]; then
-            if $validator "$jvm_out"; then
-                jvm_result="PASS"
-            else
-                jvm_result="FAIL"
-            fi
+            if $validator "$jvm_out"; then jvm_result="PASS"; else jvm_result="FAIL"; fi
         else
-            if $validator "$jvm_varg"; then
-                jvm_result="PASS"
-            else
-                jvm_result="FAIL"
-            fi
+            if $validator "$jvm_varg"; then jvm_result="PASS"; else jvm_result="FAIL"; fi
         fi
     fi
 
@@ -196,7 +193,6 @@ run_test() {
         local native_work="$WORK_DIR/native"
         mkdir -p "$native_work"
 
-        # Replace WORK placeholder with native work dir
         local native_args=()
         for arg in "$@"; do
             native_args+=("${arg//__WORK__/$native_work}")
@@ -214,19 +210,10 @@ run_test() {
             native_out=$(run_native "${native_args[@]}")
         fi
 
-        # Validate
         if [[ "$validator_arg" == "stdout" ]]; then
-            if $validator "$native_out"; then
-                native_result="PASS"
-            else
-                native_result="FAIL"
-            fi
+            if $validator "$native_out"; then native_result="PASS"; else native_result="FAIL"; fi
         else
-            if $validator "$native_varg"; then
-                native_result="PASS"
-            else
-                native_result="FAIL"
-            fi
+            if $validator "$native_varg"; then native_result="PASS"; else native_result="FAIL"; fi
         fi
     fi
 
@@ -235,7 +222,6 @@ run_test() {
     JVM_TIMES+=("$jvm_time")
     NATIVE_TIMES+=("$native_time")
 
-    # Print progress dot
     if [[ "$jvm_result" == "FAIL" || "$native_result" == "FAIL" ]]; then
         printf "x"
     else
@@ -253,13 +239,13 @@ print_results() {
     echo ""
 
     if [[ "$MODE" == "bench" || "$MODE" == "both" ]]; then
-        printf "%-28s %-8s %-8s %10s %12s %8s\n" \
+        printf "%-32s %-8s %-8s %10s %12s %8s\n" \
             "Test" "JVM" "Native" "JVM Time" "Native Time" "Speedup"
-        printf "%-28s %-8s %-8s %10s %12s %8s\n" \
+        printf "%-32s %-8s %-8s %10s %12s %8s\n" \
             "----" "---" "------" "--------" "-----------" "-------"
     else
-        printf "%-28s %-8s %-8s\n" "Test" "JVM" "Native"
-        printf "%-28s %-8s %-8s\n" "----" "---" "------"
+        printf "%-32s %-8s %-8s\n" "Test" "JVM" "Native"
+        printf "%-32s %-8s %-8s\n" "----" "---" "------"
     fi
 
     local total=0 jvm_pass=0 native_pass=0 jvm_fail=0 native_fail=0
@@ -282,14 +268,13 @@ print_results() {
             if [[ "$jt" != "-" && "$nt" != "-" && "$nt" -gt 0 ]]; then
                 speedup=$(python3 -c "print(f'{$jt/$nt:.1f}x')")
             fi
-            local jt_fmt="-"
-            local nt_fmt="-"
+            local jt_fmt="-" nt_fmt="-"
             [[ "$jt" != "-" ]] && jt_fmt="${jt}ms"
             [[ "$nt" != "-" ]] && nt_fmt="${nt}ms"
-            printf "%-28s %-8s %-8s %10s %12s %8s\n" \
+            printf "%-32s %-8s %-8s %10s %12s %8s\n" \
                 "$name" "$jr" "$nr" "$jt_fmt" "$nt_fmt" "$speedup"
         else
-            printf "%-28s %-8s %-8s\n" "$name" "$jr" "$nr"
+            printf "%-32s %-8s %-8s\n" "$name" "$jr" "$nr"
         fi
     done
 
@@ -302,7 +287,6 @@ print_results() {
         echo "  Native: $native_pass passed, $native_fail failed"
     fi
 
-    # Exit with failure if any tests failed
     if [[ $jvm_fail -gt 0 || $native_fail -gt 0 ]]; then
         return 1
     fi
@@ -319,138 +303,327 @@ main() {
 
     # Clean work directory
     rm -rf "$WORK_DIR"
-    mkdir -p "$WORK_DIR/jvm" "$WORK_DIR/native"
+    mkdir -p "$WORK_DIR/jvm" "$WORK_DIR/native" "$WORK_DIR/fixtures"
 
+    # ── Generate fixtures ─────────────────────────────────────────────
+    # Pre-generate fixtures via JVM to avoid cascading failures.
+    echo "Generating fixtures..."
+    local FIX="$WORK_DIR/fixtures"
+
+    run_jvm convert -i "$TESTDATA/test.html" -o "$FIX/test.pdf" >/dev/null 2>&1 || true
+    run_jvm convert -i "$TESTDATA/test.html" -o "$FIX/test.pptx" >/dev/null 2>&1 || true
+
+    if [[ -f "$FIX/test.pdf" ]]; then
+        run_jvm convert -i "$FIX/test.pdf" -o "$FIX/test.png" >/dev/null 2>&1 || true
+    fi
+
+    # Generate legacy format fixtures via LibreOffice
+    if [[ -f "$TESTDATA/test.docx" ]]; then
+        run_jvm convert -i "$TESTDATA/test.docx" -o "$FIX/test.doc" --backend libreoffice >/dev/null 2>&1 || true
+    fi
+    if [[ -f "$TESTDATA/test.xlsx" ]]; then
+        run_jvm convert -i "$TESTDATA/test.xlsx" -o "$FIX/test.xls" --backend libreoffice >/dev/null 2>&1 || true
+        run_jvm convert -i "$TESTDATA/test.xlsx" -o "$FIX/test.ods" >/dev/null 2>&1 || true
+    fi
+    if [[ -f "$FIX/test.pptx" ]]; then
+        run_jvm convert -i "$FIX/test.pptx" -o "$FIX/test.ppt" --backend libreoffice >/dev/null 2>&1 || true
+    fi
+
+    echo "Fixtures ready."
+    echo ""
     printf "Running tests: "
 
-    # ── HTML conversions ──────────────────────────────────────────────
+    # ══════════════════════════════════════════════════════════════════
+    # Phase 1: Aspose conversions
+    # ══════════════════════════════════════════════════════════════════
 
-    # 1. HTML → PDF
+    # HTML conversions
     run_test "HTML -> PDF" validate_pdf "__WORK__/test.pdf" \
         convert -i "$TESTDATA/test.html" -o "__WORK__/test.pdf"
 
-    # 2. HTML → PPTX
     run_test "HTML -> PPTX" validate_zip "__WORK__/test.pptx" \
         convert -i "$TESTDATA/test.html" -o "__WORK__/test.pptx"
 
-    # ── PDF conversions (depend on HTML → PDF output) ─────────────────
-    # Use a pre-generated PDF for these tests to avoid cascading failures.
-    # Generate it once from JVM which is known-good.
-    local test_pdf="$WORK_DIR/fixtures/test.pdf"
-    mkdir -p "$WORK_DIR/fixtures"
-    run_jvm convert -i "$TESTDATA/test.html" -o "$test_pdf" >/dev/null 2>&1 || true
-
-    if [[ -f "$test_pdf" ]]; then
-        # 3. PDF → HTML
+    # PDF conversions
+    if [[ -f "$FIX/test.pdf" ]]; then
         run_test "PDF -> HTML" validate_html "__WORK__/from-pdf.html" \
-            convert -i "$test_pdf" -o "__WORK__/from-pdf.html"
+            convert -i "$FIX/test.pdf" -o "__WORK__/from-pdf.html"
 
-        # 4. PDF → PPTX
         run_test "PDF -> PPTX" validate_zip "__WORK__/from-pdf.pptx" \
-            convert -i "$test_pdf" -o "__WORK__/from-pdf.pptx"
+            convert -i "$FIX/test.pdf" -o "__WORK__/from-pdf.pptx"
 
-        # 5. PDF → PNG
         run_test "PDF -> PNG" validate_png "__WORK__/test.png" \
-            convert -i "$test_pdf" -o "__WORK__/test.png"
-    else
-        echo ""
-        echo "WARNING: Could not generate test PDF — skipping PDF-based tests"
+            convert -i "$FIX/test.pdf" -o "__WORK__/test.png"
+
+        run_test "PDF -> JPEG" validate_jpeg "__WORK__/test.jpg" \
+            convert -i "$FIX/test.pdf" -o "__WORK__/test.jpg"
     fi
 
-    # 6. PNG → PDF (generate a PNG first via JVM)
-    local test_png="$WORK_DIR/fixtures/test.png"
-    if [[ -f "$test_pdf" ]]; then
-        run_jvm convert -i "$test_pdf" -o "$test_png" >/dev/null 2>&1 || true
-    fi
-    if [[ -f "$test_png" ]]; then
+    # Image → PDF
+    if [[ -f "$FIX/test.png" ]]; then
         run_test "PNG -> PDF" validate_pdf "__WORK__/from-png.pdf" \
-            convert -i "$test_png" -o "__WORK__/from-png.pdf"
+            convert -i "$FIX/test.png" -o "__WORK__/from-png.pdf"
+    fi
+    if [[ -f "$TESTDATA/test.jpg" ]]; then
+        run_test "JPEG -> PDF" validate_pdf "__WORK__/from-jpg.pdf" \
+            convert -i "$TESTDATA/test.jpg" -o "__WORK__/from-jpg.pdf"
     fi
 
-    # ── PowerPoint conversions ────────────────────────────────────────
-    # Generate a PPTX fixture via JVM
-    local test_pptx="$WORK_DIR/fixtures/test.pptx"
-    run_jvm convert -i "$TESTDATA/test.html" -o "$test_pptx" >/dev/null 2>&1 || true
-
-    if [[ -f "$test_pptx" ]]; then
-        # 7. PPTX → PDF
+    # PowerPoint conversions
+    if [[ -f "$FIX/test.pptx" ]]; then
         run_test "PPTX -> PDF" validate_pdf "__WORK__/from-pptx.pdf" \
-            convert -i "$test_pptx" -o "__WORK__/from-pptx.pdf"
+            convert -i "$FIX/test.pptx" -o "__WORK__/from-pptx.pdf"
 
-        # 8. PPTX → HTML
         run_test "PPTX -> HTML" validate_html "__WORK__/from-pptx.html" \
-            convert -i "$test_pptx" -o "__WORK__/from-pptx.html"
+            convert -i "$FIX/test.pptx" -o "__WORK__/from-pptx.html"
     fi
 
-    # ── Word conversions ──────────────────────────────────────────────
-
+    # Word conversions
     if [[ -f "$TESTDATA/test.docx" ]]; then
-        # 9. DOCX → PDF
         run_test "DOCX -> PDF" validate_pdf "__WORK__/from-docx.pdf" \
             convert -i "$TESTDATA/test.docx" -o "__WORK__/from-docx.pdf"
     fi
 
-    # ── Excel conversions ─────────────────────────────────────────────
-
+    # Excel conversions
     if [[ -f "$TESTDATA/test.xlsx" ]]; then
-        # 10. XLSX → PDF
         run_test "XLSX -> PDF" validate_pdf "__WORK__/from-xlsx.pdf" \
             convert -i "$TESTDATA/test.xlsx" -o "__WORK__/from-xlsx.pdf"
 
-        # 11. XLSX → ODS
         run_test "XLSX -> ODS" validate_ods "__WORK__/from-xlsx.ods" \
             convert -i "$TESTDATA/test.xlsx" -o "__WORK__/from-xlsx.ods"
 
-        # 12. XLSX → HTML
         run_test "XLSX -> HTML" validate_html "__WORK__/from-xlsx.html" \
             convert -i "$TESTDATA/test.xlsx" -o "__WORK__/from-xlsx.html"
     fi
 
-    # ── Split operations ──────────────────────────────────────────────
-
-    if [[ -f "$test_pdf" ]]; then
-        # 13. Split PDF
-        run_test "Split PDF" validate_split_dir "__WORK__/split-pdf" \
-            split -i "$test_pdf" -d "__WORK__/split-pdf" --extract
+    # Email conversions
+    if [[ -f "$TESTDATA/test.eml" ]]; then
+        run_test "EML -> PDF" validate_pdf "__WORK__/from-eml.pdf" \
+            convert -i "$TESTDATA/test.eml" -o "__WORK__/from-eml.pdf"
     fi
 
-    if [[ -f "$test_pptx" ]]; then
-        # 14. Split PPTX
+    # ══════════════════════════════════════════════════════════════════
+    # Phase 2: Aspose splits
+    # ══════════════════════════════════════════════════════════════════
+
+    if [[ -f "$FIX/test.pdf" ]]; then
+        run_test "Split PDF" validate_split_dir "__WORK__/split-pdf" \
+            split -i "$FIX/test.pdf" -d "__WORK__/split-pdf" --extract
+    fi
+
+    if [[ -f "$FIX/test.pptx" ]]; then
         run_test "Split PPTX" validate_split_dir "__WORK__/split-pptx" \
-            split -i "$test_pptx" -d "__WORK__/split-pptx" --extract
+            split -i "$FIX/test.pptx" -d "__WORK__/split-pptx" --extract
     fi
 
     if [[ -f "$TESTDATA/test.xlsx" ]]; then
-        # 15. Split XLSX
         run_test "Split XLSX" validate_split_dir "__WORK__/split-xlsx" \
             split -i "$TESTDATA/test.xlsx" -d "__WORK__/split-xlsx" --extract
     fi
 
     if [[ -f "$TESTDATA/test.docx" ]]; then
-        # 16. Split DOCX
         run_test "Split DOCX" validate_split_dir "__WORK__/split-docx" \
             split -i "$TESTDATA/test.docx" -d "__WORK__/split-docx" --extract
     fi
 
-    # ── Info / metadata ───────────────────────────────────────────────
+    if [[ -f "$TESTDATA/test.eml" ]]; then
+        run_test "Split EML" validate_split_dir "__WORK__/split-eml" \
+            split -i "$TESTDATA/test.eml" -d "__WORK__/split-eml" --extract
+    fi
+
+    if [[ -f "$TESTDATA/test.zip" ]]; then
+        run_test "Split ZIP" validate_split_dir "__WORK__/split-zip" \
+            split -i "$TESTDATA/test.zip" -d "__WORK__/split-zip" --extract
+    fi
+
+    # ══════════════════════════════════════════════════════════════════
+    # Phase 3: LibreOffice conversions (--backend libreoffice)
+    # ══════════════════════════════════════════════════════════════════
+
+    if [[ -f "$TESTDATA/test.docx" ]]; then
+        run_test "LO: DOCX -> PDF" validate_pdf "__WORK__/lo-docx.pdf" \
+            convert -i "$TESTDATA/test.docx" -o "__WORK__/lo-docx.pdf" --backend libreoffice
+    fi
 
     if [[ -f "$TESTDATA/test.xlsx" ]]; then
-        # 17. Info XLSX
+        run_test "LO: XLSX -> PDF" validate_pdf "__WORK__/lo-xlsx.pdf" \
+            convert -i "$TESTDATA/test.xlsx" -o "__WORK__/lo-xlsx.pdf" --backend libreoffice
+    fi
+
+    if [[ -f "$FIX/test.pptx" ]]; then
+        run_test "LO: PPTX -> PDF" validate_pdf "__WORK__/lo-pptx.pdf" \
+            convert -i "$FIX/test.pptx" -o "__WORK__/lo-pptx.pdf" --backend libreoffice
+    fi
+
+    if [[ -f "$FIX/test.ods" ]]; then
+        run_test "LO: ODS -> PDF" validate_pdf "__WORK__/lo-ods.pdf" \
+            convert -i "$FIX/test.ods" -o "__WORK__/lo-ods.pdf" --backend libreoffice
+    fi
+
+    if [[ -f "$FIX/test.doc" ]]; then
+        run_test "LO: DOC -> PDF" validate_pdf "__WORK__/lo-doc.pdf" \
+            convert -i "$FIX/test.doc" -o "__WORK__/lo-doc.pdf" --backend libreoffice
+    fi
+
+    if [[ -f "$FIX/test.xls" ]]; then
+        run_test "LO: XLS -> PDF" validate_pdf "__WORK__/lo-xls.pdf" \
+            convert -i "$FIX/test.xls" -o "__WORK__/lo-xls.pdf" --backend libreoffice
+    fi
+
+    if [[ -f "$FIX/test.ppt" ]]; then
+        run_test "LO: PPT -> PDF" validate_pdf "__WORK__/lo-ppt.pdf" \
+            convert -i "$FIX/test.ppt" -o "__WORK__/lo-ppt.pdf" --backend libreoffice
+    fi
+
+    # LibreOffice format conversions
+    if [[ -f "$TESTDATA/test.docx" ]]; then
+        run_test "LO: DOCX -> DOC" validate_cdf "__WORK__/lo-docx.doc" \
+            convert -i "$TESTDATA/test.docx" -o "__WORK__/lo-docx.doc" --backend libreoffice
+    fi
+
+    if [[ -f "$TESTDATA/test.xlsx" ]]; then
+        run_test "LO: XLSX -> XLS" validate_cdf "__WORK__/lo-xlsx.xls" \
+            convert -i "$TESTDATA/test.xlsx" -o "__WORK__/lo-xlsx.xls" --backend libreoffice
+    fi
+
+    if [[ -f "$FIX/test.pptx" ]]; then
+        run_test "LO: PPTX -> PPT" validate_cdf "__WORK__/lo-pptx.ppt" \
+            convert -i "$FIX/test.pptx" -o "__WORK__/lo-pptx.ppt" --backend libreoffice
+    fi
+
+    # ══════════════════════════════════════════════════════════════════
+    # Phase 4: Core-only conversions + splits (--backend xlcr)
+    # ══════════════════════════════════════════════════════════════════
+
+    # Tika text extraction
+    if [[ -f "$FIX/test.pdf" ]]; then
+        run_test "Core: PDF -> TXT" validate_text "__WORK__/core-pdf.txt" \
+            convert -i "$FIX/test.pdf" -o "__WORK__/core-pdf.txt" --backend xlcr
+    fi
+
+    if [[ -f "$TESTDATA/test.docx" ]]; then
+        run_test "Core: DOCX -> TXT" validate_text "__WORK__/core-docx.txt" \
+            convert -i "$TESTDATA/test.docx" -o "__WORK__/core-docx.txt" --backend xlcr
+    fi
+
+    if [[ -f "$TESTDATA/test.xlsx" ]]; then
+        run_test "Core: XLSX -> TXT" validate_text "__WORK__/core-xlsx.txt" \
+            convert -i "$TESTDATA/test.xlsx" -o "__WORK__/core-xlsx.txt" --backend xlcr
+    fi
+
+    # Tika XML extraction
+    if [[ -f "$FIX/test.pdf" ]]; then
+        run_test "Core: PDF -> XML" validate_xml "__WORK__/core-pdf.xml" \
+            convert -i "$FIX/test.pdf" -o "__WORK__/core-pdf.xml" --backend xlcr
+    fi
+
+    # Core XLSX → ODS (POI + ODFDOM)
+    if [[ -f "$TESTDATA/test.xlsx" ]]; then
+        run_test "Core: XLSX -> ODS" validate_ods "__WORK__/core-xlsx.ods" \
+            convert -i "$TESTDATA/test.xlsx" -o "__WORK__/core-xlsx.ods" --backend xlcr
+    fi
+
+    # Core splits (POI/PDFBox)
+    if [[ -f "$TESTDATA/test.xlsx" ]]; then
+        run_test "Core: Split XLSX" validate_split_dir "__WORK__/core-split-xlsx" \
+            split -i "$TESTDATA/test.xlsx" -d "__WORK__/core-split-xlsx" --extract --backend xlcr
+    fi
+
+    if [[ -f "$FIX/test.pptx" ]]; then
+        run_test "Core: Split PPTX" validate_split_dir "__WORK__/core-split-pptx" \
+            split -i "$FIX/test.pptx" -d "__WORK__/core-split-pptx" --extract --backend xlcr
+    fi
+
+    if [[ -f "$TESTDATA/test.docx" ]]; then
+        run_test "Core: Split DOCX" validate_split_dir "__WORK__/core-split-docx" \
+            split -i "$TESTDATA/test.docx" -d "__WORK__/core-split-docx" --extract --backend xlcr
+    fi
+
+    if [[ -f "$FIX/test.pdf" ]]; then
+        run_test "Core: Split PDF" validate_split_dir "__WORK__/core-split-pdf" \
+            split -i "$FIX/test.pdf" -d "__WORK__/core-split-pdf" --extract --backend xlcr
+    fi
+
+    # Core-unique splits (EML, ZIP, CSV — no Aspose equivalent in default priority)
+    if [[ -f "$TESTDATA/test.eml" ]]; then
+        run_test "Core: Split EML" validate_split_dir "__WORK__/core-split-eml" \
+            split -i "$TESTDATA/test.eml" -d "__WORK__/core-split-eml" --extract --backend xlcr
+    fi
+
+    if [[ -f "$TESTDATA/test.zip" ]]; then
+        run_test "Core: Split ZIP" validate_split_dir "__WORK__/core-split-zip" \
+            split -i "$TESTDATA/test.zip" -d "__WORK__/core-split-zip" --extract --backend xlcr
+    fi
+
+    if [[ -f "$TESTDATA/test.csv" ]]; then
+        run_test "Core: Split CSV" validate_split_dir "__WORK__/core-split-csv" \
+            split -i "$TESTDATA/test.csv" -d "__WORK__/core-split-csv" --extract --backend xlcr
+    fi
+
+    # ══════════════════════════════════════════════════════════════════
+    # Phase 5: Info / metadata (Tika parsers for all MIME types)
+    # ══════════════════════════════════════════════════════════════════
+
+    # Office formats
+    if [[ -f "$TESTDATA/test.xlsx" ]]; then
         run_test "Info XLSX" validate_info_output "stdout" \
             info -i "$TESTDATA/test.xlsx"
     fi
 
-    # 18. Info HTML
     run_test "Info HTML" validate_info_output "stdout" \
         info -i "$TESTDATA/test.html"
 
     if [[ -f "$TESTDATA/test.docx" ]]; then
-        # 19. Info DOCX
         run_test "Info DOCX" validate_info_output "stdout" \
             info -i "$TESTDATA/test.docx"
     fi
 
-    # 20. Backend info
+    if [[ -f "$TESTDATA/test.pdf" ]]; then
+        run_test "Info PDF" validate_info_output "stdout" \
+            info -i "$TESTDATA/test.pdf"
+    fi
+
+    if [[ -f "$FIX/test.pptx" ]]; then
+        run_test "Info PPTX" validate_info_output "stdout" \
+            info -i "$FIX/test.pptx"
+    fi
+
+    if [[ -f "$FIX/test.ods" ]]; then
+        run_test "Info ODS" validate_info_output "stdout" \
+            info -i "$FIX/test.ods"
+    fi
+
+    # Email / data / archive
+    if [[ -f "$TESTDATA/test.eml" ]]; then
+        run_test "Info EML" validate_info_output "stdout" \
+            info -i "$TESTDATA/test.eml"
+    fi
+
+    if [[ -f "$TESTDATA/test.csv" ]]; then
+        run_test "Info CSV" validate_info_output "stdout" \
+            info -i "$TESTDATA/test.csv"
+    fi
+
+    if [[ -f "$TESTDATA/test.zip" ]]; then
+        run_test "Info ZIP" validate_info_output "stdout" \
+            info -i "$TESTDATA/test.zip"
+    fi
+
+    # Image formats
+    if [[ -f "$TESTDATA/test.jpg" ]]; then
+        run_test "Info JPEG" validate_info_output "stdout" \
+            info -i "$TESTDATA/test.jpg"
+    fi
+
+    if [[ -f "$TESTDATA/test.tiff" ]]; then
+        run_test "Info TIFF" validate_info_output "stdout" \
+            info -i "$TESTDATA/test.tiff"
+    fi
+
+    # ══════════════════════════════════════════════════════════════════
+    # Phase 6: Backend info
+    # ══════════════════════════════════════════════════════════════════
+
     run_test "Backend info" validate_backend_info "stdout" \
         --backend-info
 
