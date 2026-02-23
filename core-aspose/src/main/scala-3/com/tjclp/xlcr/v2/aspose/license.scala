@@ -1,6 +1,6 @@
 package com.tjclp.xlcr.v2.aspose
 
-import java.io.{ File, InputStream }
+import java.io.File
 import java.nio.file.Files
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
@@ -86,6 +86,7 @@ object AsposeLicenseV2:
           .flatMap(is => Using(is)(_.readAllBytes()).toOption)
 
   // ── Per-product init guards + licensed state ─────────────────────
+  // True when license initialization has completed (success or failure).
   private val wordsInit  = new AtomicBoolean(false)
   private val cellsInit  = new AtomicBoolean(false)
   private val emailInit  = new AtomicBoolean(false)
@@ -101,6 +102,14 @@ object AsposeLicenseV2:
   private val pdfLicensed    = new AtomicBoolean(false)
   private val zipLicensed    = new AtomicBoolean(false)
 
+  private[aspose] def initOnce(guard: AtomicBoolean)(init: => Unit): Unit =
+    if !guard.get() then
+      guard.synchronized {
+        if !guard.get() then
+          try init
+          finally guard.set(true)
+      }
+
   private def initProduct(
     guard: AtomicBoolean,
     licensed: AtomicBoolean,
@@ -109,7 +118,7 @@ object AsposeLicenseV2:
     envVar: String,
     setLicense: Array[Byte] => Unit
   ): Unit =
-    if guard.compareAndSet(false, true) then
+    initOnce(guard) {
       val bytes = licenseBytes
         .orElse(envBytes(envVar))
         .orElse(fileOrClasspathBytes(licFile))
@@ -121,6 +130,7 @@ object AsposeLicenseV2:
           )
         case None =>
           logger.warn(s"No Aspose.$name license found; running in evaluation mode.")
+    }
 
   // ── Per-product init methods ─────────────────────────────────────
   def initWords(): Unit = initProduct(
@@ -203,6 +213,33 @@ object AsposeLicenseV2:
       case _: AsposeProduct.Slides.type => slidesLicensed.get()
       case _: AsposeProduct.Pdf.type    => pdfLicensed.get()
       case _: AsposeProduct.Zip.type    => zipLicensed.get()
+
+  /**
+   * Runtime product license check with lazy initialization.
+   *
+   * Calling this method is safe for capability probing: concurrent first-time callers block until
+   * initialization completes, then all observe the same licensed state.
+   */
+  def isProductLicensed(product: AsposeProduct): Boolean =
+    product match
+      case AsposeProduct.Words =>
+        initWords()
+        wordsLicensed.get()
+      case AsposeProduct.Cells =>
+        initCells()
+        cellsLicensed.get()
+      case AsposeProduct.Email =>
+        initEmail()
+        emailLicensed.get()
+      case AsposeProduct.Slides =>
+        initSlides()
+        slidesLicensed.get()
+      case AsposeProduct.Pdf =>
+        initPdf()
+        pdfLicensed.get()
+      case AsposeProduct.Zip =>
+        initZip()
+        zipLicensed.get()
 
   // ── Require license or throw ResourceError (for fallback dispatch) ──
   transparent inline def require[P <: AsposeProduct]: Unit =
