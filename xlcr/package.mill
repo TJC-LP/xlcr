@@ -11,11 +11,30 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
   override def artifactName = "xlcr"
   override def artifactDescription = "XLCR - Cross-format document conversion CLI"
 
-  // Depend on both Aspose and LibreOffice modules (which transitively include core)
-  override def moduleDeps = Seq(
-    build.`core-aspose`(crossScalaVersion),
-    build.`core-libreoffice`(crossScalaVersion)
-  )
+  // Depend on LibreOffice (always) and Aspose (when license detected at build time).
+  // When Aspose is excluded, BackendWiring stubs route all Aspose calls to UnsupportedConversion.
+  override def moduleDeps = {
+    val base = Seq(build.`core-libreoffice`(crossScalaVersion))
+    if (build.BuildConfig.asposeEnabled)
+      base :+ build.`core-aspose`(crossScalaVersion)
+    else base
+  }
+
+  // Select Aspose or no-Aspose source overlay based on build-time license detection.
+  // Overrides scala3Sources from XLCRModuleBase to add the conditional overlay.
+  override def scala3Sources =
+    if (build.BuildConfig.asposeEnabled)
+      Task.Sources(
+        moduleDir / "src" / "main" / "scala",
+        moduleDir / "src" / "main" / "scala-3",
+        moduleDir / "src" / "main" / "scala-3-aspose"
+      )
+    else
+      Task.Sources(
+        moduleDir / "src" / "main" / "scala",
+        moduleDir / "src" / "main" / "scala-3",
+        moduleDir / "src" / "main" / "scala-3-no-aspose"
+      )
 
   // Set main class for executable JAR
   override def mainClass = Some("com.tjclp.xlcr.v2.cli.XlcrMain")

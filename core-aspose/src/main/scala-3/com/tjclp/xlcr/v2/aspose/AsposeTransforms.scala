@@ -42,6 +42,33 @@ object AsposeTransforms:
   private val ZIP      = "application/zip"
   private val SEVENZIP = "application/x-7z-compressed"
 
+  private def requiredProductsForConversion(from: Mime, to: Mime): Set[AsposeProduct] =
+    (from.mimeType, to.mimeType) match
+      case (EML | MSG, PDF) =>
+        Set(AsposeProduct.Email, AsposeProduct.Words)
+      case (HTML, PPTX | PPT) | (PDF, PPTX | PPT) =>
+        Set(AsposeProduct.Slides)
+      case (PPTX | PPT | PPTM, PDF | HTML | PPTX | PPT) =>
+        Set(AsposeProduct.Slides)
+      case (DOCX | DOC | DOCM, PDF | DOCX | DOC | DOCM) =>
+        Set(AsposeProduct.Words)
+      case (XLSX | XLS | XLSM | XLSB | ODS, PDF | HTML | XLSX | XLS | XLSM | XLSB | ODS) =>
+        Set(AsposeProduct.Cells)
+      case (PDF, HTML | PNG | JPEG) | (PNG | JPEG | HTML, PDF) =>
+        Set(AsposeProduct.Pdf)
+      case _ =>
+        Set.empty
+
+  private def requiredProductsForSplit(mime: Mime): Set[AsposeProduct] =
+    mime.mimeType match
+      case XLSX | XLS | XLSM | XLSB | ODS => Set(AsposeProduct.Cells)
+      case PPTX | PPT                     => Set(AsposeProduct.Slides)
+      case PDF                            => Set(AsposeProduct.Pdf)
+      case DOCX | DOC                     => Set(AsposeProduct.Words)
+      case ZIP | SEVENZIP                 => Set(AsposeProduct.Zip)
+      case EML | MSG                      => Set(AsposeProduct.Email)
+      case _                              => Set.empty
+
   // ===========================================================================
   // Conversion dispatch
   // ===========================================================================
@@ -241,6 +268,19 @@ object AsposeTransforms:
   def canConvert(from: Mime, to: Mime): Boolean =
     supportedConversions.contains((from.mimeType, to.mimeType))
 
+  /**
+   * Check if a conversion is both statically supported and licensed at runtime.
+   */
+  def canConvertLicensed(from: Mime, to: Mime): Boolean =
+    canConvertLicensed(from, to, AsposeLicenseV2.isProductLicensed)
+
+  private[aspose] def canConvertLicensed(
+    from: Mime,
+    to: Mime,
+    isProductLicensed: AsposeProduct => Boolean
+  ): Boolean =
+    canConvert(from, to) && requiredProductsForConversion(from, to).forall(isProductLicensed)
+
   private val supportedConversions: Set[(String, String)] = Set(
     // Word -> PDF
     (DOCX, PDF),
@@ -397,6 +437,18 @@ object AsposeTransforms:
    */
   def canSplit(mime: Mime): Boolean =
     splittableMimeTypes.contains(mime.mimeType)
+
+  /**
+   * Check if splitting is both statically supported and licensed at runtime.
+   */
+  def canSplitLicensed(mime: Mime): Boolean =
+    canSplitLicensed(mime, AsposeLicenseV2.isProductLicensed)
+
+  private[aspose] def canSplitLicensed(
+    mime: Mime,
+    isProductLicensed: AsposeProduct => Boolean
+  ): Boolean =
+    canSplit(mime) && requiredProductsForSplit(mime).forall(isProductLicensed)
 
   private val splittableMimeTypes: Set[String] = Set(
     XLSX,

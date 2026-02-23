@@ -1,6 +1,8 @@
 package com.tjclp.xlcr
 package splitters
 
+import scala.annotation.nowarn
+
 import types.{ MimeType, Priority }
 import utils.aspose.AsposeLicense
 
@@ -11,6 +13,7 @@ import utils.aspose.AsposeLicense
  * @tparam I
  *   The input MimeType that this splitter can handle
  */
+@nowarn("cat=deprecation")
 trait HighPrioritySplitter[I <: MimeType] extends DocumentSplitter[I] {
   AsposeLicense.initializeIfNeeded()
 

@@ -10,12 +10,12 @@ package utils.aspose
  *   1. The current working directory (where the command is run) 2. The classpath resources
  *
  * License files it will look for:
- *   - Aspose.Java.Total.lic (for all products together)
- *   - Aspose.Java.Words.lic (for Word-specific license)
- *   - Aspose.Java.Cells.lic (for Excel-specific license)
- *   - Aspose.Java.Email.lic (for Email-specific license)
- *   - Aspose.Java.Slides.lic (for PowerPoint-specific license)
- *   - Aspose.Java.Zip.lic (for ZIP/archive-specific license)
+ *   - Aspose.Total.Java.lic (for all products together)
+ *   - Aspose.Words.Java.lic (for Word-specific license)
+ *   - Aspose.Cells.Java.lic (for Excel-specific license)
+ *   - Aspose.Email.Java.lic (for Email-specific license)
+ *   - Aspose.Slides.Java.lic (for PowerPoint-specific license)
+ *   - Aspose.Zip.Java.lic (for ZIP/archive-specific license)
  */
 case class AsposeConfig(
   input: String = "",

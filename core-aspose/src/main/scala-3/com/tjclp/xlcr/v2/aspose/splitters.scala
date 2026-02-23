@@ -9,7 +9,6 @@ import zio.blocks.scope.Scope
 
 import com.tjclp.xlcr.v2.transform.{ DynamicSplitter, Splitter, TransformError }
 import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Fragment, Mime }
-import com.tjclp.xlcr.utils.aspose.AsposeLicense
 import com.tjclp.xlcr.compat.aspose.AsposeWorkbook
 
 /**
@@ -65,7 +64,7 @@ private[aspose] def splitExcelWorkbook[M <: Mime](
   options: ConvertOptions = ConvertOptions()
 ): ZIO[Any, TransformError, Chunk[Fragment[M]]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Cells]
 
     Scope.global.scoped { scope =>
       import scope.*
@@ -159,7 +158,7 @@ private def splitPowerPointPresentation[M <: Mime](
   saveFormat: Int
 ): ZIO[Any, TransformError, Chunk[Fragment[M]]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Slides]
 
     Scope.global.scoped { scope =>
       import scope.*
@@ -199,7 +198,7 @@ given asposePdfPageSplitter: Splitter[Mime.Pdf, Mime.Pdf] with
 
   def split(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Chunk[Fragment[Mime.Pdf]]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Pdf]
 
       Scope.global.scoped { scope =>
         import scope.*
@@ -257,7 +256,7 @@ private def splitWordDocument[M <: Mime](
   saveFormat: Int
 ): ZIO[Any, TransformError, Chunk[Fragment[M]]] =
   ZIO.attempt {
-    AsposeLicense.initializeIfNeeded()
+    AsposeLicenseV2.require[Words]
 
     Scope.global.scoped { scope =>
       import scope.*
@@ -299,7 +298,7 @@ given asposeZipArchiveSplitter: DynamicSplitter[Mime.Zip] with
 
   def splitDynamic(input: Content[Mime.Zip]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Zip]
 
       Scope.global.scoped { scope =>
         import scope.*
@@ -335,7 +334,7 @@ given asposeSevenZipArchiveSplitter: DynamicSplitter[Mime.SevenZip] with
   def splitDynamic(input: Content[Mime.SevenZip])
     : ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Zip]
 
       Scope.global.scoped { scope =>
         import scope.*
@@ -374,7 +373,7 @@ given asposeEmlAttachmentSplitter: DynamicSplitter[Mime.Eml] with
 
   def splitDynamic(input: Content[Mime.Eml]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Email]
 
       val msg = com.aspose.email.MailMessage.load(new ByteArrayInputStream(input.data.toArray))
       val attachments = msg.getAttachments
@@ -397,7 +396,7 @@ given asposeMsgAttachmentSplitter: DynamicSplitter[Mime.Msg] with
 
   def splitDynamic(input: Content[Mime.Msg]): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     ZIO.attempt {
-      AsposeLicense.initializeIfNeeded()
+      AsposeLicenseV2.require[Email]
 
       val msg = com.aspose.email.MapiMessage.load(new ByteArrayInputStream(input.data.toArray))
       val attachments = msg.getAttachments

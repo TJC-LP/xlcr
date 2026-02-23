@@ -28,16 +28,40 @@ The `core-aspose` tests require a valid Aspose license to run without evaluation
 
 **Option 1: Copy license to resources** (recommended)
 ```bash
-cp Aspose.Java.Total.lic core-aspose/resources/
+cp Aspose.Total.Java.lic core-aspose/resources/
 ```
 
 **Option 2: Set environment variable**
 ```bash
-export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Java.Total.lic)
+export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Total.Java.lic)
 ./mill 'core-aspose[3.3.4].test'
 ```
 
 The license file in `core-aspose/resources/` is gitignored (`*.lic` pattern).
+
+### Aspose Build & License Environment Variables
+
+**Build-time** (controls module inclusion in JAR):
+
+| Variable | Effect |
+|---|---|
+| `XLCR_NO_ASPOSE=1` | Exclude core-aspose from build (smaller JAR, no Aspose deps) |
+
+Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deployments.
+
+**Runtime** (controls license resolution, precedence order):
+
+| Variable | Effect |
+|---|---|
+| `XLCR_NO_ASPOSE_LICENSE=1` | Kill ALL license resolution — complete blackout (highest priority) |
+| `XLCR_NO_CLASSPATH_LICENSE=1` | Skip JAR-bundled licenses; CWD files + env vars still work |
+| `ASPOSE_TOTAL_LICENSE_B64` | Base64-encoded total license (all products) |
+| `ASPOSE_WORDS_LICENSE_B64` | Per-product: Words only |
+| `ASPOSE_CELLS_LICENSE_B64` | Per-product: Cells only |
+| `ASPOSE_SLIDES_LICENSE_B64` | Per-product: Slides only |
+| `ASPOSE_PDF_LICENSE_B64` | Per-product: Pdf only |
+| `ASPOSE_EMAIL_LICENSE_B64` | Per-product: Email only |
+| `ASPOSE_ZIP_LICENSE_B64` | Per-product: Zip only |
 
 ## Build Commands
 - `./mill __.compile` - Compile all modules for all Scala versions

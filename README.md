@@ -195,10 +195,10 @@ For `core-aspose` tests without watermarks:
 
 ```bash
 # Option 1: Copy license to resources
-cp Aspose.Java.Total.lic core-aspose/resources/
+cp Aspose.Total.Java.lic core-aspose/resources/
 
 # Option 2: Environment variable
-export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Java.Total.lic)
+export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Total.Java.lic)
 ```
 
 ## Contributing
