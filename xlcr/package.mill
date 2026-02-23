@@ -71,6 +71,7 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
     "--initialize-at-run-time=com.aspose.cells",
     "--initialize-at-run-time=com.aspose.words",
     "--initialize-at-run-time=com.aspose.email",
+    "--initialize-at-run-time=com.aspose.zip",
     // Exclude auto-discovered native-image features that fail due to missing javax.mail
     "--exclude-config", ".*angus-activation.*", ".*native-image.*",
     "--exclude-config", ".*angus-mail.*", ".*native-image.*"
