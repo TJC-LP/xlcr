@@ -66,7 +66,7 @@ object DocumentInfo:
           "detectedType" -> tika.detect(content)
         )
       catch
-        case _: Exception =>
+        case _: Throwable =>
           // Return minimal info on error
           Map(
             "fileSize"     -> content.length,

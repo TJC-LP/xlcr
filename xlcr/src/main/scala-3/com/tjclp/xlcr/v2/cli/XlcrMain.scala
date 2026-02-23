@@ -490,7 +490,7 @@ object XlcrMain extends ZIOAppDefault:
         }
         metadata.names().toList.map(name => name -> metadata.get(name)).toMap
       catch
-        case _: Exception => Map.empty
+        case _: Throwable => Map.empty
 
   // ============================================================================
   // Info Output Formatters

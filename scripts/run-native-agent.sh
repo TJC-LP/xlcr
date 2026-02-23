@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 # run-native-agent.sh
-# Runs inside Docker to exercise all XLCR conversion paths with the
+# Runs inside Docker to exercise ALL XLCR conversion paths with the
 # GraalVM tracing agent, accumulating metadata via config-merge-dir.
 #
 # The tracing agent records all reflection, JNI, proxy, resource, and
 # serialization usage — exactly what native-image needs.
+#
+# Coverage strategy:
+#   Phase 1: Aspose conversions (highest priority backend)
+#   Phase 2: Aspose splits
+#   Phase 3: LibreOffice conversions (--backend libreoffice)
+#   Phase 4: Core-only conversions + splits (--backend xlcr, POI/PDFBox/Tika)
+#   Phase 5: Info / metadata for all MIME types (Tika parsers)
+#   Phase 6: Backend info
 
 set -euo pipefail
 
@@ -40,16 +48,20 @@ fi
 
 echo "Found assembly JAR: $ASSEMBLY_JAR"
 
-# ── Agent helper ────────────────────────────────────────────────────
+# ── Agent helpers ─────────────────────────────────────────────────
+# Test counter
+TEST_NUM=0
+
 # Runs the CLI with the tracing agent. Uses config-merge-dir so each
 # invocation accumulates into the same metadata directory.
 run_with_agent() {
     local description="$1"
     shift
+    TEST_NUM=$((TEST_NUM + 1))
 
     echo ""
     echo "════════════════════════════════════════════════════════════"
-    echo "  $description"
+    echo "  ${TEST_NUM}. $description"
     echo "════════════════════════════════════════════════════════════"
 
     # Run with tracing agent; allow failures (some paths may crash,
@@ -73,169 +85,389 @@ echo "Starting GraalVM tracing agent runs..."
 echo "Metadata output: $METADATA_DIR"
 echo ""
 
-# ── HTML conversions (Aspose.PDF + Aspose.Slides) ───────────────────
+# ══════════════════════════════════════════════════════════════════════
+# Phase 1: Aspose conversions (highest priority backend)
+# ══════════════════════════════════════════════════════════════════════
 
-# 1. HTML → PDF (baseline — this already works in native image)
-run_with_agent "1. HTML → PDF (Aspose.PDF)" \
+echo ""
+echo "▶ Phase 1: Aspose conversions"
+echo ""
+
+# HTML → PDF (Aspose.PDF)
+run_with_agent "HTML → PDF (Aspose.PDF)" \
     convert -i /xlcr/testdata/test.html -o "$WORK_DIR/test.pdf"
 
-# 2. HTML → PPTX (Aspose.Slides)
-run_with_agent "2. HTML → PPTX (Aspose.Slides)" \
+# HTML → PPTX (Aspose.Slides)
+run_with_agent "HTML → PPTX (Aspose.Slides)" \
     convert -i /xlcr/testdata/test.html -o "$WORK_DIR/test.pptx"
 
-# ── PDF conversions (Aspose.PDF + Aspose.Slides) ───────────────────
-
-# 3. PDF → HTML (Aspose.PDF HtmlSaveOptions)
+# PDF → HTML (Aspose.PDF HtmlSaveOptions)
 if [ -f "$WORK_DIR/test.pdf" ]; then
-    run_with_agent "3. PDF → HTML (Aspose.PDF)" \
+    run_with_agent "PDF → HTML (Aspose.PDF)" \
         convert -i "$WORK_DIR/test.pdf" -o "$WORK_DIR/from-pdf.html"
-else
-    echo "SKIP: PDF → HTML (no test.pdf generated from step 1)"
 fi
 
-# 4. PDF → PPTX (Aspose.PDF + Aspose.Slides)
+# PDF → PPTX (Aspose.PDF + Aspose.Slides)
 if [ -f "$WORK_DIR/test.pdf" ]; then
-    run_with_agent "4. PDF → PPTX (Aspose.PDF + Aspose.Slides)" \
+    run_with_agent "PDF → PPTX (Aspose.PDF + Aspose.Slides)" \
         convert -i "$WORK_DIR/test.pdf" -o "$WORK_DIR/from-pdf.pptx"
-else
-    echo "SKIP: PDF → PPTX (no test.pdf generated from step 1)"
 fi
 
-# 5. PDF → PNG (Aspose.PDF image rendering — also generates test.png for step 6)
+# PDF → PNG (Aspose.PDF image rendering)
 if [ -f "$WORK_DIR/test.pdf" ]; then
-    run_with_agent "5. PDF → PNG (Aspose.PDF)" \
+    run_with_agent "PDF → PNG (Aspose.PDF)" \
         convert -i "$WORK_DIR/test.pdf" -o "$WORK_DIR/test.png"
-else
-    echo "SKIP: PDF → PNG (no test.pdf)"
 fi
 
-# 6. PNG → PDF (Aspose.PDF image import — uses PNG generated in step 5)
+# PNG → PDF (Aspose.PDF image import)
 if [ -f "$WORK_DIR/test.png" ]; then
-    run_with_agent "6. PNG → PDF (Aspose.PDF)" \
+    run_with_agent "PNG → PDF (Aspose.PDF)" \
         convert -i "$WORK_DIR/test.png" -o "$WORK_DIR/from-png.pdf"
-else
-    echo "SKIP: PNG → PDF (no test.png from step 5)"
 fi
 
-# ── PowerPoint conversions (Aspose.Slides) ──────────────────────────
+# JPEG → PDF (Aspose.PDF image import — different codec path)
+if [ -f "/xlcr/testdata/test.jpg" ]; then
+    run_with_agent "JPEG → PDF (Aspose.PDF)" \
+        convert -i /xlcr/testdata/test.jpg -o "$WORK_DIR/from-jpg.pdf"
+fi
 
-# 7. PPTX → PDF (Aspose.Slides)
+# PPTX → PDF (Aspose.Slides)
 if [ -f "$WORK_DIR/test.pptx" ]; then
-    run_with_agent "7. PPTX → PDF (Aspose.Slides)" \
+    run_with_agent "PPTX → PDF (Aspose.Slides)" \
         convert -i "$WORK_DIR/test.pptx" -o "$WORK_DIR/from-pptx.pdf"
-else
-    echo "SKIP: PPTX → PDF (no test.pptx)"
 fi
 
-# 8. PPTX → HTML (Aspose.Slides)
+# PPTX → HTML (Aspose.Slides)
 if [ -f "$WORK_DIR/test.pptx" ]; then
-    run_with_agent "8. PPTX → HTML (Aspose.Slides)" \
+    run_with_agent "PPTX → HTML (Aspose.Slides)" \
         convert -i "$WORK_DIR/test.pptx" -o "$WORK_DIR/from-pptx.html"
-else
-    echo "SKIP: PPTX → HTML (no test.pptx)"
 fi
 
-# ── Word conversions (Aspose.Words) ─────────────────────────────────
-
-# 9. DOCX → PDF (Aspose.Words)
+# DOCX → PDF (Aspose.Words)
 if [ -f "/xlcr/testdata/test.docx" ]; then
-    run_with_agent "9. DOCX → PDF (Aspose.Words)" \
+    run_with_agent "DOCX → PDF (Aspose.Words)" \
         convert -i /xlcr/testdata/test.docx -o "$WORK_DIR/from-docx.pdf"
-else
-    echo "SKIP: DOCX → PDF (no test.docx)"
 fi
 
-# ── Excel conversions (Aspose.Cells) ────────────────────────────────
-
-# 10. XLSX → PDF (Aspose.Cells)
+# XLSX → PDF (Aspose.Cells)
 if [ -f "/xlcr/testdata/test.xlsx" ]; then
-    run_with_agent "10. XLSX → PDF (Aspose.Cells)" \
+    run_with_agent "XLSX → PDF (Aspose.Cells)" \
         convert -i /xlcr/testdata/test.xlsx -o "$WORK_DIR/from-xlsx.pdf"
-else
-    echo "SKIP: XLSX → PDF (no test.xlsx)"
 fi
 
-# 11. XLSX → ODS (POI + ODFDOM)
+# XLSX → ODS (POI + ODFDOM)
 if [ -f "/xlcr/testdata/test.xlsx" ]; then
-    run_with_agent "11. XLSX → ODS (POI + ODFDOM)" \
+    run_with_agent "XLSX → ODS (POI + ODFDOM)" \
         convert -i /xlcr/testdata/test.xlsx -o "$WORK_DIR/from-xlsx.ods"
-else
-    echo "SKIP: XLSX → ODS (no test.xlsx)"
 fi
 
-# 12. XLSX → HTML (Aspose.Cells)
+# XLSX → HTML (Aspose.Cells)
 if [ -f "/xlcr/testdata/test.xlsx" ]; then
-    run_with_agent "12. XLSX → HTML (Aspose.Cells)" \
+    run_with_agent "XLSX → HTML (Aspose.Cells)" \
         convert -i /xlcr/testdata/test.xlsx -o "$WORK_DIR/from-xlsx.html"
-else
-    echo "SKIP: XLSX → HTML (no test.xlsx)"
 fi
 
-# ── Splitting operations ────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════
+# Phase 2: Aspose splits
+# ══════════════════════════════════════════════════════════════════════
 
-# 13. Split PDF into pages (Aspose.PDF page splitting)
+echo ""
+echo "▶ Phase 2: Aspose splits"
+echo ""
+
+# Split PDF into pages (Aspose.PDF)
 if [ -f "$WORK_DIR/test.pdf" ]; then
     mkdir -p "$WORK_DIR/split-pdf"
-    run_with_agent "13. Split PDF pages (Aspose.PDF)" \
+    run_with_agent "Split PDF pages (Aspose.PDF)" \
         split -i "$WORK_DIR/test.pdf" -d "$WORK_DIR/split-pdf" --extract
-else
-    echo "SKIP: Split PDF (no test.pdf)"
 fi
 
-# 14. Split PPTX into slides (Aspose.Slides slide splitting)
+# Split PPTX into slides (Aspose.Slides)
 if [ -f "$WORK_DIR/test.pptx" ]; then
     mkdir -p "$WORK_DIR/split-pptx"
-    run_with_agent "14. Split PPTX slides (Aspose.Slides)" \
+    run_with_agent "Split PPTX slides (Aspose.Slides)" \
         split -i "$WORK_DIR/test.pptx" -d "$WORK_DIR/split-pptx" --extract
-else
-    echo "SKIP: Split PPTX (no test.pptx)"
 fi
 
-# 15. Split XLSX into sheets (Aspose.Cells/POI)
+# Split XLSX into sheets (Aspose.Cells)
 if [ -f "/xlcr/testdata/test.xlsx" ]; then
     mkdir -p "$WORK_DIR/split-xlsx"
-    run_with_agent "15. Split XLSX sheets (Aspose.Cells/POI)" \
+    run_with_agent "Split XLSX sheets (Aspose.Cells)" \
         split -i /xlcr/testdata/test.xlsx -d "$WORK_DIR/split-xlsx" --extract
-else
-    echo "SKIP: Split XLSX (no test.xlsx)"
 fi
 
-# 16. Split DOCX into pages (Aspose.Words)
+# Split DOCX into sections (Aspose.Words)
 if [ -f "/xlcr/testdata/test.docx" ]; then
     mkdir -p "$WORK_DIR/split-docx"
-    run_with_agent "16. Split DOCX pages (Aspose.Words)" \
+    run_with_agent "Split DOCX sections (Aspose.Words)" \
         split -i /xlcr/testdata/test.docx -d "$WORK_DIR/split-docx" --extract
-else
-    echo "SKIP: Split DOCX (no test.docx)"
 fi
 
-# ── Info / metadata ─────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════
+# Phase 3: LibreOffice conversions (--backend libreoffice)
+# ══════════════════════════════════════════════════════════════════════
 
-# 17. Info on XLSX (exercises Tika metadata for Excel)
+echo ""
+echo "▶ Phase 3: LibreOffice conversions"
+echo ""
+
+# DOCX → PDF (LibreOffice / JODConverter)
+if [ -f "/xlcr/testdata/test.docx" ]; then
+    run_with_agent "DOCX → PDF (LibreOffice)" \
+        convert -i /xlcr/testdata/test.docx -o "$WORK_DIR/lo-docx.pdf" --backend libreoffice
+fi
+
+# XLSX → PDF (LibreOffice)
 if [ -f "/xlcr/testdata/test.xlsx" ]; then
-    run_with_agent "17. info XLSX (Tika metadata)" \
+    run_with_agent "XLSX → PDF (LibreOffice)" \
+        convert -i /xlcr/testdata/test.xlsx -o "$WORK_DIR/lo-xlsx.pdf" --backend libreoffice
+fi
+
+# PPTX → PDF (LibreOffice)
+if [ -f "$WORK_DIR/test.pptx" ]; then
+    run_with_agent "PPTX → PDF (LibreOffice)" \
+        convert -i "$WORK_DIR/test.pptx" -o "$WORK_DIR/lo-pptx.pdf" --backend libreoffice
+fi
+
+# ODS → PDF (LibreOffice)
+if [ -f "$WORK_DIR/from-xlsx.ods" ]; then
+    run_with_agent "ODS → PDF (LibreOffice)" \
+        convert -i "$WORK_DIR/from-xlsx.ods" -o "$WORK_DIR/lo-ods.pdf" --backend libreoffice
+fi
+
+# DOCX → DOC (LibreOffice format conversion — generates legacy DOC for later tests)
+if [ -f "/xlcr/testdata/test.docx" ]; then
+    run_with_agent "DOCX → DOC (LibreOffice)" \
+        convert -i /xlcr/testdata/test.docx -o "$WORK_DIR/test.doc" --backend libreoffice
+fi
+
+# XLSX → XLS (LibreOffice format conversion — generates legacy XLS)
+if [ -f "/xlcr/testdata/test.xlsx" ]; then
+    run_with_agent "XLSX → XLS (LibreOffice)" \
+        convert -i /xlcr/testdata/test.xlsx -o "$WORK_DIR/test.xls" --backend libreoffice
+fi
+
+# PPTX → PPT (LibreOffice format conversion — generates legacy PPT)
+if [ -f "$WORK_DIR/test.pptx" ]; then
+    run_with_agent "PPTX → PPT (LibreOffice)" \
+        convert -i "$WORK_DIR/test.pptx" -o "$WORK_DIR/test.ppt" --backend libreoffice
+fi
+
+# DOC → PDF (LibreOffice — legacy format)
+if [ -f "$WORK_DIR/test.doc" ]; then
+    run_with_agent "DOC → PDF (LibreOffice)" \
+        convert -i "$WORK_DIR/test.doc" -o "$WORK_DIR/lo-doc.pdf" --backend libreoffice
+fi
+
+# XLS → PDF (LibreOffice — legacy format)
+if [ -f "$WORK_DIR/test.xls" ]; then
+    run_with_agent "XLS → PDF (LibreOffice)" \
+        convert -i "$WORK_DIR/test.xls" -o "$WORK_DIR/lo-xls.pdf" --backend libreoffice
+fi
+
+# PPT → PDF (LibreOffice — legacy format)
+if [ -f "$WORK_DIR/test.ppt" ]; then
+    run_with_agent "PPT → PDF (LibreOffice)" \
+        convert -i "$WORK_DIR/test.ppt" -o "$WORK_DIR/lo-ppt.pdf" --backend libreoffice
+fi
+
+# ══════════════════════════════════════════════════════════════════════
+# Phase 4: Core-only conversions + splits (--backend xlcr)
+# ══════════════════════════════════════════════════════════════════════
+
+echo ""
+echo "▶ Phase 4: Core-only conversions + splits (POI / PDFBox / Tika)"
+echo ""
+
+# PDF → text/plain (Tika text extraction)
+if [ -f "$WORK_DIR/test.pdf" ]; then
+    run_with_agent "PDF → TXT (Tika text extraction)" \
+        convert -i "$WORK_DIR/test.pdf" -o "$WORK_DIR/core-pdf.txt" --backend xlcr
+fi
+
+# DOCX → text/plain (Tika text extraction)
+if [ -f "/xlcr/testdata/test.docx" ]; then
+    run_with_agent "DOCX → TXT (Tika text extraction)" \
+        convert -i /xlcr/testdata/test.docx -o "$WORK_DIR/core-docx.txt" --backend xlcr
+fi
+
+# XLSX → text/plain (Tika text extraction)
+if [ -f "/xlcr/testdata/test.xlsx" ]; then
+    run_with_agent "XLSX → TXT (Tika text extraction)" \
+        convert -i /xlcr/testdata/test.xlsx -o "$WORK_DIR/core-xlsx.txt" --backend xlcr
+fi
+
+# PDF → XML (Tika XML extraction)
+if [ -f "$WORK_DIR/test.pdf" ]; then
+    run_with_agent "PDF → XML (Tika XML extraction)" \
+        convert -i "$WORK_DIR/test.pdf" -o "$WORK_DIR/core-pdf.xml" --backend xlcr
+fi
+
+# XLSX → ODS (POI + ODFDOM — core only)
+if [ -f "/xlcr/testdata/test.xlsx" ]; then
+    run_with_agent "XLSX → ODS (Core: POI + ODFDOM)" \
+        convert -i /xlcr/testdata/test.xlsx -o "$WORK_DIR/core-xlsx.ods" --backend xlcr
+fi
+
+# Split XLSX sheets (POI splitter)
+if [ -f "/xlcr/testdata/test.xlsx" ]; then
+    mkdir -p "$WORK_DIR/core-split-xlsx"
+    run_with_agent "Split XLSX sheets (Core: POI)" \
+        split -i /xlcr/testdata/test.xlsx -d "$WORK_DIR/core-split-xlsx" --extract --backend xlcr
+fi
+
+# Split PPTX slides (POI splitter)
+if [ -f "$WORK_DIR/test.pptx" ]; then
+    mkdir -p "$WORK_DIR/core-split-pptx"
+    run_with_agent "Split PPTX slides (Core: POI)" \
+        split -i "$WORK_DIR/test.pptx" -d "$WORK_DIR/core-split-pptx" --extract --backend xlcr
+fi
+
+# Split DOCX sections (POI splitter)
+if [ -f "/xlcr/testdata/test.docx" ]; then
+    mkdir -p "$WORK_DIR/core-split-docx"
+    run_with_agent "Split DOCX sections (Core: POI)" \
+        split -i /xlcr/testdata/test.docx -d "$WORK_DIR/core-split-docx" --extract --backend xlcr
+fi
+
+# Split PDF pages (PDFBox splitter)
+if [ -f "$WORK_DIR/test.pdf" ]; then
+    mkdir -p "$WORK_DIR/core-split-pdf"
+    run_with_agent "Split PDF pages (Core: PDFBox)" \
+        split -i "$WORK_DIR/test.pdf" -d "$WORK_DIR/core-split-pdf" --extract --backend xlcr
+fi
+
+# Split EML attachments (Jakarta Mail)
+if [ -f "/xlcr/testdata/test.eml" ]; then
+    mkdir -p "$WORK_DIR/core-split-eml"
+    run_with_agent "Split EML attachments (Core: Jakarta Mail)" \
+        split -i /xlcr/testdata/test.eml -d "$WORK_DIR/core-split-eml" --extract --backend xlcr
+fi
+
+# Split ZIP entries (java.util.zip)
+if [ -f "/xlcr/testdata/test.zip" ]; then
+    mkdir -p "$WORK_DIR/core-split-zip"
+    run_with_agent "Split ZIP entries (Core: java.util.zip)" \
+        split -i /xlcr/testdata/test.zip -d "$WORK_DIR/core-split-zip" --extract --backend xlcr
+fi
+
+# Split CSV rows
+if [ -f "/xlcr/testdata/test.csv" ]; then
+    mkdir -p "$WORK_DIR/core-split-csv"
+    run_with_agent "Split CSV rows (Core)" \
+        split -i /xlcr/testdata/test.csv -d "$WORK_DIR/core-split-csv" --extract --backend xlcr
+fi
+
+# Split XLS sheets (POI — legacy format)
+if [ -f "$WORK_DIR/test.xls" ]; then
+    mkdir -p "$WORK_DIR/core-split-xls"
+    run_with_agent "Split XLS sheets (Core: POI legacy)" \
+        split -i "$WORK_DIR/test.xls" -d "$WORK_DIR/core-split-xls" --extract --backend xlcr
+fi
+
+# ══════════════════════════════════════════════════════════════════════
+# Phase 5: Info / metadata for all MIME types (Tika parsers)
+# ══════════════════════════════════════════════════════════════════════
+
+echo ""
+echo "▶ Phase 5: Info / metadata (Tika parsers for all MIME types)"
+echo ""
+
+# Office formats
+if [ -f "/xlcr/testdata/test.xlsx" ]; then
+    run_with_agent "info XLSX (Tika metadata)" \
         info -i /xlcr/testdata/test.xlsx
 fi
 
-# 18. Info on HTML (exercises Tika metadata for HTML)
-run_with_agent "18. info HTML (Tika metadata)" \
+run_with_agent "info HTML (Tika metadata)" \
     info -i /xlcr/testdata/test.html
 
-# 19. Info on DOCX (exercises Tika metadata for Word)
 if [ -f "/xlcr/testdata/test.docx" ]; then
-    run_with_agent "19. info DOCX (Tika metadata)" \
+    run_with_agent "info DOCX (Tika metadata)" \
         info -i /xlcr/testdata/test.docx
 fi
 
-# 20. Backend info (exercises backend detection)
-run_with_agent "20. backend-info" \
+if [ -f "/xlcr/testdata/test.pdf" ]; then
+    run_with_agent "info PDF (Tika metadata / PDFBox)" \
+        info -i /xlcr/testdata/test.pdf
+fi
+
+if [ -f "$WORK_DIR/test.pptx" ]; then
+    run_with_agent "info PPTX (Tika OOXML Slides parser)" \
+        info -i "$WORK_DIR/test.pptx"
+fi
+
+if [ -f "$WORK_DIR/from-xlsx.ods" ]; then
+    run_with_agent "info ODS (Tika OpenDocument parser)" \
+        info -i "$WORK_DIR/from-xlsx.ods"
+fi
+
+# Legacy Office formats
+if [ -f "$WORK_DIR/test.doc" ]; then
+    run_with_agent "info DOC (Tika legacy Word parser)" \
+        info -i "$WORK_DIR/test.doc"
+fi
+
+if [ -f "$WORK_DIR/test.xls" ]; then
+    run_with_agent "info XLS (Tika legacy Excel parser)" \
+        info -i "$WORK_DIR/test.xls"
+fi
+
+if [ -f "$WORK_DIR/test.ppt" ]; then
+    run_with_agent "info PPT (Tika legacy PowerPoint parser)" \
+        info -i "$WORK_DIR/test.ppt"
+fi
+
+# Email formats
+if [ -f "/xlcr/testdata/test.eml" ]; then
+    run_with_agent "info EML (Tika RFC822 parser)" \
+        info -i /xlcr/testdata/test.eml
+fi
+
+# Data formats
+if [ -f "/xlcr/testdata/test.csv" ]; then
+    run_with_agent "info CSV (Tika CSV parser)" \
+        info -i /xlcr/testdata/test.csv
+fi
+
+# Archive formats
+if [ -f "/xlcr/testdata/test.zip" ]; then
+    run_with_agent "info ZIP (Tika archive parser)" \
+        info -i /xlcr/testdata/test.zip
+fi
+
+# Image formats (exercises Tika image parsers + exiftool EXIF extraction)
+if [ -f "/xlcr/testdata/test.jpg" ]; then
+    run_with_agent "info JPEG (Tika image + EXIF)" \
+        info -i /xlcr/testdata/test.jpg
+fi
+
+if [ -f "$WORK_DIR/test.png" ]; then
+    run_with_agent "info PNG (Tika image parser)" \
+        info -i "$WORK_DIR/test.png"
+fi
+
+if [ -f "/xlcr/testdata/test.tiff" ]; then
+    run_with_agent "info TIFF (Tika image parser)" \
+        info -i /xlcr/testdata/test.tiff
+fi
+
+# ══════════════════════════════════════════════════════════════════════
+# Phase 6: Backend info
+# ══════════════════════════════════════════════════════════════════════
+
+echo ""
+echo "▶ Phase 6: Backend info"
+echo ""
+
+run_with_agent "backend-info" \
     --backend-info
 
 # ── Summary ─────────────────────────────────────────────────────────
 
 echo ""
 echo "════════════════════════════════════════════════════════════"
-echo "  Tracing complete"
+echo "  Tracing complete — $TEST_NUM test cases executed"
 echo "════════════════════════════════════════════════════════════"
 echo ""
 echo "Metadata files in $METADATA_DIR:"
