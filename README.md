@@ -48,20 +48,20 @@ make install
 ```scala
 // build.mill (Mill)
 def mvnDeps = Seq(
-  mvn"com.tjclp::xlcr-core:0.1.0",
-  mvn"com.tjclp::xlcr-core-aspose:0.1.0"  // optional
+  mvn"com.tjclp::xlcr-core:0.2.0",
+  mvn"com.tjclp::xlcr-core-aspose:0.2.0"  // optional
 )
 ```
 
 ```scala
 // build.sbt (sbt)
 libraryDependencies ++= Seq(
-  "com.tjclp" %% "xlcr-core" % "0.1.0",
-  "com.tjclp" %% "xlcr-core-aspose" % "0.1.0"  // optional
+  "com.tjclp" %% "xlcr-core" % "0.2.0",
+  "com.tjclp" %% "xlcr-core-aspose" % "0.2.0"  // optional
 )
 ```
 
-Cross-published for **Scala 3.3.4** and **Scala 2.13.14**.
+Cross-published for **Scala 3.3.4** and **Scala 2.13.17**.
 
 ## CLI Usage
 
@@ -167,7 +167,7 @@ curl http://localhost:8080/capabilities
 ```bash
 ./mill __.compile                    # Compile all modules
 ./mill __[3.3.4].test                # Run all tests (Scala 3)
-./mill __[2.13.14].test              # Run all tests (Scala 2.13)
+./mill __[2.13.17].test              # Run all tests (Scala 2.13)
 ./mill core[3.3.4].test              # Run tests for a specific module
 ./mill __.checkFormat                # Check code formatting
 ./mill __.reformat                   # Fix formatting

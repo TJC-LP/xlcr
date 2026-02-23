@@ -5,6 +5,33 @@ All notable changes to XLCR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-02-23
+
+### Added
+- Per-product lazy Aspose licensing — `AsposeLicenseV2.require[Cells]` etc. with Scala 3 `transparent inline` zero-overhead dispatch; unlicensed products fall back to LibreOffice/Core automatically (PR #54)
+- License-aware capability checks — `canConvertLicensed`/`canSplitLicensed` gate `--backend-info` and capability queries on runtime license status per product (PR #54)
+- Kill switches — `XLCR_NO_ASPOSE=1` (exclude from build), `XLCR_NO_ASPOSE_LICENSE=1` (disable all license resolution), `XLCR_NO_CLASSPATH_LICENSE=1` (skip JAR-bundled licenses) (PR #54)
+- Per-product env vars — `ASPOSE_WORDS_LICENSE_B64`, `ASPOSE_CELLS_LICENSE_B64`, etc. for individual product licenses (PR #54)
+- License discovery test suite — `scripts/test-licensing.sh` with 8 scenarios / 12 assertions (PR #54)
+- Native image support via GraalVM CE 25.0.2 with reachability metadata and multi-stage Dockerfile (PR #48)
+- Legacy↔modern office format conversions — DOC↔DOCX, XLS↔XLSX, PPT↔PPTX (PR #49)
+- Conversion options system with DRY helpers and backend-aware validation (PRs #50, #51)
+- ZIO-blocks `Scope` for compile-time safe Aspose resource management (PR #52)
+- Cross-sheet formula evaluation to static values on XLSX split (PR #48)
+- Excel→HTML Aspose transforms (PR #48)
+
+### Changed
+- Replaced fragile compile-time Aspose detection with explicit `XLCR_NO_ASPOSE=1` opt-out — Aspose always included by default, runtime license checks handle the unlicensed case (PR #54)
+- Upgraded Tika 3.2.1→3.2.3, POI 5.5.0→5.5.1, Spark 4.0.0→4.1.1 (PR #53)
+- Scoped resource cleanup across Aspose bridges for better memory efficiency (PRs #52, #53)
+
+### Deprecated
+- `AsposeLicense` (v1) — use `AsposeLicenseV2` instead; v1 marked `@deprecated` with kill switch support for backward compat (PR #54)
+
+### Fixed
+- `initOnce` double-checked locking in `AsposeLicenseV2.initProduct` — concurrent callers now block until init completes instead of silently skipping (PR #54)
+- `--strip-masters` disposal management improved (PR #50)
+
 ## [0.1.3] - 2026-02-12
 
 ### Changed
@@ -26,7 +53,7 @@ First stable release. XLCR provides document conversion and splitting across PDF
 - **Compile-time transform discovery** - Scala 3 macros for zero-overhead backend dispatch
 - **HTTP server** - REST API for document conversion and splitting via ZIO HTTP
 - **Three-tier backend system** - Aspose (commercial) > LibreOffice (open-source) > Core (POI/Tika)
-- **Cross-published** for Scala 3.3.4 and 2.13.14
+- **Cross-published** for Scala 3.3.4 and 2.13.17
 
 ### Added
 
@@ -68,6 +95,7 @@ First stable release. XLCR provides document conversion and splitting across PDF
 - PowerPoint slide dimension loss during splitting
 - Word heading splitter overlapping content and empty headings
 
+[0.2.0]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.0
 [0.1.3]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.3
 [0.1.1]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.1
 [0.1.0]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.0

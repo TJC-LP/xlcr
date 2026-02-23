@@ -66,7 +66,7 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 ## Build Commands
 - `./mill __.compile` - Compile all modules for all Scala versions
 - `./mill __[3.3.4].compile` - Compile all modules with Scala 3.3.4
-- `./mill __[2.13.14].compile` - Compile all modules with Scala 2.13.14
+- `./mill __[2.13.17].compile` - Compile all modules with Scala 2.13.17
 - `./mill core[3.3.4].compile` - Compile a specific module with a specific Scala version
 - `./mill __.assembly` - Create executable JAR files
 - `./mill core[3.3.4].run` - Run the core application
@@ -74,7 +74,7 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 ## Test Commands
 - `./mill __.test` - Run all tests for all modules and Scala versions
 - `./mill __[3.3.4].test` - Run all tests with Scala 3.3.4
-- `./mill __[2.13.14].test` - Run all tests with Scala 2.13.14
+- `./mill __[2.13.17].test` - Run all tests with Scala 2.13.17
 - `./mill core[3.3.4].test` - Run tests for a specific module
 - `./mill core[3.3.4].test.testOnly com.tjclp.xlcr.ConfigSpec` - Run a single test class
 - `./mill __.checkFormat` - Check code formatting
@@ -83,7 +83,7 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 ## Scala Versions
 XLCR supports cross-building for:
 - **Scala 3.3.4** (primary version)
-- **Scala 2.13.14** (cross-build support)
+- **Scala 2.13.17** (cross-build support)
 
 ## Code Style
 - Scala 3 with functional programming principles
