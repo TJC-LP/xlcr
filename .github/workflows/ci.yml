@@ -73,9 +73,9 @@ jobs:
       - name: Run tests (skip Spark — no Java 25 support yet)
         if: matrix.java == 'temurin@25'
         run: |
-          ./mill 'core[${{ matrix.scala }}].test' \
-            'core-aspose[${{ matrix.scala }}].test' \
-            'core-libreoffice[${{ matrix.scala }}].test'
+          ./mill 'core[${{ matrix.scala }}].test'
+          ./mill 'core-aspose[${{ matrix.scala }}].test'
+          ./mill 'core-libreoffice[${{ matrix.scala }}].test'
           if [ "${{ matrix.scala }}" = "3.3.4" ]; then
             ./mill 'xlcr[3.3.4].test'
           fi
