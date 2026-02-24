@@ -5,6 +5,17 @@ All notable changes to XLCR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-02-24
+
+### Added
+- HTTP server folded into xlcr module — `xlcr server start` replaces standalone server JAR (PR #56)
+
+### Fixed
+- Native image: all 55/55 tests passing (was 49/55) — GraalVM reachability metadata fixes (PR #55)
+
+### Changed
+- Upgraded 26 dependencies across all modules (PR #57)
+
 ## [0.2.0] - 2026-02-23
 
 ### Added
@@ -95,6 +106,7 @@ First stable release. XLCR provides document conversion and splitting across PDF
 - PowerPoint slide dimension loss during splitting
 - Word heading splitter overlapping content and empty headings
 
+[0.2.1]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.1
 [0.2.0]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.0
 [0.1.3]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.3
 [0.1.1]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.1

@@ -48,16 +48,16 @@ make install
 ```scala
 // build.mill (Mill)
 def mvnDeps = Seq(
-  mvn"com.tjclp::xlcr-core:0.2.0",
-  mvn"com.tjclp::xlcr-core-aspose:0.2.0"  // optional
+  mvn"com.tjclp::xlcr-core:0.2.1",
+  mvn"com.tjclp::xlcr-core-aspose:0.2.1"  // optional
 )
 ```
 
 ```scala
 // build.sbt (sbt)
 libraryDependencies ++= Seq(
-  "com.tjclp" %% "xlcr-core" % "0.2.0",
-  "com.tjclp" %% "xlcr-core-aspose" % "0.2.0"  // optional
+  "com.tjclp" %% "xlcr-core" % "0.2.1",
+  "com.tjclp" %% "xlcr-core-aspose" % "0.2.1"  // optional
 )
 ```
 
