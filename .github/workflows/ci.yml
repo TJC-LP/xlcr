@@ -40,8 +40,18 @@ jobs:
           java-version: 21
 
       - name: Install LibreOffice
-        if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y libreoffice
+
+      - name: Cache Coursier and Mill
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.cache/mill
+          key: mill-${{ matrix.scala }}-${{ matrix.java }}-${{ hashFiles('build.mill', '**/package.mill', '.mill-version') }}
+          restore-keys: |
+            mill-${{ matrix.scala }}-${{ matrix.java }}-
+            mill-${{ matrix.scala }}-
 
       - name: Check Formatting
         run: ./mill __.checkFormat

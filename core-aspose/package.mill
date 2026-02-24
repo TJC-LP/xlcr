@@ -42,12 +42,12 @@ trait CoreAsposeModule extends build.XLCRModule {
 
   override def mvnDeps = Seq(
     mvn"com.aspose:aspose-cells:26.2",
-    mvn"com.aspose:aspose-words:26.1;classifier=jdk17",
+    mvn"com.aspose:aspose-words:26.2;classifier=jdk17",
     mvn"com.aspose:aspose-slides:26.2;classifier=jdk16",
     mvn"com.aspose:aspose-email:26.1;classifier=jdk16",
-    mvn"com.aspose:aspose-zip:25.9",
+    mvn"com.aspose:aspose-zip:26.1;classifier=jdk18",
     mvn"com.aspose:aspose-pdf:26.1",
-    mvn"dev.zio::zio-blocks-scope:0.0.25"
+    mvn"dev.zio::zio-blocks-scope:0.0.26"
   )
 
   object test extends ScalaTests with build.XLCRSerialTestModule {
