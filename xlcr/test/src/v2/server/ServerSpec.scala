@@ -48,7 +48,7 @@ class ServerSpec extends AnyFlatSpec with Matchers:
     Request(method = method, url = url, headers = headers, body = bodyContent)
 
   private def executeRequest(request: Request): Response =
-    runZIO(app.runZIO(request))
+    runZIO(ZIO.scoped(app.runZIO(request)))
 
   // ============================================================================
   // Health Check Tests
