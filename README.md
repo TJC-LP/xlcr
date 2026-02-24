@@ -123,14 +123,14 @@ xlcr convert -i intermediate.html -o presentation.pptx
 
 ## HTTP Server
 
-The server module exposes document conversion as a REST API:
+XLCR exposes document conversion as a REST API:
 
 ```bash
 # Start the server
-./mill 'server[3.3.4].run'
+./mill 'xlcr[3.3.4].run' server start --port 8080
 
 # Or with custom port
-XLCR_PORT=9000 ./mill 'server[3.3.4].run'
+./mill 'xlcr[3.3.4].run' server start --port 9000
 ```
 
 ### Endpoints

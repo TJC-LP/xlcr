@@ -236,7 +236,11 @@ server-native:
 		echo "Run 'make native' first."; \
 		exit 1; \
 	fi
-	$(NATIVE_BINARY) server start --port $(PORT)
+	@if [ "$$(uname)" = "Linux" ]; then \
+		XLCR_NATIVE_BINARY="$(abspath $(NATIVE_BINARY))" $(NATIVE_WRAPPER) server start --port $(PORT); \
+	else \
+		$(NATIVE_BINARY) server start --port $(PORT); \
+	fi
 
 # Start the HTTP server in Docker
 docker-server:
