@@ -9,16 +9,21 @@ on:
 
 env:
   ASPOSE_TOTAL_LICENSE_B64: ${{ secrets.ASPOSE_TOTAL_LICENSE_B64 }}
+  CI_IMAGE: ghcr.io/tjc-lp/xlcr:ci
 
 jobs:
   build:
     name: Build and Test
     strategy:
       matrix:
-        os: [ubuntu-latest]
         scala: [3.3.4, 2.13.17]
         java: [temurin@17, temurin@21, temurin@25]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/tjc-lp/xlcr:ci
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout current branch (full)
         uses: actions/checkout@v4
@@ -45,9 +50,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-
-      - name: Install LibreOffice
-        run: sudo apt-get update && sudo apt-get install -y libreoffice
 
       - name: Cache Coursier and Mill
         uses: actions/cache@v4
@@ -115,8 +117,14 @@ jobs:
     needs: [build]
     if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest-16-cores
+    container:
+      image: ghcr.io/tjc-lp/xlcr:ci
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -132,9 +140,6 @@ jobs:
         with:
           distribution: temurin
           java-version: 25
-
-      - name: Install LibreOffice
-        run: sudo apt-get update && sudo apt-get install -y libreoffice
 
       - name: Cache Coursier and Mill
         uses: actions/cache@v4
