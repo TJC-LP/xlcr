@@ -706,6 +706,65 @@ main() {
     run_test "Backend info" validate_backend_info "stdout" \
         --backend-info
 
+    # ══════════════════════════════════════════════════════════════════
+    # Phase 7: Server health check (agent mode only — traces Netty/ZIO HTTP)
+    # ══════════════════════════════════════════════════════════════════
+
+    if [[ "$MODE" == "agent" ]]; then
+        echo ""
+        echo "Tracing server endpoints for Netty/ZIO HTTP metadata..."
+
+        # Start server in background with tracing agent
+        local server_port=19876
+        local agent_flag="-agentlib:native-image-agent=config-merge-dir=${METADATA_DIR}"
+        "$JAVA_CMD" \
+            $agent_flag \
+            -Dsun.misc.unsafe.memory.access=allow \
+            --add-opens=java.base/sun.misc=ALL-UNNAMED \
+            --add-opens=java.base/java.lang=ALL-UNNAMED \
+            -Djava.awt.headless=true \
+            -jar "$ASSEMBLY_JAR" \
+            server start --port $server_port &
+        local server_pid=$!
+
+        # Wait for server to be ready
+        local max_wait=30
+        local waited=0
+        while ! curl -sf "http://localhost:$server_port/health" >/dev/null 2>&1; do
+            sleep 1
+            waited=$((waited + 1))
+            if [[ $waited -ge $max_wait ]]; then
+                echo "  Server failed to start within ${max_wait}s, skipping server tracing"
+                kill $server_pid 2>/dev/null || true
+                wait $server_pid 2>/dev/null || true
+                break
+            fi
+        done
+
+        if [[ $waited -lt $max_wait ]]; then
+            # Hit all endpoints to trace Netty/ZIO HTTP code paths
+            curl -sf "http://localhost:$server_port/health" >/dev/null 2>&1 || true
+            curl -sf "http://localhost:$server_port/" >/dev/null 2>&1 || true
+            curl -sf "http://localhost:$server_port/capabilities" >/dev/null 2>&1 || true
+
+            # POST /info with a small HTML body
+            curl -sf -X POST "http://localhost:$server_port/info" \
+                -H "Content-Type: text/html" \
+                --data-binary "<html><body>test</body></html>" >/dev/null 2>&1 || true
+
+            # POST /convert with a small HTML body
+            curl -sf -X POST "http://localhost:$server_port/convert?to=pdf" \
+                -H "Content-Type: text/html" \
+                --data-binary "<html><body>test</body></html>" -o /dev/null 2>&1 || true
+
+            echo "  Server endpoints traced."
+
+            # Shut down server
+            kill $server_pid 2>/dev/null || true
+            wait $server_pid 2>/dev/null || true
+        fi
+    fi
+
     # ── Results ───────────────────────────────────────────────────────
     print_results
 }

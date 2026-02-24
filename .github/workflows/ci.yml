@@ -101,13 +101,13 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Build server assembly JAR
-        run: ./mill 'server[3.3.4].assembly'
+      - name: Build XLCR assembly JAR
+        run: ./mill 'xlcr[3.3.4].assembly'
         env:
           ASPOSE_TOTAL_LICENSE_B64: ${{ secrets.ASPOSE_TOTAL_LICENSE_B64 }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: out/server/3.3.4/assembly.dest/out.jar
+          files: out/xlcr/3.3.4/assembly.dest/out.jar
           generate_release_notes: true

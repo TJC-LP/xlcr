@@ -6,18 +6,10 @@ import zio.http._
 import com.tjclp.xlcr.v2.server.routes.Routes
 
 /**
- * XLCR HTTP Server main entry point.
+ * XLCR HTTP Server.
  *
- * A stateless REST API for document conversion and splitting using the v2 transform system.
- *
- * Usage:
- * {{{
- * # Start the server
- * ./mill 'server[3.3.4].run'
- *
- * # With custom configuration
- * XLCR_PORT=9000 ./mill 'server[3.3.4].run'
- * }}}
+ * A stateless REST API for document conversion and splitting using the v2 transform system. Invoked
+ * via `xlcr server start` CLI command.
  *
  * Endpoints:
  *   - POST /convert?to=<mime> - Convert document to target format
@@ -28,6 +20,9 @@ import com.tjclp.xlcr.v2.server.routes.Routes
  *
  * Example requests:
  * {{{
+ * # Start the server
+ * xlcr server start --port 8080
+ *
  * # Convert DOCX to PDF
  * curl -X POST "http://localhost:8080/convert?to=pdf" \
  *   -H "Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" \
@@ -47,10 +42,19 @@ import com.tjclp.xlcr.v2.server.routes.Routes
  * curl http://localhost:8080/capabilities
  * }}}
  */
-object Server extends ZIOAppDefault:
+object Server:
 
-  override def run: ZIO[Any, Throwable, Nothing] =
-    val config         = ServerConfig.fromEnv
+  /**
+   * Start the XLCR HTTP server with the given configuration.
+   *
+   * This method blocks forever (serving requests) and only returns on fatal error.
+   *
+   * @param config
+   *   Server configuration (host, port, max request size)
+   * @return
+   *   Never returns normally - runs until the process is terminated.
+   */
+  def start(config: ServerConfig): ZIO[Any, Throwable, Nothing] =
     val maxRequestSize = Math.min(config.maxRequestSize, Int.MaxValue.toLong).toInt
 
     val program =

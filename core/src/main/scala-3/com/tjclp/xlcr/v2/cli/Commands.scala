@@ -46,6 +46,13 @@ object Commands:
     format: OutputFormat = OutputFormat.Text
   )
 
+  /** Arguments for the server command (pure data — no HTTP imports) */
+  case class ServerArgs(
+    host: Option[String] = None,
+    port: Option[Int] = None,
+    maxRequestSize: Option[Long] = None
+  )
+
   /** Output format for the info command */
   enum OutputFormat:
     case Text
@@ -57,6 +64,7 @@ object Commands:
     case Convert(args: ConvertArgs)
     case Split(args: SplitArgs)
     case Info(args: InfoArgs)
+    case Server(args: ServerArgs)
 
   /** Backend selection for CLI commands */
   enum Backend:
@@ -276,6 +284,44 @@ object Commands:
     )(infoOpts.map(CliCommand.Info.apply))
 
   // ============================================================================
+  // Server Subcommand
+  // ============================================================================
+
+  private val serverHostOpt: Opts[Option[String]] =
+    Opts.option[String](
+      long = "host",
+      help = "Host to bind to (default: 0.0.0.0, or XLCR_HOST env)"
+    ).orNone
+
+  private val serverPortOpt: Opts[Option[Int]] =
+    Opts.option[Int](
+      long = "port",
+      short = "p",
+      help = "Port to listen on (default: 8080, or XLCR_PORT env)"
+    ).orNone
+
+  private val serverMaxRequestSizeOpt: Opts[Option[Long]] =
+    Opts.option[Long](
+      long = "max-request-size",
+      help = "Maximum request body size in bytes (default: 104857600)"
+    ).orNone
+
+  private val serverStartOpts: Opts[ServerArgs] =
+    (serverHostOpt, serverPortOpt, serverMaxRequestSizeOpt).mapN(ServerArgs.apply)
+
+  private val serverStartCmd: Opts[CliCommand] =
+    Opts.subcommand(
+      name = "start",
+      help = "Start the HTTP server"
+    )(serverStartOpts.map(CliCommand.Server.apply))
+
+  val serverCmd: Opts[CliCommand] =
+    Opts.subcommand(
+      name = "server",
+      help = "HTTP server for document conversion API"
+    )(serverStartCmd)
+
+  // ============================================================================
   // Main Command
   // ============================================================================
 
@@ -283,7 +329,7 @@ object Commands:
     name = "xlcr",
     header = "XLCR - Cross-format document conversion toolkit"
   )(
-    convertCmd.orElse(splitCmd).orElse(infoCmd)
+    convertCmd.orElse(splitCmd).orElse(infoCmd).orElse(serverCmd)
   )
 
   /** Parse command line arguments */

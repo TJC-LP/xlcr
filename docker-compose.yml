@@ -5,11 +5,13 @@
 #   agent  - Run GraalVM tracing agent to capture native-image metadata
 #   test   - Run test suite (validates file output for JVM + native)
 #   bench  - Run benchmarks (JVM vs native timing comparison)
+#   server - Run XLCR HTTP server on port 8080
 #
 # Usage:
 #   docker compose run --rm agent     # Trace → metadata in volume
 #   docker compose run --rm test      # Pass/fail table
 #   docker compose run --rm bench     # Timing comparison
+#   docker compose up server          # Start HTTP server
 #   docker compose build runtime      # Build runtime image (includes native binary)
 
 services:
@@ -34,6 +36,27 @@ services:
       target: runtime
     mem_limit: 16g
     command: /xlcr/scripts/test-conversions.sh --mode bench
+
+  server:
+    build:
+      context: .
+      target: runtime
+    mem_limit: 16g
+    ports:
+      - "8080:8080"
+    command: >
+      java -Dsun.misc.unsafe.memory.access=allow
+      --add-opens=java.base/sun.misc=ALL-UNNAMED
+      --add-opens=java.base/java.lang=ALL-UNNAMED
+      -Djava.awt.headless=true
+      -jar /xlcr/out/xlcr/3.3.4/assembly.dest/out.jar
+      server start --port 8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
 volumes:
   metadata:
