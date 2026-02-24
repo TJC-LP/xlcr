@@ -18,6 +18,7 @@ import pipeline.spark.steps._
  * provide detailed timing metrics. – License-aware UDFs ensure Aspose licenses are properly
  * initialized across workers.
  */
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 trait SparkStep extends Serializable { self =>
 
   /* --------------------------------------------------------------------- */
@@ -128,6 +129,7 @@ trait SparkStep extends Serializable { self =>
   /* --------------------------------------------------------------------- */
 }
 
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 object SparkStep {
 
   /**

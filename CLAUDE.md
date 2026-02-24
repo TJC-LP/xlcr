@@ -4,7 +4,7 @@
 
 XLCR modules have different Java version requirements:
 - **Core, Aspose, LibreOffice**: Java 17+ (tested with Java 17, 21, 25)
-- **Spark Module**: Java 17 or 21 only (Spark 3.x limitation - Java 25 not supported)
+- **Spark Module** *(deprecated — removal in 0.3.0)*: Java 17 or 21 only (Spark 4.x limitation — Java 25 not supported)
 
 ### Running Tests with Java 25
 

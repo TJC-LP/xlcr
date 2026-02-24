@@ -10,6 +10,7 @@ import bridges.{ Bridge, BridgeRegistry }
 import models.FileContent
 import types.MimeType
 
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 case class ExtractStep(
   to: MimeType,
   outCol: String,

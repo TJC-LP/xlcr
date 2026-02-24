@@ -8,6 +8,7 @@ import org.apache.spark.sql.{ DataFrame, SparkSession }
  * Utility functions for creating and composing SparkSteps. This replaces the now-deprecated
  * SparkPipelineRegistry.
  */
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 object SparkStepUtils {
 
   /**
