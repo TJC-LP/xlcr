@@ -16,6 +16,7 @@ import com.tjclp.xlcr.v2.cli.Commands.*
 import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.v2.output.{ FragmentNaming, MimeExtensions, ZipBuilder }
+import com.tjclp.xlcr.v2.server.{ Server, ServerConfig }
 import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, Mime }
 
 /**
@@ -101,6 +102,19 @@ object XlcrMain extends ZIOAppDefault:
       case CliCommand.Convert(args) => runConvert(args)
       case CliCommand.Split(args)   => runSplit(args)
       case CliCommand.Info(args)    => runInfo(args)
+      case CliCommand.Server(args)  => runServer(args)
+
+  // ============================================================================
+  // Server Command
+  // ============================================================================
+
+  private def runServer(args: ServerArgs): ZIO[Any, Throwable, ExitCode] =
+    val config = ServerConfig.fromArgs(
+      host = args.host,
+      port = args.port,
+      maxRequestSize = args.maxRequestSize
+    )
+    Server.start(config).as(ExitCode.success)
 
   // ============================================================================
   // Convert Command

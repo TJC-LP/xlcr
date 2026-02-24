@@ -26,7 +26,8 @@ LICENSE_ROOT := Aspose.Total.Java.lic
         clean test test-all run help check-license compile assembly \
         native native-agent docker-native docker-native-agent \
         docker-test docker-bench docker-agent docker-build docker-cycle \
-        docker-extract-metadata docker-clean
+        docker-extract-metadata docker-clean \
+        server server-native docker-server
 
 all: build
 
@@ -220,6 +221,27 @@ test-all:
 run:
 	./mill 'xlcr[$(SCALA_VERSION)].run'
 
+# ── Server targets ───────────────────────────────────────────────────
+
+# Start the HTTP server via Mill (JVM mode, for development)
+# Usage: make server PORT=9090
+PORT ?= 8080
+server:
+	./mill 'xlcr[$(SCALA_VERSION)].run' server start --port $(PORT)
+
+# Start the HTTP server via native binary
+server-native:
+	@if [ ! -f "$(NATIVE_BINARY)" ]; then \
+		echo "Error: Native binary not found at $(NATIVE_BINARY)"; \
+		echo "Run 'make native' first."; \
+		exit 1; \
+	fi
+	$(NATIVE_BINARY) server start --port $(PORT)
+
+# Start the HTTP server in Docker
+docker-server:
+	docker compose up server
+
 # ── Docker Compose targets (multi-stage Dockerfile) ──────────────────
 
 # Run test suite in Docker (validates file output for JVM + native)
@@ -286,6 +308,11 @@ help:
 	@echo "    make install-native-user - Install native binary to ~/bin"
 	@echo "    make uninstall-native    - Remove native binary from /usr/local/bin"
 	@echo "    make uninstall-native-user - Remove native binary from ~/bin"
+	@echo ""
+	@echo "  Server:"
+	@echo "    make server         - Start HTTP server via Mill (PORT=8080)"
+	@echo "    make server-native  - Start HTTP server via native binary"
+	@echo "    make docker-server  - Start HTTP server in Docker"
 	@echo ""
 	@echo "  Development:"
 	@echo "    make test           - Run xlcr module tests"
