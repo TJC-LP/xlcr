@@ -39,11 +39,8 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Install LibreOffice (cached)
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: libreoffice
-          version: 1.0
+      - name: Install LibreOffice
+        run: sudo apt-get update && sudo apt-get install -y libreoffice
 
       - name: Cache Coursier and Mill
         uses: actions/cache@v4
