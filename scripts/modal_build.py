@@ -37,7 +37,7 @@ GRAALVM_VERSION = "25.0.2"
 MILL_VERSION = "1.1.2"
 
 build_image = (
-    modal.Image.from_registry("ubuntu:24.04")
+    modal.Image.from_registry("ubuntu:24.04", add_python="3.12")
     .apt_install(
         "curl", "git", "make", "build-essential", "zlib1g-dev",
         "libreoffice-core", "libreoffice-writer",
