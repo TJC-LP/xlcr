@@ -97,6 +97,9 @@ object XlcrConversions:
    *
    * Note: Advanced formatting and formulas may not be perfectly preserved.
    */
+  @scala.annotation.nowarn(
+    "msg=deprecated"
+  ) // ODFDOM getTableList/setDateValue — no clear replacement in 0.13.0
   val xlsxToOds: Conversion[Mime.Xlsx, Mime.Ods] =
     Conversion.withPriority[Mime.Xlsx, Mime.Ods](CORE_PRIORITY) { input =>
       ZIO.attemptBlocking {

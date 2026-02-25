@@ -126,6 +126,7 @@ object XlcrSplitters:
     finally
       ZipSecureFile.setMaxFileCount(1000L) // Reset to default
 
+  @scala.annotation.nowarn("msg=deprecated") // ODFDOM getTableList — no clear replacement in 0.13.0
   private def splitOdsWorkbook(data: Array[Byte]): Chunk[Fragment[Mime.Ods]] =
     // First pass: get sheet info
     val tempDoc = OdfSpreadsheetDocument.loadDocument(new ByteArrayInputStream(data))
