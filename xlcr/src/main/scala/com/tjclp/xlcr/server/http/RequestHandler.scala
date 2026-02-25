@@ -36,20 +36,28 @@ object RequestHandler:
       else detectMime(request, body)
     yield Content.fromChunk(body, mime)
 
+  /** MIME types that indicate "no useful Content-Type" -- fall through to Tika. */
+  private val GenericMimeTypes = Set(
+    "application/octet-stream",
+    "application/x-www-form-urlencoded"
+  )
+
   /**
    * Detect MIME type from request headers or content.
    *
    * Priority:
-   *   1. Content-Type header 2. Tika content-based detection
+   *   1. Content-Type header (if specific, i.e. not octet-stream or form-urlencoded) 2. Tika
+   *      content-based detection (fallback)
    */
   private def detectMime(request: Request, body: Chunk[Byte]): Mime =
     request.header(Header.ContentType) match
       case Some(ct) =>
-        // Parse the Content-Type header
         val mediaType = ct.mediaType
-        Mime.parse(s"${mediaType.mainType}/${mediaType.subType}")
+        val parsed    = s"${mediaType.mainType}/${mediaType.subType}"
+        // Treat generic MIME types as "no useful Content-Type" -- use Tika instead
+        if GenericMimeTypes.contains(parsed) then Mime.detectFromContent(body)
+        else Mime.parse(parsed)
       case None =>
-        // Fall back to Tika detection
         Mime.detectFromContent(body)
 
   /**
