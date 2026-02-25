@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Upgraded 26 dependencies across all modules (PR #57)
+- CI now tests on Java 17, 21, and 25 (PR #58)
+- Release assets: named CLI JAR (`xlcr-<version>.jar`) and Linux native image (`xlcr-linux-amd64`) (PR #58)
+
+### Deprecated
+- `core-spark` module — will be removed in 0.3.0; Spark 4.x does not support Java 25, and the use case is no longer needed (PR #58)
 
 ## [0.2.0] - 2026-02-23
 

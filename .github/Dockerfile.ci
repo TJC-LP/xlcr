@@ -1,0 +1,22 @@
+# CI base image for XLCR GitHub Actions workflows.
+# Published to ghcr.io/tjc-lp/xlcr:ci
+#
+# Provides LibreOffice and basic tools so CI jobs don't need apt-get install.
+# Java is installed at runtime by actions/setup-java for matrix flexibility.
+
+FROM ubuntu:24.04
+
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # GitHub Actions checkout and setup-java requirements
+    git \
+    curl \
+    ca-certificates \
+    # LibreOffice (minimal packages for document conversion tests)
+    libreoffice-core \
+    libreoffice-writer \
+    libreoffice-calc \
+    libreoffice-impress \
+    && rm -rf /var/lib/apt/lists/*

@@ -23,6 +23,7 @@ import org.xml.sax.SAXException
  * @param udfTimeout
  *   Duration for UDF timeout per file. Default is 30 seconds.
  */
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 case class DetectMime(
   override val udfTimeout: ScalaDuration = ScalaDuration(30, "seconds")
 ) extends SparkStep {

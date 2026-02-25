@@ -15,7 +15,7 @@ XLCR converts between document formats (PDF, DOCX, XLSX, PPTX, HTML, ODS, and mo
 | **core** | `xlcr-core` | Tika text extraction, document splitters (PDF/Excel/PowerPoint/Word/Email/Archive), XLSX-to-ODS conversion |
 | **core-aspose** | `xlcr-core-aspose` | Aspose-powered conversions: PDF/DOCX/XLSX/PPTX/HTML with HIGH priority (commercial license required) |
 | **core-libreoffice** | `xlcr-core-libreoffice` | LibreOffice-powered conversions: DOC/XLS/PPT/ODS to PDF as open-source fallback |
-| **core-spark** | `xlcr-core-spark` | Spark DataFrame integration for batch document processing |
+| **core-spark** | `xlcr-core-spark` | Spark DataFrame integration for batch document processing *(deprecated — removal in 0.3.0)* |
 | **xlcr** | `xlcr` | Unified CLI with compile-time transform discovery and automatic backend fallback (Scala 3 only) |
 | **server** | `xlcr-server` | HTTP REST API for document conversion and splitting (Scala 3 only) |
 

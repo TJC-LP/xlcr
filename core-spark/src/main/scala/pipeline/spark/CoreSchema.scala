@@ -14,6 +14,7 @@ import org.apache.spark.sql.{ functions => F, Column, DataFrame }
  * Having the contract in one file makes evolution (adding a column, changing a type) a single-point
  * change.
  */
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 object CoreSchema {
   /* --------------------------------------------------------------------- */
   /* Column names & nested types                                           */
