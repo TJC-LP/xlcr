@@ -151,5 +151,10 @@ COPY --from=native /xlcr/out/xlcr/nativeImage.dest/native-executable /xlcr/xlcr-
 COPY scripts/test-conversions.sh /xlcr/scripts/test-conversions.sh
 RUN chmod +x /xlcr/scripts/test-conversions.sh
 
+# Server port (for use as HTTP server)
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 --start-period=30s \
+  CMD curl -sf http://localhost:8080/health || exit 1
+
 # Default: run test suite
 CMD ["/xlcr/scripts/test-conversions.sh", "--mode", "both"]
