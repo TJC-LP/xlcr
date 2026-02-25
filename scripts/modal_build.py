@@ -87,13 +87,8 @@ def build(tag: str = "main", repo: str = "https://github.com/TJC-LP/xlcr.git"):
     )
     os.chdir("/build")
 
-    # Set up Aspose license if available
-    license_b64 = os.environ.get("ASPOSE_TOTAL_LICENSE_B64", "")
-    if license_b64:
-        os.makedirs("core-aspose/resources", exist_ok=True)
-        with open("core-aspose/resources/Aspose.Total.Java.lic", "wb") as f:
-            f.write(base64.b64decode(license_b64))
-        print("Aspose license installed")
+    # NOTE: Aspose license is NOT bundled into published artifacts.
+    # Users supply it at runtime via ASPOSE_TOTAL_LICENSE_B64 env var.
 
     # Build assembly JAR
     print("Building assembly JAR...")
