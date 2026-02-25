@@ -36,7 +36,7 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 
 | Variable | Effect |
 |---|---|
-| `XLCR_NO_ASPOSE_LICENSE=1` | Kill ALL license resolution — complete blackout (highest priority) |
+| `XLCR_NO_ASPOSE_LICENSE=1` | Kill ALL license resolution -- complete blackout (highest priority) |
 | `XLCR_NO_CLASSPATH_LICENSE=1` | Skip JAR-bundled licenses; CWD files + env vars still work |
 | `ASPOSE_TOTAL_LICENSE_B64` | Base64-encoded total license (all products) |
 | `ASPOSE_WORDS_LICENSE_B64` | Per-product: Words only |
@@ -50,7 +50,6 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 - `./mill __.compile` - Compile all modules
 - `./mill core.compile` - Compile a specific module
 - `./mill __.assembly` - Create executable JAR files
-- `./mill core.run` - Run the core application
 
 ## Test Commands
 - `./mill __.test` - Run all tests
@@ -65,218 +64,135 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 - Package organization follows com.tjclp.xlcr convention
 - CamelCase for methods/variables, PascalCase for classes/objects
 - Prefer Option/Either for error handling over exceptions
-- Bridges follow standard patterns (SimpleBridge, SymmetricBridge, etc.)
 - Make illegal states unrepresentable through type system
 - Models should be immutable case classes with well-defined interfaces
-- Parser/Renderer pairs should be symmetric
 
 ## Module Structure
 The project is organized into these main modules:
-- `core` - Core functionality: Tika text extraction, splitters (PDF/Excel/PowerPoint/Word/Email/Archives), XLSX→ODS conversion
-- `core-aspose` - Integration with Aspose for PDF conversion and document transformations (HIGH priority)
-- `core-libreoffice` - Integration with LibreOffice for open-source document conversions (DEFAULT priority fallback)
-- `data` - Directory containing sample Excel files for testing
+- `core` - Tika text extraction, document splitters (PDF/Excel/PowerPoint/Word/Email/Archives), XLSX->ODS conversion
+- `core-aspose` - Aspose-based document conversions (HIGH priority backend)
+- `core-libreoffice` - LibreOffice-based conversions via JODConverter (DEFAULT priority fallback)
+- `cli` - Command-line interface (`xlcr convert`, `xlcr server`)
+- `server` - HTTP server (ZIO HTTP)
+- `xlcr` - Unified assembly module wiring all backends together
 
-### Core Module Capabilities
-The core module provides:
-- **Tika Text Extraction**: Universal fallback for extracting plain text or XML from any document
-- **Document Splitters**: Extract pages/sheets/slides from documents
-  - PDF: PdfPageSplitter
-  - Excel: ExcelXlsSheetSplitter, ExcelXlsxSheetSplitter, OdsSheetSplitter
-  - PowerPoint: PowerPointPptSlideSplitter, PowerPointPptxSlideSplitter
-  - Word: WordDocRouterSplitter, WordDocxRouterSplitter
-  - Email: EmailAttachmentSplitter, OutlookMsgSplitter
-  - Archives: ZipEntrySplitter
-  - Text: TextSplitter, CsvSplitter
-- **Format Conversion**: XLSX → ODS (ExcelToOdsBridge)
+## Conversion Dispatch: UnifiedTransforms
 
-For Excel/PowerPoint JSON conversions, use the `~/git/xl` library instead.
+All conversions route through `UnifiedTransforms` (compile-time wired in the `xlcr` module). When no backend is specified, it tries each in order with automatic fallback:
 
-## Document Conversion
-The core-aspose module includes comprehensive document conversion capabilities:
+1. **Aspose** (BackendWiring) -- highest quality, requires license
+2. **LibreOffice** (LibreOfficeTransforms) -- open-source fallback
+3. **XLCR Core** (XlcrTransforms) -- POI/Tika/PDFBox built-ins
 
-### Supported Conversions
-- **HTML ↔ PowerPoint**: Bidirectional conversion between HTML and PowerPoint formats
-  - HTML → PPTX (PowerPoint Open XML)
-  - HTML → PPT (PowerPoint 97-2003)
-  - PPTX → HTML
-  - PPT → HTML
-- **PDF → PowerPoint**: Direct conversion from PDF to editable PowerPoint
-  - PDF → PPTX (each page becomes a slide)
-  - PDF → PPT (each page becomes a slide)
-- **PDF → HTML**: Convert PDF to structured HTML (NEW - recommended for best editability!)
-- **Two-Stage Workflow**: PDF → HTML → PowerPoint (best for editable output)
+When a specific `backend` is requested, only that backend is used with no fallback.
 
-### CLI Usage Examples
+## CLI Usage
+
 ```bash
-# Convert HTML to PowerPoint (PPTX)
-./mill core.run -i presentation.html -o output.pptx
+# Basic conversion
+xlcr convert -i input.docx -o output.pdf
 
-# Convert HTML to legacy PowerPoint (PPT)
-./mill core.run -i presentation.html -o output.ppt
+# PowerPoint to HTML with master slide removal
+xlcr convert -i presentation.pptx -o output.html --strip-masters
 
-# Convert PowerPoint to HTML
-./mill core.run -i presentation.pptx -o output.html
-
-# Convert PowerPoint to HTML with master slide removal (cleaner output)
-./mill core.run -i presentation.pptx -o output.html --strip-masters
-
-# Convert legacy PowerPoint to HTML
-./mill core.run -i presentation.ppt -o output.html
-
-# Template swapping workflow: strip template, convert, apply new template
-./mill core.run -i old-template.pptx -o clean.html --strip-masters
-./mill core.run -i clean.html -o new-presentation.pptx
-# Then apply new template in PowerPoint
-
-# Convert PDF to PowerPoint (PPTX) - each page becomes a slide
-./mill core.run -i document.pdf -o presentation.pptx
-
-# Convert PDF to legacy PowerPoint (PPT)
-./mill core.run -i document.pdf -o presentation.ppt
-
-# === PDF → HTML Conversion (NEW!) ===
-
-# Convert PDF to HTML (preserves structure better)
-./mill core.run -i document.pdf -o output.html
-
-# Convert encrypted PDF to HTML
-./mill core.run -i encrypted.pdf -o output.html  # Auto-handles restrictions
-
-# === Two-Stage Workflow (RECOMMENDED for Best Editability) ===
-
-# Stage 1: PDF → HTML (extract structured content)
-./mill core.run -i document.pdf -o intermediate.html
-
-# Stage 2: HTML → PowerPoint (create editable slides)
-./mill core.run -i intermediate.html -o presentation.pptx
-
-# Why two-stage? File size: 76MB direct vs 254KB two-stage!
+# Two-stage PDF -> editable PowerPoint (recommended)
+xlcr convert -i document.pdf -o intermediate.html
+xlcr convert -i intermediate.html -o presentation.pptx
 ```
 
-### Technical Details
+## HTTP Server
 
-**PowerPoint Conversion**:
-- Uses Aspose.Slides for Java for HTML ↔ PowerPoint
-- Handles HTML structure with best-effort slide creation
-- Automatically removes unused master slides and layout slides
+### Starting the Server
 
-**PDF → HTML Conversion** (NEW):
-- Uses Aspose.PDF for Java with HtmlSaveOptions
-- Flowing layout mode for better editability (vs fixed positioning)
-- Embeds all resources (fonts, images) into single HTML file
-- Preserves text as editable text (not images)
-- Table structure preservation enabled
-- Automatically handles encrypted and restricted PDFs (removes copy/edit restrictions)
-
-**PDF → PowerPoint Conversion** (Direct):
-- Each page in the PDF becomes a slide
-- Uses Aspose.Slides' addFromPdf() method
-- Good visual fidelity, moderate editability
-- Automatically handles encrypted and restricted PDFs
-- Larger file sizes (76MB for 94-page document)
-
-**PDF → HTML → PowerPoint** (Two-Stage - RECOMMENDED):
-- Best editability and smallest file size
-- Better structure preservation through HTML intermediate format
-- Dramatically smaller output (254KB vs 76MB for 94-page document)
-- Recommended when PowerPoint editability is priority
-- Slightly lower visual fidelity vs direct conversion
-- Optional `--strip-masters` flag creates clean copies during PowerPoint → HTML conversions
-  - Creates a new blank presentation and copies slide content only
-  - Strips all masters, layouts, footers, logos, and template elements
-  - Resulting presentation has only blank layouts with default masters
-  - Enables cleaner HTML output without any template/layout/footer overhead
-  - Facilitates template swapping workflows - strip old templates, convert to HTML, then apply new templates
-  - Significantly reduces file sizes by removing all template and branding data
-  - Perfect for re-theming presentations or removing corporate branding
-- Supports round-trip conversions (HTML → PPTX → HTML)
-
-## LibreOffice Backend (Open-Source Alternative)
-
-XLCR includes an optional LibreOffice-based conversion backend that serves as an open-source fallback when Aspose is not available.
-
-### Features
-- **Open Source**: No commercial license required
-- **Automatic Fallback**: Activates when Aspose is unavailable (lower priority)
-- **Headless Operation**: Runs LibreOffice in headless mode via JODConverter
-- **Wide Format Support**: Handles Microsoft Office and OpenDocument formats
-
-### Supported Conversions
-The LibreOffice backend (`core-libreoffice` module) supports these conversions to PDF:
-- **Word**: DOC, DOCX → PDF
-- **Excel**: XLS, XLSX, XLSM → PDF
-- **PowerPoint**: PPT, PPTX → PDF
-- **OpenDocument**: ODS (Calc spreadsheets) → PDF
-
-### Installation Requirements
-
-LibreOffice must be installed on your system:
-
-**macOS:**
 ```bash
+xlcr server start --port 8080
+```
+
+### Server Options
+
+| Flag | Env Var | Default | Description |
+|---|---|---|---|
+| `--host` | `XLCR_HOST` | `0.0.0.0` | Bind address |
+| `--port`, `-p` | `XLCR_PORT` | `8080` | Listen port |
+| `--max-request-size` | `XLCR_MAX_REQUEST_SIZE` | `104857600` (100MB) | Max request body bytes |
+| `--lo-instances` | `XLCR_LO_INSTANCES` | `1` | LibreOffice process pool size |
+| `--lo-restart-after` | `XLCR_LO_RESTART_AFTER` | `200` | Restart LO process after N conversions |
+| `--lo-task-timeout` | `XLCR_LO_TASK_TIMEOUT` | `120000` (2min) | LO task execution timeout (ms) |
+| `--lo-queue-timeout` | `XLCR_LO_QUEUE_TIMEOUT` | `30000` (30s) | LO task queue timeout (ms) |
+
+CLI flags take precedence over env vars, which take precedence over defaults.
+
+### Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/` | Server info and version |
+| `GET` | `/health` | Health check (includes LO pool status) |
+| `GET` | `/capabilities` | List all supported conversions and splits |
+| `POST` | `/convert?to=` | Convert document to target format |
+| `POST` | `/split` | Split document into fragments (returns ZIP) |
+| `POST` | `/info` | Document metadata and available conversions |
+
+### Query Parameters
+
+| Param | Applies To | Description |
+|---|---|---|
+| `to` (required) | `/convert` | Target format: MIME type, extension, or alias (`pdf`, `text/plain`, `html`, etc.) |
+| `backend` | `/convert`, `/split` | Force specific backend: `aspose`, `libreoffice`, or `xlcr` (no fallback) |
+| `detect=tika` | `/convert`, `/split` | Force Tika content detection, ignore Content-Type header |
+
+**Content-Type handling**: `application/octet-stream` and `application/x-www-form-urlencoded` are treated as unknown and trigger automatic Tika detection.
+
+### Examples
+
+```bash
+# Convert DOCX to PDF
+curl -X POST "http://localhost:8080/convert?to=pdf" \
+  -H "Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" \
+  --data-binary @document.docx -o output.pdf
+
+# Convert with Tika detection (unknown file type)
+curl -X POST "http://localhost:8080/convert?to=html&detect=tika" \
+  --data-binary @mystery-file -o output.html
+
+# Force LibreOffice backend
+curl -X POST "http://localhost:8080/convert?to=pdf&backend=libreoffice" \
+  --data-binary @spreadsheet.xlsx -o output.pdf
+
+# Health check
+curl http://localhost:8080/health
+
+# List capabilities
+curl http://localhost:8080/capabilities
+```
+
+## LibreOffice Backend
+
+### Installation
+
+```bash
+# macOS
 brew install --cask libreoffice
-```
 
-**Linux (Ubuntu/Debian):**
-```bash
+# Linux (Ubuntu/Debian)
 sudo apt-get install libreoffice
 ```
 
-**Windows:**
-Download from https://www.libreoffice.org/download/
+Default paths: `/Applications/LibreOffice.app/Contents` (macOS), `/usr/lib/libreoffice` (Linux).
+Override with `LIBREOFFICE_HOME=/path/to/libreoffice`.
 
-### Configuration
+### Supported Conversions
 
-By default, XLCR looks for LibreOffice in platform-specific locations:
-- **macOS**: `/Applications/LibreOffice.app/Contents`
-- **Linux**: `/usr/lib/libreoffice`
-- **Windows**: `C:\Program Files\LibreOffice`
-
-To specify a custom path, set the environment variable:
-```bash
-export LIBREOFFICE_HOME=/path/to/libreoffice
-```
-
-### Usage
-
-The LibreOffice backend works automatically as a fallback. No code changes needed:
-
-```bash
-# These commands will use Aspose if available, LibreOffice otherwise
-./mill core.run -i document.docx -o output.pdf
-./mill core.run -i spreadsheet.xlsx -o output.pdf
-./mill core.run -i presentation.pptx -o output.pdf
-./mill core.run -i spreadsheet.ods -o output.pdf
-```
-
-### Priority System
-
-XLCR uses a priority-based bridge selection:
-- **HIGH Priority**: Aspose bridges (preferred when available)
-- **DEFAULT Priority**: LibreOffice bridges (fallback)
-- **LOW Priority**: Last-resort implementations
-
-This ensures the best available converter is always used automatically.
-
-### Performance Considerations
-
-- **Aspose**: Pure Java, faster, no external dependencies, better quality
-- **LibreOffice**: Requires external process, slower startup, but free and open-source
-- **Recommendation**: Use Aspose for production, LibreOffice for development/testing
+DOCX, DOC, XLSX, XLS, XLSM, PPTX, PPT, ODT, ODP, RTF -> PDF
 
 ### Module Structure
 
-The `core-libreoffice` module follows the same bridge pattern as other backends:
-- `core-libreoffice/src/main/scala/bridges/` - Bridge implementations
-- `core-libreoffice/src/main/scala/config/` - JODConverter configuration
-- `core-libreoffice/src/main/scala/registration/` - SPI registration
-
-### Building
-
-To build the LibreOffice module:
-```bash
-./mill core-libreoffice.compile
-./mill core-libreoffice.test
-./mill core-libreoffice.assembly
+```
+core-libreoffice/src/main/scala/com/tjclp/xlcr/
+  libreoffice/
+    LibreOfficeTransforms.scala   # Transform dispatcher
+    conversions.scala             # Conversion implementations
+    splitters.scala               # Split implementations
+  config/
+    LibreOfficeConfig.scala       # JODConverter + process pool config
 ```
