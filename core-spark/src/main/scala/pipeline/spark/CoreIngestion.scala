@@ -9,6 +9,7 @@ import org.apache.spark.sql.{ functions => F, DataFrame, SparkSession }
  * already satisfies the CoreSchema contract. This is the fastest way for users to “init” an XLCR
  * Spark pipeline.
  */
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 object CoreIngestion {
 
   /**

@@ -14,6 +14,7 @@ import types.MimeType
  * Document splitting step with comprehensive metrics and error handling. Splits documents into
  * chunks according to the specified strategy.
  */
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 case class SplitStep(
   override val udfTimeout: ScalaDuration =
     scala.concurrent.duration.Duration(60, "seconds"),

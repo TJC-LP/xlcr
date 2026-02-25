@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
  *
  * • JVM system property `xlcr.aspose.enabled` • Environment variable `XLCR_ASPOSE_ENABLED`
  */
+@deprecated("core-spark will be removed in 0.3.0", "0.2.1")
 object SparkPipelineRegistry {
 
   private val logger = LoggerFactory.getLogger(getClass)
