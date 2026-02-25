@@ -52,7 +52,7 @@ services:
       --add-opens=java.base/sun.misc=ALL-UNNAMED
       --add-opens=java.base/java.lang=ALL-UNNAMED
       -Djava.awt.headless=true
-      -jar /xlcr/out/xlcr/3.3.4/assembly.dest/out.jar
+      -jar /xlcr/out/xlcr/assembly.dest/out.jar
       server start --port 8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
