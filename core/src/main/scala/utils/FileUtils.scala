@@ -12,7 +12,7 @@ import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{ HttpHeaders, Metadata }
 import org.slf4j.LoggerFactory
 
-import com.tjclp.xlcr.v2.types.Mime
+import com.tjclp.xlcr.types.Mime
 
 /**
  * A central utility object for file operations (reading, writing, extension detection, etc.).

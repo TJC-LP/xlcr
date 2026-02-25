@@ -33,9 +33,9 @@
 - Commit: `98e03ed`
 - Message: `Add Excel->HTML Aspose transforms and native metadata updates`
 - Files:
-  - `core-aspose/src/main/scala-3/com/tjclp/xlcr/v2/aspose/AsposeTransforms.scala`
-  - `core-aspose/src/main/scala-3/com/tjclp/xlcr/v2/aspose/conversions.scala`
-  - `core-aspose/src/main/scala-3/com/tjclp/xlcr/v2/aspose/splitters.scala`
+  - `core-aspose/src/main/scala/com/tjclp/xlcr/v2/aspose/AsposeTransforms.scala`
+  - `core-aspose/src/main/scala/com/tjclp/xlcr/v2/aspose/conversions.scala`
+  - `core-aspose/src/main/scala/com/tjclp/xlcr/v2/aspose/splitters.scala`
   - `xlcr/src/main/resources/META-INF/native-image/reachability-metadata.json`
 
 ### Functional Additions
@@ -72,7 +72,7 @@
 - `HTML -> PPTX`, `PDF -> PPTX`, `Split PPTX` all crash in:
   - `com.aspose.slides.Presentation.save`
 - Observed frames include:
-  - `com.tjclp.xlcr.v2.aspose.splitters$package$.savePresentationToBytes(splitters.scala:154)`
+  - `com.tjclp.xlcr.aspose.splitters$package$.savePresentationToBytes(splitters.scala:154)`
   - callsites in `splitters.scala` and `conversions.scala` (expected wrappers)
 
 ### PDF -> HTML failure

@@ -107,10 +107,10 @@ RUN python3 /xlcr/testdata/gen-test-images.py /xlcr/testdata
 FROM base AS assembly
 
 # Build assembly JAR
-RUN mill xlcr.assembly'
+RUN mill xlcr.assembly
 
 # Download GraalVM (needed for tracing agent library)
-RUN mill xlcr.nativeImageTool'
+RUN mill xlcr.nativeImageTool
 
 # ============================================================================
 # Stage 3: agent — run GraalVM tracing agent
@@ -132,7 +132,7 @@ ENTRYPOINT ["/xlcr/scripts/test-conversions.sh", "--mode", "agent"]
 FROM base AS native
 
 # Build native binary - Mill downloads GraalVM CE 25.0.2 automatically
-RUN mill xlcr.nativeImage'
+RUN mill xlcr.nativeImage
 
 # Binary is at /xlcr/out/xlcr/nativeImage.dest/native-executable
 

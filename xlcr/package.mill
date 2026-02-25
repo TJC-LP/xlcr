@@ -24,14 +24,12 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
     if (build.BuildConfig.asposeEnabled)
       Task.Sources(
         moduleDir / "src" / "main" / "scala",
-        moduleDir / "src" / "main" / "scala-3",
-        moduleDir / "src" / "main" / "scala-3-aspose"
+        moduleDir / "src" / "main" / "aspose"
       )
     else
       Task.Sources(
         moduleDir / "src" / "main" / "scala",
-        moduleDir / "src" / "main" / "scala-3",
-        moduleDir / "src" / "main" / "scala-3-no-aspose"
+        moduleDir / "src" / "main" / "no-aspose"
       )
 
   // Set main class for executable JAR

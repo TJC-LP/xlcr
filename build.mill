@@ -55,10 +55,9 @@ trait XLCRModuleBase extends ScalaModule with ScalafmtModule {
     "-Wunused:imports"
   )
 
-  /** Source directories — includes scala-3 overlay for Scala 3-specific code */
+  /** Source directory */
   override def sources = Task.Sources(
-    moduleDir / "src" / "main" / "scala",
-    moduleDir / "src" / "main" / "scala-3"
+    moduleDir / "src" / "main" / "scala"
   )
 }
 

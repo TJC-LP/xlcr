@@ -53,7 +53,7 @@ compile:
 # Build the fat JAR with all backends
 assembly: check-license
 	@echo "Building XLCR assembly..."
-	./mill xlcr.assembly'
+	./mill xlcr.assembly
 
 # Full build
 build: assembly
@@ -67,7 +67,7 @@ build: assembly
 # Build native binary via Mill's NativeImageModule (downloads GraalVM automatically)
 native: check-license
 	@echo "Building native binary via Mill..."
-	./mill xlcr.nativeImage'
+	./mill xlcr.nativeImage
 	@echo "Native binary built: $(NATIVE_BINARY)"
 	@ls -lh $(NATIVE_BINARY) | awk '{print "Size: " $$5}'
 
@@ -78,7 +78,7 @@ native: check-license
 native-agent: check-license
 	@echo "Running with tracing agent..."
 	@echo "Metadata output: xlcr/src/main/resources/META-INF/native-image/"
-	./mill xlcr.nativeImageAgent' $(ARGS)
+	./mill xlcr.nativeImageAgent $(ARGS)
 
 # Build native binary inside Docker and extract it (no local GraalVM required)
 # NOTE: Produces a Linux binary - for macOS, use 'make native'
@@ -210,7 +210,7 @@ clean:
 
 # Run tests for xlcr module
 test:
-	./mill xlcr.test'
+	./mill xlcr.test
 
 # Run all tests
 test-all:
@@ -218,7 +218,7 @@ test-all:
 
 # Run the CLI directly (for development)
 run:
-	./mill xlcr.run'
+	./mill xlcr.run
 
 # ── Server targets ───────────────────────────────────────────────────
 
@@ -226,7 +226,7 @@ run:
 # Usage: make server PORT=9090
 PORT ?= 8080
 server:
-	./mill xlcr.run' server start --port $(PORT)
+	./mill xlcr.run server start --port $(PORT)
 
 # Start the HTTP server via native binary
 server-native:

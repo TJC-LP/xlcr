@@ -14,8 +14,7 @@ trait CoreAsposeModule extends build.XLCRModule {
 
   // Test source directories
   def testSources = Task.Sources(
-    moduleDir / "test" / "src",
-    moduleDir / "test" / "src-3"
+    moduleDir / "test" / "src"
   )
 
   // Disable Scala 3 doc generation due to Aspose term conflicts

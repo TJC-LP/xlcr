@@ -12,8 +12,7 @@ trait CoreModule extends build.XLCRModule {
 
   // Test source directories (defined at module level where moduleDir is accessible)
   def testSources = Task.Sources(
-    moduleDir / "test" / "src",
-    moduleDir / "test" / "src-3"
+    moduleDir / "test" / "src"
   )
 
   def testResources = Task.Sources(moduleDir / "test" / "resources")

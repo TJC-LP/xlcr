@@ -1907,7 +1907,7 @@
       ]
     },
     {
-      "type": "com.tjclp.xlcr.v2.aspose.AsposeLicenseV2$",
+      "type": "com.tjclp.xlcr.aspose.AsposeLicenseV2$",
       "fields": [
         {
           "name": "forceNoLicense$lzy1"
@@ -1924,7 +1924,7 @@
       ]
     },
     {
-      "type": "com.tjclp.xlcr.v2.cli.XlcrMain",
+      "type": "com.tjclp.xlcr.cli.XlcrMain",
       "jniAccessible": true,
       "methods": [
         {
@@ -1936,7 +1936,7 @@
       ]
     },
     {
-      "type": "com.tjclp.xlcr.v2.types.Mime$package$Mime$",
+      "type": "com.tjclp.xlcr.types.Mime$package$Mime$",
       "fields": [
         {
           "name": "tikaDetector$lzy1"
@@ -14324,7 +14324,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.aspose.AsposeTransforms$",
+          "declaringClass": "com.tjclp.xlcr.aspose.AsposeTransforms$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function1"
@@ -14342,31 +14342,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.aspose.conversions$package$asposeHtmlToPdf$",
-          "interfaces": [
-            "java.io.Serializable",
-            "scala.Function1"
-          ]
-        }
-      },
-      "unsafeAllocated": true,
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        },
-        {
-          "name": "<init>",
-          "parameterTypes": [
-            "com.tjclp.xlcr.v2.types.Content"
-          ]
-        }
-      ]
-    },
-    {
-      "type": {
-        "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.aspose.conversions$package$asposeHtmlToPptx$",
+          "declaringClass": "com.tjclp.xlcr.aspose.conversions$package$asposeHtmlToPdf$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function1"
@@ -14382,7 +14358,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.types.Content"
+            "com.tjclp.xlcr.types.Content"
           ]
         }
       ]
@@ -14390,7 +14366,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.aspose.conversions$package$asposePdfToHtml$",
+          "declaringClass": "com.tjclp.xlcr.aspose.conversions$package$asposeHtmlToPptx$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function1"
@@ -14406,7 +14382,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.types.Content"
+            "com.tjclp.xlcr.types.Content"
           ]
         }
       ]
@@ -14414,7 +14390,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.aspose.conversions$package$asposePdfToPptx$",
+          "declaringClass": "com.tjclp.xlcr.aspose.conversions$package$asposePdfToHtml$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function1"
@@ -14430,7 +14406,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.types.Content"
+            "com.tjclp.xlcr.types.Content"
           ]
         }
       ]
@@ -14438,7 +14414,31 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.aspose.splitters$package$",
+          "declaringClass": "com.tjclp.xlcr.aspose.conversions$package$asposePdfToPptx$",
+          "interfaces": [
+            "java.io.Serializable",
+            "scala.Function1"
+          ]
+        }
+      },
+      "unsafeAllocated": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "com.tjclp.xlcr.types.Content"
+          ]
+        }
+      ]
+    },
+    {
+      "type": {
+        "lambda": {
+          "declaringClass": "com.tjclp.xlcr.aspose.splitters$package$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function1"
@@ -14457,13 +14457,13 @@
             "com.aspose.slides.ISlideCollection",
             "int",
             "java.lang.String",
-            "com.tjclp.xlcr.v2.types.Content"
+            "com.tjclp.xlcr.types.Content"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.types.Content",
+            "com.tjclp.xlcr.types.Content",
             "int",
             "java.lang.String"
           ]
@@ -14473,7 +14473,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.cli.Commands$",
+          "declaringClass": "com.tjclp.xlcr.cli.Commands$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function1"
@@ -14485,7 +14485,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$"
+            "com.tjclp.xlcr.cli.Commands$"
           ]
         }
       ]
@@ -14493,7 +14493,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.cli.Commands$",
+          "declaringClass": "com.tjclp.xlcr.cli.Commands$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function2"
@@ -14505,7 +14505,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$"
+            "com.tjclp.xlcr.cli.Commands$"
           ]
         }
       ]
@@ -14513,7 +14513,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.cli.Commands$",
+          "declaringClass": "com.tjclp.xlcr.cli.Commands$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function3"
@@ -14525,7 +14525,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$"
+            "com.tjclp.xlcr.cli.Commands$"
           ]
         }
       ]
@@ -14533,7 +14533,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.cli.Commands$",
+          "declaringClass": "com.tjclp.xlcr.cli.Commands$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function5"
@@ -14545,7 +14545,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$"
+            "com.tjclp.xlcr.cli.Commands$"
           ]
         }
       ]
@@ -14553,7 +14553,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.cli.Commands$",
+          "declaringClass": "com.tjclp.xlcr.cli.Commands$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function6"
@@ -14565,7 +14565,7 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$"
+            "com.tjclp.xlcr.cli.Commands$"
           ]
         }
       ]
@@ -14573,7 +14573,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.cli.XlcrMain$",
+          "declaringClass": "com.tjclp.xlcr.cli.XlcrMain$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function0"
@@ -14591,33 +14591,33 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$ConvertArgs"
+            "com.tjclp.xlcr.cli.Commands$ConvertArgs"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$SplitArgs"
+            "com.tjclp.xlcr.cli.Commands$SplitArgs"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$SplitArgs",
+            "com.tjclp.xlcr.cli.Commands$SplitArgs",
             "zio.Chunk"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.XlcrMain$"
+            "com.tjclp.xlcr.cli.XlcrMain$"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.types.Content",
-            "com.tjclp.xlcr.v2.cli.Commands$ConvertArgs"
+            "com.tjclp.xlcr.types.Content",
+            "com.tjclp.xlcr.cli.Commands$ConvertArgs"
           ]
         },
         {
@@ -14656,7 +14656,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.cli.XlcrMain$",
+          "declaringClass": "com.tjclp.xlcr.cli.XlcrMain$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function1"
@@ -14680,41 +14680,41 @@
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$ConvertArgs"
+            "com.tjclp.xlcr.cli.Commands$ConvertArgs"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$ConvertArgs",
-            "com.tjclp.xlcr.v2.types.Content"
+            "com.tjclp.xlcr.cli.Commands$ConvertArgs",
+            "com.tjclp.xlcr.types.Content"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$ConvertArgs",
-            "com.tjclp.xlcr.v2.types.Content",
+            "com.tjclp.xlcr.cli.Commands$ConvertArgs",
+            "com.tjclp.xlcr.types.Content",
             "java.lang.String"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$SplitArgs"
+            "com.tjclp.xlcr.cli.Commands$SplitArgs"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$SplitArgs",
-            "com.tjclp.xlcr.v2.types.Content"
+            "com.tjclp.xlcr.cli.Commands$SplitArgs",
+            "com.tjclp.xlcr.types.Content"
           ]
         },
         {
           "name": "<init>",
           "parameterTypes": [
-            "com.tjclp.xlcr.v2.cli.Commands$SplitArgs",
+            "com.tjclp.xlcr.cli.Commands$SplitArgs",
             "zio.Chunk"
           ]
         },
@@ -14722,7 +14722,7 @@
           "name": "<init>",
           "parameterTypes": [
             "java.nio.file.Path",
-            "com.tjclp.xlcr.v2.types.DynamicFragment"
+            "com.tjclp.xlcr.types.DynamicFragment"
           ]
         },
         {
@@ -14751,7 +14751,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.cli.XlcrMain$",
+          "declaringClass": "com.tjclp.xlcr.cli.XlcrMain$",
           "interfaces": [
             "scala.runtime.function.JProcedure1"
           ]
@@ -14774,7 +14774,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.output.MimeExtensions$",
+          "declaringClass": "com.tjclp.xlcr.output.MimeExtensions$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function0"
@@ -14792,7 +14792,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.types.Mime$package$Mime$",
+          "declaringClass": "com.tjclp.xlcr.types.Mime$package$Mime$",
           "interfaces": [
             "java.io.Serializable",
             "scala.Function1"
@@ -14816,7 +14816,7 @@
     {
       "type": {
         "lambda": {
-          "declaringClass": "com.tjclp.xlcr.v2.types.Mime$package$Mime$",
+          "declaringClass": "com.tjclp.xlcr.types.Mime$package$Mime$",
           "interfaces": [
             "scala.runtime.function.JProcedure1"
           ]
