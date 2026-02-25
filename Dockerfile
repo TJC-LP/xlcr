@@ -107,10 +107,10 @@ RUN python3 /xlcr/testdata/gen-test-images.py /xlcr/testdata
 FROM base AS assembly
 
 # Build assembly JAR
-RUN mill 'xlcr[3.3.4].assembly'
+RUN mill xlcr.assembly'
 
 # Download GraalVM (needed for tracing agent library)
-RUN mill 'xlcr[3.3.4].nativeImageTool'
+RUN mill xlcr.nativeImageTool'
 
 # ============================================================================
 # Stage 3: agent — run GraalVM tracing agent
@@ -132,9 +132,9 @@ ENTRYPOINT ["/xlcr/scripts/test-conversions.sh", "--mode", "agent"]
 FROM base AS native
 
 # Build native binary - Mill downloads GraalVM CE 25.0.2 automatically
-RUN mill 'xlcr[3.3.4].nativeImage'
+RUN mill xlcr.nativeImage'
 
-# Binary is at /xlcr/out/xlcr/3.3.4/nativeImage.dest/native-executable
+# Binary is at /xlcr/out/xlcr/nativeImage.dest/native-executable
 
 # ============================================================================
 # Stage 5: runtime — self-contained test/benchmark container
@@ -145,7 +145,7 @@ FROM base AS runtime
 COPY --from=assembly /xlcr/out/xlcr /xlcr/out/xlcr
 
 # Copy native binary from native stage
-COPY --from=native /xlcr/out/xlcr/3.3.4/nativeImage.dest/native-executable /xlcr/xlcr-native
+COPY --from=native /xlcr/out/xlcr/nativeImage.dest/native-executable /xlcr/xlcr-native
 
 # Copy test/benchmark script
 COPY scripts/test-conversions.sh /xlcr/scripts/test-conversions.sh

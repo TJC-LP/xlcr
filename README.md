@@ -125,10 +125,10 @@ XLCR exposes document conversion as a REST API:
 
 ```bash
 # Start the server
-./mill 'xlcr[3.3.4].run' server start --port 8080
+./mill xlcr.run server start --port 8080
 
 # Or with custom port
-./mill 'xlcr[3.3.4].run' server start --port 9000
+./mill xlcr.run server start --port 9000
 ```
 
 ### Endpoints
@@ -164,8 +164,8 @@ curl http://localhost:8080/capabilities
 
 ```bash
 ./mill __.compile                    # Compile all modules
-./mill __[3.3.4].test                # Run all tests (Scala 3)
-./mill core[3.3.4].test              # Run tests for a specific module
+./mill __.test                       # Run all tests
+./mill core.test                     # Run tests for a specific module
 ./mill __.checkFormat                # Check code formatting
 ./mill __.reformat                   # Fix formatting
 ./mill __.assembly                   # Build fat JARs

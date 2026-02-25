@@ -3,14 +3,14 @@ package build.`core-aspose`
 import mill._
 import mill.scalalib._
 
-object `package` extends Cross[CoreAsposeModule](Seq("3.3.4"))
+object `package` extends CoreAsposeModule
 
 trait CoreAsposeModule extends build.XLCRModule {
   override def artifactName = "xlcr-core-aspose"
   override def artifactDescription =
     "XLCR Aspose - Aspose-based document conversion bridges"
 
-  override def moduleDeps = Seq(build.core("3.3.4"))
+  override def moduleDeps = Seq(build.core)
 
   // Test source directories
   def testSources = Task.Sources(
@@ -20,11 +20,7 @@ trait CoreAsposeModule extends build.XLCRModule {
 
   // Disable Scala 3 doc generation due to Aspose term conflicts
   override def docSources: T[Seq[PathRef]] = Task {
-    if (crossScalaVersion.startsWith("3.")) {
-      Seq.empty[PathRef]
-    } else {
-      super.docSources()
-    }
+    Seq.empty[PathRef]
   }
 
   override def scalacOptions: T[Seq[String]] =

@@ -3,7 +3,7 @@ package build.core
 import mill._
 import mill.scalalib._
 
-object `package` extends Cross[CoreModule](Seq("3.3.4"))
+object `package` extends CoreModule
 
 trait CoreModule extends build.XLCRModule {
   override def artifactName = "xlcr-core"

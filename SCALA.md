@@ -1,19 +1,18 @@
-# Scala Version Compatibility
+# Scala Version
 
-XLCR is now Scala 3 focused.
+XLCR builds with **Scala 3.3.4**.
 
-| Module | Scala 3.3.4 |
-|--------|-------------|
+| Module | Status |
+|--------|--------|
 | core | ✅ |
 | core-aspose | ✅ |
 | core-libreoffice | ✅ |
 | xlcr | ✅ |
-| server | ✅ |
 
 ## Build Commands
 
 ```bash
-./mill __[3.3.4].compile
-./mill __[3.3.4].test
+./mill __.compile
+./mill __.test
 ./mill __.checkFormat
 ```

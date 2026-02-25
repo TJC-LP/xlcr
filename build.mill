@@ -6,11 +6,13 @@ import mill.scalalib.publish._
 import mill.scalalib.scalafmt._
 import mill.scalalib.Assembly._
 
-val scalaVersions = Seq("3.3.4")
 val organization = "com.tjclp"
 
 /** Shared build configuration constants */
 object BuildConfig {
+  /** Scala version for all modules */
+  val scalaVersion = "3.3.4"
+
   /** Aspose Maven repository URL */
   val asposeRepoUrl = "https://releases.aspose.com/java/repo/"
 
@@ -30,7 +32,9 @@ object BuildConfig {
 }
 
 /** Base trait for all XLCR modules - shared compiler settings and formatting */
-trait XLCRModuleBase extends CrossScalaModule with ScalafmtModule {
+trait XLCRModuleBase extends ScalaModule with ScalafmtModule {
+  override def scalaVersion = BuildConfig.scalaVersion
+
   override def repositoriesTask: Task[Seq[coursier.Repository]] = Task.Anon {
     super.repositoriesTask() ++ Seq(
       coursier.MavenRepository(BuildConfig.asposeRepoUrl)
@@ -40,40 +44,22 @@ trait XLCRModuleBase extends CrossScalaModule with ScalafmtModule {
   // JVM options for forked processes (run, test execution)
   override def forkArgs: T[Seq[String]] = BuildConfig.lazyValsJvmArgs
 
-  override def scalacOptions: T[Seq[String]] = {
-    val baseOpts = Seq(
-      "-encoding",
-      "utf-8",
-      "-feature",
-      "-language:implicitConversions",
-      "-language:higherKinds",
-      "-unchecked",
-      "-deprecation"
-    )
+  override def scalacOptions: T[Seq[String]] = Seq(
+    "-encoding",
+    "utf-8",
+    "-feature",
+    "-language:implicitConversions",
+    "-language:higherKinds",
+    "-unchecked",
+    "-deprecation",
+    "-Wunused:imports"
+  )
 
-    val versionOpts =
-      if (crossScalaVersion.startsWith("3.")) {
-        Seq("-Wunused:imports")
-      } else {
-        Seq("-Wunused:imports")
-      }
-
-    baseOpts ++ versionOpts
-  }
-
-  /** Source directories for cross-compilation */
-  def scala3Sources = Task.Sources(
+  /** Source directories — includes scala-3 overlay for Scala 3-specific code */
+  override def sources = Task.Sources(
     moduleDir / "src" / "main" / "scala",
     moduleDir / "src" / "main" / "scala-3"
   )
-
-  def scala2Sources = Task.Sources(
-    moduleDir / "src" / "main" / "scala",
-    moduleDir / "src" / "main" / "scala-2",
-    moduleDir / "src" / "main" / "scala-2.13"
-  )
-
-  override def sources = if (crossScalaVersion.startsWith("3.")) scala3Sources else scala2Sources
 }
 
 /** Trait for publishable library modules - publishes to Maven Central via Sonatype */

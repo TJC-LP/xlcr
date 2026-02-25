@@ -3,14 +3,14 @@ package build.`core-libreoffice`
 import mill._
 import mill.scalalib._
 
-object `package` extends Cross[CoreLibreOfficeModule](Seq("3.3.4"))
+object `package` extends CoreLibreOfficeModule
 
 trait CoreLibreOfficeModule extends build.XLCRModule {
   override def artifactName = "xlcr-core-libreoffice"
   override def artifactDescription =
     "XLCR LibreOffice - LibreOffice-based document conversion bridges"
 
-  override def moduleDeps = Seq(build.core("3.3.4"))
+  override def moduleDeps = Seq(build.core)
 
   // Test source directories (defined at module level where moduleDir is accessible)
   def testSources = Task.Sources(moduleDir / "test" / "src")

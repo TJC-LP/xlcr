@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Project now targets Scala 3.3.4 only.
+- Simplified build: removed cross-compilation — `./mill __.compile` and `./mill __.test` just work (no `[3.3.4]` specifier needed).
 
 ## [0.2.2] - 2026-02-25
 
