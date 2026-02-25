@@ -198,10 +198,6 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Stage Aspose license for Docker build
-        if: env.ASPOSE_TOTAL_LICENSE_B64 != ''
-        run: echo "$ASPOSE_TOTAL_LICENSE_B64" | base64 -d > Aspose.Total.Java.lic
-
       - name: Extract version from tag
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
