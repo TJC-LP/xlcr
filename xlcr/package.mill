@@ -160,6 +160,12 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
   object test extends ScalaTests with build.XLCRTestModule {
     override def sources = testSources
 
+    /** Use a different LibreOffice port than core-libreoffice tests (2002)
+      * so both modules can run their tests in parallel without port conflicts.
+      */
+    override def forkArgs: T[Seq[String]] =
+      super.forkArgs() ++ Seq("-Dxlcr.libreoffice.port=2003")
+
     // Additional test dependencies for ZIO HTTP testing
     override def mvnDeps = super.mvnDeps() ++ Seq(
       mvn"dev.zio::zio-test-sbt:2.1.24"
