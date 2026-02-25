@@ -63,6 +63,120 @@ class AsposeTransformsCapabilitySpec extends AnyWordSpec with Matchers:
     }
   }
 
+  "AsposeTransforms.canConvert (Tier 1 additions)" should {
+    "support PDF -> DOCX/DOC/XLSX" in {
+      AsposeTransforms.canConvert(Mime.pdf, Mime.docx) shouldBe true
+      AsposeTransforms.canConvert(Mime.pdf, Mime.doc) shouldBe true
+      AsposeTransforms.canConvert(Mime.pdf, Mime.xlsx) shouldBe true
+    }
+
+    "support Word -> HTML/Plain/Markdown" in {
+      AsposeTransforms.canConvert(Mime.docx, Mime.html) shouldBe true
+      AsposeTransforms.canConvert(Mime.doc, Mime.html) shouldBe true
+      AsposeTransforms.canConvert(Mime.docm, Mime.html) shouldBe true
+      AsposeTransforms.canConvert(Mime.docx, Mime.plain) shouldBe true
+      AsposeTransforms.canConvert(Mime.doc, Mime.plain) shouldBe true
+      AsposeTransforms.canConvert(Mime.docx, Mime.markdown) shouldBe true
+      AsposeTransforms.canConvert(Mime.doc, Mime.markdown) shouldBe true
+    }
+
+    "support Excel -> CSV/JSON/Markdown" in {
+      AsposeTransforms.canConvert(Mime.xlsx, Mime.csv) shouldBe true
+      AsposeTransforms.canConvert(Mime.xls, Mime.csv) shouldBe true
+      AsposeTransforms.canConvert(Mime.xlsm, Mime.csv) shouldBe true
+      AsposeTransforms.canConvert(Mime.xlsb, Mime.csv) shouldBe true
+      AsposeTransforms.canConvert(Mime.ods, Mime.csv) shouldBe true
+      AsposeTransforms.canConvert(Mime.xlsx, Mime.json) shouldBe true
+      AsposeTransforms.canConvert(Mime.xlsx, Mime.markdown) shouldBe true
+    }
+
+    "support RTF conversions" in {
+      AsposeTransforms.canConvert(Mime.rtf, Mime.pdf) shouldBe true
+      AsposeTransforms.canConvert(Mime.rtf, Mime.docx) shouldBe true
+      AsposeTransforms.canConvert(Mime.rtf, Mime.html) shouldBe true
+      AsposeTransforms.canConvert(Mime.docx, Mime.rtf) shouldBe true
+    }
+
+    "support Email -> HTML and EML <-> MSG" in {
+      AsposeTransforms.canConvert(Mime.eml, Mime.html) shouldBe true
+      AsposeTransforms.canConvert(Mime.msg, Mime.html) shouldBe true
+      AsposeTransforms.canConvert(Mime.eml, Mime.msg) shouldBe true
+      AsposeTransforms.canConvert(Mime.msg, Mime.eml) shouldBe true
+    }
+
+    "support Word/Slides -> Images" in {
+      AsposeTransforms.canConvert(Mime.docx, Mime.png) shouldBe true
+      AsposeTransforms.canConvert(Mime.docx, Mime.jpeg) shouldBe true
+      AsposeTransforms.canConvert(Mime.pptx, Mime.png) shouldBe true
+      AsposeTransforms.canConvert(Mime.pptx, Mime.jpeg) shouldBe true
+      AsposeTransforms.canConvert(Mime.ppt, Mime.png) shouldBe true
+      AsposeTransforms.canConvert(Mime.ppt, Mime.jpeg) shouldBe true
+    }
+
+    "require correct products for new conversions" in {
+      // PDF -> DOCX needs Pdf product
+      val pdfToDocx = AsposeTransforms.canConvertLicensed(
+        Mime.pdf,
+        Mime.docx,
+        {
+          case AsposeProduct.Pdf => true
+          case _                 => false
+        }
+      )
+      pdfToDocx shouldBe true
+
+      // DOCX -> HTML needs Words product
+      val docxToHtml = AsposeTransforms.canConvertLicensed(
+        Mime.docx,
+        Mime.html,
+        {
+          case AsposeProduct.Words => true
+          case _                   => false
+        }
+      )
+      docxToHtml shouldBe true
+
+      // XLSX -> CSV needs Cells product
+      val xlsxToCsv = AsposeTransforms.canConvertLicensed(
+        Mime.xlsx,
+        Mime.csv,
+        {
+          case AsposeProduct.Cells => true
+          case _                   => false
+        }
+      )
+      xlsxToCsv shouldBe true
+
+      // EML -> HTML needs Email + Words
+      val emlToHtml = AsposeTransforms.canConvertLicensed(
+        Mime.eml,
+        Mime.html,
+        _ => true
+      )
+      emlToHtml shouldBe true
+      val emlToHtmlMissingWords = AsposeTransforms.canConvertLicensed(
+        Mime.eml,
+        Mime.html,
+        {
+          case AsposeProduct.Email => true
+          case _                   => false
+        }
+      )
+      emlToHtmlMissingWords shouldBe false
+
+      // EML -> MSG only needs Email
+      val emlToMsg = AsposeTransforms.canConvertLicensed(
+        Mime.eml,
+        Mime.msg,
+        {
+          case AsposeProduct.Email => true
+          case _                   => false
+        }
+      )
+      emlToMsg shouldBe true
+    }
+  }
+
   "AsposeTransforms.canSplitLicensed" should {
     "gate split capability on the required product license" in {
       AsposeTransforms.canSplit(Mime.zip) shouldBe true

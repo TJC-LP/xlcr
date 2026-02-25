@@ -91,7 +91,12 @@ object CapabilitiesRoutes:
       Mime.odp,
       Mime.png,
       Mime.jpeg,
-      Mime.csv
+      Mime.csv,
+      Mime.json,
+      Mime.markdown,
+      Mime.rtf,
+      Mime.eml,
+      Mime.msg
     )
 
     // Find all conversion paths

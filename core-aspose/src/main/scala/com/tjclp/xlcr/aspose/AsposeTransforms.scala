@@ -41,20 +41,39 @@ object AsposeTransforms:
   private val PPTM     = "application/vnd.ms-powerpoint.presentation.macroenabled.12"
   private val ZIP      = "application/zip"
   private val SEVENZIP = "application/x-7z-compressed"
+  private val RTF      = "application/rtf"
+  private val PLAIN    = "text/plain"
+  private val MARKDOWN = "text/markdown"
+  private val CSV      = "text/csv"
+  private val JSON     = "application/json"
 
   private def requiredProductsForConversion(from: Mime, to: Mime): Set[AsposeProduct] =
     (from.mimeType, to.mimeType) match
-      case (EML | MSG, PDF) =>
+      // Email conversions (PDF and HTML both need Email + Words)
+      case (EML | MSG, PDF | HTML) =>
         Set(AsposeProduct.Email, AsposeProduct.Words)
+      // Email format interchange
+      case (EML, MSG) | (MSG, EML) =>
+        Set(AsposeProduct.Email)
+      // Slides-based conversions
       case (HTML, PPTX | PPT) | (PDF, PPTX | PPT) =>
         Set(AsposeProduct.Slides)
-      case (PPTX | PPT | PPTM, PDF | HTML | PPTX | PPT) =>
+      case (PPTX | PPT | PPTM, PDF | HTML | PPTX | PPT | PNG | JPEG) =>
         Set(AsposeProduct.Slides)
-      case (DOCX | DOC | DOCM, PDF | DOCX | DOC | DOCM) =>
+      // Word-based conversions
+      case (
+            DOCX | DOC | DOCM | RTF,
+            PDF | DOCX | DOC | DOCM | RTF | HTML | PLAIN | MARKDOWN | PNG | JPEG
+          ) =>
         Set(AsposeProduct.Words)
-      case (XLSX | XLS | XLSM | XLSB | ODS, PDF | HTML | XLSX | XLS | XLSM | XLSB | ODS) =>
+      // Cells-based conversions
+      case (
+            XLSX | XLS | XLSM | XLSB | ODS,
+            PDF | HTML | XLSX | XLS | XLSM | XLSB | ODS | CSV | JSON | MARKDOWN
+          ) =>
         Set(AsposeProduct.Cells)
-      case (PDF, HTML | PNG | JPEG) | (PNG | JPEG | HTML, PDF) =>
+      // PDF-based conversions
+      case (PDF, HTML | PNG | JPEG | DOCX | DOC | XLSX) | (PNG | JPEG | HTML, PDF) =>
         Set(AsposeProduct.Pdf)
       case _ =>
         Set.empty
@@ -255,6 +274,94 @@ object AsposeTransforms:
       case (MSG, PDF) =>
         asposeMsgToPdf.convert(input.asInstanceOf[Content[Mime.Msg]]).map(widen)
 
+      // --- Tier 1 additions ---
+
+      // PDF -> DOCX / DOC / XLSX
+      case (PDF, DOCX) =>
+        asposePdfToDocx.convert(input.asInstanceOf[Content[Mime.Pdf]]).map(widen)
+      case (PDF, DOC) =>
+        asposePdfToDoc.convert(input.asInstanceOf[Content[Mime.Pdf]]).map(widen)
+      case (PDF, XLSX) =>
+        asposePdfToXlsx.convert(input.asInstanceOf[Content[Mime.Pdf]]).map(widen)
+
+      // Word -> HTML (options-aware: embedResources, password)
+      case (DOCX, HTML) =>
+        convertWordDocToHtml(input.asInstanceOf[Content[Mime.Docx]], options).map(widen)
+      case (DOC, HTML) =>
+        convertWordDocToHtml(input.asInstanceOf[Content[Mime.Doc]], options).map(widen)
+      case (DOCM, HTML) =>
+        convertWordDocToHtml(input.asInstanceOf[Content[Mime.Docm]], options).map(widen)
+
+      // Word -> Plain Text
+      case (DOCX, PLAIN) =>
+        asposeDocxToPlain.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+      case (DOC, PLAIN) =>
+        asposeDocToPlain.convert(input.asInstanceOf[Content[Mime.Doc]]).map(widen)
+
+      // Word -> Markdown
+      case (DOCX, MARKDOWN) =>
+        asposeDocxToMarkdown.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+      case (DOC, MARKDOWN) =>
+        asposeDocToMarkdown.convert(input.asInstanceOf[Content[Mime.Doc]]).map(widen)
+
+      // Excel -> CSV (options-aware: sheetNames, evaluateFormulas)
+      case (XLSX, CSV) =>
+        convertWorkbookToCsv(input.asInstanceOf[Content[Mime.Xlsx]], options).map(widen)
+      case (XLS, CSV) =>
+        convertWorkbookToCsv(input.asInstanceOf[Content[Mime.Xls]], options).map(widen)
+      case (XLSM, CSV) =>
+        convertWorkbookToCsv(input.asInstanceOf[Content[Mime.Xlsm]], options).map(widen)
+      case (XLSB, CSV) =>
+        convertWorkbookToCsv(input.asInstanceOf[Content[Mime.Xlsb]], options).map(widen)
+      case (ODS, CSV) =>
+        convertWorkbookToCsv(input.asInstanceOf[Content[Mime.Ods]], options).map(widen)
+
+      // Excel -> JSON
+      case (XLSX, JSON) =>
+        asposeXlsxToJson.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+
+      // Excel -> Markdown
+      case (XLSX, MARKDOWN) =>
+        asposeXlsxToMarkdown.convert(input.asInstanceOf[Content[Mime.Xlsx]]).map(widen)
+
+      // RTF conversions
+      case (RTF, PDF) =>
+        asposeRtfToPdf.convert(input.asInstanceOf[Content[Mime.Rtf]]).map(widen)
+      case (RTF, DOCX) =>
+        asposeRtfToDocx.convert(input.asInstanceOf[Content[Mime.Rtf]]).map(widen)
+      case (RTF, HTML) =>
+        asposeRtfToHtml.convert(input.asInstanceOf[Content[Mime.Rtf]]).map(widen)
+      case (DOCX, RTF) =>
+        asposeDocxToRtf.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+
+      // Email -> HTML
+      case (EML, HTML) =>
+        asposeEmlToHtml.convert(input.asInstanceOf[Content[Mime.Eml]]).map(widen)
+      case (MSG, HTML) =>
+        asposeMsgToHtml.convert(input.asInstanceOf[Content[Mime.Msg]]).map(widen)
+
+      // EML <-> MSG
+      case (EML, MSG) =>
+        asposeEmlToMsg.convert(input.asInstanceOf[Content[Mime.Eml]]).map(widen)
+      case (MSG, EML) =>
+        asposeMsgToEml.convert(input.asInstanceOf[Content[Mime.Msg]]).map(widen)
+
+      // Word -> Images (first page)
+      case (DOCX, PNG) =>
+        asposeDocxToPng.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+      case (DOCX, JPEG) =>
+        asposeDocxToJpeg.convert(input.asInstanceOf[Content[Mime.Docx]]).map(widen)
+
+      // Slides -> Images (first slide thumbnail)
+      case (PPTX, PNG) =>
+        asposePptxToPng.convert(input.asInstanceOf[Content[Mime.Pptx]]).map(widen)
+      case (PPTX, JPEG) =>
+        asposePptxToJpeg.convert(input.asInstanceOf[Content[Mime.Pptx]]).map(widen)
+      case (PPT, PNG) =>
+        asposePptToPng.convert(input.asInstanceOf[Content[Mime.Ppt]]).map(widen)
+      case (PPT, JPEG) =>
+        asposePptToJpeg.convert(input.asInstanceOf[Content[Mime.Ppt]]).map(widen)
+
       case _ =>
         ZIO.fail(UnsupportedConversion(input.mime, to))
 
@@ -292,6 +399,21 @@ object AsposeTransforms:
     (DOCM, DOC),
     (DOC, DOCM),
     (DOCX, DOCM),
+    // Word -> HTML
+    (DOCX, HTML),
+    (DOC, HTML),
+    (DOCM, HTML),
+    // Word -> Plain Text
+    (DOCX, PLAIN),
+    (DOC, PLAIN),
+    // Word -> Markdown
+    (DOCX, MARKDOWN),
+    (DOC, MARKDOWN),
+    // Word -> Images
+    (DOCX, PNG),
+    (DOCX, JPEG),
+    // Word <-> RTF
+    (DOCX, RTF),
     // Excel -> PDF
     (XLSX, PDF),
     (XLS, PDF),
@@ -304,6 +426,16 @@ object AsposeTransforms:
     (XLSM, HTML),
     (XLSB, HTML),
     (ODS, HTML),
+    // Excel -> CSV
+    (XLSX, CSV),
+    (XLS, CSV),
+    (XLSM, CSV),
+    (XLSB, CSV),
+    (ODS, CSV),
+    // Excel -> JSON
+    (XLSX, JSON),
+    // Excel -> Markdown
+    (XLSX, MARKDOWN),
     // Excel format conversions
     (XLS, XLSX),
     (XLSX, XLS),
@@ -326,10 +458,19 @@ object AsposeTransforms:
     (PPTX, PPT),
     (PPTM, PPTX),
     (PPTM, PPT),
+    // PowerPoint -> Images
+    (PPTX, PNG),
+    (PPTX, JPEG),
+    (PPT, PNG),
+    (PPT, JPEG),
     // PDF -> HTML/PowerPoint
     (PDF, HTML),
     (PDF, PPTX),
     (PDF, PPT),
+    // PDF -> DOCX / DOC / XLSX
+    (PDF, DOCX),
+    (PDF, DOC),
+    (PDF, XLSX),
     // PDF <-> Images
     (PDF, PNG),
     (PDF, JPEG),
@@ -337,9 +478,19 @@ object AsposeTransforms:
     (JPEG, PDF),
     // HTML -> PDF
     (HTML, PDF),
+    // RTF conversions
+    (RTF, PDF),
+    (RTF, DOCX),
+    (RTF, HTML),
     // Email -> PDF
     (EML, PDF),
-    (MSG, PDF)
+    (MSG, PDF),
+    // Email -> HTML
+    (EML, HTML),
+    (MSG, HTML),
+    // Email format interchange
+    (EML, MSG),
+    (MSG, EML)
   )
 
   // ===========================================================================
