@@ -14,6 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
+    # GraalVM native-image requires a C toolchain and zlib
+    gcc \
+    zlib1g-dev \
+    build-essential \
     # LibreOffice (minimal packages for document conversion tests)
     libreoffice-core \
     libreoffice-writer \
