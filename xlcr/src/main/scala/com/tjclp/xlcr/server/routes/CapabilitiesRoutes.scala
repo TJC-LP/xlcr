@@ -104,7 +104,7 @@ object CapabilitiesRoutes:
 
     // Find all splittable types
     val splits = documentTypes
-      .filter(UnifiedTransforms.canSplit)
+      .filter(m => UnifiedTransforms.canSplit(m))
       .map { mime =>
         // For most splits, output type is same as input
         // (sheets from XLSX, pages from PDF, etc.)

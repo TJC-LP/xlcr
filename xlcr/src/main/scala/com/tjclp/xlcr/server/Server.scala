@@ -1,5 +1,6 @@
 package com.tjclp.xlcr.server
 
+import com.tjclp.xlcr.config.{LibreOfficeConfig, PoolConfig}
 import com.tjclp.xlcr.server.routes.Routes
 
 import zio.*
@@ -21,6 +22,9 @@ import zio.*
  * {{{
  * # Start the server
  * xlcr server start --port 8080
+ *
+ * # Start with 4 LibreOffice instances
+ * xlcr server start --port 8080 --lo-instances 4
  *
  * # Convert DOCX to PDF
  * curl -X POST "http://localhost:8080/convert?to=pdf" \
@@ -46,10 +50,11 @@ object Server:
   /**
    * Start the XLCR HTTP server with the given configuration.
    *
-   * This method blocks forever (serving requests) and only returns on fatal error.
+   * This method blocks forever (serving requests) and only returns on fatal error. If LibreOffice
+   * is available, it is eagerly initialized with the configured pool size.
    *
    * @param config
-   *   Server configuration (host, port, max request size)
+   *   Server configuration (host, port, max request size, LO pool settings)
    * @return
    *   Never returns normally - runs until the process is terminated.
    */
@@ -58,6 +63,9 @@ object Server:
 
     val program =
       for
+        // Configure and eagerly initialize LibreOffice pool
+        _ <- initializeLibreOffice(config)
+
         _ <- ZIO.logInfo(s"Starting XLCR Server on ${config.host}:${config.port}")
         _ <- ZIO.logInfo("Endpoints:")
         _ <- ZIO.logInfo("  POST /convert?to=<mime>  - Convert document")
@@ -77,4 +85,25 @@ object Server:
       zio.http.Server.live
     )
   end start
+
+  /**
+   * Configure and eagerly initialize the LibreOffice process pool. Skipped if LibreOffice is not
+   * installed.
+   */
+  private def initializeLibreOffice(config: ServerConfig): ZIO[Any, Throwable, Unit] =
+    ZIO.attemptBlocking {
+      if LibreOfficeConfig.isAvailable() then
+        LibreOfficeConfig.configure(
+          PoolConfig(
+            instances = config.loInstances,
+            maxTasksPerProcess = config.loRestartAfter,
+            taskExecutionTimeout = config.loTaskTimeout,
+            taskQueueTimeout = config.loQueueTimeout
+          )
+        )
+        // Eagerly initialize to catch startup failures before serving requests
+        val _ = LibreOfficeConfig.getOfficeManager()
+    }.tapError(err =>
+      ZIO.logWarning(s"LibreOffice initialization failed: ${err.getMessage}")
+    ).catchAll(_ => ZIO.unit) // Non-fatal: server can still serve Aspose/Core conversions
 end Server

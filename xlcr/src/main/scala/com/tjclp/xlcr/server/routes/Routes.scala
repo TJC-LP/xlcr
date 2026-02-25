@@ -1,5 +1,6 @@
 package com.tjclp.xlcr.server.routes
 
+import com.tjclp.xlcr.config.LibreOfficeConfig
 import com.tjclp.xlcr.server.http.ResponseBuilder
 import com.tjclp.xlcr.server.json.*
 
@@ -26,7 +27,21 @@ object Routes:
    */
   private val healthRoutes: zio.http.Routes[Any, Response] = zio.http.Routes(
     Method.GET / "health" -> handler { (_: Request) =>
-      ZIO.succeed(ResponseBuilder.json(HealthResponse(status = "healthy").toJson))
+      ZIO
+        .attemptBlocking {
+          val loStatus =
+            val available = LibreOfficeConfig.isAvailable()
+            val cfg       = LibreOfficeConfig.currentConfig
+            LibreOfficeStatus(
+              available = available,
+              running = LibreOfficeConfig.isRunning(),
+              instances = cfg.instances,
+              maxTasksPerProcess = cfg.maxTasksPerProcess
+            )
+          HealthResponse(status = "healthy", libreoffice = Some(loStatus))
+        }
+        .catchAll(_ => ZIO.succeed(HealthResponse(status = "healthy")))
+        .map(resp => ResponseBuilder.json(resp.toJson))
     },
 
     // Root endpoint - return basic server info

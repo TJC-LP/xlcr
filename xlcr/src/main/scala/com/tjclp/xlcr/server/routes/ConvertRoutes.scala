@@ -10,21 +10,23 @@ import zio.http.*
 /**
  * Routes for document conversion.
  *
- * POST /convert?to=<mime>
+ * POST /convert?to=<mime>[&backend=<backend>][&detect=tika]
  *
  * Converts the request body to the specified target MIME type.
  *
  * Query parameters:
  *   - to: Target MIME type (required). Accepts either extension ("pdf") or full MIME type
  *     ("application/pdf")
+ *   - backend: Optional backend override ("aspose", "libreoffice", "xlcr"). Default: auto-fallback
+ *   - detect: Set to "tika" to force Tika content detection, ignoring Content-Type header
  *
  * Request:
  *   - Body: Raw document bytes
- *   - Content-Type: MIME type of input (auto-detected if not provided)
+ *   - Content-Type: MIME type of input (optional, auto-detected via Tika if missing)
  *
  * Response:
  *   - 200: Converted document bytes with appropriate Content-Type
- *   - 400: Bad request (missing parameters, empty body)
+ *   - 400: Bad request (missing parameters, empty body, invalid backend)
  *   - 415: Unsupported conversion
  *   - 500: Internal server error
  */
@@ -40,22 +42,26 @@ object ConvertRoutes:
 
   private def handleConvert(request: Request): ZIO[Any, HttpError, Response] =
     for
-      // Extract input content
+      // Extract input content (handles ?detect=tika)
       content <- RequestHandler.extractContent(request)
 
       // Parse target MIME type from query param
       targetMime <- RequestHandler.parseTargetMime(request)
 
+      // Parse optional backend override
+      backend <- RequestHandler.parseBackend(request)
+
       // Check if conversion is supported
-      _ <- ZIO.unless(UnifiedTransforms.canConvert(content.mime, targetMime))(
+      _ <- ZIO.unless(UnifiedTransforms.canConvert(content.mime, targetMime, backend))(
         ZIO.fail(HttpError.unsupportedMediaType(
-          s"Cannot convert ${content.mime.value} to ${targetMime.value}"
+          s"Cannot convert ${content.mime.value} to ${targetMime.value}" +
+            backend.fold("")(b => s" with backend ${b.toString.toLowerCase}")
         ))
       )
 
       // Perform conversion
       result <- UnifiedTransforms
-        .convert(content, targetMime)
+        .convert(content, targetMime, backend = backend)
         .mapError(HttpError.fromTransformError)
     yield ResponseBuilder.fromContent(result)
 end ConvertRoutes

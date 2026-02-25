@@ -50,7 +50,11 @@ object Commands:
   case class ServerArgs(
     host: Option[String] = None,
     port: Option[Int] = None,
-    maxRequestSize: Option[Long] = None
+    maxRequestSize: Option[Long] = None,
+    loInstances: Option[Int] = None,
+    loRestartAfter: Option[Int] = None,
+    loTaskTimeout: Option[Long] = None,
+    loQueueTimeout: Option[Long] = None
   )
 
   /** Output format for the info command */
@@ -306,8 +310,51 @@ object Commands:
       help = "Maximum request body size in bytes (default: 104857600)"
     ).orNone
 
+  private val loInstancesOpt: Opts[Option[Int]] =
+    Opts
+      .option[Int](
+        long = "lo-instances",
+        help = "Number of LibreOffice processes to run (default: 1, or XLCR_LO_INSTANCES env)"
+      )
+      .orNone
+
+  private val loRestartAfterOpt: Opts[Option[Int]] =
+    Opts
+      .option[Int](
+        long = "lo-restart-after",
+        help =
+          "Restart LibreOffice after N conversions (default: 200, or XLCR_LO_RESTART_AFTER env)"
+      )
+      .orNone
+
+  private val loTaskTimeoutOpt: Opts[Option[Long]] =
+    Opts
+      .option[Long](
+        long = "lo-task-timeout",
+        help =
+          "LibreOffice task execution timeout in ms (default: 120000, or XLCR_LO_TASK_TIMEOUT env)"
+      )
+      .orNone
+
+  private val loQueueTimeoutOpt: Opts[Option[Long]] =
+    Opts
+      .option[Long](
+        long = "lo-queue-timeout",
+        help =
+          "LibreOffice task queue timeout in ms (default: 30000, or XLCR_LO_QUEUE_TIMEOUT env)"
+      )
+      .orNone
+
   private val serverStartOpts: Opts[ServerArgs] =
-    (serverHostOpt, serverPortOpt, serverMaxRequestSizeOpt).mapN(ServerArgs.apply)
+    (
+      serverHostOpt,
+      serverPortOpt,
+      serverMaxRequestSizeOpt,
+      loInstancesOpt,
+      loRestartAfterOpt,
+      loTaskTimeoutOpt,
+      loQueueTimeoutOpt
+    ).mapN(ServerArgs.apply)
 
   private val serverStartCmd: Opts[CliCommand] =
     Opts.subcommand(
