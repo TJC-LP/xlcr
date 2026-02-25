@@ -110,16 +110,42 @@ object CapabilitiesResponse:
   given JsonDecoder[CapabilitiesResponse] = DeriveJsonDecoder.gen[CapabilitiesResponse]
 
 /**
+ * LibreOffice backend status for health reporting.
+ *
+ * @param available
+ *   Whether LibreOffice is installed and detectable
+ * @param running
+ *   Whether the OfficeManager is currently running
+ * @param instances
+ *   Number of configured LibreOffice processes
+ * @param maxTasksPerProcess
+ *   Conversions before automatic process restart
+ */
+final case class LibreOfficeStatus(
+  available: Boolean,
+  running: Boolean,
+  instances: Int,
+  maxTasksPerProcess: Int
+)
+
+object LibreOfficeStatus:
+  given JsonEncoder[LibreOfficeStatus] = DeriveJsonEncoder.gen[LibreOfficeStatus]
+  given JsonDecoder[LibreOfficeStatus] = DeriveJsonDecoder.gen[LibreOfficeStatus]
+
+/**
  * Health check response.
  *
  * @param status
  *   Health status ("healthy" or "unhealthy")
  * @param version
  *   Server version
+ * @param libreoffice
+ *   LibreOffice backend status (if available)
  */
 final case class HealthResponse(
   status: String,
-  version: String = "2.0.0"
+  version: String = "2.0.0",
+  libreoffice: Option[LibreOfficeStatus] = None
 )
 
 object HealthResponse:
@@ -135,4 +161,5 @@ object Codecs:
   export ConversionCapability.given
   export SplitCapability.given
   export CapabilitiesResponse.given
+  export LibreOfficeStatus.given
   export HealthResponse.given

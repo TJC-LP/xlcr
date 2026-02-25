@@ -111,7 +111,11 @@ object XlcrMain extends ZIOAppDefault:
     val config = ServerConfig.fromArgs(
       host = args.host,
       port = args.port,
-      maxRequestSize = args.maxRequestSize
+      maxRequestSize = args.maxRequestSize,
+      loInstances = args.loInstances,
+      loRestartAfter = args.loRestartAfter,
+      loTaskTimeout = args.loTaskTimeout,
+      loQueueTimeout = args.loQueueTimeout
     )
     Server.start(config).as(ExitCode.success)
 

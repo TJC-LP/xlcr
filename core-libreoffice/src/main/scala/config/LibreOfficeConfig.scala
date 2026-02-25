@@ -12,6 +12,28 @@ import org.jodconverter.local.office.LocalOfficeManager
 import org.slf4j.LoggerFactory
 
 /**
+ * Pool configuration for LibreOffice process management.
+ *
+ * Call `LibreOfficeConfig.configure(config)` before first use of `getOfficeManager()` to customize
+ * pool settings. If not called, defaults match JODConverter's built-in defaults.
+ *
+ * @param instances
+ *   Number of LibreOffice processes to run (one per port, starting from base port)
+ * @param maxTasksPerProcess
+ *   Maximum conversions per process before automatic restart (prevents memory leaks)
+ * @param taskExecutionTimeout
+ *   Maximum time in ms for a single conversion task
+ * @param taskQueueTimeout
+ *   Maximum time in ms a task waits in queue before failing
+ */
+final case class PoolConfig(
+  instances: Int = 1,
+  maxTasksPerProcess: Int = 200,
+  taskExecutionTimeout: Long = 120000L, // 2 minutes
+  taskQueueTimeout: Long = 30000L       // 30 seconds
+)
+
+/**
  * Thread-safe LibreOffice configuration and lifecycle manager.
  *
  * Manages the JODConverter OfficeManager instance for document conversions. The manager handles
@@ -20,23 +42,22 @@ import org.slf4j.LoggerFactory
  * Features:
  *   - Lazy initialization on first use
  *   - Configurable LibreOffice installation path
- *   - Process pooling for concurrent conversions
+ *   - Multi-instance process pooling via JODConverter port numbers
  *   - Automatic cleanup on JVM shutdown
  *   - Thread-safe singleton pattern
+ *
+ * For multi-instance pooling, call `configure(PoolConfig(instances = N))` before first use.
+ * JODConverter spawns one LibreOffice process per port and round-robins tasks across them.
  */
 object LibreOfficeConfig:
 
-  private val logger     = LoggerFactory.getLogger(getClass)
-  private val managerRef = new AtomicReference[Option[OfficeManager]](None)
+  private val logger        = LoggerFactory.getLogger(getClass)
+  private val managerRef    = new AtomicReference[Option[OfficeManager]](None)
+  private val poolConfigRef = new AtomicReference[PoolConfig](PoolConfig())
 
   // Configuration properties
   private val LibreOfficeHomeEnvVar  = "LIBREOFFICE_HOME"
   private val DefaultLibreOfficeHome = "/Applications/LibreOffice.app/Contents"
-
-  // Performance tuning
-  private val MaxTasksPerProcess   = 200
-  private val TaskExecutionTimeout = 120000L // 2 minutes
-  private val TaskQueueTimeout     = 30000L  // 30 seconds
 
   /**
    * Port for LibreOffice socket connection. Override via system property `xlcr.libreoffice.port` to
@@ -47,6 +68,33 @@ object LibreOfficeConfig:
     Option(System.getProperty("xlcr.libreoffice.port"))
       .flatMap(s => scala.util.Try(s.toInt).toOption)
       .getOrElse(DefaultPort)
+
+  /**
+   * Configure LibreOffice pool settings. Must be called before first `getOfficeManager()`.
+   *
+   * Thread-safe. Calling after initialization logs a warning and is a no-op.
+   *
+   * @param config
+   *   Pool configuration (instances, task limits, timeouts)
+   */
+  def configure(config: PoolConfig): Unit = synchronized {
+    if managerRef.get().isDefined then
+      logger.warn("LibreOffice already initialized, ignoring configure() call")
+    else
+      logger.info(
+        s"Configuring LibreOffice pool: ${config.instances} instance(s), " +
+          s"restart after ${config.maxTasksPerProcess} tasks"
+      )
+      poolConfigRef.set(config)
+  }
+
+  /**
+   * Get the current pool configuration. Useful for health reporting.
+   *
+   * @return
+   *   The active pool configuration
+   */
+  def currentConfig: PoolConfig = poolConfigRef.get()
 
   /**
    * Check if LibreOffice is available without initializing the OfficeManager. This is useful for
@@ -145,7 +193,7 @@ object LibreOfficeConfig:
 
   /**
    * Initializes the LibreOffice OfficeManager. Configures process pooling, timeouts, and
-   * LibreOffice installation path.
+   * LibreOffice installation path. Uses settings from `poolConfigRef` (set via `configure()`).
    *
    * @return
    *   The configured and started OfficeManager
@@ -156,21 +204,31 @@ object LibreOfficeConfig:
     logger.info("Initializing LibreOffice OfficeManager...")
 
     val officeHome = getLibreOfficeHome()
+    val config     = poolConfigRef.get()
+
+    // Generate port numbers: base port + N instances
+    val basePort = port
+    val ports    = (0 until config.instances).map(i => basePort + i).toArray
+
     logger.info(s"Using LibreOffice installation at: $officeHome")
+    logger.info(
+      s"Configuring ${config.instances} LibreOffice instance(s) on ports: ${ports.mkString(", ")}"
+    )
 
     Try {
-      val loPort = port
-      logger.info(s"Configuring LibreOffice on port $loPort")
-      val builder = LocalOfficeManager.builder()
+      val builder = LocalOfficeManager
+        .builder()
         .officeHome(officeHome)
-        .portNumbers(loPort)
-        .maxTasksPerProcess(MaxTasksPerProcess)
-        .taskExecutionTimeout(TaskExecutionTimeout)
-        .taskQueueTimeout(TaskQueueTimeout)
+        .portNumbers(ports*)
+        .maxTasksPerProcess(config.maxTasksPerProcess)
+        .taskExecutionTimeout(config.taskExecutionTimeout)
+        .taskQueueTimeout(config.taskQueueTimeout)
 
       val manager = builder.build()
       manager.start()
-      logger.info("LibreOffice OfficeManager initialized successfully")
+      logger.info(
+        s"LibreOffice OfficeManager initialized: ${config.instances} instance(s)"
+      )
       manager
     } match
       case Success(manager) => manager

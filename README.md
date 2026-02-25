@@ -121,15 +121,46 @@ xlcr convert -i intermediate.html -o presentation.pptx
 
 ## HTTP Server
 
-XLCR exposes document conversion as a REST API:
+XLCR provides a stateless REST API for document conversion, splitting, and metadata extraction.
+
+### Starting the Server
 
 ```bash
-# Start the server
+# Via installed CLI (after `make install` or `make install-user`)
+xlcr server start --port 8080
+
+# Via Mill (development)
 ./mill xlcr.run server start --port 8080
 
-# Or with custom port
-./mill xlcr.run server start --port 9000
+# Via Docker
+docker compose up server
 ```
+
+### Server Options
+
+| Flag | Env Variable | Default | Description |
+|------|-------------|---------|-------------|
+| `--host` | `XLCR_HOST` | `0.0.0.0` | Bind address |
+| `--port` | `XLCR_PORT` | `8080` | Listen port |
+| `--max-request-size` | `XLCR_MAX_REQUEST_SIZE` | `104857600` | Max body size (bytes) |
+| `--lo-instances` | `XLCR_LO_INSTANCES` | `1` | Number of LibreOffice processes |
+| `--lo-restart-after` | `XLCR_LO_RESTART_AFTER` | `200` | Restart LO after N conversions |
+| `--lo-task-timeout` | `XLCR_LO_TASK_TIMEOUT` | `120000` | Conversion timeout (ms) |
+| `--lo-queue-timeout` | `XLCR_LO_QUEUE_TIMEOUT` | `30000` | Queue wait timeout (ms) |
+
+### LibreOffice Process Pooling
+
+For production deployments with heavy LibreOffice usage, run multiple instances for parallel conversions:
+
+```bash
+# 4 LibreOffice instances, restart each after 100 conversions
+xlcr server start --lo-instances 4 --lo-restart-after 100
+
+# Or via environment variables
+XLCR_LO_INSTANCES=4 XLCR_LO_RESTART_AFTER=100 xlcr server start
+```
+
+Each instance runs as a separate LibreOffice process on a dedicated port (starting from 2002). JODConverter handles round-robin task distribution and automatic process restarts. Budget ~200-300MB RAM per instance.
 
 ### Endpoints
 
@@ -139,7 +170,7 @@ XLCR exposes document conversion as a REST API:
 | `POST` | `/split` | Split document into fragments (ZIP output) |
 | `POST` | `/info` | Get document metadata |
 | `GET` | `/capabilities` | List all supported conversions |
-| `GET` | `/health` | Health check |
+| `GET` | `/health` | Health check (includes LibreOffice pool status) |
 
 ### Examples
 
@@ -153,6 +184,9 @@ curl -X POST "http://localhost:8080/convert?to=pdf" \
 curl -X POST "http://localhost:8080/split" \
   -H "Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" \
   --data-binary @workbook.xlsx -o sheets.zip
+
+# Check server health and LibreOffice pool status
+curl http://localhost:8080/health
 
 # List capabilities
 curl http://localhost:8080/capabilities
