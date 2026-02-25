@@ -839,3 +839,427 @@ given asposeMsgToPdf: Conversion[Mime.Msg, Mime.Pdf] with
       }
     }.mapError(TransformError.fromThrowable)
 end asposeMsgToPdf
+
+// =============================================================================
+// PDF -> DOCX / DOC (Aspose.PDF)
+// =============================================================================
+
+given asposePdfToDocx: Conversion[Mime.Pdf, Mime.Docx] with
+  override def name = "Aspose.Pdf.PdfToDocx"
+
+  def convert(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Content[Mime.Docx]] =
+    ZIO.attempt {
+      AsposeLicenseV2.require[Pdf]
+      Scope.global.scoped { scope =>
+        import scope.*
+        val stream   = new ByteArrayInputStream(input.data.toArray)
+        val document = allocate(pdfDocResource(
+          new com.aspose.pdf.Document(stream)
+        ))
+        val saveOptions = new com.aspose.pdf.DocSaveOptions()
+        saveOptions.setFormat(com.aspose.pdf.DocSaveOptions.DocFormat.DocX)
+        val out = new ByteArrayOutputStream()
+        $(document)(_.save(out, saveOptions))
+        Content[Mime.Docx](out.toByteArray, Mime.docx, input.metadata)
+      }
+    }.mapError(TransformError.fromThrowable)
+end asposePdfToDocx
+
+given asposePdfToDoc: Conversion[Mime.Pdf, Mime.Doc] with
+  override def name = "Aspose.Pdf.PdfToDoc"
+
+  def convert(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Content[Mime.Doc]] =
+    ZIO.attempt {
+      AsposeLicenseV2.require[Pdf]
+      Scope.global.scoped { scope =>
+        import scope.*
+        val stream   = new ByteArrayInputStream(input.data.toArray)
+        val document = allocate(pdfDocResource(
+          new com.aspose.pdf.Document(stream)
+        ))
+        val saveOptions = new com.aspose.pdf.DocSaveOptions()
+        saveOptions.setFormat(com.aspose.pdf.DocSaveOptions.DocFormat.Doc)
+        val out = new ByteArrayOutputStream()
+        $(document)(_.save(out, saveOptions))
+        Content[Mime.Doc](out.toByteArray, Mime.doc, input.metadata)
+      }
+    }.mapError(TransformError.fromThrowable)
+end asposePdfToDoc
+
+// =============================================================================
+// PDF -> XLSX (Aspose.PDF)
+// =============================================================================
+
+given asposePdfToXlsx: Conversion[Mime.Pdf, Mime.Xlsx] with
+  override def name = "Aspose.Pdf.PdfToXlsx"
+
+  def convert(input: Content[Mime.Pdf]): ZIO[Any, TransformError, Content[Mime.Xlsx]] =
+    ZIO.attempt {
+      AsposeLicenseV2.require[Pdf]
+      Scope.global.scoped { scope =>
+        import scope.*
+        val stream   = new ByteArrayInputStream(input.data.toArray)
+        val document = allocate(pdfDocResource(
+          new com.aspose.pdf.Document(stream)
+        ))
+        val saveOptions = new com.aspose.pdf.ExcelSaveOptions()
+        saveOptions.setFormat(com.aspose.pdf.ExcelSaveOptions.ExcelFormat.XLSX)
+        val out = new ByteArrayOutputStream()
+        $(document)(_.save(out, saveOptions))
+        Content[Mime.Xlsx](out.toByteArray, Mime.xlsx, input.metadata)
+      }
+    }.mapError(TransformError.fromThrowable)
+end asposePdfToXlsx
+
+// =============================================================================
+// Word -> HTML (Aspose.Words)
+// =============================================================================
+
+private[aspose] def convertWordDocToHtml[I <: Mime](
+  input: Content[I],
+  options: ConvertOptions = ConvertOptions()
+): ZIO[Any, TransformError, Content[Mime.Html]] =
+  ZIO.attempt {
+    AsposeLicenseV2.require[Words]
+    Scope.global.scoped { scope =>
+      import scope.*
+      val loadOpts = new com.aspose.words.LoadOptions()
+      options.password.foreach(loadOpts.setPassword)
+      val doc = allocate(wordDocResource(
+        new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray), loadOpts)
+      ))
+      val saveOpts = new com.aspose.words.HtmlSaveOptions(com.aspose.words.SaveFormat.HTML)
+      if options.embedResources then
+        saveOpts.setExportImagesAsBase64(true)
+      val out = new ByteArrayOutputStream()
+      $(doc)(_.save(out, saveOpts))
+      Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
+    }
+  }.mapError(TransformError.fromThrowable)
+
+given asposeDocxToHtml: Conversion[Mime.Docx, Mime.Html] with
+  override def name                      = "Aspose.Words.DocxToHtml"
+  def convert(input: Content[Mime.Docx]) = convertWordDocToHtml(input)
+
+given asposeDocToHtml: Conversion[Mime.Doc, Mime.Html] with
+  override def name                     = "Aspose.Words.DocToHtml"
+  def convert(input: Content[Mime.Doc]) = convertWordDocToHtml(input)
+
+given asposeDocmToHtml: Conversion[Mime.Docm, Mime.Html] with
+  override def name                      = "Aspose.Words.DocmToHtml"
+  def convert(input: Content[Mime.Docm]) = convertWordDocToHtml(input)
+
+// =============================================================================
+// Word -> Plain Text (Aspose.Words)
+// =============================================================================
+
+given asposeDocxToPlain: Conversion[Mime.Docx, Mime.Plain] with
+  override def name                      = "Aspose.Words.DocxToPlain"
+  def convert(input: Content[Mime.Docx]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.TEXT, Mime.plain)
+
+given asposeDocToPlain: Conversion[Mime.Doc, Mime.Plain] with
+  override def name                     = "Aspose.Words.DocToPlain"
+  def convert(input: Content[Mime.Doc]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.TEXT, Mime.plain)
+
+// =============================================================================
+// Word -> Markdown (Aspose.Words)
+// =============================================================================
+
+given asposeDocxToMarkdown: Conversion[Mime.Docx, Mime.Markdown] with
+  override def name                      = "Aspose.Words.DocxToMarkdown"
+  def convert(input: Content[Mime.Docx]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.MARKDOWN, Mime.markdown)
+
+given asposeDocToMarkdown: Conversion[Mime.Doc, Mime.Markdown] with
+  override def name                     = "Aspose.Words.DocToMarkdown"
+  def convert(input: Content[Mime.Doc]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.MARKDOWN, Mime.markdown)
+
+// =============================================================================
+// Excel -> CSV (Aspose.Cells)
+// =============================================================================
+
+private[aspose] def convertWorkbookToCsv[I <: Mime](
+  input: Content[I],
+  options: ConvertOptions = ConvertOptions()
+): ZIO[Any, TransformError, Content[Mime.Csv]] =
+  ZIO.attempt {
+    AsposeLicenseV2.require[Cells]
+    Scope.global.scoped { scope =>
+      import scope.*
+      val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, options)))
+      if options.evaluateFormulas then
+        $(workbook) { wb =>
+          try wb.calculateFormula()
+          catch case _: Exception => ()
+        }
+      // If specific sheets are requested, hide the rest
+      if options.sheetNames.nonEmpty then
+        $(workbook) { wb =>
+          val sheets = wb.getWorksheets
+          for i <- 0 until sheets.getCount do
+            val ws = sheets.get(i)
+            if !options.sheetNames.contains(ws.getName) then ws.setVisible(false)
+        }
+      val out = new ByteArrayOutputStream()
+      $(workbook)(_.save(out, com.aspose.cells.SaveFormat.CSV))
+      Content[Mime.Csv](out.toByteArray, Mime.csv, input.metadata)
+    }
+  }.mapError(TransformError.fromThrowable)
+
+given asposeXlsxToCsv: Conversion[Mime.Xlsx, Mime.Csv] with
+  override def name                      = "Aspose.Cells.XlsxToCsv"
+  def convert(input: Content[Mime.Xlsx]) = convertWorkbookToCsv(input)
+
+given asposeXlsToCsv: Conversion[Mime.Xls, Mime.Csv] with
+  override def name                     = "Aspose.Cells.XlsToCsv"
+  def convert(input: Content[Mime.Xls]) = convertWorkbookToCsv(input)
+
+given asposeXlsmToCsv: Conversion[Mime.Xlsm, Mime.Csv] with
+  override def name                      = "Aspose.Cells.XlsmToCsv"
+  def convert(input: Content[Mime.Xlsm]) = convertWorkbookToCsv(input)
+
+given asposeXlsbToCsv: Conversion[Mime.Xlsb, Mime.Csv] with
+  override def name                      = "Aspose.Cells.XlsbToCsv"
+  def convert(input: Content[Mime.Xlsb]) = convertWorkbookToCsv(input)
+
+given asposeOdsToCsv: Conversion[Mime.Ods, Mime.Csv] with
+  override def name                     = "Aspose.Cells.OdsToCsv"
+  def convert(input: Content[Mime.Ods]) = convertWorkbookToCsv(input)
+
+// =============================================================================
+// Excel -> JSON (Aspose.Cells)
+// =============================================================================
+
+given asposeXlsxToJson: Conversion[Mime.Xlsx, Mime.Json] with
+  override def name = "Aspose.Cells.XlsxToJson"
+
+  def convert(input: Content[Mime.Xlsx]): ZIO[Any, TransformError, Content[Mime.Json]] =
+    ZIO.attempt {
+      AsposeLicenseV2.require[Cells]
+      Scope.global.scoped { scope =>
+        import scope.*
+        val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, ConvertOptions())))
+        val out      = new ByteArrayOutputStream()
+        $(workbook)(_.save(out, com.aspose.cells.SaveFormat.JSON))
+        Content[Mime.Json](out.toByteArray, Mime.json, input.metadata)
+      }
+    }.mapError(TransformError.fromThrowable)
+
+// =============================================================================
+// Excel -> Markdown (Aspose.Cells)
+// =============================================================================
+
+given asposeXlsxToMarkdown: Conversion[Mime.Xlsx, Mime.Markdown] with
+  override def name = "Aspose.Cells.XlsxToMarkdown"
+
+  def convert(input: Content[Mime.Xlsx]): ZIO[Any, TransformError, Content[Mime.Markdown]] =
+    ZIO.attempt {
+      AsposeLicenseV2.require[Cells]
+      Scope.global.scoped { scope =>
+        import scope.*
+        val workbook = allocate(cellsWorkbookResource(loadCellsWorkbook(input, ConvertOptions())))
+        val out      = new ByteArrayOutputStream()
+        $(workbook)(_.save(out, com.aspose.cells.SaveFormat.MARKDOWN))
+        Content[Mime.Markdown](out.toByteArray, Mime.markdown, input.metadata)
+      }
+    }.mapError(TransformError.fromThrowable)
+
+// =============================================================================
+// RTF Support (Aspose.Words)
+// =============================================================================
+
+given asposeRtfToPdf: Conversion[Mime.Rtf, Mime.Pdf] with
+  override def name                     = "Aspose.Words.RtfToPdf"
+  def convert(input: Content[Mime.Rtf]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.PDF, Mime.pdf)
+
+given asposeRtfToDocx: Conversion[Mime.Rtf, Mime.Docx] with
+  override def name                     = "Aspose.Words.RtfToDocx"
+  def convert(input: Content[Mime.Rtf]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.DOCX, Mime.docx)
+
+given asposeRtfToHtml: Conversion[Mime.Rtf, Mime.Html] with
+  override def name                     = "Aspose.Words.RtfToHtml"
+  def convert(input: Content[Mime.Rtf]) = convertWordDocToHtml(input)
+
+given asposeDocxToRtf: Conversion[Mime.Docx, Mime.Rtf] with
+  override def name                      = "Aspose.Words.DocxToRtf"
+  def convert(input: Content[Mime.Docx]) =
+    convertWordDoc(input, com.aspose.words.SaveFormat.RTF, Mime.rtf)
+
+// =============================================================================
+// Email -> HTML (Aspose.Email + Words)
+// =============================================================================
+
+given asposeEmlToHtml: Conversion[Mime.Eml, Mime.Html] with
+  override def name = "Aspose.Email.EmlToHtml"
+
+  def convert(input: Content[Mime.Eml]): ZIO[Any, TransformError, Content[Mime.Html]] =
+    ZIO.attempt {
+      AsposeLicenseV2.requireAll[(Email, Words)]
+      Scope.global.scoped { scope =>
+        import scope.*
+        val msg = com.aspose.email.MailMessage.load(new ByteArrayInputStream(input.data.toArray))
+        val mhtmlStream = new ByteArrayOutputStream()
+        msg.save(mhtmlStream, com.aspose.email.SaveOptions.getDefaultMhtml)
+        val doc = allocate(wordDocResource(
+          new com.aspose.words.Document(new ByteArrayInputStream(mhtmlStream.toByteArray))
+        ))
+        val saveOpts = new com.aspose.words.HtmlSaveOptions(com.aspose.words.SaveFormat.HTML)
+        saveOpts.setExportImagesAsBase64(true)
+        val out = new ByteArrayOutputStream()
+        $(doc)(_.save(out, saveOpts))
+        Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
+      }
+    }.mapError(TransformError.fromThrowable)
+end asposeEmlToHtml
+
+given asposeMsgToHtml: Conversion[Mime.Msg, Mime.Html] with
+  override def name = "Aspose.Email.MsgToHtml"
+
+  def convert(input: Content[Mime.Msg]): ZIO[Any, TransformError, Content[Mime.Html]] =
+    ZIO.attempt {
+      AsposeLicenseV2.requireAll[(Email, Words)]
+      Scope.global.scoped { scope =>
+        import scope.*
+        val msg = com.aspose.email.MapiMessage.load(new ByteArrayInputStream(input.data.toArray))
+        val mhtmlStream = new ByteArrayOutputStream()
+        msg.save(mhtmlStream, com.aspose.email.SaveOptions.getDefaultMhtml)
+        val doc = allocate(wordDocResource(
+          new com.aspose.words.Document(new ByteArrayInputStream(mhtmlStream.toByteArray))
+        ))
+        val saveOpts = new com.aspose.words.HtmlSaveOptions(com.aspose.words.SaveFormat.HTML)
+        saveOpts.setExportImagesAsBase64(true)
+        val out = new ByteArrayOutputStream()
+        $(doc)(_.save(out, saveOpts))
+        Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
+      }
+    }.mapError(TransformError.fromThrowable)
+end asposeMsgToHtml
+
+// =============================================================================
+// EML <-> MSG (Aspose.Email)
+// =============================================================================
+
+given asposeEmlToMsg: Conversion[Mime.Eml, Mime.Msg] with
+  override def name = "Aspose.Email.EmlToMsg"
+
+  def convert(input: Content[Mime.Eml]): ZIO[Any, TransformError, Content[Mime.Msg]] =
+    ZIO.attempt {
+      AsposeLicenseV2.require[Email]
+      val msg     = com.aspose.email.MailMessage.load(new ByteArrayInputStream(input.data.toArray))
+      val mapiMsg = com.aspose.email.MapiMessage.fromMailMessage(msg)
+      val out     = new ByteArrayOutputStream()
+      mapiMsg.save(out)
+      Content[Mime.Msg](out.toByteArray, Mime.msg, input.metadata)
+    }.mapError(TransformError.fromThrowable)
+
+given asposeMsgToEml: Conversion[Mime.Msg, Mime.Eml] with
+  override def name = "Aspose.Email.MsgToEml"
+
+  def convert(input: Content[Mime.Msg]): ZIO[Any, TransformError, Content[Mime.Eml]] =
+    ZIO.attempt {
+      AsposeLicenseV2.require[Email]
+      val mapiMsg = com.aspose.email.MapiMessage.load(new ByteArrayInputStream(input.data.toArray))
+      val mailMsg = mapiMsg.toMailMessage(new com.aspose.email.MailConversionOptions())
+      val out     = new ByteArrayOutputStream()
+      mailMsg.save(out, com.aspose.email.SaveOptions.getDefaultEml)
+      Content[Mime.Eml](out.toByteArray, Mime.eml, input.metadata)
+    }.mapError(TransformError.fromThrowable)
+
+// =============================================================================
+// Word -> Images (Aspose.Words - first page rendering)
+// =============================================================================
+
+private[aspose] def convertWordDocToImage[I <: Mime, O <: Mime](
+  input: Content[I],
+  saveFormat: Int,
+  outputMime: O,
+  options: ConvertOptions = ConvertOptions()
+): ZIO[Any, TransformError, Content[O]] =
+  ZIO.attempt {
+    AsposeLicenseV2.require[Words]
+    Scope.global.scoped { scope =>
+      import scope.*
+      val loadOpts = new com.aspose.words.LoadOptions()
+      options.password.foreach(loadOpts.setPassword)
+      val doc = allocate(wordDocResource(
+        new com.aspose.words.Document(new ByteArrayInputStream(input.data.toArray), loadOpts)
+      ))
+      val imgSaveOpts = new com.aspose.words.ImageSaveOptions(saveFormat)
+      imgSaveOpts.setPageSet(new com.aspose.words.PageSet(0)) // First page only
+      imgSaveOpts.setResolution(300f)
+      val out = new ByteArrayOutputStream()
+      $(doc)(_.save(out, imgSaveOpts))
+      Content[O](out.toByteArray, outputMime, input.metadata)
+    }
+  }.mapError(TransformError.fromThrowable)
+
+given asposeDocxToPng: Conversion[Mime.Docx, Mime.Png] with
+  override def name                      = "Aspose.Words.DocxToPng"
+  def convert(input: Content[Mime.Docx]) =
+    convertWordDocToImage(input, com.aspose.words.SaveFormat.PNG, Mime.png)
+
+given asposeDocxToJpeg: Conversion[Mime.Docx, Mime.Jpeg] with
+  override def name                      = "Aspose.Words.DocxToJpeg"
+  def convert(input: Content[Mime.Docx]) =
+    convertWordDocToImage(input, com.aspose.words.SaveFormat.JPEG, Mime.jpeg)
+
+// =============================================================================
+// Slides -> Images (Aspose.Slides - first slide thumbnail)
+// =============================================================================
+
+private[aspose] def convertSlideToImage[I <: Mime, O <: Mime](
+  input: Content[I],
+  formatName: String,
+  outputMime: O,
+  options: ConvertOptions = ConvertOptions()
+): ZIO[Any, TransformError, Content[O]] =
+  ZIO.attempt {
+    AsposeLicenseV2.require[Slides]
+    Scope.global.scoped { scope =>
+      import scope.*
+      val loadOpts = new com.aspose.slides.LoadOptions()
+      options.password.foreach(loadOpts.setPassword)
+      val pres = allocate(presentationResource(
+        new com.aspose.slides.Presentation(new ByteArrayInputStream(input.data.toArray), loadOpts)
+      ))
+      val out = new ByteArrayOutputStream()
+      $(pres) { p =>
+        val slide     = p.getSlides.get_Item(0)
+        val scaleX    = 1920.0f / p.getSlideSize.getSize.getWidth.toFloat
+        val scaleY    = 1080.0f / p.getSlideSize.getSize.getHeight.toFloat
+        val image     = slide.getImage(scaleX, scaleY)
+        val imgFormat = formatName match
+          case "png"  => com.aspose.slides.ImageFormat.Png
+          case "jpeg" => com.aspose.slides.ImageFormat.Jpeg
+          case _      => com.aspose.slides.ImageFormat.Png
+        image.save(out, imgFormat)
+        image.dispose()
+      }
+      Content[O](out.toByteArray, outputMime, input.metadata)
+    }
+  }.mapError(TransformError.fromThrowable)
+
+given asposePptxToPng: Conversion[Mime.Pptx, Mime.Png] with
+  override def name                      = "Aspose.Slides.PptxToPng"
+  def convert(input: Content[Mime.Pptx]) =
+    convertSlideToImage(input, "png", Mime.png)
+
+given asposePptxToJpeg: Conversion[Mime.Pptx, Mime.Jpeg] with
+  override def name                      = "Aspose.Slides.PptxToJpeg"
+  def convert(input: Content[Mime.Pptx]) =
+    convertSlideToImage(input, "jpeg", Mime.jpeg)
+
+given asposePptToPng: Conversion[Mime.Ppt, Mime.Png] with
+  override def name                     = "Aspose.Slides.PptToPng"
+  def convert(input: Content[Mime.Ppt]) =
+    convertSlideToImage(input, "png", Mime.png)
+
+given asposePptToJpeg: Conversion[Mime.Ppt, Mime.Jpeg] with
+  override def name                     = "Aspose.Slides.PptToJpeg"
+  def convert(input: Content[Mime.Ppt]) =
+    convertSlideToImage(input, "jpeg", Mime.jpeg)
