@@ -129,6 +129,28 @@ class LibreOfficeConfigSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
     }
   }
 
+  "LibreOfficeConfig.getOfficeManager" should "reject non-positive instance counts" in {
+    LibreOfficeConfig.shutdown()
+
+    try {
+      LibreOfficeConfig.configure(PoolConfig(instances = 0))
+      val zeroErr = intercept[IllegalArgumentException] {
+        LibreOfficeConfig.getOfficeManager()
+      }
+      zeroErr.getMessage should include("XLCR_LO_INSTANCES")
+
+      LibreOfficeConfig.shutdown()
+      LibreOfficeConfig.configure(PoolConfig(instances = -1))
+      val negativeErr = intercept[IllegalArgumentException] {
+        LibreOfficeConfig.getOfficeManager()
+      }
+      negativeErr.getMessage should include("XLCR_LO_INSTANCES")
+    } finally {
+      LibreOfficeConfig.shutdown()
+      LibreOfficeConfig.configure(PoolConfig())
+    }
+  }
+
   "LibreOfficeConfig.getOfficeManager" should "initialize when LibreOffice is available" in {
     // Only run if LibreOffice is available
     if (LibreOfficeConfig.isAvailable()) {

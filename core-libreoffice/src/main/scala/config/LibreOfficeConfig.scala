@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
  * pool settings. If not called, defaults match JODConverter's built-in defaults.
  *
  * @param instances
- *   Number of LibreOffice processes to run (one per port, starting from base port)
+ *   Number of LibreOffice processes to run (must be > 0; one per port, starting from base port)
  * @param maxTasksPerProcess
  *   Maximum conversions per process before automatic restart (prevents memory leaks)
  * @param taskExecutionTimeout
@@ -68,6 +68,13 @@ object LibreOfficeConfig:
     Option(System.getProperty("xlcr.libreoffice.port"))
       .flatMap(s => scala.util.Try(s.toInt).toOption)
       .getOrElse(DefaultPort)
+
+  private def validatePoolConfig(config: PoolConfig): Unit =
+    require(
+      config.instances > 0,
+      s"Invalid LibreOffice pool size: ${config.instances}. " +
+        "Expected --lo-instances / XLCR_LO_INSTANCES to be a positive integer."
+    )
 
   /**
    * Configure LibreOffice pool settings. Must be called before first `getOfficeManager()`.
@@ -203,8 +210,10 @@ object LibreOfficeConfig:
   private def initializeOfficeManager(): OfficeManager =
     logger.info("Initializing LibreOffice OfficeManager...")
 
+    val config = poolConfigRef.get()
+    validatePoolConfig(config)
+
     val officeHome = getLibreOfficeHome()
-    val config     = poolConfigRef.get()
 
     // Generate port numbers: base port + N instances
     val basePort = port
