@@ -6,11 +6,13 @@ import mill.scalalib.publish._
 import mill.scalalib.scalafmt._
 import mill.scalalib.Assembly._
 
-val scalaVersions = Seq("3.3.4", "2.13.17")
 val organization = "com.tjclp"
 
 /** Shared build configuration constants */
 object BuildConfig {
+  /** Scala version for all modules */
+  val scalaVersion = "3.3.4"
+
   /** Aspose Maven repository URL */
   val asposeRepoUrl = "https://releases.aspose.com/java/repo/"
 
@@ -27,26 +29,12 @@ object BuildConfig {
     "-XX:+IgnoreUnrecognizedVMOptions"
   )
 
-  /** Spark-required JVM args for Java 17+ */
-  val sparkJvmArgs: Seq[String] = Seq(
-    "--add-opens=java.base/java.lang=ALL-UNNAMED",
-    "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
-    "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
-    "--add-opens=java.base/java.io=ALL-UNNAMED",
-    "--add-opens=java.base/java.net=ALL-UNNAMED",
-    "--add-opens=java.base/java.nio=ALL-UNNAMED",
-    "--add-opens=java.base/java.util=ALL-UNNAMED",
-    "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED",
-    "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
-    "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-    "--add-opens=java.base/sun.nio.cs=ALL-UNNAMED",
-    "--add-opens=java.base/sun.security.action=ALL-UNNAMED",
-    "--add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
-  ) ++ lazyValsJvmArgs
 }
 
 /** Base trait for all XLCR modules - shared compiler settings and formatting */
-trait XLCRModuleBase extends CrossScalaModule with ScalafmtModule {
+trait XLCRModuleBase extends ScalaModule with ScalafmtModule {
+  override def scalaVersion = BuildConfig.scalaVersion
+
   override def repositoriesTask: Task[Seq[coursier.Repository]] = Task.Anon {
     super.repositoriesTask() ++ Seq(
       coursier.MavenRepository(BuildConfig.asposeRepoUrl)
@@ -56,40 +44,21 @@ trait XLCRModuleBase extends CrossScalaModule with ScalafmtModule {
   // JVM options for forked processes (run, test execution)
   override def forkArgs: T[Seq[String]] = BuildConfig.lazyValsJvmArgs
 
-  override def scalacOptions: T[Seq[String]] = {
-    val baseOpts = Seq(
-      "-encoding",
-      "utf-8",
-      "-feature",
-      "-language:implicitConversions",
-      "-language:higherKinds",
-      "-unchecked",
-      "-deprecation"
-    )
-
-    val versionOpts =
-      if (crossScalaVersion.startsWith("3.")) {
-        Seq("-Wunused:imports")
-      } else {
-        Seq("-Wunused:imports")
-      }
-
-    baseOpts ++ versionOpts
-  }
-
-  /** Source directories for cross-compilation */
-  def scala3Sources = Task.Sources(
-    moduleDir / "src" / "main" / "scala",
-    moduleDir / "src" / "main" / "scala-3"
+  override def scalacOptions: T[Seq[String]] = Seq(
+    "-encoding",
+    "utf-8",
+    "-feature",
+    "-language:implicitConversions",
+    "-language:higherKinds",
+    "-unchecked",
+    "-deprecation",
+    "-Wunused:imports"
   )
 
-  def scala2Sources = Task.Sources(
-    moduleDir / "src" / "main" / "scala",
-    moduleDir / "src" / "main" / "scala-2",
-    moduleDir / "src" / "main" / "scala-2.13"
+  /** Source directory */
+  override def sources = Task.Sources(
+    moduleDir / "src" / "main" / "scala"
   )
-
-  override def sources = if (crossScalaVersion.startsWith("3.")) scala3Sources else scala2Sources
 }
 
 /** Trait for publishable library modules - publishes to Maven Central via Sonatype */
@@ -97,7 +66,7 @@ trait XLCRModule extends XLCRModuleBase with PublishModule {
 
   /** Version derived from PUBLISH_VERSION env var (set by CI), or default for local dev */
   override def publishVersion: T[String] =
-    sys.env.getOrElse("PUBLISH_VERSION", "0.2.3-SNAPSHOT")
+    sys.env.getOrElse("PUBLISH_VERSION", "0.3.0-SNAPSHOT")
 
   override def pomSettings: T[PomSettings] = PomSettings(
     description = artifactDescription,
@@ -148,18 +117,20 @@ trait XLCRSerialTestModule extends XLCRTestModule {
   }
 }
 
-/** Trait for LibreOffice tests - runs all tests in a single fork to share one LibreOffice process */
+/** Trait for LibreOffice tests - runs all tests in a single fork to share one LibreOffice process.
+  * Config tests call shutdown() and must remain sequential within the fork.
+  * Uses port 2002 — other modules using LibreOffice should pick a different port.
+  */
 trait XLCRLibreOfficeTestModule extends XLCRTestModule {
   /** Run all tests in a single fork - LibreOffice process is shared across all tests */
   override def testForkGrouping: T[Seq[Seq[String]]] = Task {
     Seq(discoveredTestClasses())
   }
 
-  /** Disable parallel test execution within the fork - LibreOffice can only handle one conversion at a time */
+  /** Disable parallel test execution — config tests mutate singleton state (init/shutdown cycles) */
   override def testParallelism: T[Boolean] = false
-}
 
-/** Trait for Spark test modules with additional JVM args */
-trait XLCRSparkTestModule extends XLCRTestModule {
-  override def forkArgs: T[Seq[String]] = BuildConfig.sparkJvmArgs
+  /** Assign a dedicated LibreOffice port so parallel test modules don't conflict */
+  override def forkArgs: T[Seq[String]] =
+    super.forkArgs() ++ Seq("-Dxlcr.libreoffice.port=2002")
 }

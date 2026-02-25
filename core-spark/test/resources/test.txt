@@ -1,7 +1,0 @@
-This is a simple text file for testing the Spark splitting functionality.
-
-It has multiple paragraphs to demonstrate how chunk splitting works.
-
-The TextSplitter will now recognize this content and create chunks that respect paragraph boundaries when possible.
-
-This example shows how our improved chunk labeling works, providing more informative labels in the Spark pipeline.

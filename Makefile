@@ -1,14 +1,13 @@
 # XLCR Makefile
 # Build and install the XLCR document conversion CLI
 
-SCALA_VERSION := 3.3.4
 JAR_NAME := xlcr.jar
 INSTALL_DIR := /usr/local/bin
 JAR_DIR := /usr/local/lib/xlcr
 WRAPPER_SCRIPT := scripts/xlcr-wrapper.sh
 
 # Mill builds native binary here
-NATIVE_BINARY := out/xlcr/$(SCALA_VERSION)/nativeImage.dest/native-executable
+NATIVE_BINARY := out/xlcr/nativeImage.dest/native-executable
 NATIVE_LIB_DIR := /usr/local/lib/xlcr
 NATIVE_WRAPPER := scripts/xlcr-native-wrapper.sh
 
@@ -49,16 +48,16 @@ check-license:
 # Compile all modules
 compile:
 	@echo "Compiling all modules..."
-	./mill '__[$(SCALA_VERSION)].compile'
+	./mill __.compile
 
 # Build the fat JAR with all backends
 assembly: check-license
 	@echo "Building XLCR assembly..."
-	./mill 'xlcr[$(SCALA_VERSION)].assembly'
+	./mill xlcr.assembly
 
 # Full build
 build: assembly
-	@echo "Build complete: out/xlcr/$(SCALA_VERSION)/assembly.dest/out.jar"
+	@echo "Build complete: out/xlcr/assembly.dest/out.jar"
 	@if [ -f "$(LICENSE_ASPOSE_RESOURCES)" ]; then \
 		echo "License bundled: Aspose will be fully licensed"; \
 	else \
@@ -68,7 +67,7 @@ build: assembly
 # Build native binary via Mill's NativeImageModule (downloads GraalVM automatically)
 native: check-license
 	@echo "Building native binary via Mill..."
-	./mill 'xlcr[$(SCALA_VERSION)].nativeImage'
+	./mill xlcr.nativeImage
 	@echo "Native binary built: $(NATIVE_BINARY)"
 	@ls -lh $(NATIVE_BINARY) | awk '{print "Size: " $$5}'
 
@@ -79,7 +78,7 @@ native: check-license
 native-agent: check-license
 	@echo "Running with tracing agent..."
 	@echo "Metadata output: xlcr/src/main/resources/META-INF/native-image/"
-	./mill 'xlcr[$(SCALA_VERSION)].nativeImageAgent' $(ARGS)
+	./mill xlcr.nativeImageAgent $(ARGS)
 
 # Build native binary inside Docker and extract it (no local GraalVM required)
 # NOTE: Produces a Linux binary - for macOS, use 'make native'
@@ -90,7 +89,7 @@ docker-native:
 	@docker rm $(DOCKER_CONTAINER) 2>/dev/null || true
 	docker create --name $(DOCKER_CONTAINER) xlcr-native
 	mkdir -p out
-	docker cp $(DOCKER_CONTAINER):/xlcr/out/xlcr/$(SCALA_VERSION)/nativeImage.dest/native-executable out/xlcr-native
+	docker cp $(DOCKER_CONTAINER):/xlcr/out/xlcr/nativeImage.dest/native-executable out/xlcr-native
 	docker rm $(DOCKER_CONTAINER)
 	@echo "Native binary extracted: out/xlcr-native"
 	@ls -lh out/xlcr-native | awk '{print "Size: " $$5}'
@@ -104,7 +103,7 @@ docker-native-agent: docker-agent
 install: build
 	@echo "Installing XLCR to $(INSTALL_DIR)..."
 	sudo mkdir -p $(JAR_DIR)
-	sudo cp out/xlcr/$(SCALA_VERSION)/assembly.dest/out.jar $(JAR_DIR)/$(JAR_NAME)
+	sudo cp out/xlcr/assembly.dest/out.jar $(JAR_DIR)/$(JAR_NAME)
 	sudo cp $(WRAPPER_SCRIPT) $(INSTALL_DIR)/xlcr
 	sudo chmod +x $(INSTALL_DIR)/xlcr
 	@echo ""
@@ -118,7 +117,7 @@ install: build
 install-user: build
 	@echo "Installing XLCR to ~/bin..."
 	mkdir -p ~/lib/xlcr ~/bin
-	cp out/xlcr/$(SCALA_VERSION)/assembly.dest/out.jar ~/lib/xlcr/$(JAR_NAME)
+	cp out/xlcr/assembly.dest/out.jar ~/lib/xlcr/$(JAR_NAME)
 	cp $(WRAPPER_SCRIPT) ~/bin/xlcr
 	chmod +x ~/bin/xlcr
 	@echo ""
@@ -211,15 +210,15 @@ clean:
 
 # Run tests for xlcr module
 test:
-	./mill 'xlcr[$(SCALA_VERSION)].test'
+	./mill xlcr.test
 
 # Run all tests
 test-all:
-	./mill '__[$(SCALA_VERSION)].test'
+	./mill __.test
 
 # Run the CLI directly (for development)
 run:
-	./mill 'xlcr[$(SCALA_VERSION)].run'
+	./mill xlcr.run
 
 # ── Server targets ───────────────────────────────────────────────────
 
@@ -227,7 +226,7 @@ run:
 # Usage: make server PORT=9090
 PORT ?= 8080
 server:
-	./mill 'xlcr[$(SCALA_VERSION)].run' server start --port $(PORT)
+	./mill xlcr.run server start --port $(PORT)
 
 # Start the HTTP server via native binary
 server-native:

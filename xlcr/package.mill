@@ -4,8 +4,7 @@ import mill._
 import mill.scalalib._
 import mill.javalib.NativeImageModule
 
-// Only build for Scala 3 - this is a unified CLI module
-object `package` extends Cross[XlcrModule](Seq("3.3.4"))
+object `package` extends XlcrModule
 
 trait XlcrModule extends build.XLCRModule with NativeImageModule {
   override def artifactName = "xlcr"
@@ -14,30 +13,27 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
   // Depend on LibreOffice (always) and Aspose (when license detected at build time).
   // When Aspose is excluded, BackendWiring stubs route all Aspose calls to UnsupportedConversion.
   override def moduleDeps = {
-    val base = Seq(build.`core-libreoffice`(crossScalaVersion))
+    val base = Seq(build.`core-libreoffice`)
     if (build.BuildConfig.asposeEnabled)
-      base :+ build.`core-aspose`(crossScalaVersion)
+      base :+ build.`core-aspose`
     else base
   }
 
   // Select Aspose or no-Aspose source overlay based on build-time license detection.
-  // Overrides scala3Sources from XLCRModuleBase to add the conditional overlay.
-  override def scala3Sources =
+  override def sources =
     if (build.BuildConfig.asposeEnabled)
       Task.Sources(
         moduleDir / "src" / "main" / "scala",
-        moduleDir / "src" / "main" / "scala-3",
-        moduleDir / "src" / "main" / "scala-3-aspose"
+        moduleDir / "src" / "main" / "aspose"
       )
     else
       Task.Sources(
         moduleDir / "src" / "main" / "scala",
-        moduleDir / "src" / "main" / "scala-3",
-        moduleDir / "src" / "main" / "scala-3-no-aspose"
+        moduleDir / "src" / "main" / "no-aspose"
       )
 
   // Set main class for executable JAR
-  override def mainClass = Some("com.tjclp.xlcr.v2.cli.XlcrMain")
+  override def mainClass = Some("com.tjclp.xlcr.cli.XlcrMain")
 
   // Disable prepended shell script - JAR has >65535 entries
   override def prependShellScript = ""
@@ -125,8 +121,8 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
   /** Run the app with the GraalVM tracing agent to generate native-image metadata.
     *
     * Usage:
-    *   ./mill 'xlcr[3.3.4].nativeImageAgent' --help
-    *   ./mill 'xlcr[3.3.4].nativeImageAgent' -i test.pdf -o test.html
+    *   ./mill xlcr.nativeImageAgent --help
+    *   ./mill xlcr.nativeImageAgent -i test.pdf -o test.html
     *
     * Generated config goes to xlcr/src/main/resources/META-INF/native-image/
     * Run with representative workloads for best coverage.
@@ -161,6 +157,12 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
 
   object test extends ScalaTests with build.XLCRTestModule {
     override def sources = testSources
+
+    /** Use a different LibreOffice port than core-libreoffice tests (2002)
+      * so both modules can run their tests in parallel without port conflicts.
+      */
+    override def forkArgs: T[Seq[String]] =
+      super.forkArgs() ++ Seq("-Dxlcr.libreoffice.port=2003")
 
     // Additional test dependencies for ZIO HTTP testing
     override def mvnDeps = super.mvnDeps() ++ Seq(

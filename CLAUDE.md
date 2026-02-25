@@ -3,24 +3,7 @@
 ## Java Version Requirements
 
 XLCR modules have different Java version requirements:
-- **Core, Aspose, LibreOffice**: Java 17+ (tested with Java 17, 21, 25)
-- **Spark Module** *(deprecated — removal in 0.3.0)*: Java 17 or 21 only (Spark 4.x limitation — Java 25 not supported)
-
-### Running Tests with Java 25
-
-If you're using Java 25 locally, you have two options:
-
-**Option 1: Skip Spark tests** (recommended for LibreOffice/core development)
-```bash
-./mill core[3.3.4].test core-aspose[3.3.4].test core-libreoffice[3.3.4].test
-```
-
-**Option 2: Use Java 17 for Spark tests**
-```bash
-# Set Java 17 for this session
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
-./mill __.test
-```
+- **Core, Aspose, LibreOffice, CLI, Server**: Java 17+ (tested with Java 17, 21, 25)
 
 ### Aspose License for Local Testing
 
@@ -34,7 +17,7 @@ cp Aspose.Total.Java.lic core-aspose/resources/
 **Option 2: Set environment variable**
 ```bash
 export ASPOSE_TOTAL_LICENSE_B64=$(base64 < Aspose.Total.Java.lic)
-./mill 'core-aspose[3.3.4].test'
+./mill 'core-aspose.test'
 ```
 
 The license file in `core-aspose/resources/` is gitignored (`*.lic` pattern).
@@ -64,26 +47,17 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 | `ASPOSE_ZIP_LICENSE_B64` | Per-product: Zip only |
 
 ## Build Commands
-- `./mill __.compile` - Compile all modules for all Scala versions
-- `./mill __[3.3.4].compile` - Compile all modules with Scala 3.3.4
-- `./mill __[2.13.17].compile` - Compile all modules with Scala 2.13.17
-- `./mill core[3.3.4].compile` - Compile a specific module with a specific Scala version
+- `./mill __.compile` - Compile all modules
+- `./mill core.compile` - Compile a specific module
 - `./mill __.assembly` - Create executable JAR files
-- `./mill core[3.3.4].run` - Run the core application
+- `./mill core.run` - Run the core application
 
 ## Test Commands
-- `./mill __.test` - Run all tests for all modules and Scala versions
-- `./mill __[3.3.4].test` - Run all tests with Scala 3.3.4
-- `./mill __[2.13.17].test` - Run all tests with Scala 2.13.17
-- `./mill core[3.3.4].test` - Run tests for a specific module
-- `./mill core[3.3.4].test.testOnly com.tjclp.xlcr.ConfigSpec` - Run a single test class
+- `./mill __.test` - Run all tests
+- `./mill core.test` - Run tests for a specific module
+- `./mill core.test.testOnly com.tjclp.xlcr.ConfigSpec` - Run a single test class
 - `./mill __.checkFormat` - Check code formatting
 - `./mill __.reformat` - Reformat code
-
-## Scala Versions
-XLCR supports cross-building for:
-- **Scala 3.3.4** (primary version)
-- **Scala 2.13.17** (cross-build support)
 
 ## Code Style
 - Scala 3 with functional programming principles
@@ -101,7 +75,6 @@ The project is organized into these main modules:
 - `core` - Core functionality: Tika text extraction, splitters (PDF/Excel/PowerPoint/Word/Email/Archives), XLSX→ODS conversion
 - `core-aspose` - Integration with Aspose for PDF conversion and document transformations (HIGH priority)
 - `core-libreoffice` - Integration with LibreOffice for open-source document conversions (DEFAULT priority fallback)
-- `core-spark` - Spark DataFrame integration for document processing
 - `data` - Directory containing sample Excel files for testing
 
 ### Core Module Capabilities
@@ -137,46 +110,46 @@ The core-aspose module includes comprehensive document conversion capabilities:
 ### CLI Usage Examples
 ```bash
 # Convert HTML to PowerPoint (PPTX)
-./mill core[3.3.4].run -i presentation.html -o output.pptx
+./mill core.run -i presentation.html -o output.pptx
 
 # Convert HTML to legacy PowerPoint (PPT)
-./mill core[3.3.4].run -i presentation.html -o output.ppt
+./mill core.run -i presentation.html -o output.ppt
 
 # Convert PowerPoint to HTML
-./mill core[3.3.4].run -i presentation.pptx -o output.html
+./mill core.run -i presentation.pptx -o output.html
 
 # Convert PowerPoint to HTML with master slide removal (cleaner output)
-./mill core[3.3.4].run -i presentation.pptx -o output.html --strip-masters
+./mill core.run -i presentation.pptx -o output.html --strip-masters
 
 # Convert legacy PowerPoint to HTML
-./mill core[3.3.4].run -i presentation.ppt -o output.html
+./mill core.run -i presentation.ppt -o output.html
 
 # Template swapping workflow: strip template, convert, apply new template
-./mill core[3.3.4].run -i old-template.pptx -o clean.html --strip-masters
-./mill core[3.3.4].run -i clean.html -o new-presentation.pptx
+./mill core.run -i old-template.pptx -o clean.html --strip-masters
+./mill core.run -i clean.html -o new-presentation.pptx
 # Then apply new template in PowerPoint
 
 # Convert PDF to PowerPoint (PPTX) - each page becomes a slide
-./mill core[3.3.4].run -i document.pdf -o presentation.pptx
+./mill core.run -i document.pdf -o presentation.pptx
 
 # Convert PDF to legacy PowerPoint (PPT)
-./mill core[3.3.4].run -i document.pdf -o presentation.ppt
+./mill core.run -i document.pdf -o presentation.ppt
 
 # === PDF → HTML Conversion (NEW!) ===
 
 # Convert PDF to HTML (preserves structure better)
-./mill core[3.3.4].run -i document.pdf -o output.html
+./mill core.run -i document.pdf -o output.html
 
 # Convert encrypted PDF to HTML
-./mill core[3.3.4].run -i encrypted.pdf -o output.html  # Auto-handles restrictions
+./mill core.run -i encrypted.pdf -o output.html  # Auto-handles restrictions
 
 # === Two-Stage Workflow (RECOMMENDED for Best Editability) ===
 
 # Stage 1: PDF → HTML (extract structured content)
-./mill core[3.3.4].run -i document.pdf -o intermediate.html
+./mill core.run -i document.pdf -o intermediate.html
 
 # Stage 2: HTML → PowerPoint (create editable slides)
-./mill core[3.3.4].run -i intermediate.html -o presentation.pptx
+./mill core.run -i intermediate.html -o presentation.pptx
 
 # Why two-stage? File size: 76MB direct vs 254KB two-stage!
 ```
@@ -271,10 +244,10 @@ The LibreOffice backend works automatically as a fallback. No code changes neede
 
 ```bash
 # These commands will use Aspose if available, LibreOffice otherwise
-./mill core[3.3.4].run -i document.docx -o output.pdf
-./mill core[3.3.4].run -i spreadsheet.xlsx -o output.pdf
-./mill core[3.3.4].run -i presentation.pptx -o output.pdf
-./mill core[3.3.4].run -i spreadsheet.ods -o output.pdf
+./mill core.run -i document.docx -o output.pdf
+./mill core.run -i spreadsheet.xlsx -o output.pdf
+./mill core.run -i presentation.pptx -o output.pdf
+./mill core.run -i spreadsheet.ods -o output.pdf
 ```
 
 ### Priority System
@@ -303,7 +276,7 @@ The `core-libreoffice` module follows the same bridge pattern as other backends:
 
 To build the LibreOffice module:
 ```bash
-./mill core-libreoffice[3.3.4].compile
-./mill core-libreoffice[3.3.4].test
-./mill core-libreoffice[3.3.4].assembly
+./mill core-libreoffice.compile
+./mill core-libreoffice.test
+./mill core-libreoffice.assembly
 ```

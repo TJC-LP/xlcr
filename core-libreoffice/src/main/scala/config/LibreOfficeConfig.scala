@@ -39,6 +39,16 @@ object LibreOfficeConfig {
   private val TaskQueueTimeout     = 30000L  // 30 seconds
 
   /**
+   * Port for LibreOffice socket connection. Override via system property `xlcr.libreoffice.port` to
+   * avoid conflicts when multiple test modules run LibreOffice concurrently.
+   */
+  private val DefaultPort = 2002
+  private def port: Int =
+    Option(System.getProperty("xlcr.libreoffice.port"))
+      .flatMap(s => scala.util.Try(s.toInt).toOption)
+      .getOrElse(DefaultPort)
+
+  /**
    * Check if LibreOffice is available without initializing the OfficeManager. This is useful for
    * pre-flight checks and backend discovery.
    *
@@ -156,8 +166,11 @@ object LibreOfficeConfig {
     logger.info(s"Using LibreOffice installation at: $officeHome")
 
     Try {
+      val loPort = port
+      logger.info(s"Configuring LibreOffice on port $loPort")
       val builder = LocalOfficeManager.builder()
         .officeHome(officeHome)
+        .portNumbers(loPort)
         .maxTasksPerProcess(MaxTasksPerProcess)
         .taskExecutionTimeout(TaskExecutionTimeout)
         .taskQueueTimeout(TaskQueueTimeout)

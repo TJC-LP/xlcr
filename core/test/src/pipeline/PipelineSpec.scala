@@ -1,178 +1,228 @@
-package com.tjclp.xlcr
-package pipeline
+package com.tjclp.xlcr.pipeline
 
-import java.nio.file.{ Files, Path }
+import zio.{Chunk, ZIO}
 
-import scala.util.Try
+import com.tjclp.xlcr.base.V2TestSupport
+import com.tjclp.xlcr.transform.{Conversion, DynamicSplitter, Splitter}
+import com.tjclp.xlcr.types.{Content, DynamicFragment, Fragment, Mime}
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.{ BeforeAndAfterEach, TryValues }
+/**
+ * Tests for the Pipeline high-level API using compile-time transform evidence.
+ */
+class PipelineSpec extends V2TestSupport:
 
-class PipelineSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach with TryValues {
-
-  var tempDir: Path        = _
-  var testInputFile: Path  = _
-  var testOutputFile: Path = _
-
-  override def beforeEach(): Unit = {
-    tempDir = Files.createTempDirectory("pipeline-test")
-    testInputFile = Files.createTempFile(tempDir, "input", ".txt")
-    testOutputFile = tempDir.resolve("output.txt")
-
-    // Write some test content
-    Files.write(testInputFile, "Hello, World!".getBytes)
-  }
-
-  override def afterEach(): Unit =
-    // Clean up temp files
-    Try {
-      Files.walk(tempDir)
-        .sorted(java.util.Comparator.reverseOrder())
-        .forEach(Files.delete)
+  private def stringConversion[I <: Mime, O <: Mime](
+      out: O
+  )(f: String => String): Conversion[I, O] =
+    Conversion.pure[I, O] { input =>
+      val text = new String(input.toArray, "UTF-8")
+      Content.fromString(f(text), out)
     }
 
-  "Pipeline.run" should "convert a text file successfully" in {
-    Pipeline.run(
-      inputPath = testInputFile.toString,
-      outputPath = testOutputFile.toString,
-      diffMode = false
+  // ==========================================================================
+  // Pipeline.convert Tests
+  // ==========================================================================
+
+  "Pipeline.convert" should "convert content with compile-time evidence" in {
+    given Conversion[Mime.Plain, Mime.Html] =
+      stringConversion(Mime.html)(t => s"<html>$t</html>")
+
+    val input = Content.fromString("hello", Mime.plain)
+    val result = runZIO(Pipeline.convert[Mime.Plain, Mime.Html](input))
+
+    new String(result.toArray, "UTF-8") shouldBe "<html>hello</html>"
+    result.mime shouldBe Mime.html
+  }
+
+  it should "compose multi-hop conversions with explicit chaining" in {
+    given c1: Conversion[Mime.Plain, Mime.Json] =
+      stringConversion(Mime.json)(t => s"""{"text":"$t"}""")
+    given c2: Conversion[Mime.Json, Mime.Xml] =
+      stringConversion(Mime.xml)(t => s"<root>$t</root>")
+
+    // Multi-hop requires explicit composition - compiler can't infer intermediate M
+    val input = Content.fromString("data", Mime.plain)
+    val result = runZIO(
+      for
+        json <- Pipeline.convert[Mime.Plain, Mime.Json](input)
+        xml  <- Pipeline.convert[Mime.Json, Mime.Xml](json)
+      yield xml
     )
 
-    Files.exists(testOutputFile) shouldBe true
-    val content = new String(Files.readAllBytes(testOutputFile))
-    content.trim shouldBe "Hello, World!"
+    val text = new String(result.toArray, "UTF-8")
+    text should include("<root>")
+    text should include("data")
   }
 
-  it should "throw InputFileNotFoundException for non-existent input" in {
-    val nonExistentFile = tempDir.resolve("nonexistent.txt").toString
+  // ==========================================================================
+  // Pipeline.transform Tests
+  // ==========================================================================
 
-    (the[InputFileNotFoundException] thrownBy {
-      Pipeline.run(
-        inputPath = nonExistentFile,
-        outputPath = testOutputFile.toString
-      )
-    } should have).message(s"Input file '$nonExistentFile' does not exist")
+  "Pipeline.transform" should "return identity output when I == O" in {
+    // When I == O, identity transform takes precedence - use Pipeline.split for splitting
+    val input = Content.fromString("pdf data", Mime.pdf)
+    val results = runZIO(Pipeline.transform[Mime.Pdf, Mime.Pdf](input))
+
+    results.size shouldBe 1
+    results.head.mime shouldBe Mime.pdf
+    new String(results.head.toArray, "UTF-8") shouldBe "pdf data"
   }
 
-  it should "handle file copy when no bridge is available" in {
-    // Create a file with an unusual extension
-    val customFile   = Files.createTempFile(tempDir, "test", ".xyz")
-    val customOutput = tempDir.resolve("output.xyz")
-    Files.write(customFile, "Custom content".getBytes)
+  // ==========================================================================
+  // Pipeline.split Tests
+  // ==========================================================================
 
-    // Pipeline now throws UnknownExtensionException for unknown extensions
-    (the[UnknownExtensionException] thrownBy {
-      Pipeline.run(
-        inputPath = customFile.toString,
-        outputPath = customOutput.toString
-      )
-    } should have).message(s"Cannot determine MIME type for extension 'xyz' in file: $customOutput")
-  }
-
-  it should "create parent directories for output file" in {
-    val nestedOutput = tempDir.resolve("nested/deep/output.txt")
-
-    Pipeline.run(
-      inputPath = testInputFile.toString,
-      outputPath = nestedOutput.toString
-    )
-
-    Files.exists(nestedOutput) shouldBe true
-    Files.exists(nestedOutput.getParent) shouldBe true
-  }
-
-  // Mock bridge tests would require mocking BridgeRegistry
-  // which is complex due to ServiceLoader usage
-
-  "Pipeline.split" should "validate input file exists" in {
-    val nonExistentFile = tempDir.resolve("nonexistent.pdf").toString
-    val outputDir       = tempDir.resolve("output")
-
-    (the[InputFileNotFoundException] thrownBy {
-      Pipeline.split(
-        inputPath = nonExistentFile,
-        outputDir = outputDir.toString
-      )
-    } should have).message(
-      s"Input file 'Input path must be an existing file: $nonExistentFile' does not exist"
-    )
-  }
-
-  it should "create output directory if it doesn't exist" in {
-    val pdfFile   = createMockPdfFile()
-    val outputDir = tempDir.resolve("split-output")
-
-    // This would need a real PDF splitter or mock
-    // For now, just test the directory creation part
-    Try {
-      Pipeline.split(
-        inputPath = pdfFile.toString,
-        outputDir = outputDir.toString
-      )
+  "Pipeline.split" should "preserve fragment names from typed splitters" in {
+    given Splitter[Mime.Pptx, Mime.Pptx] = Splitter { _ =>
+      ZIO.succeed(Chunk(
+        Fragment(Content.fromString("slide1", Mime.pptx), 0, Some("Title Slide")),
+        Fragment(Content.fromString("slide2", Mime.pptx), 1, Some("Agenda"))
+      ))
     }
 
-    // Even if splitting fails, directory should be created
-    Files.exists(outputDir) shouldBe true
+    val input = Content.fromString("pptx", Mime.pptx)
+    val fragments = runZIO(Pipeline.split[Mime.Pptx, Mime.Pptx](input))
+
+    fragments.map(_.name.getOrElse("")) shouldBe Chunk("Title Slide", "Agenda")
   }
 
-  it should "handle unsupported split strategies gracefully" in {
-    val outputDir = tempDir.resolve("output")
-
-    // Try to split a text file by page (unsupported)
-    // With the current implementation, this succeeds and creates a single chunk
-    // because DocumentSplitter has fallback behavior for unsupported strategies
-    val result = Try {
-      Pipeline.split(
-        inputPath = testInputFile.toString,
-        outputDir = outputDir.toString,
-        strategy = Some(splitters.SplitStrategy.Page)
-      )
+  "Pipeline.splitDynamic" should "return dynamic fragments when a DynamicSplitter is in scope" in {
+    given DynamicSplitter[Mime.Zip] = DynamicSplitter { _ =>
+      ZIO.succeed(Chunk(
+        DynamicFragment.fromArray("file1".getBytes("UTF-8"), Mime.plain, 0, Some("a.txt")),
+        DynamicFragment.fromArray("{}".getBytes("UTF-8"), Mime.json, 1, Some("b.json"))
+      ))
     }
 
-    result.isSuccess shouldBe true
-    // Check that output directory has at least one file (the fallback chunk)
-    Files.exists(outputDir) shouldBe true
+    val input = Content.fromString("zip", Mime.zip)
+    val fragments = runZIO(Pipeline.splitDynamic[Mime.Zip](input))
+
+    fragments.size shouldBe 2
+    fragments(0).mime shouldBe Mime.plain
+    fragments(1).mime shouldBe Mime.json
   }
 
-  // Helper methods
-  private def createMockPdfFile(): Path = {
-    val pdfFile = Files.createTempFile(tempDir, "test", ".pdf")
-    // Write minimal PDF header
-    Files.write(pdfFile, "%PDF-1.4".getBytes)
-    pdfFile
+  // ==========================================================================
+  // Streaming Tests
+  // ==========================================================================
+
+  "Pipeline.stream" should "stream conversion results" in {
+    given Conversion[Mime.Plain, Mime.Html] =
+      stringConversion(Mime.html)(t => s"<p>$t</p>")
+
+    val input = Content.fromString("test", Mime.plain)
+    val stream = Pipeline.stream[Mime.Plain, Mime.Html](input)
+
+    val results = runZIO(stream.runCollect)
+    results.size shouldBe 1
   }
 
-  private def createMockExcelFile(): Path = {
-    val xlsxFile = Files.createTempFile(tempDir, "test", ".xlsx")
-    // Write minimal ZIP header (Excel files are ZIP archives)
-    Files.write(xlsxFile, Array[Byte](0x50, 0x4b, 0x03, 0x04))
-    xlsxFile
-  }
+  // ==========================================================================
+  // Batch Operations Tests
+  // ==========================================================================
 
-  "Pipeline configuration" should "respect image conversion settings" in {
-    // This test would verify that image conversion settings are passed through
-    // Would require mocking or actual PDF to image conversion
-    val config = splitters.SplitConfig(
-      strategy = Some(splitters.SplitStrategy.Page),
-      maxImageWidth = 1000,
-      maxImageHeight = 800,
-      imageDpi = 150,
-      jpegQuality = 0.9f
+  "Pipeline.convertAll" should "convert multiple inputs in parallel" in {
+    given Conversion[Mime.Plain, Mime.Html] =
+      stringConversion(Mime.html)(t => s"<p>$t</p>")
+
+    val inputs = Chunk(
+      Content.fromString("one", Mime.plain),
+      Content.fromString("two", Mime.plain),
+      Content.fromString("three", Mime.plain)
     )
 
-    config.maxImageWidth shouldBe 1000
-    config.maxImageHeight shouldBe 800
-    config.imageDpi shouldBe 150
-    config.jpegQuality shouldBe 0.9f
+    val results = runZIO(Pipeline.convertAll[Mime.Plain, Mime.Html](inputs))
+
+    results.size shouldBe 3
+    results.foreach(_.mime shouldBe Mime.html)
   }
 
-  "Pipeline error handling" should "provide meaningful error messages" in {
-    // Test various error scenarios
-    val invalidPath = "/invalid\u0000path/file.txt" // Null character in path
+  "Pipeline.convertAllSeq" should "convert multiple inputs sequentially" in {
+    given Conversion[Mime.Plain, Mime.Json] =
+      stringConversion(Mime.json)(t => s"""{"v":"$t"}""")
 
-    Try {
-      Pipeline.run(invalidPath, testOutputFile.toString)
-    }.failure.exception shouldBe a[Exception]
+    val inputs = Chunk(
+      Content.fromString("a", Mime.plain),
+      Content.fromString("b", Mime.plain)
+    )
+
+    val results = runZIO(Pipeline.convertAllSeq[Mime.Plain, Mime.Json](inputs))
+
+    results.size shouldBe 2
+    results.foreach(_.mime shouldBe Mime.json)
   }
-}
+
+  // ==========================================================================
+  // Pipeline Builder Tests
+  // ==========================================================================
+
+  "Pipeline.from" should "create a pipeline builder" in {
+    given Conversion[Mime.Pdf, Mime.Html] =
+      stringConversion(Mime.html)(t => s"<html>$t</html>")
+
+    val pipeline = Pipeline.from(Mime.pdf).to(Mime.html)
+
+    pipeline.getInputMime shouldBe Mime.pdf
+    pipeline.getOutputMime shouldBe Mime.html
+  }
+
+  "BuiltPipeline.run" should "execute the pipeline" in {
+    given Conversion[Mime.Plain, Mime.Html] =
+      stringConversion(Mime.html)(t => s"<html>$t</html>")
+
+    val pipeline = Pipeline.from(Mime.plain).to(Mime.html)
+    val input = Content.fromString("test", Mime.plain)
+    val result = runZIO(pipeline.run(input))
+
+    new String(result.toArray, "UTF-8") shouldBe "<html>test</html>"
+  }
+
+  "BuiltPipeline.runAll" should "return all results from pipeline" in {
+    given Conversion[Mime.Plain, Mime.Html] =
+      stringConversion(Mime.html)(t => s"<p>$t</p>")
+
+    val pipeline = Pipeline.from(Mime.plain).to(Mime.html)
+    val input = Content.fromString("test", Mime.plain)
+    val results = runZIO(pipeline.runAll(input))
+
+    results.size shouldBe 1
+    new String(results.head.toArray, "UTF-8") should include("<p>test</p>")
+  }
+
+  "BuiltPipeline.runBatch" should "process multiple inputs" in {
+    given Conversion[Mime.Json, Mime.Plain] =
+      stringConversion(Mime.plain)(_ => "converted")
+
+    val pipeline = Pipeline.from(Mime.json).to(Mime.plain)
+    val inputs = Chunk(
+      Content.fromString("{}", Mime.json),
+      Content.fromString("[]", Mime.json)
+    )
+
+    val results = runZIO(pipeline.runBatch(inputs))
+
+    results.size shouldBe 2
+    results.foreach(r => new String(r.toArray, "UTF-8") shouldBe "converted")
+  }
+
+  "BuiltPipeline.getTransform" should "return the underlying transform" in {
+    given Conversion[Mime.Xml, Mime.Json] =
+      stringConversion(Mime.json)(identity)
+
+    val pipeline = Pipeline.from(Mime.xml).to(Mime.json)
+    val transform = pipeline.getTransform
+
+    transform should not be null
+  }
+
+  "BuiltPipeline.runStream" should "produce stream of results" in {
+    given Conversion[Mime.Csv, Mime.Json] =
+      stringConversion(Mime.json)(t => s"""{"data":"$t"}""")
+
+    val pipeline = Pipeline.from(Mime.csv).to(Mime.json)
+    val input = Content.fromString("a,b,c", Mime.csv)
+    val stream = pipeline.runStream(input)
+
+    val results = runZIO(stream.runCollect)
+    results.size should be >= 1
+  }

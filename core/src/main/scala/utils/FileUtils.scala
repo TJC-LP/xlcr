@@ -12,7 +12,7 @@ import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.{ HttpHeaders, Metadata }
 import org.slf4j.LoggerFactory
 
-import types.MimeType
+import com.tjclp.xlcr.types.Mime
 
 /**
  * A central utility object for file operations (reading, writing, extension detection, etc.).
@@ -22,6 +22,11 @@ object FileUtils {
   private lazy val tikaConfig = new TikaConfig()
   private lazy val detector   = tikaConfig.getDetector
   private val logger          = LoggerFactory.getLogger(getClass)
+
+  final case class UnknownExtensionException(path: Path, extension: String)
+      extends IllegalArgumentException(
+        s"Unknown extension '$extension' for path '$path'"
+      )
 
   /**
    * Recursively delete a directory and all its contents.
@@ -150,15 +155,15 @@ object FileUtils {
    * Detect MIME type using Tika. If Tika returns text/plain, fallback to extension-based detection
    * for known file types.
    */
-  def detectMimeType(path: Path): MimeType =
+  def detectMimeType(path: Path): Mime =
     detectMimeTypeWithTika(path) match {
       case Success(mimeType) =>
         logger.debug(
           s"Tika detected MIME type: ${mimeType.mimeType} for file: $path"
         )
-        if (mimeType == MimeType.TextPlain) {
+        if (mimeType == Mime.plain) {
           val extMime = detectMimeTypeFromExtension(path)
-          if (extMime != MimeType.TextPlain) extMime else mimeType
+          if (extMime != Mime.plain) extMime else mimeType
         } else mimeType
       case Failure(exception) =>
         logger.warn(
@@ -174,20 +179,19 @@ object FileUtils {
   def detectMimeTypeFromExtension(
     path: Path,
     strict: Boolean = false
-  ): MimeType = {
+  ): Mime = {
     val extension = getExtension(path.toString)
-    import types.FileType
-
-    FileType.fromExtension(extension).map(_.getMimeType).getOrElse {
+    val mime      = Mime.fromExtension(extension)
+    if (mime == Mime.octet) {
       if (strict) {
         throw new UnknownExtensionException(path, extension)
       } else {
         logger.debug(
           s"No MIME type found for extension of $path, defaulting to text/plain"
         )
-        MimeType.TextPlain
+        Mime.plain
       }
-    }
+    } else mime
   }
 
   /**
@@ -204,7 +208,7 @@ object FileUtils {
   /**
    * Try to use Tika to detect the MIME type. Returns Success or Failure.
    */
-  private def detectMimeTypeWithTika(filePath: Path): Try[MimeType] = Try {
+  private def detectMimeTypeWithTika(filePath: Path): Try[Mime] = Try {
     if (!Files.exists(filePath)) {
       throw new IOException(s"File does not exist: $filePath")
     }
@@ -215,11 +219,11 @@ object FileUtils {
     Using.resource(TikaInputStream.get(filePath)) { tikaStream =>
       val mediaType  = detector.detect(tikaStream, metadata)
       val mimeString = mediaType.toString
-      MimeType.values.find(_.mimeType == mimeString).getOrElse {
+      Mime.fromString(mimeString).getOrElse {
         logger.debug(
           s"Unrecognized MIME type from Tika: $mimeString, falling back to text/plain"
         )
-        MimeType.TextPlain
+        Mime.plain
       }
     }
   }

@@ -15,9 +15,7 @@ XLCR converts between document formats (PDF, DOCX, XLSX, PPTX, HTML, ODS, and mo
 | **core** | `xlcr-core` | Tika text extraction, document splitters (PDF/Excel/PowerPoint/Word/Email/Archive), XLSX-to-ODS conversion |
 | **core-aspose** | `xlcr-core-aspose` | Aspose-powered conversions: PDF/DOCX/XLSX/PPTX/HTML with HIGH priority (commercial license required) |
 | **core-libreoffice** | `xlcr-core-libreoffice` | LibreOffice-powered conversions: DOC/XLS/PPT/ODS to PDF as open-source fallback |
-| **core-spark** | `xlcr-core-spark` | Spark DataFrame integration for batch document processing *(deprecated — removal in 0.3.0)* |
-| **xlcr** | `xlcr` | Unified CLI with compile-time transform discovery and automatic backend fallback (Scala 3 only) |
-| **server** | `xlcr-server` | HTTP REST API for document conversion and splitting (Scala 3 only) |
+| **xlcr** | `xlcr` | Unified CLI with compile-time transform discovery, HTTP server, and automatic backend fallback (Scala 3 only) |
 
 Backend selection is automatic: Aspose (HIGH priority) > LibreOffice (DEFAULT) > Core. You can also select a backend explicitly with `--backend aspose` or `--backend libreoffice`.
 
@@ -61,7 +59,7 @@ libraryDependencies ++= Seq(
 )
 ```
 
-Cross-published for **Scala 3.3.4** and **Scala 2.13.17**.
+Published for **Scala 3.3.4**.
 
 ## CLI Usage
 
@@ -127,10 +125,10 @@ XLCR exposes document conversion as a REST API:
 
 ```bash
 # Start the server
-./mill 'xlcr[3.3.4].run' server start --port 8080
+./mill xlcr.run server start --port 8080
 
 # Or with custom port
-./mill 'xlcr[3.3.4].run' server start --port 9000
+./mill xlcr.run server start --port 9000
 ```
 
 ### Endpoints
@@ -166,9 +164,8 @@ curl http://localhost:8080/capabilities
 
 ```bash
 ./mill __.compile                    # Compile all modules
-./mill __[3.3.4].test                # Run all tests (Scala 3)
-./mill __[2.13.17].test              # Run all tests (Scala 2.13)
-./mill core[3.3.4].test              # Run tests for a specific module
+./mill __.test                       # Run all tests
+./mill core.test                     # Run tests for a specific module
 ./mill __.checkFormat                # Check code formatting
 ./mill __.reformat                   # Fix formatting
 ./mill __.assembly                   # Build fat JARs

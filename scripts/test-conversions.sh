@@ -60,7 +60,7 @@ if [[ "$MODE" == "agent" ]]; then
     if [[ -z "$JAVA_CMD" ]]; then
         echo "ERROR: Could not find GraalVM java binary for tracing agent"
         echo "Searched: /root/.cache/coursier/ and /xlcr/out/"
-        echo "Ensure 'mill xlcr[3.3.4].nativeImageTool' was run during build."
+        echo "Ensure 'mill xlcr.nativeImageTool' was run during build."
         exit 1
     fi
     echo "Found GraalVM java: $JAVA_CMD"
@@ -70,7 +70,7 @@ ASSEMBLY_JAR=$(find /xlcr/out -path '*/assembly.dest/out.jar' -type f 2>/dev/nul
 
 if [[ -z "$ASSEMBLY_JAR" ]] && [[ "$RUNNER" != "native" ]]; then
     echo "ERROR: Assembly JAR not found in /xlcr/out/"
-    echo "Build with: mill 'xlcr[3.3.4].assembly'"
+    echo "Build with: mill xlcr.assembly"
     exit 1
 fi
 

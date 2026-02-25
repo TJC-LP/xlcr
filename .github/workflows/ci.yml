@@ -40,7 +40,6 @@ jobs:
     needs: [ci-image]
     strategy:
       matrix:
-        scala: [3.3.4, 2.13.17]
         java: [temurin@17, temurin@21, temurin@25]
     runs-on: ubuntu-latest
     container:
@@ -81,30 +80,18 @@ jobs:
           path: |
             ~/.cache/coursier
             ~/.cache/mill
-          key: mill-${{ matrix.scala }}-${{ matrix.java }}-${{ hashFiles('build.mill', '**/package.mill', '.mill-version') }}
+          key: mill-${{ matrix.java }}-${{ hashFiles('build.mill', '**/package.mill', '.mill-version') }}
           restore-keys: |
-            mill-${{ matrix.scala }}-${{ matrix.java }}-
-            mill-${{ matrix.scala }}-
+            mill-${{ matrix.java }}-
 
       - name: Check Formatting
         run: ./mill __.checkFormat
 
       - name: Compile project
-        run: ./mill __[${{ matrix.scala }}].compile
+        run: ./mill __.compile
 
       - name: Run tests
-        if: matrix.java != 'temurin@25'
-        run: ./mill __[${{ matrix.scala }}].test
-
-      - name: Run tests (skip Spark — no Java 25 support yet)
-        if: matrix.java == 'temurin@25'
-        run: |
-          ./mill 'core[${{ matrix.scala }}].test'
-          ./mill 'core-aspose[${{ matrix.scala }}].test'
-          ./mill 'core-libreoffice[${{ matrix.scala }}].test'
-          if [ "${{ matrix.scala }}" = "3.3.4" ]; then
-            ./mill 'xlcr[3.3.4].test'
-          fi
+        run: ./mill __.test
 
   publish:
     name: Publish Artifacts
@@ -140,9 +127,15 @@ jobs:
     name: Create Release
     needs: [build]
     if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
+    container:
+      image: ghcr.io/tjc-lp/xlcr:ci
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -157,7 +150,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 25
 
       - name: Cache Coursier and Mill
         uses: actions/cache@v4
@@ -168,13 +161,20 @@ jobs:
           key: mill-release-${{ hashFiles('build.mill', '**/package.mill', '.mill-version') }}
 
       - name: Build assembly JAR
-        run: ./mill 'xlcr[3.3.4].assembly'
+        run: ./mill xlcr.assembly
+
+      - name: Build native image
+        run: ./mill xlcr.nativeImage
 
       - name: Stage release artifacts
-        run: cp out/xlcr/3.3.4/assembly.dest/out.jar "xlcr-${{ steps.version.outputs.version }}.jar"
+        run: |
+          cp out/xlcr/assembly.dest/out.jar "xlcr-${{ steps.version.outputs.version }}.jar"
+          cp out/xlcr/nativeImage.dest/native-executable "xlcr-${{ steps.version.outputs.version }}-linux-amd64"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: xlcr-${{ steps.version.outputs.version }}.jar
+          files: |
+            xlcr-${{ steps.version.outputs.version }}.jar
+            xlcr-${{ steps.version.outputs.version }}-linux-amd64
           generate_release_notes: true

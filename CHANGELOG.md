@@ -5,6 +5,17 @@ All notable changes to XLCR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- `core-spark` module and all Spark pipeline sources/tests/docs.
+- All v1 architecture: bridges, splitters, parsers, renderers, registries, legacy CLI, pipeline system.
+- Scala 2.13.17 cross-build support.
+
+### Changed
+- Project now targets Scala 3.3.4 only.
+- Simplified build: removed cross-compilation — `./mill __.compile` and `./mill __.test` just work (no `[3.3.4]` specifier needed).
+
 ## [0.2.2] - 2026-02-25
 
 ### Added
