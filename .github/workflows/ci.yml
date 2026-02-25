@@ -123,53 +123,56 @@ jobs:
           MILL_PGP_SECRET_BASE64: ${{ secrets.PGP_SECRET }}
           MILL_PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
 
-  release:
-    name: Create Release
+  # Build JAR + native image on Modal (offloads heavy compilation to Modal cloud)
+  modal-build:
+    name: Build on Modal
     needs: [build]
     if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest-16-cores
-    container:
-      image: ghcr.io/tjc-lp/xlcr:ci
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    permissions:
-      contents: write
-      packages: read
+    runs-on: ubuntu-latest
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
 
       - name: Extract version from tag
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 25
+      - name: Build on Modal
+        run: uv run scripts/modal_build.py --tag v${{ steps.version.outputs.version }}
 
-      - name: Cache Coursier and Mill
-        uses: actions/cache@v4
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
+          name: xlcr-release
           path: |
-            ~/.cache/coursier
-            ~/.cache/mill
-          key: mill-release-${{ hashFiles('build.mill', '**/package.mill', '.mill-version') }}
+            artifacts/xlcr.jar
+            artifacts/xlcr-native
 
-      - name: Build assembly JAR
-        run: ./mill xlcr.assembly
+  release:
+    name: Create Release
+    needs: [modal-build]
+    if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Build native image
-        run: ./mill xlcr.nativeImage
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: xlcr-release
 
       - name: Stage release artifacts
         run: |
-          cp out/xlcr/assembly.dest/out.jar "xlcr-${{ steps.version.outputs.version }}.jar"
-          cp out/xlcr/nativeImage.dest/native-executable "xlcr-${{ steps.version.outputs.version }}-linux-amd64"
+          cp xlcr.jar "xlcr-${{ steps.version.outputs.version }}.jar"
+          cp xlcr-native "xlcr-${{ steps.version.outputs.version }}-linux-amd64"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -181,14 +184,20 @@ jobs:
 
   publish-docker:
     name: Publish Runtime Docker Image
-    needs: [build]
+    needs: [modal-build]
     if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest-16-cores
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: xlcr-release
+          path: artifacts
 
       - uses: docker/login-action@v3
         with:
@@ -205,7 +214,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          target: runtime
+          file: Dockerfile.runtime
           push: true
           tags: |
             ghcr.io/tjc-lp/xlcr:latest
