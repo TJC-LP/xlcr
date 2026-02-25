@@ -29,12 +29,13 @@ object SyncTransforms {
       moduleOpt.flatMap(module => Try(module.getClass.getMethod(methodName, argTypes*)).toOption)
 
     private val contentClass = classOf[Content[?]]
-    private val mimeClass = classOf[String]
+    private val mimeClass    = classOf[String]
     private val optionsClass = classOf[ConvertOptions]
 
     lazy val canConvertMethod: Option[Method] = method("canConvert", mimeClass, mimeClass)
-    lazy val canSplitMethod: Option[Method] = method("canSplit", mimeClass)
-    lazy val convertMethod: Option[Method] = method("convert", contentClass, mimeClass, optionsClass)
+    lazy val canSplitMethod: Option[Method]   = method("canSplit", mimeClass)
+    lazy val convertMethod: Option[Method] =
+      method("convert", contentClass, mimeClass, optionsClass)
     lazy val splitMethod: Option[Method] =
       method("split", contentClass, optionsClass).orElse(method("split", contentClass))
 
@@ -64,9 +65,12 @@ object SyncTransforms {
         }
       }
 
-    private def invokeEffect[A](methodOpt: Option[Method], args: AnyRef*): Option[ZIO[Any, TransformError, A]] =
+    private def invokeEffect[A](
+      methodOpt: Option[Method],
+      args: AnyRef*
+    ): Option[ZIO[Any, TransformError, A]] =
       for {
-        m <- methodOpt
+        m      <- methodOpt
         module <- moduleOpt
         effect <- Try(m.invoke(module, args*).asInstanceOf[ZIO[Any, TransformError, A]]).toOption
       } yield effect
@@ -93,8 +97,8 @@ object SyncTransforms {
 
   /** Convert document bytes from one MIME type to another. */
   def convert(input: Array[Byte], inputMime: String, outputMime: String): Array[Byte] = {
-    val from = normalizeMime(inputMime)
-    val to = normalizeMime(outputMime)
+    val from    = normalizeMime(inputMime)
+    val to      = normalizeMime(outputMime)
     val content = Content(input, from)
 
     if (from == to) input
@@ -124,10 +128,10 @@ object SyncTransforms {
     new String(convert(input, inputMime, outputMime), java.nio.charset.StandardCharsets.UTF_8)
 
   /**
-    * Split document bytes into fragments as tuples: (bytes, mime, index, label, total).
-    */
+   * Split document bytes into fragments as tuples: (bytes, mime, index, label, total).
+   */
   def split(input: Array[Byte], inputMime: String): Seq[(Array[Byte], String, Int, String, Int)] = {
-    val mime = normalizeMime(inputMime)
+    val mime    = normalizeMime(inputMime)
     val content = Content(input, mime)
 
     val asposeEffect = asposeBackend
@@ -147,7 +151,7 @@ object SyncTransforms {
           XlcrTransforms.split(content)
       }
 
-    val fragments = unsafeRun(effect)
+    val fragments    = unsafeRun(effect)
     val defaultTotal = fragments.length
 
     fragments.map { fragment =>
@@ -172,7 +176,7 @@ object SyncTransforms {
   /** Find the effective implementation name for conversion lineage tracking. */
   def findConversionImpl(inputMime: String, outputMime: String): Option[String] = {
     val from = normalizeMime(inputMime)
-    val to = normalizeMime(outputMime)
+    val to   = normalizeMime(outputMime)
     if (from == to) Some("IdentityTransform")
     else if (asposeBackend.canConvert(from, to)) Some(asposeBackend.name)
     else if (libreofficeBackend.canConvert(from, to)) Some(libreofficeBackend.name)

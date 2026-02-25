@@ -181,7 +181,7 @@ object FileUtils {
     strict: Boolean = false
   ): Mime = {
     val extension = getExtension(path.toString)
-    val mime = Mime.fromExtension(extension)
+    val mime      = Mime.fromExtension(extension)
     if (mime == Mime.octet) {
       if (strict) {
         throw new UnknownExtensionException(path, extension)

@@ -2,7 +2,16 @@ package com.tjclp.xlcr.v2.cli
 
 import zio.{ Chunk, ZIO }
 
-import com.tjclp.xlcr.v2.aspose.{ AsposeTransforms, AsposeLicenseV2, Words, Cells, Email, Slides, Pdf, Zip }
+import com.tjclp.xlcr.v2.aspose.{
+  AsposeLicenseV2,
+  AsposeTransforms,
+  Cells,
+  Email,
+  Pdf,
+  Slides,
+  Words,
+  Zip
+}
 import com.tjclp.xlcr.v2.transform.TransformError
 import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, DynamicFragment, Mime }
 
