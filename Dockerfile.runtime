@@ -1,0 +1,64 @@
+# Dockerfile.runtime
+# Lightweight runtime image using pre-built artifacts from Modal CI.
+# No compilation — just packages pre-built JAR + native binary with LibreOffice and GraalVM libs.
+#
+# Expects artifacts/ directory with:
+#   artifacts/xlcr.jar      - Assembly JAR
+#   artifacts/xlcr-native   - GraalVM native binary
+#
+# Usage:
+#   docker build -f Dockerfile.runtime -t ghcr.io/tjc-lp/xlcr:latest .
+
+FROM ubuntu:24.04
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    file \
+    python3 \
+    python3-pip \
+    tesseract-ocr \
+    imagemagick \
+    libreoffice-core \
+    libreoffice-writer \
+    libreoffice-calc \
+    libreoffice-impress \
+    && pip3 install --break-system-packages openpyxl python-docx fpdf2 Pillow \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install GraalVM CE (needed by native binary for AWT/font support)
+ARG GRAALVM_VERSION=25.0.2
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "arm64" ]; then GRAAL_ARCH="aarch64"; else GRAAL_ARCH="x64"; fi && \
+    curl -fL "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-${GRAALVM_VERSION}/graalvm-community-jdk-${GRAALVM_VERSION}_linux-${GRAAL_ARCH}_bin.tar.gz" \
+      | tar xz -C /opt && \
+    ln -s /opt/graalvm-community-openjdk-* /opt/graalvm
+
+ENV JAVA_HOME=/opt/graalvm
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+ENV LD_LIBRARY_PATH="${JAVA_HOME}/lib:${JAVA_HOME}/lib/server"
+
+WORKDIR /xlcr
+
+# Copy pre-built artifacts
+COPY artifacts/xlcr.jar /xlcr/out/xlcr/assembly.dest/out.jar
+COPY artifacts/xlcr-native /xlcr/xlcr-native
+RUN chmod +x /xlcr/xlcr-native
+
+# Copy test script and generate fixtures
+COPY scripts/test-conversions.sh /xlcr/scripts/test-conversions.sh
+RUN chmod +x /xlcr/scripts/test-conversions.sh
+
+COPY scripts/testdata/ /xlcr/testdata/
+RUN python3 /xlcr/testdata/gen-test-xlsx.py /xlcr/testdata/test.xlsx && \
+    python3 /xlcr/testdata/gen-test-docx.py /xlcr/testdata/test.docx && \
+    python3 /xlcr/testdata/gen-test-pdf.py /xlcr/testdata/test.pdf && \
+    python3 /xlcr/testdata/gen-test-eml.py /xlcr/testdata/test.eml && \
+    python3 /xlcr/testdata/gen-test-csv.py /xlcr/testdata/test.csv && \
+    python3 /xlcr/testdata/gen-test-zip.py /xlcr/testdata/test.zip && \
+    python3 /xlcr/testdata/gen-test-images.py /xlcr/testdata
+
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 --start-period=30s \
+  CMD curl -sf http://localhost:8080/health || exit 1
+
+CMD ["/xlcr/scripts/test-conversions.sh", "--mode", "both"]
