@@ -1,9 +1,9 @@
 package com.tjclp.xlcr.core
 
-import zio.{ Chunk, ZIO }
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
 
-import com.tjclp.xlcr.transform.{ TransformError, UnsupportedConversion }
-import com.tjclp.xlcr.types.{ Content, DynamicFragment, Mime }
+import zio.*
 
 /**
  * Stateless dispatch object for XLCR Core transforms.
@@ -192,3 +192,4 @@ object XlcrTransforms:
     MSG,
     ZIP
   )
+end XlcrTransforms

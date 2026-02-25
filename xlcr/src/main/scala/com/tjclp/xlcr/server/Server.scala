@@ -1,9 +1,8 @@
 package com.tjclp.xlcr.server
 
-import zio._
-import zio.http._
-
 import com.tjclp.xlcr.server.routes.Routes
+
+import zio.*
 
 /**
  * XLCR HTTP Server.
@@ -77,3 +76,5 @@ object Server:
       ),
       zio.http.Server.live
     )
+  end start
+end Server

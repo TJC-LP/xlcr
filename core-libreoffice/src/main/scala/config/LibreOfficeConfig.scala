@@ -4,7 +4,7 @@ package config
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.*
 
 import org.jodconverter.core.office.OfficeManager
 import org.jodconverter.local.LocalConverter
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
  *   - Automatic cleanup on JVM shutdown
  *   - Thread-safe singleton pattern
  */
-object LibreOfficeConfig {
+object LibreOfficeConfig:
 
   private val logger     = LoggerFactory.getLogger(getClass)
   private val managerRef = new AtomicReference[Option[OfficeManager]](None)
@@ -43,7 +43,7 @@ object LibreOfficeConfig {
    * avoid conflicts when multiple test modules run LibreOffice concurrently.
    */
   private val DefaultPort = 2002
-  private def port: Int =
+  private def port: Int   =
     Option(System.getProperty("xlcr.libreoffice.port"))
       .flatMap(s => scala.util.Try(s.toInt).toOption)
       .getOrElse(DefaultPort)
@@ -65,16 +65,14 @@ object LibreOfficeConfig {
    *   Status message indicating availability and location
    */
   def availabilityStatus(): String =
-    detectLibreOfficeHome() match {
+    detectLibreOfficeHome() match
       case Some(home) =>
-        if (home.exists() && home.isDirectory) {
+        if home.exists() && home.isDirectory then
           s"Available at ${home.getAbsolutePath}"
-        } else {
+        else
           s"Configured but not found at ${home.getAbsolutePath}"
-        }
       case None =>
         "Not found - set LIBREOFFICE_HOME or install in standard location"
-    }
 
   /**
    * Detect LibreOffice home directory without throwing exceptions. Checks environment variable
@@ -83,35 +81,32 @@ object LibreOfficeConfig {
    * @return
    *   Some(File) if LibreOffice found, None otherwise
    */
-  def detectLibreOfficeHome(): Option[File] = {
+  def detectLibreOfficeHome(): Option[File] =
     // Check environment variable first
     val homeFromEnv = Option(System.getenv(LibreOfficeHomeEnvVar))
       .filter(_.nonEmpty)
       .map(new File(_))
       .filter(f => f.exists() && f.isDirectory)
 
-    if (homeFromEnv.isDefined) {
+    if homeFromEnv.isDefined then
       return homeFromEnv
-    }
 
     // Try platform-specific defaults
-    val osName = System.getProperty("os.name").toLowerCase
-    val defaultPath = if (osName.contains("mac")) {
+    val osName      = System.getProperty("os.name").toLowerCase
+    val defaultPath = if osName.contains("mac") then
       DefaultLibreOfficeHome
-    } else if (osName.contains("win")) {
+    else if osName.contains("win") then
       "C:\\Program Files\\LibreOffice"
-    } else {
+    else
       // Linux
       "/usr/lib/libreoffice"
-    }
 
     val defaultDir = new File(defaultPath)
-    if (defaultDir.exists() && defaultDir.isDirectory) {
+    if defaultDir.exists() && defaultDir.isDirectory then
       Some(defaultDir)
-    } else {
+    else
       None
-    }
-  }
+  end detectLibreOfficeHome
 
   /**
    * Gets or initializes the OfficeManager instance. Thread-safe lazy initialization with automatic
@@ -123,20 +118,18 @@ object LibreOfficeConfig {
    *   if LibreOffice cannot be initialized
    */
   def getOfficeManager(): OfficeManager =
-    managerRef.get() match {
+    managerRef.get() match
       case Some(manager) => manager
-      case None =>
+      case None          =>
         synchronized {
-          managerRef.get() match {
+          managerRef.get() match
             case Some(manager) => manager
-            case None =>
+            case None          =>
               val manager = initializeOfficeManager()
               managerRef.set(Some(manager))
               registerShutdownHook(manager)
               manager
-          }
         }
-    }
 
   /**
    * Creates a LocalConverter instance for document conversions. This is the main API for converting
@@ -159,7 +152,7 @@ object LibreOfficeConfig {
    * @throws RuntimeException
    *   if initialization fails
    */
-  private def initializeOfficeManager(): OfficeManager = {
+  private def initializeOfficeManager(): OfficeManager =
     logger.info("Initializing LibreOffice OfficeManager...")
 
     val officeHome = getLibreOfficeHome()
@@ -179,17 +172,17 @@ object LibreOfficeConfig {
       manager.start()
       logger.info("LibreOffice OfficeManager initialized successfully")
       manager
-    } match {
+    } match
       case Success(manager) => manager
-      case Failure(ex) =>
+      case Failure(ex)      =>
         logger.error("Failed to initialize LibreOffice OfficeManager", ex)
         throw new RuntimeException(
           s"Failed to initialize LibreOffice. Please ensure LibreOffice is installed at $officeHome " +
             s"or set the $LibreOfficeHomeEnvVar environment variable to the correct path.",
           ex
         )
-    }
-  }
+    end match
+  end initializeOfficeManager
 
   /**
    * Determines the LibreOffice installation directory. Checks environment variable first, then
@@ -202,18 +195,17 @@ object LibreOfficeConfig {
    *   if LibreOffice home cannot be found
    */
   private def getLibreOfficeHome(): File =
-    detectLibreOfficeHome() match {
+    detectLibreOfficeHome() match
       case Some(home) =>
         logger.info(s"Using LibreOffice home: ${home.getAbsolutePath}")
         home
       case None =>
-        val tried = s"Tried: LIBREOFFICE_HOME environment variable and platform default"
+        val tried = "Tried: LIBREOFFICE_HOME environment variable and platform default"
         logger.error(s"LibreOffice home not found. $tried")
         throw new RuntimeException(
           s"LibreOffice installation not found. $tried. " +
-            s"Please install LibreOffice or set LIBREOFFICE_HOME environment variable."
+            "Please install LibreOffice or set LIBREOFFICE_HOME environment variable."
         )
-    }
 
   /**
    * Registers a JVM shutdown hook to gracefully stop the OfficeManager. This ensures LibreOffice
@@ -228,10 +220,9 @@ object LibreOfficeConfig {
         logger.info("Shutting down LibreOffice OfficeManager...")
         manager.stop()
         logger.info("LibreOffice OfficeManager stopped successfully")
-      } match {
+      } match
         case Failure(ex) => logger.error("Error stopping LibreOffice OfficeManager", ex)
         case _           => ()
-      }
     ))
 
   /**
@@ -246,10 +237,9 @@ object LibreOfficeConfig {
         logger.info("Manually shutting down LibreOffice OfficeManager...")
         manager.stop()
         logger.info("LibreOffice OfficeManager stopped successfully")
-      } match {
+      } match
         case Failure(ex) => logger.error("Error stopping LibreOffice OfficeManager", ex)
         case _           => ()
-      }
       managerRef.set(None)
     }
   }
@@ -262,4 +252,4 @@ object LibreOfficeConfig {
    */
   def isRunning(): Boolean =
     managerRef.get().exists(_.isRunning)
-}
+end LibreOfficeConfig

@@ -1,11 +1,11 @@
 package com.tjclp.xlcr.pipeline
 
-import zio.{ Chunk, ZIO }
-import zio.stream.ZStream
-
 import com.tjclp.xlcr.registry.CanTransform
-import com.tjclp.xlcr.transform.{ DynamicSplitter, Splitter, Transform, TransformError }
-import com.tjclp.xlcr.types.{ Content, DynamicFragment, Fragment, Mime }
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
+
+import zio.*
+import zio.stream.ZStream
 
 /**
  * High-level Pipeline API for the v2 Transform algebra.
@@ -142,6 +142,7 @@ object Pipeline:
   ): ZIO[Any, TransformError, Content[O]] =
     ZIO.fromOption(results.headOption)
       .orElseFail(TransformError.validation(s"$transformName produced no outputs"))
+end Pipeline
 
 /**
  * Fluent builder for constructing multi-step transform pipelines.
@@ -169,6 +170,7 @@ final class PipelineBuilder[I <: Mime, C <: Mime] private (
    */
   def to[O <: Mime](mime: O)(using ct: CanTransform[C, O]): BuiltPipeline[I, O] =
     new BuiltPipeline(inputMime, mime, transform >>> ct.transform)
+end PipelineBuilder
 
 object PipelineBuilder:
   private[pipeline] def initial[M <: Mime](mime: M): PipelineBuilder[M, M] =
@@ -226,3 +228,4 @@ final class BuiltPipeline[I <: Mime, O <: Mime] private[pipeline] (
    * Get the output MIME type.
    */
   def getOutputMime: O = outputMime
+end BuiltPipeline

@@ -75,6 +75,7 @@ final case class Content[M <: Mime](
   /** Create a copy with different data from a byte array */
   def withData(newData: Array[Byte]): Content[M] =
     copy(data = Chunk.fromArray(newData))
+end Content
 
 object Content:
 
@@ -132,3 +133,4 @@ object Content:
   /** Create empty Content of a specific MIME type */
   def empty[M <: Mime](mime: M): Content[M] =
     Content(Chunk.empty, mime)
+end Content

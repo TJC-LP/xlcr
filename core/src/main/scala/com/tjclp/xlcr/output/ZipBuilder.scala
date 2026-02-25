@@ -1,7 +1,7 @@
 package com.tjclp.xlcr.output
 
-import java.io.{ ByteArrayOutputStream, OutputStream }
-import java.util.zip.{ ZipEntry, ZipOutputStream }
+import java.io.*
+import java.util.zip.*
 
 import com.tjclp.xlcr.types.DynamicFragment
 
@@ -88,6 +88,8 @@ object ZipBuilder:
         zos.closeEntry()
       }
     finally zos.close()
+    end try
+  end writeZip
 
   /**
    * Write a ZIP archive from a ZIO Chunk to an output stream.
@@ -105,3 +107,4 @@ object ZipBuilder:
     defaultExt: String
   ): Unit =
     writeZip(fragments.toList, out, defaultExt)
+end ZipBuilder

@@ -1,11 +1,11 @@
 package com.tjclp.xlcr.cli
 
-import zio.{ Chunk, ZIO }
-
 import com.tjclp.xlcr.core.XlcrTransforms
 import com.tjclp.xlcr.libreoffice.LibreOfficeTransforms
-import com.tjclp.xlcr.transform.{ ResourceError, TransformError, UnsupportedConversion }
-import com.tjclp.xlcr.types.{ Content, ConvertOptions, DynamicFragment, Mime }
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
+
+import zio.*
 
 /**
  * Unified transform dispatcher with automatic fallback.
@@ -122,3 +122,4 @@ object UnifiedTransforms:
     BackendWiring.asposeCanSplit(mime) ||
       LibreOfficeTransforms.canSplit(mime) ||
       XlcrTransforms.canSplit(mime)
+end UnifiedTransforms

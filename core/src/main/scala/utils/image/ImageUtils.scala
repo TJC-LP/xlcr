@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 /**
  * Utility functions for image processing across both Aspose and non-Aspose implementations.
  */
-object ImageUtils {
+object ImageUtils:
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -34,11 +34,10 @@ object ImageUtils {
     maxWidth: Int,
     maxHeight: Int,
     logScaling: Boolean = true
-  ): (Int, Int) = {
+  ): (Int, Int) =
     // If dimensions are already smaller than max, keep them as is
-    if (originalWidth <= maxWidth && originalHeight <= maxHeight) {
+    if originalWidth <= maxWidth && originalHeight <= maxHeight then
       return (originalWidth, originalHeight)
-    }
 
     // Calculate scale factor to fit within bounds while maintaining aspect ratio
     val widthScale  = maxWidth.toDouble / originalWidth
@@ -48,14 +47,13 @@ object ImageUtils {
     val newWidth  = Math.max(1, Math.round(originalWidth * scale).toInt)
     val newHeight = Math.max(1, Math.round(originalHeight * scale).toInt)
 
-    if (logScaling) {
+    if logScaling then
       logger.debug(
         s"Scaling image from ${originalWidth}x${originalHeight} to ${newWidth}x${newHeight}"
       )
-    }
 
     (newWidth, newHeight)
-  }
+  end calculateOptimalDimensions
 
   /**
    * Scale an image to fit within maximum dimensions while preserving aspect ratio. Uses bilinear
@@ -74,7 +72,7 @@ object ImageUtils {
     image: BufferedImage,
     maxWidth: Int,
     maxHeight: Int
-  ): BufferedImage = {
+  ): BufferedImage =
     val originalWidth  = image.getWidth
     val originalHeight = image.getHeight
 
@@ -87,9 +85,8 @@ object ImageUtils {
     )
 
     // If no resizing needed, return the original
-    if (newWidth == originalWidth && newHeight == originalHeight) {
+    if newWidth == originalWidth && newHeight == originalHeight then
       return image
-    }
 
     // Create a new BufferedImage with the target dimensions
     val resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB)
@@ -119,5 +116,5 @@ object ImageUtils {
     g.dispose()
 
     resizedImage
-  }
-}
+  end resizeImage
+end ImageUtils

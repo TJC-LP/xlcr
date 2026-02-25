@@ -32,6 +32,7 @@ final case class Fragment[M <: Mime](
   /** Get the name or a default based on index */
   def nameOrDefault(prefix: String = "part"): String =
     name.getOrElse(s"$prefix-${displayIndex}")
+end Fragment
 
 /**
  * A DynamicFragment represents a piece of a split document where the output MIME type is determined
@@ -73,6 +74,7 @@ final case class DynamicFragment(
     if content.mime == expectedMime then
       Some(Fragment(content.asInstanceOf[Content[M]], index, name))
     else None
+end DynamicFragment
 
 object Fragment:
   /** Create a Fragment with auto-populated metadata */
@@ -97,6 +99,7 @@ object Fragment:
     name: Option[String] = None
   ): Fragment[M] =
     Fragment(Content(data, mime), index, name)
+end Fragment
 
 object DynamicFragment:
   /** Create a DynamicFragment with auto-populated metadata */
@@ -129,3 +132,4 @@ object DynamicFragment:
       fragment.index,
       fragment.name
     )
+end DynamicFragment

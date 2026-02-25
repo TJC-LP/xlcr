@@ -2,10 +2,10 @@ package com.tjclp.xlcr.cli
 
 import java.nio.file.Path
 
+import com.tjclp.xlcr.types.*
+
 import cats.syntax.all.*
 import com.monovore.decline.*
-
-import com.tjclp.xlcr.types.{ ConvertOptions, PaperSize }
 
 /**
  * Decline-based CLI commands for XLCR v2.
@@ -148,7 +148,7 @@ object Commands:
       case "aspose"      => Backend.Aspose.validNel
       case "libreoffice" => Backend.LibreOffice.validNel
       case "xlcr"        => Backend.Xlcr.validNel
-      case other =>
+      case other         =>
         s"Unknown backend: $other (expected: aspose, libreoffice, xlcr)".invalidNel
 
   // ============================================================================
@@ -335,3 +335,4 @@ object Commands:
   /** Parse command line arguments */
   def parse(args: Seq[String]): Either[Help, CliCommand] =
     mainCommand.parse(args)
+end Commands

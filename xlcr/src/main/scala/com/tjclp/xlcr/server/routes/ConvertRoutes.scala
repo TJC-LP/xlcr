@@ -1,11 +1,11 @@
 package com.tjclp.xlcr.server.routes
 
-import zio._
-import zio.http._
-
 import com.tjclp.xlcr.cli.UnifiedTransforms
-import com.tjclp.xlcr.server.http.{ HttpError, RequestHandler, ResponseBuilder }
+import com.tjclp.xlcr.server.http.*
 import com.tjclp.xlcr.transform.TransformError
+
+import zio.*
+import zio.http.*
 
 /**
  * Routes for document conversion.
@@ -58,3 +58,4 @@ object ConvertRoutes:
         .convert(content, targetMime)
         .mapError(HttpError.fromTransformError)
     yield ResponseBuilder.fromContent(result)
+end ConvertRoutes

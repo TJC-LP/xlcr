@@ -59,7 +59,7 @@ libraryDependencies ++= Seq(
 )
 ```
 
-Published for **Scala 3.3.4**.
+Published for **Scala 3.8.2**.
 
 ## CLI Usage
 

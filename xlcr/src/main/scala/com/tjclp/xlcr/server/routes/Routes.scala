@@ -1,11 +1,11 @@
 package com.tjclp.xlcr.server.routes
 
-import zio._
-import zio.http._
-import zio.json._
-
 import com.tjclp.xlcr.server.http.ResponseBuilder
-import com.tjclp.xlcr.server.json.{ Codecs, HealthResponse }
+import com.tjclp.xlcr.server.json.*
+
+import zio.*
+import zio.http.*
+import zio.json.*
 
 /**
  * Composed routes for the XLCR HTTP server.
@@ -51,5 +51,7 @@ object Routes:
    * All routes for the server.
    */
   val all: zio.http.Routes[Any, Response] =
-    healthRoutes ++ ConvertRoutes.routes ++ SplitRoutes.routes ++ InfoRoutes
-      .routes ++ CapabilitiesRoutes.routes
+    healthRoutes ++ ConvertRoutes.routes ++ SplitRoutes.routes ++
+      InfoRoutes
+        .routes ++ CapabilitiesRoutes.routes
+end Routes

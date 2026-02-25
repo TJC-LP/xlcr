@@ -1,9 +1,9 @@
 package com.tjclp.xlcr.transform
 
-import zio.{ Chunk, ZIO }
-import zio.stream.ZStream
+import com.tjclp.xlcr.types.*
 
-import com.tjclp.xlcr.types.{ Content, DynamicFragment, Fragment, Mime }
+import zio.*
+import zio.stream.ZStream
 
 /**
  * A Splitter is a 1:N Transform that splits content into multiple fragments of the same output MIME
@@ -52,6 +52,7 @@ trait Splitter[I <: Mime, O <: Mime] extends Transform[I, O]:
    */
   def streamFragments(input: Content[I]): ZStream[Any, TransformError, Fragment[O]] =
     ZStream.fromIterableZIO(split(input))
+end Splitter
 
 object Splitter:
 
@@ -98,6 +99,7 @@ object Splitter:
     new Splitter[I, O]:
       override def split(input: Content[I]): ZIO[Any, TransformError, Chunk[Fragment[O]]] =
         ZIO.attempt(f(input)).mapError(TransformError.fromThrowable)
+end Splitter
 
 /**
  * A DynamicSplitter is a 1:N Transform that splits content into multiple fragments where each
@@ -143,6 +145,7 @@ trait DynamicSplitter[I <: Mime] extends Transform[I, Mime]:
    */
   def streamDynamicFragments(input: Content[I]): ZStream[Any, TransformError, DynamicFragment] =
     ZStream.fromIterableZIO(splitDynamic(input))
+end DynamicSplitter
 
 object DynamicSplitter:
 
@@ -193,3 +196,4 @@ object DynamicSplitter:
       override def splitDynamic(input: Content[I])
         : ZIO[Any, TransformError, Chunk[DynamicFragment]] =
         ZIO.attempt(f(input)).mapError(TransformError.fromThrowable)
+end DynamicSplitter

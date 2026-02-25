@@ -4,23 +4,25 @@ import java.lang.reflect.Method
 
 import scala.util.Try
 
-import zio.{ Chunk, Runtime, Unsafe, ZIO }
-
 import com.tjclp.xlcr.core.XlcrTransforms
-import com.tjclp.xlcr.transform.{ ResourceError, TransformError, UnsupportedConversion }
-import com.tjclp.xlcr.types.{ Content, ConvertOptions, DynamicFragment, Mime }
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
+
+import zio.*
 
 /** Synchronous facade for JVM-only consumers (for example Spark UDFs). */
-object SyncTransforms {
+object SyncTransforms:
 
   private val runtime = Runtime.default
 
   private final case class ReflectBackend(
     name: String,
     moduleClassName: String
-  ) {
+  ):
     lazy val moduleOpt: Option[AnyRef] =
-      Try(Class.forName(moduleClassName).getField("MODULE$").get(null).asInstanceOf[AnyRef]).toOption
+      Try(
+        Class.forName(moduleClassName).getField("MODULE$").get(null).asInstanceOf[AnyRef]
+      ).toOption
 
     private def method(
       methodName: String,
@@ -34,7 +36,7 @@ object SyncTransforms {
 
     lazy val canConvertMethod: Option[Method] = method("canConvert", mimeClass, mimeClass)
     lazy val canSplitMethod: Option[Method]   = method("canSplit", mimeClass)
-    lazy val convertMethod: Option[Method] =
+    lazy val convertMethod: Option[Method]    =
       method("convert", contentClass, mimeClass, optionsClass)
     lazy val splitMethod: Option[Method] =
       method("split", contentClass, optionsClass).orElse(method("split", contentClass))
@@ -49,14 +51,13 @@ object SyncTransforms {
       invokeEffect[Content[Mime]](convertMethod, input, to, ConvertOptions())
 
     def split(input: Content[Mime]): Option[ZIO[Any, TransformError, Chunk[DynamicFragment]]] =
-      splitMethod match {
+      splitMethod match
         case Some(m) if m.getParameterCount == 2 =>
           invokeEffect[Chunk[DynamicFragment]](Some(m), input, ConvertOptions())
         case Some(m) =>
           invokeEffect[Chunk[DynamicFragment]](Some(m), input)
         case None =>
           None
-      }
 
     private def invokeBoolean(methodOpt: Option[Method], args: AnyRef*): Boolean =
       methodOpt.exists { m =>
@@ -69,12 +70,12 @@ object SyncTransforms {
       methodOpt: Option[Method],
       args: AnyRef*
     ): Option[ZIO[Any, TransformError, A]] =
-      for {
+      for
         m      <- methodOpt
         module <- moduleOpt
         effect <- Try(m.invoke(module, args*).asInstanceOf[ZIO[Any, TransformError, A]]).toOption
-      } yield effect
-  }
+      yield effect
+  end ReflectBackend
 
   // Optional backends (available only when their modules are on the classpath)
   private val asposeBackend = ReflectBackend(
@@ -96,13 +97,13 @@ object SyncTransforms {
     }
 
   /** Convert document bytes from one MIME type to another. */
-  def convert(input: Array[Byte], inputMime: String, outputMime: String): Array[Byte] = {
+  def convert(input: Array[Byte], inputMime: String, outputMime: String): Array[Byte] =
     val from    = normalizeMime(inputMime)
     val to      = normalizeMime(outputMime)
     val content = Content(input, from)
 
-    if (from == to) input
-    else {
+    if from == to then input
+    else
       val asposeEffect =
         asposeBackend.convert(content, to).getOrElse(ZIO.fail(UnsupportedConversion(from, to)))
 
@@ -120,8 +121,8 @@ object SyncTransforms {
         }
 
       unsafeRun(effect).toArray
-    }
-  }
+    end if
+  end convert
 
   /** Extract text-like output from document bytes. */
   def extract(input: Array[Byte], inputMime: String, outputMime: String): String =
@@ -130,7 +131,7 @@ object SyncTransforms {
   /**
    * Split document bytes into fragments as tuples: (bytes, mime, index, label, total).
    */
-  def split(input: Array[Byte], inputMime: String): Seq[(Array[Byte], String, Int, String, Int)] = {
+  def split(input: Array[Byte], inputMime: String): Seq[(Array[Byte], String, Int, String, Int)] =
     val mime    = normalizeMime(inputMime)
     val content = Content(input, mime)
 
@@ -171,25 +172,23 @@ object SyncTransforms {
         total
       )
     }
-  }
+  end split
 
   /** Find the effective implementation name for conversion lineage tracking. */
-  def findConversionImpl(inputMime: String, outputMime: String): Option[String] = {
+  def findConversionImpl(inputMime: String, outputMime: String): Option[String] =
     val from = normalizeMime(inputMime)
     val to   = normalizeMime(outputMime)
-    if (from == to) Some("IdentityTransform")
-    else if (asposeBackend.canConvert(from, to)) Some(asposeBackend.name)
-    else if (libreofficeBackend.canConvert(from, to)) Some(libreofficeBackend.name)
-    else if (XlcrTransforms.canConvert(from, to)) Some("XlcrTransforms")
+    if from == to then Some("IdentityTransform")
+    else if asposeBackend.canConvert(from, to) then Some(asposeBackend.name)
+    else if libreofficeBackend.canConvert(from, to) then Some(libreofficeBackend.name)
+    else if XlcrTransforms.canConvert(from, to) then Some("XlcrTransforms")
     else None
-  }
 
   /** Find the effective implementation name for splitter lineage tracking. */
-  def findSplitterImpl(inputMime: String): Option[String] = {
+  def findSplitterImpl(inputMime: String): Option[String] =
     val mime = normalizeMime(inputMime)
-    if (asposeBackend.canSplit(mime)) Some(asposeBackend.name)
-    else if (libreofficeBackend.canSplit(mime)) Some(libreofficeBackend.name)
-    else if (XlcrTransforms.canSplit(mime)) Some("XlcrTransforms")
+    if asposeBackend.canSplit(mime) then Some(asposeBackend.name)
+    else if libreofficeBackend.canSplit(mime) then Some(libreofficeBackend.name)
+    else if XlcrTransforms.canSplit(mime) then Some("XlcrTransforms")
     else None
-  }
-}
+end SyncTransforms

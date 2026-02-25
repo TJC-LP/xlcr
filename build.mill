@@ -1,17 +1,20 @@
 //| mill-jvm-version: system
+//| mvnDeps:
+//|   - com.goyeau::mill-scalafix::0.6.0
 
 import mill._
 import mill.scalalib._
 import mill.scalalib.publish._
 import mill.scalalib.scalafmt._
 import mill.scalalib.Assembly._
+import com.goyeau.mill.scalafix.ScalafixModule
 
 val organization = "com.tjclp"
 
 /** Shared build configuration constants */
 object BuildConfig {
   /** Scala version for all modules */
-  val scalaVersion = "3.3.4"
+  val scalaVersion = "3.8.2"
 
   /** Aspose Maven repository URL */
   val asposeRepoUrl = "https://releases.aspose.com/java/repo/"
@@ -32,7 +35,7 @@ object BuildConfig {
 }
 
 /** Base trait for all XLCR modules - shared compiler settings and formatting */
-trait XLCRModuleBase extends ScalaModule with ScalafmtModule {
+trait XLCRModuleBase extends ScalaModule with ScalafmtModule with ScalafixModule {
   override def scalaVersion = BuildConfig.scalaVersion
 
   override def repositoriesTask: Task[Seq[coursier.Repository]] = Task.Anon {

@@ -154,3 +154,4 @@ object MimeExtensions:
   @targetName("getExtensionOrBinFromMime")
   def getExtensionOrDefault(mime: Mime): String =
     getExtension(mime).getOrElse("bin")
+end MimeExtensions

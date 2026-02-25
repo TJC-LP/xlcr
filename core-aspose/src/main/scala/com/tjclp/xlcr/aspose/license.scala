@@ -6,11 +6,11 @@ import java.util.Base64
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.compiletime.erasedValue
-import scala.util.{ Try, Using }
-
-import org.slf4j.LoggerFactory
+import scala.util.*
 
 import com.tjclp.xlcr.transform.ResourceError
+
+import org.slf4j.LoggerFactory
 
 /** Aspose product enumeration for type-safe per-product license dispatch. */
 enum AsposeProduct:
@@ -126,7 +126,8 @@ object AsposeLicenseV2:
         case Some(b) =>
           Try(setLicense(b)).fold(
             ex => logger.error(s"Failed to load Aspose.$name license", ex),
-            _ => { licensed.set(true); logger.info(s"Aspose.$name license applied") }
+            _ =>
+              licensed.set(true); logger.info(s"Aspose.$name license applied")
           )
         case None =>
           logger.warn(s"No Aspose.$name license found; running in evaluation mode.")
@@ -200,7 +201,7 @@ object AsposeLicenseV2:
   transparent inline def initAll[T <: Tuple]: Unit =
     inline erasedValue[T] match
       case _: EmptyTuple => ()
-      case _: (h *: t) =>
+      case _: (h *: t)   =>
         init[h & AsposeProduct]
         initAll[t]
 
@@ -257,10 +258,12 @@ object AsposeLicenseV2:
         if !pdfLicensed.get() then throw ResourceError.missingLicense("Aspose.Pdf")
       case _: AsposeProduct.Zip.type =>
         if !zipLicensed.get() then throw ResourceError.missingLicense("Aspose.Zip")
+  end require
 
   transparent inline def requireAll[T <: Tuple]: Unit =
     inline erasedValue[T] match
       case _: EmptyTuple => ()
-      case _: (h *: t) =>
+      case _: (h *: t)   =>
         require[h & AsposeProduct]
         requireAll[t]
+end AsposeLicenseV2

@@ -1,13 +1,13 @@
 package com.tjclp.xlcr.server.routes
 
-import zio._
-import zio.http._
-import zio.json._
-
 import com.tjclp.xlcr.cli.UnifiedTransforms
 import com.tjclp.xlcr.server.http.ResponseBuilder
-import com.tjclp.xlcr.server.json._
+import com.tjclp.xlcr.server.json.*
 import com.tjclp.xlcr.types.Mime
+
+import zio.*
+import zio.http.*
+import zio.json.*
 
 /**
  * Routes for capability discovery.
@@ -117,8 +117,7 @@ object CapabilitiesRoutes:
       }
 
     // Collect supported input/output types
-    val supportedInputTypes =
-      (conversions.map(_.from) ++ splits.map(_.mimeType)).distinct.sorted
+    val supportedInputTypes  = (conversions.map(_.from) ++ splits.map(_.mimeType)).distinct.sorted
     val supportedOutputTypes = conversions.map(_.to).distinct.sorted
 
     CapabilitiesResponse(
@@ -127,3 +126,5 @@ object CapabilitiesRoutes:
       supportedInputTypes = supportedInputTypes,
       supportedOutputTypes = supportedOutputTypes
     )
+  end buildCapabilities
+end CapabilitiesRoutes

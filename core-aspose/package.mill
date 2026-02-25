@@ -24,7 +24,7 @@ trait CoreAsposeModule extends build.XLCRModule {
 
   override def scalacOptions: T[Seq[String]] =
     super.scalacOptions() ++ Seq(
-      "-Yresolve-term-conflict:package"
+      "-Xresolve-term-conflict:package"
     )
 
   override def mvnDeps = Seq(

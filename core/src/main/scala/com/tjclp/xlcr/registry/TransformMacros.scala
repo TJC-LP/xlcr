@@ -2,7 +2,7 @@ package com.tjclp.xlcr.registry
 
 import scala.quoted.*
 
-import com.tjclp.xlcr.transform.{ Conversion, Splitter, Transform }
+import com.tjclp.xlcr.transform.*
 import com.tjclp.xlcr.types.Mime
 
 /**
@@ -83,3 +83,4 @@ object TransformMacros:
         '{ Some(${ iss.tree.asExprOf[Splitter[I, O]] }) }
       case _: ImplicitSearchFailure =>
         '{ None }
+end TransformMacros

@@ -1,9 +1,9 @@
 package com.tjclp.xlcr.server.http
 
-import zio._
-import zio.http._
+import com.tjclp.xlcr.types.*
 
-import com.tjclp.xlcr.types.{ Content, Mime }
+import zio.*
+import zio.http.*
 
 /**
  * Utilities for extracting content from HTTP requests.
@@ -100,3 +100,4 @@ object RequestHandler:
     getQueryParam(request, name) match
       case Some(value) => ZIO.succeed(value)
       case None        => ZIO.fail(HttpError.badRequest(s"Missing required query parameter: $name"))
+end RequestHandler

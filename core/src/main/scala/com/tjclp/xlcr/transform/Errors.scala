@@ -216,3 +216,4 @@ object TransformError:
   /** Create an UnsupportedConversion error */
   def unsupported(from: Mime, to: Mime): UnsupportedConversion =
     UnsupportedConversion(from, to)
+end TransformError

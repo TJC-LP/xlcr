@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
  *   - Normalize path separators across platforms
  *   - Remove hidden file prefixes
  */
-object PathFilter {
+object PathFilter:
   private val logger = LoggerFactory.getLogger(getClass)
 
   // Patterns for filtering macOS metadata files and directories
@@ -54,16 +54,15 @@ object PathFilter {
    * @return
    *   The cleaned path for display
    */
-  def cleanPathForDisplay(path: String): String = {
+  def cleanPathForDisplay(path: String): String =
     // Get the last path component (filename)
     val lastComponent = path.split("/").last
 
     // Remove the macOS resource fork prefix if present
-    if (lastComponent.startsWith("._"))
+    if lastComponent.startsWith("._") then
       lastComponent.substring(2)
     else
       lastComponent
-  }
 
   /**
    * Normalizes path separators to forward slashes.
@@ -92,29 +91,27 @@ object PathFilter {
     paths: Seq[String],
     includeMacOsFilter: Boolean = true,
     additionalFilters: Seq[String] = Seq.empty
-  ): Seq[String] = {
+  ): Seq[String] =
     // Compile additional regex patterns
     val additionalRegexes = additionalFilters.map(_.r)
 
     // Create the combined filter function
-    val filterFn: String => Boolean = { path =>
+    val filterFn: String => Boolean = path =>
       val normalizedPath = normalizeSeparators(path)
 
       // Check macOS filter if enabled
-      val macOsFiltered = if (includeMacOsFilter) {
+      val macOsFiltered = if includeMacOsFilter then
         !isMacOsMetadata(normalizedPath)
-      } else {
+      else
         true
-      }
 
       // Check additional filters
       val additionalFiltered =
         !additionalRegexes.exists(regex => regex.findFirstIn(normalizedPath).isDefined)
 
       macOsFiltered && additionalFiltered
-    }
 
     // Apply the filter
     paths.filter(filterFn)
-  }
-}
+  end filterPaths
+end PathFilter

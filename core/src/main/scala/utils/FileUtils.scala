@@ -3,22 +3,22 @@ package utils
 
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.nio.file.{ Files, Path, StandardOpenOption }
+import java.nio.file.*
 
-import scala.util.{ Failure, Success, Try, Using }
+import scala.util.*
+
+import com.tjclp.xlcr.types.Mime
 
 import org.apache.tika.config.TikaConfig
 import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{ HttpHeaders, Metadata }
+import org.apache.tika.metadata.*
 import org.slf4j.LoggerFactory
-
-import com.tjclp.xlcr.types.Mime
 
 /**
  * A central utility object for file operations (reading, writing, extension detection, etc.).
  * Consolidating these methods here helps reduce boilerplate and code duplication.
  */
-object FileUtils {
+object FileUtils:
   private lazy val tikaConfig = new TikaConfig()
   private lazy val detector   = tikaConfig.getDetector
   private val logger          = LoggerFactory.getLogger(getClass)
@@ -32,12 +32,10 @@ object FileUtils {
    * Recursively delete a directory and all its contents.
    */
   def deleteRecursively(path: Path): Unit =
-    if (Files.exists(path)) {
-      if (Files.isDirectory(path)) {
+    if Files.exists(path) then
+      if Files.isDirectory(path) then
         Files.list(path).forEach(deleteRecursively)
-      }
       Files.delete(path)
-    }
 
   /**
    * Write the given byte array to the specified path, overwriting if necessary. Creates parent
@@ -52,9 +50,8 @@ object FileUtils {
    */
   def writeBytes(path: Path, data: Array[Byte]): Try[Unit] = Try {
     val parent = path.getParent
-    if (parent != null && !Files.exists(parent)) {
+    if parent != null && !Files.exists(parent) then
       Files.createDirectories(parent)
-    }
 
     Files.write(
       path,
@@ -79,11 +76,10 @@ object FileUtils {
    * @return
    *   The result of the function f.
    */
-  def withTempFile[T](prefix: String, suffix: String)(f: Path => T): T = {
+  def withTempFile[T](prefix: String, suffix: String)(f: Path => T): T =
     val tempFile = Files.createTempFile(prefix, suffix)
     try f(tempFile)
     finally Files.deleteIfExists(tempFile)
-  }
 
   /**
    * Read a JSON file and return its content as a String.
@@ -106,9 +102,8 @@ object FileUtils {
    */
   def readBytes(path: Path): Try[Array[Byte]] =
     Try {
-      if (!fileExists(path)) {
+      if !fileExists(path) then
         throw new IOException(s"File does not exist: $path")
-      }
       Files.readAllBytes(path)
     }
 
@@ -137,9 +132,8 @@ object FileUtils {
   def writeJsonFile(path: Path, jsonContent: String): Try[Unit] =
     Try {
       val parent = path.getParent
-      if (parent != null && !Files.exists(parent)) {
+      if parent != null && !Files.exists(parent) then
         Files.createDirectories(parent)
-      }
 
       // Ensure UTF-8 encoding
       val utf8Bytes = jsonContent.getBytes(StandardCharsets.UTF_8)
@@ -156,22 +150,21 @@ object FileUtils {
    * for known file types.
    */
   def detectMimeType(path: Path): Mime =
-    detectMimeTypeWithTika(path) match {
+    detectMimeTypeWithTika(path) match
       case Success(mimeType) =>
         logger.debug(
           s"Tika detected MIME type: ${mimeType.mimeType} for file: $path"
         )
-        if (mimeType == Mime.plain) {
+        if mimeType == Mime.plain then
           val extMime = detectMimeTypeFromExtension(path)
-          if (extMime != Mime.plain) extMime else mimeType
-        } else mimeType
+          if extMime != Mime.plain then extMime else mimeType
+        else mimeType
       case Failure(exception) =>
         logger.warn(
           s"Tika detection failed for $path, falling back to extension-based detection",
           exception
         )
         detectMimeTypeFromExtension(path)
-    }
 
   /**
    * Detect MIME type by extension, throwing an exception if none is found and strict mode is true.
@@ -179,39 +172,36 @@ object FileUtils {
   def detectMimeTypeFromExtension(
     path: Path,
     strict: Boolean = false
-  ): Mime = {
+  ): Mime =
     val extension = getExtension(path.toString)
     val mime      = Mime.fromExtension(extension)
-    if (mime == Mime.octet) {
-      if (strict) {
+    if mime == Mime.octet then
+      if strict then
         throw new UnknownExtensionException(path, extension)
-      } else {
+      else
         logger.debug(
           s"No MIME type found for extension of $path, defaulting to text/plain"
         )
         Mime.plain
-      }
-    } else mime
-  }
+    else mime
+  end detectMimeTypeFromExtension
 
   /**
    * Retrieves the lowercase extension without the dot. Returns an empty string if none is found.
    */
-  def getExtension(filePath: String): String = {
+  def getExtension(filePath: String): String =
     val name         = filePath.toLowerCase
     val lastDotIndex = name.lastIndexOf('.')
-    if (lastDotIndex > 0 && lastDotIndex < name.length - 1) {
+    if lastDotIndex > 0 && lastDotIndex < name.length - 1 then
       name.substring(lastDotIndex + 1)
-    } else ""
-  }
+    else ""
 
   /**
    * Try to use Tika to detect the MIME type. Returns Success or Failure.
    */
   private def detectMimeTypeWithTika(filePath: Path): Try[Mime] = Try {
-    if (!Files.exists(filePath)) {
+    if !Files.exists(filePath) then
       throw new IOException(s"File does not exist: $filePath")
-    }
 
     val metadata = new Metadata()
     metadata.set(HttpHeaders.CONTENT_LOCATION, filePath.getFileName.toString)
@@ -227,4 +217,4 @@ object FileUtils {
       }
     }
   }
-}
+end FileUtils

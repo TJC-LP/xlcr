@@ -1,10 +1,10 @@
 package com.tjclp.xlcr.streaming
 
-import zio.{ Chunk, ZIO }
-import zio.stream.ZStream
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
 
-import com.tjclp.xlcr.transform.{ Transform, TransformError }
-import com.tjclp.xlcr.types.{ Content, Mime }
+import zio.*
+import zio.stream.ZStream
 
 /**
  * A StreamingTransform processes input as a stream of chunks rather than loading the entire input
@@ -49,6 +49,7 @@ trait StreamingTransform[I <: Mime, O <: Mime] extends Transform[I, O]:
    */
   override def stream(input: Content[I]): ZStream[Any, TransformError, Content[O]] =
     streamChunked(ZStream.succeed(input.data), input.mime)
+end StreamingTransform
 
 object StreamingTransform:
 
@@ -99,6 +100,7 @@ object StreamingTransform:
 
       override def priority: Int = transform.priority
       override def name: String  = s"StreamingAdapter(${transform.name})"
+end StreamingTransform
 
 /**
  * A ChunkedProcessor handles documents that can be processed in chunks. Useful for formats that
@@ -134,6 +136,7 @@ trait ChunkedProcessor[I <: Mime, O <: Mime]:
    *   Any remaining output
    */
   def finalize(state: ChunkedProcessor.State[O]): ZIO[Any, TransformError, Chunk[Content[O]]]
+end ChunkedProcessor
 
 object ChunkedProcessor:
   /**
