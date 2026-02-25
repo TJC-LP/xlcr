@@ -6,8 +6,6 @@ import java.nio.file.*
 import scala.util.Using
 
 import com.tjclp.xlcr.cli.Commands.*
-import com.tjclp.xlcr.core.XlcrTransforms
-import com.tjclp.xlcr.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.output.*
 import com.tjclp.xlcr.server.*
 import com.tjclp.xlcr.types.*
@@ -154,10 +152,11 @@ object XlcrMain extends ZIOAppDefault:
       }
 
       // Perform conversion using selected backend
-      result <- selectBackend(args.backend).convert(content, outputMime, args.options).mapError {
-        err =>
+      result <- UnifiedTransforms
+        .convert(content, outputMime, args.options, args.backend)
+        .mapError { err =>
           new RuntimeException(s"Conversion failed: ${err.message}")
-      }
+        }
 
       // Write output file
       _ <- ZIO.attemptBlocking(result.writeTo(args.output))
@@ -205,9 +204,11 @@ object XlcrMain extends ZIOAppDefault:
       }
 
       // Perform split using selected backend
-      fragments <- selectBackend(args.backend).split(content, args.options).mapError { err =>
-        new RuntimeException(s"Split failed: ${err.message}")
-      }
+      fragments <- UnifiedTransforms
+        .split(content, args.options, args.backend)
+        .mapError { err =>
+          new RuntimeException(s"Split failed: ${err.message}")
+        }
 
       // Output based on --extract flag
       _ <- if args.extract then
@@ -376,74 +377,6 @@ object XlcrMain extends ZIOAppDefault:
       println("      - EML/MSG attachments (Jakarta Mail / POI HSMF)")
       println("      - ZIP entries (java.util.zip)")
     }.unit
-
-  // ============================================================================
-  // Backend Selection
-  // ============================================================================
-
-  /** Select the appropriate backend based on user choice */
-  private def selectBackend(backend: Option[Backend]): BackendDispatch =
-    backend match
-      case Some(Backend.Aspose)      => AsposeBackend
-      case Some(Backend.LibreOffice) => LibreOfficeBackend
-      case Some(Backend.Xlcr)        => XlcrBackend
-      case _                         => UnifiedBackend
-
-  /** Trait for backend dispatch */
-  private trait BackendDispatch:
-    def convert(
-      input: Content[Mime],
-      to: Mime,
-      options: ConvertOptions = ConvertOptions()
-    ): ZIO[Any, com.tjclp.xlcr.transform.TransformError, Content[Mime]]
-    def split(
-      input: Content[Mime],
-      options: ConvertOptions = ConvertOptions()
-    ): ZIO[
-      Any,
-      com.tjclp.xlcr.transform.TransformError,
-      Chunk[com.tjclp.xlcr.types.DynamicFragment]
-    ]
-
-  private object AsposeBackend extends BackendDispatch:
-    def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
-      BackendWiring.asposeConvert(input, to, options)
-    def split(input: Content[Mime], options: ConvertOptions) =
-      BackendWiring.asposeSplit(input, options)
-
-  private object LibreOfficeBackend extends BackendDispatch:
-    def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
-      ZIO.when(!options.isDefault)(
-        ZIO.logWarning(
-          s"LibreOffice backend ignoring unsupported options: ${options.nonDefaultSummary}"
-        )
-      ) *> LibreOfficeTransforms.convert(input, to, options)
-    def split(input: Content[Mime], options: ConvertOptions) =
-      ZIO.when(!options.isDefault)(
-        ZIO.logWarning(
-          s"LibreOffice backend ignoring unsupported options: ${options.nonDefaultSummary}"
-        )
-      ) *> LibreOfficeTransforms.split(input)
-
-  private object XlcrBackend extends BackendDispatch:
-    def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
-      ZIO.when(!options.isDefault)(
-        ZIO.logWarning(
-          s"XLCR Core backend ignoring unsupported options: ${options.nonDefaultSummary}"
-        )
-      ) *> XlcrTransforms.convert(input, to)
-    def split(input: Content[Mime], options: ConvertOptions) =
-      ZIO.when(!options.isDefault)(
-        ZIO.logWarning(
-          s"XLCR Core backend ignoring unsupported options: ${options.nonDefaultSummary}"
-        )
-      ) *> XlcrTransforms.split(input)
-
-  private object UnifiedBackend extends BackendDispatch:
-    def convert(input: Content[Mime], to: Mime, options: ConvertOptions) =
-      UnifiedTransforms.convert(input, to, options)
-    def split(input: Content[Mime], options: ConvertOptions) =
-      UnifiedTransforms.split(input, options)
 
   // ============================================================================
   // Utility Functions

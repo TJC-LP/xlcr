@@ -1,5 +1,6 @@
 package com.tjclp.xlcr.server.http
 
+import com.tjclp.xlcr.cli.Commands.Backend
 import com.tjclp.xlcr.types.*
 
 import zio.*
@@ -13,8 +14,9 @@ object RequestHandler:
   /**
    * Extract content from an HTTP request.
    *
-   * Reads the request body and determines the MIME type from:
-   *   1. Content-Type header (if present) 2. Tika content detection (fallback)
+   * Reads the request body and determines the MIME type using one of two strategies:
+   *   - Default: Content-Type header (if present), Tika content detection (fallback when missing)
+   *   - `?detect=tika`: Always use Tika content inspection, ignore Content-Type header
    *
    * @param request
    *   The HTTP request
@@ -22,6 +24,7 @@ object RequestHandler:
    *   Content with detected MIME type, or HttpError
    */
   def extractContent(request: Request): ZIO[Any, HttpError, Content[Mime]] =
+    val forceDetect = getQueryParam(request, "detect").exists(_.equalsIgnoreCase("tika"))
     for
       body <- request.body.asChunk.mapError(err =>
         HttpError.badRequest(s"Failed to read request body: ${err.getMessage}")
@@ -29,7 +32,8 @@ object RequestHandler:
       _ <- ZIO.when(body.isEmpty)(
         ZIO.fail(HttpError.badRequest("Request body is empty"))
       )
-      mime = detectMime(request, body)
+      mime = if forceDetect then Mime.detectFromContent(body)
+      else detectMime(request, body)
     yield Content.fromChunk(body, mime)
 
   /**
@@ -47,6 +51,29 @@ object RequestHandler:
       case None =>
         // Fall back to Tika detection
         Mime.detectFromContent(body)
+
+  /**
+   * Parse the optional backend query parameter.
+   *
+   * @param request
+   *   The HTTP request
+   * @return
+   *   Some(Backend) if specified, None for auto-fallback, or HttpError for invalid values
+   */
+  def parseBackend(request: Request): ZIO[Any, HttpError, Option[Backend]] =
+    getQueryParam(request, "backend") match
+      case None        => ZIO.succeed(None)
+      case Some(value) =>
+        value.toLowerCase match
+          case "aspose"      => ZIO.succeed(Some(Backend.Aspose))
+          case "libreoffice" => ZIO.succeed(Some(Backend.LibreOffice))
+          case "xlcr"        => ZIO.succeed(Some(Backend.Xlcr))
+          case other         =>
+            ZIO.fail(
+              HttpError.badRequest(
+                s"Unknown backend: $other (expected: aspose, libreoffice, xlcr)"
+              )
+            )
 
   /**
    * Parse the target MIME type from query parameter.

@@ -1,5 +1,6 @@
 package com.tjclp.xlcr.cli
 
+import com.tjclp.xlcr.cli.Commands.Backend
 import com.tjclp.xlcr.core.XlcrTransforms
 import com.tjclp.xlcr.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.transform.*
@@ -8,17 +9,18 @@ import com.tjclp.xlcr.types.*
 import zio.*
 
 /**
- * Unified transform dispatcher with automatic fallback.
+ * Unified transform dispatcher with automatic fallback and optional backend selection.
  *
- * This object provides the default behavior for the xlcr CLI: it tries Aspose first (higher
- * quality, more features), then falls back to LibreOffice, and finally falls back to XLCR Core
- * (built-in POI/Tika transforms).
+ * Default behavior (no backend specified): tries Aspose first (higher quality, more features), then
+ * falls back to LibreOffice, and finally falls back to XLCR Core (built-in POI/Tika transforms).
+ *
+ * When a specific backend is requested, routes directly to that backend with no fallback.
  *
  * If Aspose is not included at build time (no license detected), BackendWiring stubs immediately
  * return UnsupportedConversion, so the fallback is instant. If Aspose IS included but a specific
  * product isn't licensed at runtime, ResourceError triggers the same fallback.
  *
- * Priority order:
+ * Priority order (default):
  *   1. Aspose (preferred - better quality, more conversions) 2. LibreOffice (fallback - open
  *      source, fewer features) 3. XLCR Core (final fallback - built-in, no external dependencies)
  *
@@ -28,7 +30,9 @@ import zio.*
  *
  * // Automatically uses best available backend
  * val result = UnifiedTransforms.convert(content, Mime.pdf)
- * val fragments = UnifiedTransforms.split(content)
+ *
+ * // Use a specific backend
+ * val result = UnifiedTransforms.convert(content, Mime.pdf, backend = Some(Backend.LibreOffice))
  * }}}
  */
 object UnifiedTransforms:
@@ -40,21 +44,102 @@ object UnifiedTransforms:
   /**
    * Convert content to a target MIME type.
    *
-   * Tries Aspose first, falls back to LibreOffice if Aspose doesn't support the conversion or lacks
-   * a license for the required product, then falls back to XLCR Core if LibreOffice doesn't support
-   * it.
+   * When `backend` is None, tries Aspose first, falls back to LibreOffice, then to XLCR Core. When
+   * a specific backend is given, routes directly with no fallback.
    *
    * @param input
    *   The input content to convert
    * @param to
    *   The target MIME type
+   * @param options
+   *   Conversion options (password, layout, etc.)
+   * @param backend
+   *   Optional backend override (None = auto-fallback)
    * @return
-   *   The converted content or UnsupportedConversion error
+   *   The converted content or TransformError
    */
   def convert(
     input: Content[Mime],
     to: Mime,
-    options: ConvertOptions = ConvertOptions()
+    options: ConvertOptions = ConvertOptions(),
+    backend: Option[Backend] = None
+  ): ZIO[Any, TransformError, Content[Mime]] =
+    backend match
+      case Some(Backend.Aspose)      => BackendWiring.asposeConvert(input, to, options)
+      case Some(Backend.LibreOffice) => LibreOfficeTransforms.convert(input, to, options)
+      case Some(Backend.Xlcr)        => XlcrTransforms.convert(input, to)
+      case None                      => convertWithFallback(input, to, options)
+
+  /**
+   * Check if a conversion is supported.
+   *
+   * When `backend` is None, returns true if ANY backend supports it. When a specific backend is
+   * given, checks only that backend.
+   */
+  def canConvert(from: Mime, to: Mime, backend: Option[Backend] = None): Boolean =
+    backend match
+      case Some(Backend.Aspose)      => BackendWiring.asposeCanConvert(from, to)
+      case Some(Backend.LibreOffice) => LibreOfficeTransforms.canConvert(from, to)
+      case Some(Backend.Xlcr)        => XlcrTransforms.canConvert(from, to)
+      case None                      =>
+        BackendWiring.asposeCanConvert(from, to) ||
+        LibreOfficeTransforms.canConvert(from, to) ||
+        XlcrTransforms.canConvert(from, to)
+
+  // ===========================================================================
+  // Splitter dispatch with fallback
+  // ===========================================================================
+
+  /**
+   * Split content into fragments.
+   *
+   * When `backend` is None, tries Aspose first, falls back to LibreOffice, then to XLCR Core. When
+   * a specific backend is given, routes directly with no fallback.
+   *
+   * @param input
+   *   The input content to split
+   * @param options
+   *   Conversion options
+   * @param backend
+   *   Optional backend override (None = auto-fallback)
+   * @return
+   *   Chunk of dynamic fragments or TransformError
+   */
+  def split(
+    input: Content[Mime],
+    options: ConvertOptions = ConvertOptions(),
+    backend: Option[Backend] = None
+  ): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
+    backend match
+      case Some(Backend.Aspose)      => BackendWiring.asposeSplit(input, options)
+      case Some(Backend.LibreOffice) => LibreOfficeTransforms.split(input)
+      case Some(Backend.Xlcr)        => XlcrTransforms.split(input)
+      case None                      => splitWithFallback(input, options)
+
+  /**
+   * Check if splitting is supported.
+   *
+   * When `backend` is None, returns true if ANY backend supports it. When a specific backend is
+   * given, checks only that backend.
+   */
+  def canSplit(mime: Mime, backend: Option[Backend] = None): Boolean =
+    backend match
+      case Some(Backend.Aspose)      => BackendWiring.asposeCanSplit(mime)
+      case Some(Backend.LibreOffice) => LibreOfficeTransforms.canSplit(mime)
+      case Some(Backend.Xlcr)        => XlcrTransforms.canSplit(mime)
+      case None                      =>
+        BackendWiring.asposeCanSplit(mime) ||
+        LibreOfficeTransforms.canSplit(mime) ||
+        XlcrTransforms.canSplit(mime)
+
+  // ===========================================================================
+  // Private: fallback chains (original behavior)
+  // ===========================================================================
+
+  private def convertWithFallback(
+    input: Content[Mime],
+    to: Mime,
+    options: ConvertOptions
   ): ZIO[Any, TransformError, Content[Mime]] =
     BackendWiring.asposeConvert(input, to, options).catchSome {
       case _: UnsupportedConversion | _: ResourceError =>
@@ -72,32 +157,9 @@ object UnifiedTransforms:
         ) *> XlcrTransforms.convert(input, to)
     }
 
-  /**
-   * Check if a conversion is supported by any backend.
-   */
-  def canConvert(from: Mime, to: Mime): Boolean =
-    BackendWiring.asposeCanConvert(from, to) ||
-      LibreOfficeTransforms.canConvert(from, to) ||
-      XlcrTransforms.canConvert(from, to)
-
-  // ===========================================================================
-  // Splitter dispatch with fallback
-  // ===========================================================================
-
-  /**
-   * Split content into fragments.
-   *
-   * Tries Aspose first, falls back to LibreOffice if Aspose doesn't support splitting for this MIME
-   * type or lacks a license, then falls back to XLCR Core.
-   *
-   * @param input
-   *   The input content to split
-   * @return
-   *   Chunk of dynamic fragments or UnsupportedConversion error
-   */
-  def split(
+  private def splitWithFallback(
     input: Content[Mime],
-    options: ConvertOptions = ConvertOptions()
+    options: ConvertOptions
   ): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     BackendWiring.asposeSplit(input, options).catchSome {
       case _: UnsupportedConversion | _: ResourceError =>
@@ -114,12 +176,4 @@ object UnifiedTransforms:
           )
         ) *> XlcrTransforms.split(input)
     }
-
-  /**
-   * Check if splitting is supported by any backend.
-   */
-  def canSplit(mime: Mime): Boolean =
-    BackendWiring.asposeCanSplit(mime) ||
-      LibreOfficeTransforms.canSplit(mime) ||
-      XlcrTransforms.canSplit(mime)
 end UnifiedTransforms

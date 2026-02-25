@@ -172,12 +172,34 @@ Each instance runs as a separate LibreOffice process on a dedicated port (starti
 | `GET` | `/capabilities` | List all supported conversions |
 | `GET` | `/health` | Health check (includes LibreOffice pool status) |
 
+### Query Parameters
+
+| Parameter | Endpoints | Values | Description |
+|-----------|-----------|--------|-------------|
+| `to` | `/convert` | MIME type or extension | Target format (required) |
+| `detect` | `/convert`, `/split`, `/info` | `tika` | Force Tika content detection, ignore Content-Type header |
+| `backend` | `/convert`, `/split` | `aspose`, `libreoffice`, `xlcr` | Use specific backend instead of auto-fallback |
+
+Content-Type is optional on all endpoints. When missing, Tika automatically detects the format from content bytes. Use `?detect=tika` to force Tika even when Content-Type is present.
+
 ### Examples
 
 ```bash
 # Convert DOCX to PDF
 curl -X POST "http://localhost:8080/convert?to=pdf" \
   -H "Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" \
+  --data-binary @document.docx -o output.pdf
+
+# Convert without Content-Type (Tika auto-detects)
+curl -X POST "http://localhost:8080/convert?to=pdf" \
+  --data-binary @document.docx -o output.pdf
+
+# Force Tika detection (overrides Content-Type header)
+curl -X POST "http://localhost:8080/convert?to=pdf&detect=tika" \
+  --data-binary @document.docx -o output.pdf
+
+# Use a specific backend
+curl -X POST "http://localhost:8080/convert?to=pdf&backend=libreoffice" \
   --data-binary @document.docx -o output.pdf
 
 # Split XLSX into sheets
