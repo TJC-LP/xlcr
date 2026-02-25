@@ -64,8 +64,7 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
     "--initialize-at-build-time=scala.runtime.LazyVals$",
     "--initialize-at-build-time=scala.runtime.LazyVals",
     "--initialize-at-build-time=scala.runtime.Statics",
-    // In JDK 25, sun.misc lives in jdk.unsupported (not java.base)
-    "-J--add-opens=jdk.unsupported/sun.misc=ALL-UNNAMED",
+    "-J--add-opens=java.base/sun.misc=ALL-UNNAMED",
     "-J--add-opens=java.base/java.lang=ALL-UNNAMED",
     // Aspose libraries use complex internal class initialization that crashes
     // with SIGSEGV when initialized at build time. Deferring to run time avoids

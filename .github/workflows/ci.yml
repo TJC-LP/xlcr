@@ -141,14 +141,8 @@ jobs:
     needs: [build]
     if: github.event_name != 'pull_request' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/tjc-lp/xlcr:ci
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: write
-      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -163,7 +157,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 25
+          java-version: 17
 
       - name: Cache Coursier and Mill
         uses: actions/cache@v4
@@ -176,18 +170,11 @@ jobs:
       - name: Build assembly JAR
         run: ./mill 'xlcr[3.3.4].assembly'
 
-      - name: Build native image
-        run: ./mill 'xlcr[3.3.4].nativeImage'
-
       - name: Stage release artifacts
-        run: |
-          cp out/xlcr/3.3.4/assembly.dest/out.jar "xlcr-${{ steps.version.outputs.version }}.jar"
-          cp out/xlcr/3.3.4/nativeImage.dest/native-executable "xlcr-${{ steps.version.outputs.version }}-linux-amd64"
+        run: cp out/xlcr/3.3.4/assembly.dest/out.jar "xlcr-${{ steps.version.outputs.version }}.jar"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            xlcr-${{ steps.version.outputs.version }}.jar
-            xlcr-${{ steps.version.outputs.version }}-linux-amd64
+          files: xlcr-${{ steps.version.outputs.version }}.jar
           generate_release_notes: true
