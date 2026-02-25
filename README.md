@@ -23,7 +23,7 @@ Backend selection is automatic: Aspose (HIGH priority) > LibreOffice (DEFAULT) >
 
 ## Prerequisites
 
-- **Java 17+** (tested with Java 17 and 21)
+- **Java 17+** (tested with Java 17, 21, and 25)
 - **Mill** build tool (included via `./mill` wrapper script)
 - **LibreOffice** (optional, for `core-libreoffice` backend)
 - **Aspose license** (optional, for `core-aspose` backend without watermarks)
@@ -48,16 +48,16 @@ make install
 ```scala
 // build.mill (Mill)
 def mvnDeps = Seq(
-  mvn"com.tjclp::xlcr-core:0.2.1",
-  mvn"com.tjclp::xlcr-core-aspose:0.2.1"  // optional
+  mvn"com.tjclp::xlcr-core:0.2.2",
+  mvn"com.tjclp::xlcr-core-aspose:0.2.2"  // optional
 )
 ```
 
 ```scala
 // build.sbt (sbt)
 libraryDependencies ++= Seq(
-  "com.tjclp" %% "xlcr-core" % "0.2.1",
-  "com.tjclp" %% "xlcr-core-aspose" % "0.2.1"  // optional
+  "com.tjclp" %% "xlcr-core" % "0.2.2",
+  "com.tjclp" %% "xlcr-core-aspose" % "0.2.2"  // optional
 )
 ```
 

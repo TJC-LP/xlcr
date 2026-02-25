@@ -182,12 +182,12 @@ jobs:
       - name: Stage release artifacts
         run: |
           cp out/xlcr/3.3.4/assembly.dest/out.jar "xlcr-${{ steps.version.outputs.version }}.jar"
-          cp out/xlcr/3.3.4/nativeImage.dest/native-executable xlcr-linux-amd64
+          cp out/xlcr/3.3.4/nativeImage.dest/native-executable "xlcr-${{ steps.version.outputs.version }}-linux-amd64"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             xlcr-${{ steps.version.outputs.version }}.jar
-            xlcr-linux-amd64
+            xlcr-${{ steps.version.outputs.version }}-linux-amd64
           generate_release_notes: true
