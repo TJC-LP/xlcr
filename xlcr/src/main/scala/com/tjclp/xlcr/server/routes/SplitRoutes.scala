@@ -1,11 +1,11 @@
 package com.tjclp.xlcr.server.routes
 
-import zio._
-import zio.http._
-
 import com.tjclp.xlcr.cli.UnifiedTransforms
-import com.tjclp.xlcr.server.http.{ HttpError, RequestHandler, ResponseBuilder }
+import com.tjclp.xlcr.server.http.*
 import com.tjclp.xlcr.transform.TransformError
+
+import zio.*
+import zio.http.*
 
 /**
  * Routes for document splitting.
@@ -58,3 +58,4 @@ object SplitRoutes:
       // Build ZIP response
       response <- ResponseBuilder.fromFragments(fragments)
     yield response
+end SplitRoutes

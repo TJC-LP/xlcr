@@ -7,13 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Upgraded Scala 3.3.4 → 3.8.2 (latest stable).
+- Fixed deprecated `-Yresolve-term-conflict` scalac flag (now `-Xresolve-term-conflict`).
+- Upgraded scalafmt 3.8.2 → 3.10.7 with hypermodern Scala 3 formatting: braceless syntax, `then`/`do` control flow, `*` wildcard imports, automatic end markers.
+- Wired scalafix into Mill build via mill-scalafix 0.6.0 plugin (`./mill __.fix`).
+- Updated scalafix OrganizeImports to coalesce all imports to wildcards with Scala 3 dialect.
+- Added RedundantSyntax scalafix rule.
+
 ### Removed
 - `core-spark` module and all Spark pipeline sources/tests/docs.
 - All v1 architecture: bridges, splitters, parsers, renderers, registries, legacy CLI, pipeline system.
 - Scala 2.13.17 cross-build support.
 
 ### Changed
-- Project now targets Scala 3.3.4 only.
+- Project now targets Scala 3 only (upgraded from 3.3.4 to 3.8.2).
 - Simplified build: removed cross-compilation — `./mill __.compile` and `./mill __.test` just work (no `[3.3.4]` specifier needed).
 
 ## [0.2.2] - 2026-02-25

@@ -49,6 +49,7 @@ object Mime:
 
     /** Check if this is a video MIME type */
     def isVideo: Boolean = baseType == "video"
+  end extension
 
   // ============================================================================
   // Opaque subtypes for compile-time safety
@@ -396,6 +397,8 @@ object Mime:
       case "ttf"             => ttf
       case "otf"             => otf
       case _                 => octet
+    end match
+  end fromExtension
 
   def fromFilename(filename: String): Mime =
     val lastDotIndex = filename.lastIndexOf('.')
@@ -419,7 +422,7 @@ object Mime:
 
   import org.apache.tika.config.TikaConfig
   import org.apache.tika.io.TikaInputStream
-  import org.apache.tika.metadata.{ HttpHeaders, Metadata }
+  import org.apache.tika.metadata.{HttpHeaders, Metadata}
   import scala.util.Using
   import java.io.ByteArrayInputStream
 
@@ -500,3 +503,4 @@ object Mime:
       }
     catch
       case _: Exception => fromFilename(path.getFileName.toString)
+end Mime

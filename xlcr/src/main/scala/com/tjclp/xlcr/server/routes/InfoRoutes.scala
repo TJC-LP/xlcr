@@ -1,13 +1,13 @@
 package com.tjclp.xlcr.server.routes
 
-import zio._
-import zio.http._
-import zio.json._
-
 import com.tjclp.xlcr.cli.UnifiedTransforms
-import com.tjclp.xlcr.server.http.{ HttpError, RequestHandler, ResponseBuilder }
-import com.tjclp.xlcr.server.json.{ Codecs, InfoResponse }
+import com.tjclp.xlcr.server.http.*
+import com.tjclp.xlcr.server.json.*
 import com.tjclp.xlcr.types.Mime
+
+import zio.*
+import zio.http.*
+import zio.json.*
 
 /**
  * Routes for document information.
@@ -92,3 +92,5 @@ object InfoRoutes:
     commonOutputs
       .filter(output => UnifiedTransforms.canConvert(inputMime, output))
       .map(_.value)
+  end findAvailableConversions
+end InfoRoutes

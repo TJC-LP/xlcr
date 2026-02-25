@@ -1,15 +1,15 @@
 package com.tjclp.xlcr.aspose
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import java.io.*
 
 import scala.jdk.CollectionConverters.*
 
-import zio.{ Chunk, ZIO }
-import zio.blocks.scope.Scope
-
-import com.tjclp.xlcr.transform.{ DynamicSplitter, Splitter, TransformError }
-import com.tjclp.xlcr.types.{ Content, ConvertOptions, DynamicFragment, Fragment, Mime }
 import com.tjclp.xlcr.compat.aspose.AsposeWorkbook
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
+
+import zio.*
+import zio.blocks.scope.Scope
 
 /**
  * Pure given instances for Aspose-based document splitters.
@@ -129,6 +129,7 @@ private[aspose] def splitExcelWorkbook[M <: Mime](
           Fragment(content, fragIdx, Some(sheetName))
         finally
           destWb.dispose()
+        end try
       }
 
       Chunk.fromIterable(fragments)
@@ -227,11 +228,13 @@ given asposePdfPageSplitter: Splitter[Mime.Pdf, Mime.Pdf] with
             Fragment(content, pageNum - 1, Some(s"Page $pageNum"))
           finally
             destDoc.close()
+          end try
         }
 
         Chunk.fromIterable(fragments)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePdfPageSplitter
 
 // =============================================================================
 // Word Document Splitters (by section/page)
@@ -283,6 +286,7 @@ private def splitWordDocument[M <: Mime](
           Fragment(content, idx, Some(s"Section ${idx + 1}"))
         finally
           destDoc.cleanup()
+        end try
       }
 
       Chunk.fromIterable(fragments)
@@ -314,7 +318,7 @@ given asposeZipArchiveSplitter: DynamicSplitter[Mime.Zip] with
               entry.extract(out)
               val entryName = entry.getName
               val mime      = Mime.fromFilename(entryName)
-              val content = Content.fromChunk(
+              val content   = Content.fromChunk(
                 Chunk.fromArray(out.toByteArray),
                 mime,
                 Map("filename" -> entryName)
@@ -327,6 +331,7 @@ given asposeZipArchiveSplitter: DynamicSplitter[Mime.Zip] with
         }
       }
     }.mapError(TransformError.fromThrowable)
+end asposeZipArchiveSplitter
 
 given asposeSevenZipArchiveSplitter: DynamicSplitter[Mime.SevenZip] with
   override def name = "Aspose.Zip.SevenZipArchiveSplitter"
@@ -350,7 +355,7 @@ given asposeSevenZipArchiveSplitter: DynamicSplitter[Mime.SevenZip] with
               entry.extract(out)
               val entryName = entry.getName
               val mime      = Mime.fromFilename(entryName)
-              val content = Content.fromChunk(
+              val content   = Content.fromChunk(
                 Chunk.fromArray(out.toByteArray),
                 mime,
                 Map("filename" -> entryName)
@@ -363,6 +368,7 @@ given asposeSevenZipArchiveSplitter: DynamicSplitter[Mime.SevenZip] with
         }
       }
     }.mapError(TransformError.fromThrowable)
+end asposeSevenZipArchiveSplitter
 
 // =============================================================================
 // Email Attachment Splitters (Dynamic - multiple MIME types)
@@ -377,19 +383,20 @@ given asposeEmlAttachmentSplitter: DynamicSplitter[Mime.Eml] with
 
       val msg = com.aspose.email.MailMessage.load(new ByteArrayInputStream(input.data.toArray))
       val attachments = msg.getAttachments
-      val fragments = attachments.asScala.zipWithIndex.map { case (attachment, idx) =>
+      val fragments   = attachments.asScala.zipWithIndex.map { case (attachment, idx) =>
         val out = new ByteArrayOutputStream()
         attachment.save(out)
-        val filename = attachment.getName
+        val filename    = attachment.getName
         val contentType =
           Option(attachment.getContentType).map(_.toString).getOrElse("application/octet-stream")
-        val mime = Mime.parse(contentType)
+        val mime    = Mime.parse(contentType)
         val content =
           Content.fromChunk(Chunk.fromArray(out.toByteArray), mime, Map("filename" -> filename))
         DynamicFragment(content, idx, Some(filename))
       }
       Chunk.fromIterable(fragments.toSeq)
     }.mapError(TransformError.fromThrowable)
+end asposeEmlAttachmentSplitter
 
 given asposeMsgAttachmentSplitter: DynamicSplitter[Mime.Msg] with
   override def name = "Aspose.Email.MsgAttachmentSplitter"
@@ -400,7 +407,7 @@ given asposeMsgAttachmentSplitter: DynamicSplitter[Mime.Msg] with
 
       val msg = com.aspose.email.MapiMessage.load(new ByteArrayInputStream(input.data.toArray))
       val attachments = msg.getAttachments
-      val fragments = attachments.asScala.zipWithIndex.map { case (attachment, idx) =>
+      val fragments   = attachments.asScala.zipWithIndex.map { case (attachment, idx) =>
         val data     = attachment.getBinaryData
         val filename = attachment.getDisplayName
         val mime     = Mime.fromFilename(filename)
@@ -409,3 +416,4 @@ given asposeMsgAttachmentSplitter: DynamicSplitter[Mime.Msg] with
       }
       Chunk.fromIterable(fragments.toSeq)
     }.mapError(TransformError.fromThrowable)
+end asposeMsgAttachmentSplitter

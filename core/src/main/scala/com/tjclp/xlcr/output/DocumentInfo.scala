@@ -4,13 +4,13 @@ import java.io.ByteArrayInputStream
 
 import scala.util.Using
 
+import com.tjclp.xlcr.types.Mime
+
 import org.apache.tika.Tika
 import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{ HttpHeaders, Metadata }
+import org.apache.tika.metadata.*
 import org.apache.tika.parser.AutoDetectParser
 import org.apache.tika.sax.BodyContentHandler
-
-import com.tjclp.xlcr.types.Mime
 
 /**
  * Utilities for extracting document metadata using Apache Tika.
@@ -150,8 +150,8 @@ object DocumentInfo:
     val size         = content.length
 
     // Extract commonly useful metadata fields
-    val title  = metadata.get("dc:title").orElse(metadata.get("title")).map(_.toString)
-    val author = metadata.get("dc:creator").orElse(metadata.get("Author")).map(_.toString)
+    val title   = metadata.get("dc:title").orElse(metadata.get("title")).map(_.toString)
+    val author  = metadata.get("dc:creator").orElse(metadata.get("Author")).map(_.toString)
     val created =
       metadata.get("dcterms:created").orElse(metadata.get("Creation-Date")).map(_.toString)
     val modified =
@@ -174,6 +174,8 @@ object DocumentInfo:
       wordCount = wordCount,
       rawMetadata = metadata
     )
+  end extractInfo
+end DocumentInfo
 
 /**
  * Structured result from document info extraction.

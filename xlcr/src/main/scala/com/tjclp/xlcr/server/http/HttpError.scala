@@ -1,8 +1,8 @@
 package com.tjclp.xlcr.server.http
 
-import zio.http.Status
+import com.tjclp.xlcr.transform.*
 
-import com.tjclp.xlcr.transform._
+import zio.http.Status
 
 /**
  * HTTP error representation for API responses.
@@ -41,7 +41,7 @@ object HttpError:
       HttpError(
         Status.UnsupportedMediaType,
         s"Cannot convert ${from.value} to ${to.value}",
-        Some(s"No conversion path available from source format to target format")
+        Some("No conversion path available from source format to target format")
       )
 
     case ParseError(msg, cause) =>
@@ -122,3 +122,4 @@ object HttpError:
   /** Create an unsupported media type error */
   def unsupportedMediaType(message: String): HttpError =
     HttpError(Status.UnsupportedMediaType, message)
+end HttpError

@@ -1,23 +1,22 @@
 package com.tjclp.xlcr.cli
 
 import java.io.FileOutputStream
-import java.nio.file.{ Files, Path }
-
-import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.{ HttpHeaders, Metadata }
-import org.apache.tika.parser.AutoDetectParser
-import org.apache.tika.sax.BodyContentHandler
+import java.nio.file.*
 
 import scala.util.Using
-
-import zio.*
 
 import com.tjclp.xlcr.cli.Commands.*
 import com.tjclp.xlcr.core.XlcrTransforms
 import com.tjclp.xlcr.libreoffice.LibreOfficeTransforms
-import com.tjclp.xlcr.output.{ FragmentNaming, MimeExtensions, ZipBuilder }
-import com.tjclp.xlcr.server.{ Server, ServerConfig }
-import com.tjclp.xlcr.types.{ Content, ConvertOptions, Mime }
+import com.tjclp.xlcr.output.*
+import com.tjclp.xlcr.server.*
+import com.tjclp.xlcr.types.*
+
+import org.apache.tika.io.TikaInputStream
+import org.apache.tika.metadata.*
+import org.apache.tika.parser.AutoDetectParser
+import org.apache.tika.sax.BodyContentHandler
+import zio.*
 
 /**
  * XLCR CLI entry point with compile-time transform discovery.
@@ -129,7 +128,7 @@ object XlcrMain extends ZIOAppDefault:
       // Read input file and detect MIME type
       inputBytes <- ZIO.attemptBlocking(Files.readAllBytes(args.input))
       inputChunk = Chunk.fromArray(inputBytes)
-      inputMime = if args.extensionOnly then
+      inputMime  = if args.extensionOnly then
         Mime.fromFilename(args.input.getFileName.toString)
       else
         Mime.detectLazily(inputChunk, args.input.getFileName.toString)
@@ -181,7 +180,7 @@ object XlcrMain extends ZIOAppDefault:
       // Read input file and detect MIME type
       inputBytes <- ZIO.attemptBlocking(Files.readAllBytes(args.input))
       inputChunk = Chunk.fromArray(inputBytes)
-      inputMime = if args.extensionOnly then
+      inputMime  = if args.extensionOnly then
         Mime.fromFilename(args.input.getFileName.toString)
       else
         Mime.detectLazily(inputChunk, args.input.getFileName.toString)
@@ -289,7 +288,7 @@ object XlcrMain extends ZIOAppDefault:
     for
       // Check file exists
       exists <- ZIO.attemptBlocking(Files.exists(args.input))
-      _ <- ZIO.unless(exists)(
+      _      <- ZIO.unless(exists)(
         ZIO.fail(new RuntimeException(s"File not found: ${args.input}"))
       )
 
@@ -494,6 +493,7 @@ object XlcrMain extends ZIOAppDefault:
       Mime.jpeg
     )
     targets.filter(target => target != from && UnifiedTransforms.canConvert(from, target))
+  end findAvailableConversions
 
   // ============================================================================
   // Metadata Extraction
@@ -577,6 +577,7 @@ object XlcrMain extends ZIOAppDefault:
   }
 }"""
     Console.printLine(json)
+  end printInfoJson
 
   private def printInfoXml(
     path: Path,
@@ -610,6 +611,7 @@ $metadataXml
   </metadata>
 </fileInfo>"""
     Console.printLine(xml)
+  end printInfoXml
 
   private def escapeJson(s: String): String =
     s.replace("\\", "\\\\")
@@ -624,3 +626,4 @@ $metadataXml
       .replace(">", "&gt;")
       .replace("\"", "&quot;")
       .replace("'", "&apos;")
+end XlcrMain

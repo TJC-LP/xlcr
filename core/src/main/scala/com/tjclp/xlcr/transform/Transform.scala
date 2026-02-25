@@ -1,9 +1,9 @@
 package com.tjclp.xlcr.transform
 
-import zio.{ Chunk, ZIO }
-import zio.stream.ZStream
+import com.tjclp.xlcr.types.*
 
-import com.tjclp.xlcr.types.{ Content, Mime }
+import zio.*
+import zio.stream.ZStream
 
 /**
  * The unified Transform algebra for XLCR v2.
@@ -84,6 +84,7 @@ trait Transform[I <: Mime, O <: Mime]:
    * Human-readable name for this transform (for logging/debugging).
    */
   def name: String = getClass.getSimpleName
+end Transform
 
 object Transform:
 
@@ -108,6 +109,7 @@ object Transform:
     override def priority: Int = math.min(first.priority, second.priority)
 
     override def name: String = s"${first.name} >>> ${second.name}"
+  end Composed
 
   /**
    * Create a Transform from a function.
@@ -168,3 +170,4 @@ object Transform:
       override def apply(input: Content[I]): ZIO[Any, TransformError, Chunk[Content[O]]] =
         ZIO.succeed(Chunk.empty)
       override def name: String = "empty"
+end Transform

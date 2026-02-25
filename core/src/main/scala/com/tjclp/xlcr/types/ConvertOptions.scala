@@ -44,6 +44,7 @@ final case class ConvertOptions(
     if !flowingLayout then parts += "fixed-layout"
     if !embedResources then parts += "no-embed-resources"
     parts.result().mkString(", ")
+end ConvertOptions
 
 /**
  * Standard paper sizes.

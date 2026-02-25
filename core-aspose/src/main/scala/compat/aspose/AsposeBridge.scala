@@ -8,10 +8,10 @@ package compat.aspose
  * This approach uses fully qualified names for everything, avoiding the import conflicts that cause
  * errors in Scala 3.
  */
-object AsposeBridge {
+object AsposeBridge:
 
   // ===== CELLS =====
-  object Cells {
+  object Cells:
     def createWorkbook(stream: java.io.InputStream): com.aspose.cells.Workbook =
       new com.aspose.cells.Workbook(stream)
 
@@ -30,18 +30,17 @@ object AsposeBridge {
     val LANDSCAPE_ORIENTATION: Int = com.aspose.cells.PageOrientationType.LANDSCAPE
     val PAPER_A4: Int              = com.aspose.cells.PaperSizeType.PAPER_A_4
     val LOAD_FORMAT_ODS: Int       = com.aspose.cells.LoadFormat.ODS
-  }
+  end Cells
 
   // ===== SLIDES =====
-  object Slides {
+  object Slides:
     def createPresentation(stream: java.io.InputStream): com.aspose.slides.Presentation =
       new com.aspose.slides.Presentation(stream)
 
     val PDF_FORMAT: Int = com.aspose.slides.SaveFormat.Pdf
-  }
 
   // ===== WORDS =====
-  object Words {
+  object Words:
     def createDocument(stream: java.io.InputStream): com.aspose.words.Document =
       new com.aspose.words.Document(stream)
 
@@ -56,10 +55,10 @@ object AsposeBridge {
 
     val MHTML_FORMAT: Int = com.aspose.words.LoadFormat.MHTML
     val PDF_FORMAT: Int   = com.aspose.words.SaveFormat.PDF
-  }
+  end Words
 
   // ===== PDF =====
-  object Pdf {
+  object Pdf:
     def createDocument(stream: java.io.InputStream): com.aspose.pdf.Document =
       new com.aspose.pdf.Document(stream)
 
@@ -85,14 +84,13 @@ object AsposeBridge {
     def createPngDevice(resolution: com.aspose.pdf.devices.Resolution)
       : com.aspose.pdf.devices.PngDevice =
       new com.aspose.pdf.devices.PngDevice(resolution)
-  }
+  end Pdf
 
   // ===== EMAIL =====
-  object Email {
+  object Email:
     def loadMailMessage(stream: java.io.InputStream): com.aspose.email.MailMessage =
       com.aspose.email.MailMessage.load(stream)
 
     def createMhtSaveOptions(): com.aspose.email.MhtSaveOptions =
       new com.aspose.email.MhtSaveOptions()
-  }
-}
+end AsposeBridge

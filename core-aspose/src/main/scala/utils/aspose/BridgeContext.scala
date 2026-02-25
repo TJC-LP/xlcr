@@ -6,11 +6,10 @@ package utils.aspose
  * discovered via ServiceLoader and don't receive direct parameters, this context allows passing
  * runtime configuration like stripMasters flag.
  */
-object BridgeContext {
+object BridgeContext:
 
-  private val context = new ThreadLocal[BridgeContextData]() {
+  private val context = new ThreadLocal[BridgeContextData]():
     override def initialValue(): BridgeContextData = BridgeContextData()
-  }
 
   /**
    * Get the current thread's bridge context
@@ -31,12 +30,12 @@ object BridgeContext {
    * Execute a block of code with a specific bridge context, automatically clearing it afterward
    */
   def withContext[T](data: BridgeContextData)(block: => T): T =
-    try {
+    try
       set(data)
       block
-    } finally
+    finally
       clear()
-}
+end BridgeContext
 
 /**
  * Data stored in the bridge context

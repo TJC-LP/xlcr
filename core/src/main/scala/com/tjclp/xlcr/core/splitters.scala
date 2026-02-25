@@ -1,20 +1,16 @@
 package com.tjclp.xlcr.core
 
-import java.io.{
-  ByteArrayInputStream,
-  ByteArrayOutputStream,
-  File,
-  FileInputStream,
-  FileOutputStream
-}
+import java.io.*
 import java.util.Properties
-import java.util.zip.{ ZipEntry, ZipInputStream }
+import java.util.zip.*
 
 import scala.jdk.CollectionConverters.*
 
-import zio.{ Chunk, ZIO }
-import zio.blocks.scope.Scope
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
 
+import jakarta.mail.*
+import jakarta.mail.internet.MimeMessage
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.poi.hsmf.MAPIMessage
@@ -23,11 +19,8 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.apache.poi.xslf.usermodel.XMLSlideShow
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
-import jakarta.mail.{ Multipart, Part, Session }
-import jakarta.mail.internet.MimeMessage
-
-import com.tjclp.xlcr.transform.{ DynamicSplitter, SplitError, Splitter }
-import com.tjclp.xlcr.types.{ Content, DynamicFragment, Fragment, Mime }
+import zio.*
+import zio.blocks.scope.Scope
 
 /**
  * Core XLCR splitters using POI, PDFBox, and Java standard libraries. These serve as the
@@ -79,7 +72,7 @@ object XlcrSplitters:
       ZipSecureFile.setMaxFileCount(10000L)
 
       // First pass: get sheet count and names
-      val tempWb = WorkbookFactory.create(new ByteArrayInputStream(data))
+      val tempWb              = WorkbookFactory.create(new ByteArrayInputStream(data))
       val (total, sheetNames) =
         try
           val count = tempWb.getNumberOfSheets
@@ -120,6 +113,7 @@ object XlcrSplitters:
           Fragment(content, idx, Some(sheetNames(idx)))
         finally
           wb.close()
+        end try
       }
 
       Chunk.fromIterable(fragments)
@@ -129,7 +123,7 @@ object XlcrSplitters:
   @scala.annotation.nowarn("msg=deprecated") // ODFDOM getTableList — no clear replacement in 0.13.0
   private def splitOdsWorkbook(data: Array[Byte]): Chunk[Fragment[Mime.Ods]] =
     // First pass: get sheet info
-    val tempDoc = OdfSpreadsheetDocument.loadDocument(new ByteArrayInputStream(data))
+    val tempDoc             = OdfSpreadsheetDocument.loadDocument(new ByteArrayInputStream(data))
     val (total, sheetNames) =
       try
         val sheets = tempDoc.getTableList(false)
@@ -160,9 +154,11 @@ object XlcrSplitters:
         Fragment(content, idx, Some(sheetNames(idx)))
       finally
         doc.close()
+      end try
     }
 
     Chunk.fromIterable(fragments)
+  end splitOdsWorkbook
 
   // ============================================================================
   // PowerPoint Slide Splitters (POI)
@@ -205,7 +201,7 @@ object XlcrSplitters:
         // Extract each slide
         val fragments = (0 until total).flatMap { idx =>
           val originalSlide = slides(idx)
-          val title =
+          val title         =
             Option(originalSlide.getTitle).filter(_.nonEmpty).getOrElse(s"Slide ${idx + 1}")
 
           try
@@ -231,15 +227,20 @@ object XlcrSplitters:
                 dest.close()
             finally
               destFile.delete()
+            end try
           catch
             case _: Exception => None
+          end try
         }
 
         Chunk.fromIterable(fragments)
       finally
         src.close()
+      end try
     finally
       tempFile.delete()
+    end try
+  end splitPptxPresentation
 
   // ============================================================================
   // Word Section Splitters (POI)
@@ -311,6 +312,8 @@ object XlcrSplitters:
       Chunk.fromIterable(fragments)
     finally
       original.close()
+    end try
+  end splitPdfDocument
 
   // ============================================================================
   // Text/CSV Splitters (Built-in)
@@ -354,7 +357,7 @@ object XlcrSplitters:
 
           if rows.isEmpty then Chunk.empty
           else
-            val total = rows.size
+            val total     = rows.size
             val fragments = rows.zipWithIndex.map { case (row, idx) =>
               val chunkText              = s"$header\n$row"
               val content: Content[Mime] = Content.fromString(chunkText, Mime.csv)
@@ -414,9 +417,11 @@ object XlcrSplitters:
           val content = Content.fromChunk(Chunk.fromArray(bytes), mime)
           fragments += DynamicFragment(content, fragments.size, Some(subj))
           bodyCaptured = true
+        end if
 
     harvest(msg)
     Chunk.fromIterable(fragments)
+  end splitEmlMessage
 
   /**
    * Split MSG Outlook message into body + attachments using POI HSMF.
@@ -510,13 +515,18 @@ object XlcrSplitters:
 
           val content = Content.fromChunk(Chunk.fromArray(baos.toByteArray), mime)
           fragments += DynamicFragment(content, fragments.size, Some(displayName))
+        end if
 
         zipInputStream.closeEntry()
         entry = zipInputStream.getNextEntry()
+      end while
     finally
       zipInputStream.close()
+    end try
 
     Chunk.fromIterable(fragments)
+  end splitZipArchive
 
   private def isMacOsMetadata(path: String): Boolean =
     path.contains("__MACOSX") || path.contains(".DS_Store") || path.startsWith("._")
+end XlcrSplitters

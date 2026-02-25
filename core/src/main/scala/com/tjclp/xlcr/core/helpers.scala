@@ -1,10 +1,9 @@
 package com.tjclp.xlcr.core
 
-import org.apache.poi.hsmf.MAPIMessage
-
-import zio.blocks.scope.{ Resource, Unscoped }
-
 import com.tjclp.xlcr.types.DynamicFragment
+
+import org.apache.poi.hsmf.MAPIMessage
+import zio.blocks.scope.*
 
 // Unscoped instances so Chunk/Fragment types can escape Scope.global.scoped blocks
 given unscopedChunk[A: Unscoped]: Unscoped[zio.Chunk[A]] with {}

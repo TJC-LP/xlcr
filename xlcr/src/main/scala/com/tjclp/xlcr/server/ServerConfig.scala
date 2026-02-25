@@ -62,3 +62,4 @@ object ServerConfig:
       port = port.getOrElse(envConfig.port),
       maxRequestSize = maxRequestSize.getOrElse(envConfig.maxRequestSize)
     )
+end ServerConfig

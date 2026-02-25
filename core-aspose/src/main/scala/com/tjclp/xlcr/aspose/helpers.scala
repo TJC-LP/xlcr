@@ -2,9 +2,9 @@ package com.tjclp.xlcr.aspose
 
 import java.io.ByteArrayInputStream
 
-import zio.blocks.scope.{ Resource, Unscoped }
+import com.tjclp.xlcr.types.*
 
-import com.tjclp.xlcr.types.{ Content, ConvertOptions, DynamicFragment, Fragment, Mime }
+import zio.blocks.scope.*
 
 // Unscoped instances so Content/Fragment can escape Scope.global.scoped blocks
 given unscopedMime[M <: Mime]: Unscoped[M] with               {}

@@ -84,3 +84,4 @@ object FragmentNaming:
     val sanitized = sanitizeName(name)
     val ext       = extension.stripPrefix(".")
     s"${padded}__${sanitized}.${ext}"
+end FragmentNaming

@@ -2,12 +2,12 @@ package com.tjclp.xlcr.server.http
 
 import java.nio.charset.StandardCharsets
 
-import zio._
-import zio.http._
-
 import com.tjclp.xlcr.output.ZipBuilder
-import com.tjclp.xlcr.types.{ Content, DynamicFragment, Mime }
-import com.tjclp.xlcr.server.json.{ Codecs, ErrorResponse }
+import com.tjclp.xlcr.server.json.*
+import com.tjclp.xlcr.types.*
+
+import zio.*
+import zio.http.*
 
 /**
  * Utilities for building HTTP responses.
@@ -92,7 +92,7 @@ object ResponseBuilder:
    *   HTTP response with error JSON body
    */
   def error(error: HttpError): Response =
-    import zio.json._
+    import zio.json.*
     import Codecs.given
     val errorJson = ErrorResponse(
       error = error.message,
@@ -106,6 +106,7 @@ object ResponseBuilder:
       ),
       body = Body.fromString(errorJson)
     )
+  end error
 
   /**
    * Build a health check response.
@@ -124,3 +125,4 @@ object ResponseBuilder:
    */
   private def parseMediaType(mime: Mime): MediaType =
     MediaType.forContentType(mime.value).getOrElse(MediaType.application.`octet-stream`)
+end ResponseBuilder

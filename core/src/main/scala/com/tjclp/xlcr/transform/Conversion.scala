@@ -1,8 +1,8 @@
 package com.tjclp.xlcr.transform
 
-import zio.{ Chunk, ZIO }
+import com.tjclp.xlcr.types.*
 
-import com.tjclp.xlcr.types.{ Content, Mime }
+import zio.*
 
 /**
  * A Conversion is a 1:1 Transform that converts content from one MIME type to another.
@@ -41,6 +41,7 @@ trait Conversion[I <: Mime, O <: Mime] extends Transform[I, O]:
    */
   final override def apply(input: Content[I]): ZIO[Any, TransformError, Chunk[Content[O]]] =
     convert(input).map(Chunk.single)
+end Conversion
 
 object Conversion:
 
@@ -117,3 +118,4 @@ object Conversion:
       override def convert(input: Content[M]): ZIO[Any, TransformError, Content[M]] =
         ZIO.succeed(input)
       override def name: String = "identity"
+end Conversion

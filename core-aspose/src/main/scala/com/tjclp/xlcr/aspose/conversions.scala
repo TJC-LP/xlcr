@@ -1,12 +1,12 @@
 package com.tjclp.xlcr.aspose
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import java.io.*
+
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
 
 import zio.ZIO
 import zio.blocks.scope.Scope
-
-import com.tjclp.xlcr.transform.{ Conversion, TransformError }
-import com.tjclp.xlcr.types.{ Content, ConvertOptions, Mime }
 
 /**
  * Pure given instances for Aspose-based document conversions.
@@ -40,6 +40,7 @@ given asposeDocxToPdf: Conversion[Mime.Docx, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeDocxToPdf
 
 given asposeDocToPdf: Conversion[Mime.Doc, Mime.Pdf] with
   override def name = "Aspose.Words.DocToPdf"
@@ -57,6 +58,7 @@ given asposeDocToPdf: Conversion[Mime.Doc, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeDocToPdf
 
 // =============================================================================
 // Word format conversions (legacy <-> modern)
@@ -84,32 +86,32 @@ private[aspose] def convertWordDoc[I <: Mime, O <: Mime](
   }.mapError(TransformError.fromThrowable)
 
 given asposeDocToDocx: Conversion[Mime.Doc, Mime.Docx] with
-  override def name = "Aspose.Words.DocToDocx"
+  override def name                     = "Aspose.Words.DocToDocx"
   def convert(input: Content[Mime.Doc]) =
     convertWordDoc(input, com.aspose.words.SaveFormat.DOCX, Mime.docx)
 
 given asposeDocxToDoc: Conversion[Mime.Docx, Mime.Doc] with
-  override def name = "Aspose.Words.DocxToDoc"
+  override def name                      = "Aspose.Words.DocxToDoc"
   def convert(input: Content[Mime.Docx]) =
     convertWordDoc(input, com.aspose.words.SaveFormat.DOC, Mime.doc)
 
 given asposeDocmToDocx: Conversion[Mime.Docm, Mime.Docx] with
-  override def name = "Aspose.Words.DocmToDocx"
+  override def name                      = "Aspose.Words.DocmToDocx"
   def convert(input: Content[Mime.Docm]) =
     convertWordDoc(input, com.aspose.words.SaveFormat.DOCX, Mime.docx)
 
 given asposeDocmToDoc: Conversion[Mime.Docm, Mime.Doc] with
-  override def name = "Aspose.Words.DocmToDoc"
+  override def name                      = "Aspose.Words.DocmToDoc"
   def convert(input: Content[Mime.Docm]) =
     convertWordDoc(input, com.aspose.words.SaveFormat.DOC, Mime.doc)
 
 given asposeDocToDocm: Conversion[Mime.Doc, Mime.Docm] with
-  override def name = "Aspose.Words.DocToDocm"
+  override def name                     = "Aspose.Words.DocToDocm"
   def convert(input: Content[Mime.Doc]) =
     convertWordDoc(input, com.aspose.words.SaveFormat.DOCM, Mime.docm)
 
 given asposeDocxToDocm: Conversion[Mime.Docx, Mime.Docm] with
-  override def name = "Aspose.Words.DocxToDocm"
+  override def name                      = "Aspose.Words.DocxToDocm"
   def convert(input: Content[Mime.Docx]) =
     convertWordDoc(input, com.aspose.words.SaveFormat.DOCM, Mime.docm)
 
@@ -133,6 +135,7 @@ given asposeXlsxToPdf: Conversion[Mime.Xlsx, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeXlsxToPdf
 
 given asposeXlsToPdf: Conversion[Mime.Xls, Mime.Pdf] with
   override def name = "Aspose.Cells.XlsToPdf"
@@ -150,6 +153,7 @@ given asposeXlsToPdf: Conversion[Mime.Xls, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeXlsToPdf
 
 given asposeXlsmToPdf: Conversion[Mime.Xlsm, Mime.Pdf] with
   override def name = "Aspose.Cells.XlsmToPdf"
@@ -167,6 +171,7 @@ given asposeXlsmToPdf: Conversion[Mime.Xlsm, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeXlsmToPdf
 
 given asposeXlsbToPdf: Conversion[Mime.Xlsb, Mime.Pdf] with
   override def name = "Aspose.Cells.XlsbToPdf"
@@ -184,6 +189,7 @@ given asposeXlsbToPdf: Conversion[Mime.Xlsb, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeXlsbToPdf
 
 given asposeOdsToPdf: Conversion[Mime.Ods, Mime.Pdf] with
   override def name = "Aspose.Cells.OdsToPdf"
@@ -201,6 +207,7 @@ given asposeOdsToPdf: Conversion[Mime.Ods, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeOdsToPdf
 
 // =============================================================================
 // Excel -> HTML
@@ -363,7 +370,7 @@ private[aspose] def convertPdfToHtml(
     AsposeLicenseV2.require[Pdf]
     Scope.global.scoped { scope =>
       import scope.*
-      val stream = new ByteArrayInputStream(input.data.toArray)
+      val stream   = new ByteArrayInputStream(input.data.toArray)
       val document = allocate(pdfDocResource(
         options.password match
           case Some(pwd) => new com.aspose.pdf.Document(stream, pwd)
@@ -385,42 +392,42 @@ private[aspose] def convertPdfToHtml(
   }.mapError(TransformError.fromThrowable)
 
 given asposeXlsToXlsx: Conversion[Mime.Xls, Mime.Xlsx] with
-  override def name = "Aspose.Cells.XlsToXlsx"
+  override def name                     = "Aspose.Cells.XlsToXlsx"
   def convert(input: Content[Mime.Xls]) =
     convertWorkbook(input, com.aspose.cells.SaveFormat.XLSX, Mime.xlsx)
 
 given asposeXlsxToXls: Conversion[Mime.Xlsx, Mime.Xls] with
-  override def name = "Aspose.Cells.XlsxToXls"
+  override def name                      = "Aspose.Cells.XlsxToXls"
   def convert(input: Content[Mime.Xlsx]) =
     convertWorkbook(input, com.aspose.cells.SaveFormat.EXCEL_97_TO_2003, Mime.xls)
 
 given asposeXlsmToXlsx: Conversion[Mime.Xlsm, Mime.Xlsx] with
-  override def name = "Aspose.Cells.XlsmToXlsx"
+  override def name                      = "Aspose.Cells.XlsmToXlsx"
   def convert(input: Content[Mime.Xlsm]) =
     convertWorkbook(input, com.aspose.cells.SaveFormat.XLSX, Mime.xlsx)
 
 given asposeXlsbToXlsx: Conversion[Mime.Xlsb, Mime.Xlsx] with
-  override def name = "Aspose.Cells.XlsbToXlsx"
+  override def name                      = "Aspose.Cells.XlsbToXlsx"
   def convert(input: Content[Mime.Xlsb]) =
     convertWorkbook(input, com.aspose.cells.SaveFormat.XLSX, Mime.xlsx)
 
 given asposeXlsxToXlsm: Conversion[Mime.Xlsx, Mime.Xlsm] with
-  override def name = "Aspose.Cells.XlsxToXlsm"
+  override def name                      = "Aspose.Cells.XlsxToXlsm"
   def convert(input: Content[Mime.Xlsx]) =
     convertWorkbook(input, com.aspose.cells.SaveFormat.XLSM, Mime.xlsm)
 
 given asposeXlsxToXlsb: Conversion[Mime.Xlsx, Mime.Xlsb] with
-  override def name = "Aspose.Cells.XlsxToXlsb"
+  override def name                      = "Aspose.Cells.XlsxToXlsb"
   def convert(input: Content[Mime.Xlsx]) =
     convertWorkbook(input, com.aspose.cells.SaveFormat.XLSB, Mime.xlsb)
 
 given asposeOdsToXlsx: Conversion[Mime.Ods, Mime.Xlsx] with
-  override def name = "Aspose.Cells.OdsToXlsx"
+  override def name                     = "Aspose.Cells.OdsToXlsx"
   def convert(input: Content[Mime.Ods]) =
     convertWorkbook(input, com.aspose.cells.SaveFormat.XLSX, Mime.xlsx)
 
 given asposeXlsxToOds: Conversion[Mime.Xlsx, Mime.Ods] with
-  override def name = "Aspose.Cells.XlsxToOds"
+  override def name                      = "Aspose.Cells.XlsxToOds"
   def convert(input: Content[Mime.Xlsx]) =
     convertWorkbook(input, com.aspose.cells.SaveFormat.ODS, Mime.ods)
 
@@ -444,6 +451,7 @@ given asposePptxToPdf: Conversion[Mime.Pptx, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePptxToPdf
 
 given asposePptToPdf: Conversion[Mime.Ppt, Mime.Pdf] with
   override def name = "Aspose.Slides.PptToPdf"
@@ -461,6 +469,7 @@ given asposePptToPdf: Conversion[Mime.Ppt, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePptToPdf
 
 // =============================================================================
 // PowerPoint <-> HTML
@@ -482,6 +491,7 @@ given asposePptxToHtml: Conversion[Mime.Pptx, Mime.Html] with
         Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePptxToHtml
 
 given asposePptToHtml: Conversion[Mime.Ppt, Mime.Html] with
   override def name = "Aspose.Slides.PptToHtml"
@@ -499,6 +509,7 @@ given asposePptToHtml: Conversion[Mime.Ppt, Mime.Html] with
         Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePptToHtml
 
 given asposeHtmlToPptx: Conversion[Mime.Html, Mime.Pptx] with
   override def name = "Aspose.Slides.HtmlToPptx"
@@ -520,6 +531,7 @@ given asposeHtmlToPptx: Conversion[Mime.Html, Mime.Pptx] with
         Content[Mime.Pptx](out.toByteArray, Mime.pptx, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeHtmlToPptx
 
 given asposeHtmlToPpt: Conversion[Mime.Html, Mime.Ppt] with
   override def name = "Aspose.Slides.HtmlToPpt"
@@ -539,6 +551,7 @@ given asposeHtmlToPpt: Conversion[Mime.Html, Mime.Ppt] with
         Content[Mime.Ppt](out.toByteArray, Mime.ppt, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeHtmlToPpt
 
 // =============================================================================
 // PowerPoint format conversions (legacy <-> modern)
@@ -566,22 +579,22 @@ private def convertPresentation[I <: Mime, O <: Mime](
   }.mapError(TransformError.fromThrowable)
 
 given asposePptToPptx: Conversion[Mime.Ppt, Mime.Pptx] with
-  override def name = "Aspose.Slides.PptToPptx"
+  override def name                     = "Aspose.Slides.PptToPptx"
   def convert(input: Content[Mime.Ppt]) =
     convertPresentation(input, com.aspose.slides.SaveFormat.Pptx, Mime.pptx)
 
 given asposePptxToPpt: Conversion[Mime.Pptx, Mime.Ppt] with
-  override def name = "Aspose.Slides.PptxToPpt"
+  override def name                      = "Aspose.Slides.PptxToPpt"
   def convert(input: Content[Mime.Pptx]) =
     convertPresentation(input, com.aspose.slides.SaveFormat.Ppt, Mime.ppt)
 
 given asposePptmToPptx: Conversion[Mime.Pptm, Mime.Pptx] with
-  override def name = "Aspose.Slides.PptmToPptx"
+  override def name                      = "Aspose.Slides.PptmToPptx"
   def convert(input: Content[Mime.Pptm]) =
     convertPresentation(input, com.aspose.slides.SaveFormat.Pptx, Mime.pptx)
 
 given asposePptmToPpt: Conversion[Mime.Pptm, Mime.Ppt] with
-  override def name = "Aspose.Slides.PptmToPpt"
+  override def name                      = "Aspose.Slides.PptmToPpt"
   def convert(input: Content[Mime.Pptm]) =
     convertPresentation(input, com.aspose.slides.SaveFormat.Ppt, Mime.ppt)
 
@@ -612,6 +625,7 @@ given asposePdfToHtml: Conversion[Mime.Pdf, Mime.Html] with
         Content[Mime.Html](out.toByteArray, Mime.html, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePdfToHtml
 
 // =============================================================================
 // PDF -> PowerPoint
@@ -635,6 +649,7 @@ given asposePdfToPptx: Conversion[Mime.Pdf, Mime.Pptx] with
         Content[Mime.Pptx](out.toByteArray, Mime.pptx, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePdfToPptx
 
 given asposePdfToPpt: Conversion[Mime.Pdf, Mime.Ppt] with
   override def name = "Aspose.Slides.PdfToPpt"
@@ -654,6 +669,7 @@ given asposePdfToPpt: Conversion[Mime.Pdf, Mime.Ppt] with
         Content[Mime.Ppt](out.toByteArray, Mime.ppt, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePdfToPpt
 
 // =============================================================================
 // PDF -> Images
@@ -680,6 +696,7 @@ given asposePdfToPng: Conversion[Mime.Pdf, Mime.Png] with
         Content[Mime.Png](out.toByteArray, Mime.png, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePdfToPng
 
 given asposePdfToJpeg: Conversion[Mime.Pdf, Mime.Jpeg] with
   override def name = "Aspose.Pdf.PdfToJpeg"
@@ -701,6 +718,7 @@ given asposePdfToJpeg: Conversion[Mime.Pdf, Mime.Jpeg] with
         Content[Mime.Jpeg](out.toByteArray, Mime.jpeg, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePdfToJpeg
 
 // =============================================================================
 // Images -> PDF
@@ -726,6 +744,7 @@ given asposePngToPdf: Conversion[Mime.Png, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposePngToPdf
 
 given asposeJpegToPdf: Conversion[Mime.Jpeg, Mime.Pdf] with
   override def name = "Aspose.Pdf.JpegToPdf"
@@ -747,6 +766,7 @@ given asposeJpegToPdf: Conversion[Mime.Jpeg, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeJpegToPdf
 
 // =============================================================================
 // HTML -> PDF
@@ -761,7 +781,7 @@ given asposeHtmlToPdf: Conversion[Mime.Html, Mime.Pdf] with
       Scope.global.scoped { scope =>
         import scope.*
         val htmlOptions = new com.aspose.pdf.HtmlLoadOptions()
-        val document = allocate(pdfDocResource(
+        val document    = allocate(pdfDocResource(
           new com.aspose.pdf.Document(new ByteArrayInputStream(input.data.toArray), htmlOptions)
         ))
         val out = new ByteArrayOutputStream()
@@ -769,6 +789,7 @@ given asposeHtmlToPdf: Conversion[Mime.Html, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeHtmlToPdf
 
 // =============================================================================
 // Email -> PDF
@@ -796,6 +817,7 @@ given asposeEmlToPdf: Conversion[Mime.Eml, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeEmlToPdf
 
 given asposeMsgToPdf: Conversion[Mime.Msg, Mime.Pdf] with
   override def name = "Aspose.Email.MsgToPdf"
@@ -816,3 +838,4 @@ given asposeMsgToPdf: Conversion[Mime.Msg, Mime.Pdf] with
         Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
       }
     }.mapError(TransformError.fromThrowable)
+end asposeMsgToPdf

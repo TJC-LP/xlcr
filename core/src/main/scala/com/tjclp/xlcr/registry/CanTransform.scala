@@ -1,8 +1,9 @@
 package com.tjclp.xlcr.registry
 
+import scala.util.NotGiven
+
 import com.tjclp.xlcr.transform.Transform
 import com.tjclp.xlcr.types.Mime
-import scala.util.NotGiven
 
 /**
  * Type class evidence that a transform exists from type I to type O.
@@ -92,6 +93,7 @@ object CanTransform:
     ev: CanTransform[I, O] = null
   ): Option[Transform[I, O]] =
     Option(ev).map(_.transform)
+end CanTransform
 
 /**
  * Extension methods for Content when CanTransform evidence is available.
@@ -108,9 +110,12 @@ extension [I <: Mime](content: com.tjclp.xlcr.types.Content[I])
   /**
    * Transform this content to another MIME type (may produce multiple outputs).
    */
-  def transformTo[O <: Mime](using ct: CanTransform[I, O]): zio.ZIO[
+  def transformTo[O <: Mime](using
+    ct: CanTransform[I, O]
+  ): zio.ZIO[
     Any,
     com.tjclp.xlcr.transform.TransformError,
     zio.Chunk[com.tjclp.xlcr.types.Content[O]]
   ] =
     ct.transform(content)
+end extension

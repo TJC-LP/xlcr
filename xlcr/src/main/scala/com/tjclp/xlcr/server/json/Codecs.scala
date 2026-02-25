@@ -1,6 +1,6 @@
 package com.tjclp.xlcr.server.json
 
-import zio.json._
+import zio.json.*
 
 /**
  * JSON response models and codecs for the XLCR API.

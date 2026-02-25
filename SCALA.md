@@ -1,6 +1,6 @@
 # Scala Version
 
-XLCR builds with **Scala 3.3.4**.
+XLCR builds with **Scala 3.8.2**.
 
 | Module | Status |
 |--------|--------|

@@ -1,17 +1,16 @@
 package com.tjclp.xlcr.core
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+import java.io.*
 
-import zio.ZIO
+import com.tjclp.xlcr.transform.*
+import com.tjclp.xlcr.types.*
 
+import org.apache.poi.ss.usermodel.*
 import org.apache.tika.metadata.Metadata
-import org.apache.tika.parser.{ AutoDetectParser, ParseContext }
-import org.apache.tika.sax.{ BodyContentHandler, ToXMLContentHandler, WriteOutContentHandler }
-import org.apache.poi.ss.usermodel.{ CellType, DateUtil, WorkbookFactory }
+import org.apache.tika.parser.*
+import org.apache.tika.sax.*
 import org.odftoolkit.odfdom.doc.OdfSpreadsheetDocument
-
-import com.tjclp.xlcr.transform.{ Conversion, ParseError, RenderError }
-import com.tjclp.xlcr.types.{ Content, Mime }
+import zio.ZIO
 
 /**
  * Core XLCR conversions using Tika and POI with no external dependencies. These serve as the
@@ -190,11 +189,15 @@ object XlcrConversions:
 
             finally
               excelWorkbook.close()
+            end try
           finally
             odsDocument.close()
+          end try
         finally
           tempFile.delete()
+        end try
       }.mapError { e =>
         RenderError(s"XLSX to ODS conversion failed: ${e.getMessage}", Some(e))
       }
     }
+end XlcrConversions
