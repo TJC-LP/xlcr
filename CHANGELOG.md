@@ -9,9 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - `core-spark` module and all Spark pipeline sources/tests/docs.
+- All v1 architecture: bridges, splitters, parsers, renderers, registries, legacy CLI, pipeline system.
+- Scala 2.13.17 cross-build support.
 
 ### Changed
 - Project now targets Scala 3.3.4 only.
+
+## [0.2.2] - 2026-02-25
+
+### Added
+- 39 new LibreOffice V2 conversions (21 → 60 total), covering macro-enabled formats, CSV, HTML, OpenDocument cross-format, ODG drawings, document-to-image, and more (PR #59)
+
+### Changed
+- CI: GHCR container image for builds — eliminates apt rate limiting; self-bootstrapping ci-image job (PR #58)
+- CI: Java 25 added to test matrix (PR #58)
+- Release assets: versioned CLI JAR (`xlcr-<version>.jar`) and Linux native image (`xlcr-<version>-linux-amd64`) published to GitHub Releases (PR #58)
+
+### Deprecated
+- `core-spark` module — will be removed in 0.3.0; Spark 4.x does not support Java 25 (PR #58)
+
+## [0.2.1] - 2026-02-24
+
+### Added
+- HTTP server folded into xlcr module — `xlcr server start` replaces standalone server JAR (PR #56)
+
+### Fixed
+- Native image: all 55/55 tests passing (was 49/55) — GraalVM reachability metadata fixes (PR #55)
+
+### Changed
+- Upgraded 26 dependencies across all modules (PR #57)
+- CI now tests on Java 17, 21, and 25 (PR #58)
+- Release assets: named CLI JAR (`xlcr-<version>.jar`) and Linux native image (`xlcr-linux-amd64`) (PR #58)
+
+### Deprecated
+- `core-spark` module — will be removed in 0.3.0; Spark 4.x does not support Java 25, and the use case is no longer needed (PR #58)
 
 ## [0.2.0] - 2026-02-23
 
@@ -103,6 +134,8 @@ First stable release. XLCR provides document conversion and splitting across PDF
 - PowerPoint slide dimension loss during splitting
 - Word heading splitter overlapping content and empty headings
 
+[0.2.2]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.2
+[0.2.1]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.1
 [0.2.0]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.0
 [0.1.3]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.3
 [0.1.1]: https://github.com/TJC-LP/xlcr/releases/tag/v0.1.1

@@ -38,3 +38,27 @@ object ServerConfig:
         .flatMap(_.toLongOption)
         .getOrElse(100 * 1024 * 1024)
     )
+
+  /**
+   * Create configuration from CLI arguments, with env var fallback, then defaults.
+   *
+   * Priority: CLI flags > environment variables > defaults.
+   *
+   * @param host
+   *   CLI --host flag value
+   * @param port
+   *   CLI --port flag value
+   * @param maxRequestSize
+   *   CLI --max-request-size flag value
+   */
+  def fromArgs(
+    host: Option[String] = None,
+    port: Option[Int] = None,
+    maxRequestSize: Option[Long] = None
+  ): ServerConfig =
+    val envConfig = fromEnv
+    ServerConfig(
+      host = host.getOrElse(envConfig.host),
+      port = port.getOrElse(envConfig.port),
+      maxRequestSize = maxRequestSize.getOrElse(envConfig.maxRequestSize)
+    )

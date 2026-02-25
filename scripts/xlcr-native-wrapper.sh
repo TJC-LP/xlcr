@@ -10,7 +10,7 @@
 set -e
 
 NATIVE_BINARY_DIR="/usr/local/lib/xlcr"
-NATIVE_BINARY="$NATIVE_BINARY_DIR/xlcr"
+NATIVE_BINARY="${XLCR_NATIVE_BINARY:-$NATIVE_BINARY_DIR/xlcr}"
 
 if [[ ! -f "$NATIVE_BINARY" ]]; then
     # Fall back to searching alongside this script

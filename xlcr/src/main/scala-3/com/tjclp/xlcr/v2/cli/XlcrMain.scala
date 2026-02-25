@@ -16,6 +16,7 @@ import com.tjclp.xlcr.v2.cli.Commands.*
 import com.tjclp.xlcr.v2.core.XlcrTransforms
 import com.tjclp.xlcr.v2.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.v2.output.{ FragmentNaming, MimeExtensions, ZipBuilder }
+import com.tjclp.xlcr.v2.server.{ Server, ServerConfig }
 import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, Mime }
 
 /**
@@ -39,6 +40,15 @@ import com.tjclp.xlcr.v2.types.{ Content, ConvertOptions, Mime }
  * }}}
  */
 object XlcrMain extends ZIOAppDefault:
+
+  // JDK 22+ defaults to Panama FFM for HarfBuzz font shaping (HBShaper).
+  // GraalVM CE 25 segfaults on aarch64 when creating Panama upcall stubs
+  // in TrampolineSet.prepareTrampolines(). Disabling FFM falls back to the
+  // JNI-based HarfBuzz path (identical to JDK 21), avoiding the crash.
+  // Must be set before sun.font.SunLayoutEngine's static initializer runs.
+  locally {
+    java.lang.System.setProperty("sun.font.layout.ffm", "false")
+  }
 
   // Ensure java.home and java.library.path are set before Aspose initializes
   // (critical for native images). In GraalVM native images, build-time -Djava.home
@@ -92,6 +102,19 @@ object XlcrMain extends ZIOAppDefault:
       case CliCommand.Convert(args) => runConvert(args)
       case CliCommand.Split(args)   => runSplit(args)
       case CliCommand.Info(args)    => runInfo(args)
+      case CliCommand.Server(args)  => runServer(args)
+
+  // ============================================================================
+  // Server Command
+  // ============================================================================
+
+  private def runServer(args: ServerArgs): ZIO[Any, Throwable, ExitCode] =
+    val config = ServerConfig.fromArgs(
+      host = args.host,
+      port = args.port,
+      maxRequestSize = args.maxRequestSize
+    )
+    Server.start(config).as(ExitCode.success)
 
   // ============================================================================
   // Convert Command
@@ -490,7 +513,7 @@ object XlcrMain extends ZIOAppDefault:
         }
         metadata.names().toList.map(name => name -> metadata.get(name)).toMap
       catch
-        case _: Exception => Map.empty
+        case _: Throwable => Map.empty
 
   // ============================================================================
   // Info Output Formatters

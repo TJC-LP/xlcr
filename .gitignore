@@ -46,6 +46,7 @@ build/
 ### Scala ###
 .bsp/
 .scala-build/
+.metals/
 
 ### Env ###
 .env

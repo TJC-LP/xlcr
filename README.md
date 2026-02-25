@@ -15,14 +15,13 @@ XLCR converts between document formats (PDF, DOCX, XLSX, PPTX, HTML, ODS, and mo
 | **core** | `xlcr-core` | Tika text extraction, document splitters (PDF/Excel/PowerPoint/Word/Email/Archive), XLSX-to-ODS conversion |
 | **core-aspose** | `xlcr-core-aspose` | Aspose-powered conversions: PDF/DOCX/XLSX/PPTX/HTML with HIGH priority (commercial license required) |
 | **core-libreoffice** | `xlcr-core-libreoffice` | LibreOffice-powered conversions: DOC/XLS/PPT/ODS to PDF as open-source fallback |
-| **xlcr** | `xlcr` | Unified CLI with compile-time transform discovery and automatic backend fallback (Scala 3 only) |
-| **server** | `xlcr-server` | HTTP REST API for document conversion and splitting (Scala 3 only) |
+| **xlcr** | `xlcr` | Unified CLI with compile-time transform discovery, HTTP server, and automatic backend fallback (Scala 3 only) |
 
 Backend selection is automatic: Aspose (HIGH priority) > LibreOffice (DEFAULT) > Core. You can also select a backend explicitly with `--backend aspose` or `--backend libreoffice`.
 
 ## Prerequisites
 
-- **Java 17+** (tested with Java 17 and 21)
+- **Java 17+** (tested with Java 17, 21, and 25)
 - **Mill** build tool (included via `./mill` wrapper script)
 - **LibreOffice** (optional, for `core-libreoffice` backend)
 - **Aspose license** (optional, for `core-aspose` backend without watermarks)
@@ -47,16 +46,16 @@ make install
 ```scala
 // build.mill (Mill)
 def mvnDeps = Seq(
-  mvn"com.tjclp::xlcr-core:0.2.0",
-  mvn"com.tjclp::xlcr-core-aspose:0.2.0"  // optional
+  mvn"com.tjclp::xlcr-core:0.2.2",
+  mvn"com.tjclp::xlcr-core-aspose:0.2.2"  // optional
 )
 ```
 
 ```scala
 // build.sbt (sbt)
 libraryDependencies ++= Seq(
-  "com.tjclp" %% "xlcr-core" % "0.2.0",
-  "com.tjclp" %% "xlcr-core-aspose" % "0.2.0"  // optional
+  "com.tjclp" %% "xlcr-core" % "0.2.2",
+  "com.tjclp" %% "xlcr-core-aspose" % "0.2.2"  // optional
 )
 ```
 
@@ -122,14 +121,14 @@ xlcr convert -i intermediate.html -o presentation.pptx
 
 ## HTTP Server
 
-The server module exposes document conversion as a REST API:
+XLCR exposes document conversion as a REST API:
 
 ```bash
 # Start the server
-./mill 'server[3.3.4].run'
+./mill 'xlcr[3.3.4].run' server start --port 8080
 
 # Or with custom port
-XLCR_PORT=9000 ./mill 'server[3.3.4].run'
+./mill 'xlcr[3.3.4].run' server start --port 9000
 ```
 
 ### Endpoints

@@ -25,7 +25,7 @@
 # ============================================================================
 FROM ubuntu:24.04 AS base
 
-# Install build tools and Python (no JDK from apt — we use GraalVM below)
+# Install build tools, Python, and external tools for comprehensive tracing
 RUN apt-get update && apt-get install -y \
     curl \
     make \
@@ -34,7 +34,15 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     file \
-    && pip3 install --break-system-packages openpyxl python-docx \
+    tesseract-ocr \
+    libimage-exiftool-perl \
+    imagemagick \
+    ffmpeg \
+    libreoffice-core \
+    libreoffice-writer \
+    libreoffice-calc \
+    libreoffice-impress \
+    && pip3 install --break-system-packages openpyxl python-docx fpdf2 Pillow \
     && rm -rf /var/lib/apt/lists/*
 
 # Install GraalVM CE as the system JDK (matches jvmId in package.mill)
@@ -65,7 +73,6 @@ COPY core/package.mill core/package.mill
 COPY core-aspose/package.mill core-aspose/package.mill
 COPY core-libreoffice/package.mill core-libreoffice/package.mill
 COPY xlcr/package.mill xlcr/package.mill
-COPY server/package.mill server/package.mill
 
 # Copy source code and resources
 COPY core/src core/src
@@ -81,8 +88,18 @@ COPY Aspose.Total.Java.li[c] core-aspose/resources/
 COPY scripts/testdata/test.html /xlcr/testdata/test.html
 COPY scripts/testdata/gen-test-xlsx.py /xlcr/testdata/gen-test-xlsx.py
 COPY scripts/testdata/gen-test-docx.py /xlcr/testdata/gen-test-docx.py
+COPY scripts/testdata/gen-test-pdf.py /xlcr/testdata/gen-test-pdf.py
+COPY scripts/testdata/gen-test-eml.py /xlcr/testdata/gen-test-eml.py
+COPY scripts/testdata/gen-test-csv.py /xlcr/testdata/gen-test-csv.py
+COPY scripts/testdata/gen-test-zip.py /xlcr/testdata/gen-test-zip.py
+COPY scripts/testdata/gen-test-images.py /xlcr/testdata/gen-test-images.py
 RUN python3 /xlcr/testdata/gen-test-xlsx.py /xlcr/testdata/test.xlsx
 RUN python3 /xlcr/testdata/gen-test-docx.py /xlcr/testdata/test.docx
+RUN python3 /xlcr/testdata/gen-test-pdf.py /xlcr/testdata/test.pdf
+RUN python3 /xlcr/testdata/gen-test-eml.py /xlcr/testdata/test.eml
+RUN python3 /xlcr/testdata/gen-test-csv.py /xlcr/testdata/test.csv
+RUN python3 /xlcr/testdata/gen-test-zip.py /xlcr/testdata/test.zip
+RUN python3 /xlcr/testdata/gen-test-images.py /xlcr/testdata
 
 # ============================================================================
 # Stage 2: assembly — build JAR + download GraalVM for agent
@@ -100,13 +117,14 @@ RUN mill 'xlcr[3.3.4].nativeImageTool'
 # ============================================================================
 FROM assembly AS agent
 
-COPY scripts/run-native-agent.sh /xlcr/run-native-agent.sh
-RUN chmod +x /xlcr/run-native-agent.sh
+COPY scripts/test-conversions.sh /xlcr/scripts/test-conversions.sh
+RUN chmod +x /xlcr/scripts/test-conversions.sh
 
 # Create metadata output directory
 RUN mkdir -p /metadata-output
+ENV METADATA_DIR=/metadata-output
 
-ENTRYPOINT ["/xlcr/run-native-agent.sh"]
+ENTRYPOINT ["/xlcr/scripts/test-conversions.sh", "--mode", "agent"]
 
 # ============================================================================
 # Stage 4: native — build native binary
