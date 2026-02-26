@@ -38,6 +38,8 @@ RUN apt-get update && apt-get install -y \
     libimage-exiftool-perl \
     imagemagick \
     ffmpeg \
+    fonts-liberation \
+    fonts-dejavu-core \
     libreoffice-core \
     libreoffice-writer \
     libreoffice-calc \

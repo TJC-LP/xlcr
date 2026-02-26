@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     tesseract-ocr \
     imagemagick \
+    fonts-liberation \
+    fonts-dejavu-core \
     libreoffice-core \
     libreoffice-writer \
     libreoffice-calc \
