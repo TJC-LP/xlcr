@@ -30906,6 +30906,9 @@
       "glob": "com/aspose/cells/resources/Aspose.Cells.geo_1.ttf"
     },
     {
+      "glob": "com/aspose/cells/resources/Aspose.Cells.typefaces.zip"
+    },
+    {
       "glob": "com/aspose/cells/resources/Aspose.License.BlackList.xml"
     },
     {
