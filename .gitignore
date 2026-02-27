@@ -70,3 +70,9 @@ changes.txt
 test-output
 spreadsheetllm-base
 aspose-license-b64.txt
+
+### Python ###
+__pycache__/
+
+### Artifacts ###
+artifacts/
