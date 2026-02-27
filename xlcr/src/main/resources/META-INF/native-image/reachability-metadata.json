@@ -13,6 +13,9 @@
       ]
     },
     {
+      "type": "boolean[]"
+    },
+    {
       "type": "byte[]",
       "jniAccessible": true
     },
@@ -894,6 +897,69 @@
       "type": "com.aspose.pdf.internal.imaging.internal.p261.z5"
     },
     {
+      "type": "com.aspose.pdf.internal.imaging.internal.p334.z13[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p334.z16[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p334.z19[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p334.z20[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p334.z22[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p334.z23"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z29[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z33[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z35[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z36[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z37[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z42[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z44[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z46[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z56[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z61[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z64[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z65[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z67[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z68[]"
+    },
+    {
+      "type": "com.aspose.pdf.internal.imaging.internal.p335.z70[]"
+    },
+    {
       "type": "com.aspose.pdf.internal.l104f.lI",
       "methods": [
         {
@@ -1112,7 +1178,13 @@
       ]
     },
     {
-      "type": "com.aspose.pdf.internal.l5h.le"
+      "type": "com.aspose.pdf.internal.l5h.le",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "com.aspose.pdf.internal.l5h.le[]"
@@ -2210,7 +2282,13 @@
       ]
     },
     {
+      "type": "double[]"
+    },
+    {
       "type": "float[]"
+    },
+    {
+      "type": "int[]"
     },
     {
       "type": "io.netty.bootstrap.ServerBootstrap$1"
@@ -5021,6 +5099,9 @@
       ]
     },
     {
+      "type": "long[]"
+    },
+    {
       "type": "magnolia1.CallByNeed",
       "fields": [
         {
@@ -5269,10 +5350,31 @@
       ]
     },
     {
+      "type": "org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink",
+      "methods": [
+        {
+          "name": "getAction",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationPopup"
     },
     {
       "type": "org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText"
+    },
+    {
+      "type": "org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationUnknown"
+    },
+    {
+      "type": "org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationWidget",
+      "methods": [
+        {
+          "name": "getAction",
+          "parameterTypes": []
+        }
+      ]
     },
     {
       "type": "org.apache.poi.hssf.usermodel.HSSFWorkbookFactory"
@@ -6544,6 +6646,18 @@
         {
           "name": "<init>",
           "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFX",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.w3c.dom.Element",
+            "java.lang.String"
+          ]
         }
       ]
     },
@@ -11310,6 +11424,9 @@
     },
     {
       "type": "schemaorg_apache_xmlbeans.system.sXMLTOOLS.TypeSystemHolder"
+    },
+    {
+      "type": "short[]"
     },
     {
       "type": "sun.awt.AWTAutoShutdown",
@@ -31261,6 +31378,9 @@
     },
     {
       "glob": "org/apache/pdfbox/resources/afm/Times-Roman.afm"
+    },
+    {
+      "glob": "org/apache/pdfbox/resources/afm/ZapfDingbats.afm"
     },
     {
       "glob": "org/apache/pdfbox/resources/glyphlist/additional.txt"
