@@ -66,6 +66,8 @@ trait XlcrModule extends build.XLCRModule with NativeImageModule {
     // with SIGSEGV when initialized at build time. Deferring to run time avoids
     // the segfault — code is still AOT-compiled, only static initializers run lazily.
     // Netty (used by zio-http) must init at run time for native image
+    // SharedArenaSupport: Netty's buffer cleanup uses Arena.ofShared on Java 25+
+    "-H:+SharedArenaSupport",
     "--initialize-at-run-time=io.netty",
     "--initialize-at-run-time=com.aspose.slides",
     "--initialize-at-run-time=com.aspose.pdf",
