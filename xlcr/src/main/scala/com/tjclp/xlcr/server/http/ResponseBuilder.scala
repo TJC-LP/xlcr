@@ -95,7 +95,7 @@ object ResponseBuilder:
     import zio.json.*
     import Codecs.given
     val errorJson = ErrorResponse(
-      error = error.message,
+      error = Option(error.message).getOrElse("Internal server error"),
       details = error.details,
       status = error.status.code
     ).toJson
