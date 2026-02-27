@@ -121,12 +121,15 @@ object CapabilitiesResponse:
  *   Number of configured LibreOffice processes
  * @param maxTasksPerProcess
  *   Conversions before automatic process restart
+ * @param ready
+ *   Optional runtime readiness probe result (present only when explicitly requested)
  */
 final case class LibreOfficeStatus(
   available: Boolean,
   running: Boolean,
   instances: Int,
-  maxTasksPerProcess: Int
+  maxTasksPerProcess: Int,
+  ready: Option[Boolean] = None
 )
 
 object LibreOfficeStatus:

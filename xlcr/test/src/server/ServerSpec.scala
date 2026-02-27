@@ -9,6 +9,7 @@ import zio.json._
 
 import com.tjclp.xlcr.server.routes.Routes
 import com.tjclp.xlcr.server.json._
+import com.tjclp.xlcr.config.LibreOfficeConfig
 import com.tjclp.xlcr.types.Mime
 
 /**
@@ -62,6 +63,45 @@ class ServerSpec extends AnyFlatSpec with Matchers:
 
     val body = runZIO(response.body.asString)
     body should include("healthy")
+  }
+
+  it should "not start LibreOffice by default" in {
+    if LibreOfficeConfig.isAvailable() then
+      LibreOfficeConfig.shutdown()
+      val request  = makeRequest(Method.GET, "/health")
+      val response = executeRequest(request)
+      response.status shouldBe Status.Ok
+
+      val body   = runZIO(response.body.asString)
+      val health = body.fromJson[HealthResponse]
+      health.isRight shouldBe true
+      health.toOption.get.libreoffice.flatMap(_.ready) shouldBe None
+      health.toOption.get.libreoffice.get.running shouldBe false
+    else
+      info("Skipping: LibreOffice unavailable")
+  }
+
+  it should "support explicit LibreOffice runtime probes" in {
+    LibreOfficeConfig.shutdown()
+    val request  = makeRequest(Method.GET, "/health?check=libreoffice")
+    val response = executeRequest(request)
+    response.status shouldBe Status.Ok
+
+    val body   = runZIO(response.body.asString)
+    val health = body.fromJson[HealthResponse]
+    health.isRight shouldBe true
+
+    val payload = health.toOption.get
+    val lo      = payload.libreoffice.get
+
+    if LibreOfficeConfig.isAvailable() then
+      payload.status shouldBe "healthy"
+      lo.ready shouldBe Some(true)
+      lo.running shouldBe true
+      LibreOfficeConfig.shutdown()
+    else
+      payload.status shouldBe "unhealthy"
+      lo.ready shouldBe Some(false)
   }
 
   // ============================================================================
@@ -130,6 +170,79 @@ class ServerSpec extends AnyFlatSpec with Matchers:
     val response = executeRequest(request)
 
     response.status shouldBe Status.BadRequest
+  }
+
+  it should "prefer Content-Type over content sniffing by default" in {
+    val htmlBody = "<html><body>hello</body></html>".getBytes("UTF-8")
+    val request  = makeRequest(
+      Method.POST,
+      "/info",
+      Some(htmlBody),
+      Some(Mime.csv.value)
+    )
+    val response = executeRequest(request)
+
+    response.status shouldBe Status.Ok
+
+    val body = runZIO(response.body.asString)
+    val info = body.fromJson[InfoResponse]
+    info.isRight shouldBe true
+    info.toOption.get.mimeType shouldBe Mime.csv.value
+  }
+
+  it should "honor detect=tika and override Content-Type for /info" in {
+    val htmlBody = "<html><body>hello</body></html>".getBytes("UTF-8")
+    val request  = makeRequest(
+      Method.POST,
+      "/info?detect=tika",
+      Some(htmlBody),
+      Some(Mime.csv.value)
+    )
+    val response = executeRequest(request)
+
+    response.status shouldBe Status.Ok
+
+    val body = runZIO(response.body.asString)
+    val info = body.fromJson[InfoResponse]
+    info.isRight shouldBe true
+    info.toOption.get.mimeType shouldBe Mime.html.value
+  }
+
+  // ============================================================================
+  // Capability/Availability Tests
+  // ============================================================================
+
+  "GET /capabilities" should "hide LibreOffice-only conversions when unavailable" in {
+    if !LibreOfficeConfig.isAvailable() then
+      val request  = makeRequest(Method.GET, "/capabilities")
+      val response = executeRequest(request)
+      response.status shouldBe Status.Ok
+
+      val body         = runZIO(response.body.asString)
+      val capabilities = body.fromJson[CapabilitiesResponse]
+      capabilities.isRight shouldBe true
+
+      val hasOdgToSvg = capabilities.toOption.get.conversions.exists(c =>
+        c.from == Mime.odg.value && c.to == Mime.svg.value
+      )
+      hasOdgToSvg shouldBe false
+    else
+      info("Skipping: LibreOffice available")
+  }
+
+  "POST /convert with backend=libreoffice" should "return 503 when LibreOffice is unavailable" in {
+    if !LibreOfficeConfig.isAvailable() then
+      val request = makeRequest(
+        Method.POST,
+        "/convert?to=pdf&backend=libreoffice",
+        Some("hello".getBytes("UTF-8")),
+        Some(Mime.plain.value)
+      )
+      val response = executeRequest(request)
+
+      response.status shouldBe Status.ServiceUnavailable
+    else
+      info("Skipping: LibreOffice available")
   }
 
   // ============================================================================

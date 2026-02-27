@@ -1,6 +1,7 @@
 package com.tjclp.xlcr.cli
 
 import com.tjclp.xlcr.cli.Commands.Backend
+import com.tjclp.xlcr.config.LibreOfficeConfig
 import com.tjclp.xlcr.core.XlcrTransforms
 import com.tjclp.xlcr.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.transform.*
@@ -36,6 +37,9 @@ import zio.*
  * }}}
  */
 object UnifiedTransforms:
+
+  /** Whether LibreOffice is installed and can be considered for routing decisions. */
+  private def libreOfficeAvailable: Boolean = LibreOfficeConfig.isAvailable()
 
   // ===========================================================================
   // Conversion dispatch with fallback
@@ -79,11 +83,12 @@ object UnifiedTransforms:
   def canConvert(from: Mime, to: Mime, backend: Option[Backend] = None): Boolean =
     backend match
       case Some(Backend.Aspose)      => BackendWiring.asposeCanConvert(from, to)
-      case Some(Backend.LibreOffice) => LibreOfficeTransforms.canConvert(from, to)
-      case Some(Backend.Xlcr)        => XlcrTransforms.canConvert(from, to)
-      case None                      =>
+      case Some(Backend.LibreOffice) => libreOfficeAvailable &&
+        LibreOfficeTransforms.canConvert(from, to)
+      case Some(Backend.Xlcr) => XlcrTransforms.canConvert(from, to)
+      case None               =>
         BackendWiring.asposeCanConvert(from, to) ||
-        LibreOfficeTransforms.canConvert(from, to) ||
+        (libreOfficeAvailable && LibreOfficeTransforms.canConvert(from, to)) ||
         XlcrTransforms.canConvert(from, to)
 
   // ===========================================================================
@@ -125,11 +130,11 @@ object UnifiedTransforms:
   def canSplit(mime: Mime, backend: Option[Backend] = None): Boolean =
     backend match
       case Some(Backend.Aspose)      => BackendWiring.asposeCanSplit(mime)
-      case Some(Backend.LibreOffice) => LibreOfficeTransforms.canSplit(mime)
+      case Some(Backend.LibreOffice) => libreOfficeAvailable && LibreOfficeTransforms.canSplit(mime)
       case Some(Backend.Xlcr)        => XlcrTransforms.canSplit(mime)
       case None                      =>
         BackendWiring.asposeCanSplit(mime) ||
-        LibreOfficeTransforms.canSplit(mime) ||
+        (libreOfficeAvailable && LibreOfficeTransforms.canSplit(mime)) ||
         XlcrTransforms.canSplit(mime)
 
   // ===========================================================================
@@ -149,6 +154,18 @@ object UnifiedTransforms:
           )
         ) *> LibreOfficeTransforms.convert(input, to, options)
     }.catchSome {
+      case loErr: ResourceError =>
+        if XlcrTransforms.canConvert(input.mime, to) then
+          ZIO.logWarning(
+            s"LibreOffice unavailable, falling back to XLCR Core: ${loErr.message}"
+          ) *>
+            ZIO.when(!options.isDefault)(
+              ZIO.logWarning(
+                s"Falling back to XLCR Core which ignores options: ${options.nonDefaultSummary}"
+              )
+            ) *> XlcrTransforms.convert(input, to)
+        else
+          ZIO.fail(loErr)
       case _: UnsupportedConversion =>
         ZIO.when(!options.isDefault)(
           ZIO.logWarning(

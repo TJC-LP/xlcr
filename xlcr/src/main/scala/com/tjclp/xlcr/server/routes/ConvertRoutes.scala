@@ -1,6 +1,8 @@
 package com.tjclp.xlcr.server.routes
 
 import com.tjclp.xlcr.cli.UnifiedTransforms
+import com.tjclp.xlcr.cli.Commands.Backend
+import com.tjclp.xlcr.config.LibreOfficeConfig
 import com.tjclp.xlcr.server.http.*
 import com.tjclp.xlcr.transform.TransformError
 
@@ -50,6 +52,15 @@ object ConvertRoutes:
 
       // Parse optional backend override
       backend <- RequestHandler.parseBackend(request)
+
+      // Explicit LibreOffice backend requires runtime availability
+      _ <- ZIO.when(backend.contains(Backend.LibreOffice) && !LibreOfficeConfig.isAvailable())(
+        ZIO.fail(HttpError(
+          Status.ServiceUnavailable,
+          "LibreOffice backend is not available",
+          Some("Install LibreOffice or set LIBREOFFICE_HOME")
+        ))
+      )
 
       // Check if conversion is supported
       _ <- ZIO.unless(UnifiedTransforms.canConvert(content.mime, targetMime, backend))(

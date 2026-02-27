@@ -11,6 +11,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.BeforeAndAfterAll
 
+import com.tjclp.xlcr.config.LibreOfficeConfig
+import com.tjclp.xlcr.libreoffice.LibreOfficeTransforms
 import com.tjclp.xlcr.types.{Content, Mime}
 
 /**
@@ -95,6 +97,12 @@ class UnifiedTransformsSpec extends AnyFlatSpec with Matchers with BeforeAndAfte
   it should "return true for XLSX to ODS conversion" in {
     // XLCR Core supports this
     UnifiedTransforms.canConvert(Mime.xlsx, Mime.ods) shouldBe true
+  }
+
+  it should "respect LibreOffice availability for explicit backend checks" in {
+    val loSupported =
+      LibreOfficeConfig.isAvailable() && LibreOfficeTransforms.canConvert(Mime.docx, Mime.pdf)
+    UnifiedTransforms.canConvert(Mime.docx, Mime.pdf, Some(Commands.Backend.LibreOffice)) shouldBe loSupported
   }
 
   // ============================================================================
