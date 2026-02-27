@@ -1,9 +1,10 @@
 package com.tjclp.xlcr.server.routes
 
 import com.tjclp.xlcr.cli.UnifiedTransforms
+import com.tjclp.xlcr.output.DocumentInfo
 import com.tjclp.xlcr.server.http.*
 import com.tjclp.xlcr.server.json.*
-import com.tjclp.xlcr.types.Mime
+import com.tjclp.xlcr.types.{Content, Mime}
 
 import zio.*
 import zio.http.*
@@ -40,11 +41,30 @@ object InfoRoutes:
 
   private def handleInfo(request: Request): ZIO[Any, HttpError, Response] =
     for
-      // Extract input content
-      content <- RequestHandler.extractContent(request)
+      // Read raw body (don't trust Content-Type for /info — we detect it)
+      body <- request.body.asChunk.mapError(err =>
+        HttpError.badRequest(s"Failed to read request body: ${err.getMessage}")
+      )
+      _ <- ZIO.when(body.isEmpty)(
+        ZIO.fail(HttpError.badRequest("Request body is empty"))
+      )
 
-      // Check split capability
-      canSplit = UnifiedTransforms.canSplit(content.mime)
+      // Extract Tika metadata headers only (skips body text / OCR)
+      // Also gives us detectedType via content inspection
+      metadataRaw <- ZIO
+        .attemptBlocking {
+          DocumentInfo.extractMetadataOnly(body.toArray)
+        }
+        .mapError(err => HttpError.internalError(s"Metadata extraction failed: ${err.getMessage}"))
+
+      // Use Tika-detected MIME as the authoritative type
+      detectedMime = Mime.parse(
+        metadataRaw.getOrElse("detectedType", "application/octet-stream").toString
+      )
+      content = Content.fromChunk(body, detectedMime)
+
+      // Check split capability using detected type
+      canSplit = UnifiedTransforms.canSplit(detectedMime)
 
       // Try to get fragment count if splittable (best effort)
       fragmentCount <- if canSplit then
@@ -55,16 +75,25 @@ object InfoRoutes:
       else
         ZIO.succeed(None)
 
-      // Find available conversions
-      availableConversions = findAvailableConversions(content.mime)
+      // Find available conversions using detected type
+      availableConversions = findAvailableConversions(detectedMime)
+
+      // Coerce metadata values to strings for JSON
+      metadata = metadataRaw.map { case (k, v) =>
+        k ->
+          (v match
+            case list: List[?] => list.mkString(", ")
+            case other         => other.toString)
+      }
 
       // Build response
       info = InfoResponse(
-        mimeType = content.mime.value,
-        size = content.size.toLong,
+        mimeType = detectedMime.value,
+        size = body.length.toLong,
         canSplit = canSplit,
         fragmentCount = fragmentCount,
-        availableConversions = availableConversions
+        availableConversions = availableConversions,
+        metadata = Some(metadata)
       )
     yield ResponseBuilder.json(info.toJson)
 

@@ -11,6 +11,7 @@ import org.apache.tika.io.TikaInputStream
 import org.apache.tika.metadata.*
 import org.apache.tika.parser.AutoDetectParser
 import org.apache.tika.sax.BodyContentHandler
+import org.apache.tika.sax.WriteOutContentHandler
 
 /**
  * Utilities for extracting document metadata using Apache Tika.
@@ -104,6 +105,57 @@ object DocumentInfo:
    */
   def extractMetadata(content: Array[Byte], mime: Mime): Map[String, Any] =
     extractMetadata(content, Some(mime.value), None)
+
+  /**
+   * Extract only document metadata headers without parsing the full document body.
+   *
+   * Uses a no-op SAX handler so Tika reads structural metadata (page count, author, dates,
+   * permissions, etc.) but skips text extraction and OCR. Much faster than `extractMetadata` for
+   * large or scanned documents.
+   *
+   * @param content
+   *   Document content as byte array
+   * @param mimeType
+   *   Optional MIME type hint
+   * @return
+   *   Map of metadata keys to string values
+   */
+  def extractMetadataOnly(
+    content: Array[Byte],
+    mimeType: Option[String] = None
+  ): Map[String, Any] =
+    if content.isEmpty then Map.empty
+    else
+      val metadata = new Metadata()
+      mimeType.foreach(mt => metadata.set("Content-Type", mt))
+
+      // WriteOutContentHandler(0) triggers WriteLimitReachedException on first
+      // body character.  Tika populates metadata from document headers before
+      // any body/OCR processing, so we get all metadata for free.
+      val handler = new BodyContentHandler(new WriteOutContentHandler(0))
+      try
+        Using.resource(TikaInputStream.get(new ByteArrayInputStream(content))) { stream =>
+          parser.parse(stream, handler, metadata)
+        }
+      catch
+        // Expected — the zero-limit handler throws as soon as body content starts
+        case _: Throwable => ()
+
+      val metadataMap = metadata.names().map { name =>
+        val values = metadata.getValues(name)
+        name -> (if values.length == 1 then values.head else values.toList)
+      }.toMap
+
+      metadataMap ++ Map(
+        "fileSize"     -> content.length,
+        "detectedType" -> tika.detect(content)
+      )
+
+  /**
+   * Extract only metadata headers with a Mime type hint.
+   */
+  def extractMetadataOnly(content: Array[Byte], mime: Mime): Map[String, Any] =
+    extractMetadataOnly(content, Some(mime.value))
 
   /**
    * Detect the MIME type of content.

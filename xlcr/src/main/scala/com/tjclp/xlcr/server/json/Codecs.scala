@@ -45,7 +45,8 @@ final case class InfoResponse(
   size: Long,
   canSplit: Boolean,
   fragmentCount: Option[Int],
-  availableConversions: List[String]
+  availableConversions: List[String],
+  metadata: Option[Map[String, String]] = None
 )
 
 object InfoResponse:
