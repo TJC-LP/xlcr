@@ -45,7 +45,8 @@ final case class InfoResponse(
   size: Long,
   canSplit: Boolean,
   fragmentCount: Option[Int],
-  availableConversions: List[String]
+  availableConversions: List[String],
+  metadata: Option[Map[String, String]] = None
 )
 
 object InfoResponse:
@@ -120,12 +121,15 @@ object CapabilitiesResponse:
  *   Number of configured LibreOffice processes
  * @param maxTasksPerProcess
  *   Conversions before automatic process restart
+ * @param ready
+ *   Optional runtime readiness probe result (present only when explicitly requested)
  */
 final case class LibreOfficeStatus(
   available: Boolean,
   running: Boolean,
   instances: Int,
-  maxTasksPerProcess: Int
+  maxTasksPerProcess: Int,
+  ready: Option[Boolean] = None
 )
 
 object LibreOfficeStatus:

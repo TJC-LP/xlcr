@@ -32,19 +32,33 @@ private def convertWithLibreOffice(
   inputExtension: String,
   outputExtension: String
 ): ZIO[Any, TransformError, Array[Byte]] =
-  ZIO.attemptBlocking {
-    val inputFile  = File.createTempFile("xlcr-input-", s".$inputExtension")
-    val outputFile = File.createTempFile("xlcr-output-", s".$outputExtension")
+  if !LibreOfficeConfig.isAvailable() then
+    ZIO.fail(ResourceError.missingLibrary("LibreOffice"))
+  else
+    ZIO.attemptBlocking {
+      val inputFile  = File.createTempFile("xlcr-input-", s".$inputExtension")
+      val outputFile = File.createTempFile("xlcr-output-", s".$outputExtension")
 
-    try
-      Files.write(inputFile.toPath, inputBytes)
-      val converter = LibreOfficeConfig.createConverter()
-      converter.convert(inputFile).to(outputFile).execute()
-      Files.readAllBytes(outputFile.toPath)
-    finally
-      if inputFile.exists() then inputFile.delete()
-      if outputFile.exists() then outputFile.delete()
-  }.mapError(TransformError.fromThrowable)
+      try
+        Files.write(inputFile.toPath, inputBytes)
+        val converter = LibreOfficeConfig.createConverter()
+        converter.convert(inputFile).to(outputFile).execute()
+        Files.readAllBytes(outputFile.toPath)
+      finally
+        if inputFile.exists() then inputFile.delete()
+        if outputFile.exists() then outputFile.delete()
+    }.mapError(mapLibreOfficeError)
+
+private def mapLibreOfficeError(err: Throwable): TransformError =
+  val msg = Option(err.getMessage).getOrElse(err.getClass.getSimpleName)
+  if msg.toLowerCase.contains("libreoffice") then
+    ResourceError(
+      message = s"LibreOffice runtime unavailable: $msg",
+      resourceType = "library",
+      cause = Some(err)
+    )
+  else
+    TransformError.fromThrowable(err)
 
 // =============================================================================
 // Word -> PDF

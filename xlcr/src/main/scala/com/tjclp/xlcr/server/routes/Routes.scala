@@ -4,6 +4,8 @@ import com.tjclp.xlcr.config.LibreOfficeConfig
 import com.tjclp.xlcr.server.http.ResponseBuilder
 import com.tjclp.xlcr.server.json.*
 
+import scala.util.Try
+
 import zio.*
 import zio.http.*
 import zio.json.*
@@ -26,21 +28,53 @@ object Routes:
    * Health check routes.
    */
   private val healthRoutes: zio.http.Routes[Any, Response] = zio.http.Routes(
-    Method.GET / "health" -> handler { (_: Request) =>
+    Method.GET / "health" -> handler { (request: Request) =>
+      val probeLibreOffice = request.url.queryParams
+        .queryParam("check")
+        .exists(_.equalsIgnoreCase("libreoffice"))
+
       ZIO
         .attemptBlocking {
+          val available = LibreOfficeConfig.isAvailable()
+          val cfg       = LibreOfficeConfig.currentConfig
+          val ready     = if probeLibreOffice then
+            available && Try {
+              LibreOfficeConfig.getOfficeManager()
+              true
+            }.getOrElse(false)
+          else
+            true
+
           val loStatus =
-            val available = LibreOfficeConfig.isAvailable()
-            val cfg       = LibreOfficeConfig.currentConfig
             LibreOfficeStatus(
               available = available,
               running = LibreOfficeConfig.isRunning(),
               instances = cfg.instances,
-              maxTasksPerProcess = cfg.maxTasksPerProcess
+              maxTasksPerProcess = cfg.maxTasksPerProcess,
+              ready = if probeLibreOffice then Some(ready) else None
             )
-          HealthResponse(status = "healthy", libreoffice = Some(loStatus))
+          val healthStatus = if probeLibreOffice && !ready then "unhealthy" else "healthy"
+          HealthResponse(status = healthStatus, libreoffice = Some(loStatus))
         }
-        .catchAll(_ => ZIO.succeed(HealthResponse(status = "healthy")))
+        .catchAll { _ =>
+          ZIO
+            .attemptBlocking {
+              val cfg = LibreOfficeConfig.currentConfig
+              HealthResponse(
+                status = if probeLibreOffice then "unhealthy" else "healthy",
+                libreoffice = Some(LibreOfficeStatus(
+                  available = LibreOfficeConfig.isAvailable(),
+                  running = LibreOfficeConfig.isRunning(),
+                  instances = cfg.instances,
+                  maxTasksPerProcess = cfg.maxTasksPerProcess,
+                  ready = if probeLibreOffice then Some(false) else None
+                ))
+              )
+            }
+            .orElseSucceed(HealthResponse(status =
+              if probeLibreOffice then "unhealthy" else "healthy"
+            ))
+        }
         .map(resp => ResponseBuilder.json(resp.toJson))
     },
 

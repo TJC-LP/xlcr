@@ -87,8 +87,8 @@ object Server:
   end start
 
   /**
-   * Configure and eagerly initialize the LibreOffice process pool. Skipped if LibreOffice is not
-   * installed.
+   * Configure the LibreOffice process pool (lazy — actual process starts on first use). Skipped if
+   * LibreOffice is not installed.
    */
   private def initializeLibreOffice(config: ServerConfig): ZIO[Any, Throwable, Unit] =
     ZIO.attemptBlocking {
@@ -101,9 +101,6 @@ object Server:
             taskQueueTimeout = config.loQueueTimeout
           )
         )
-        // Eagerly initialize to catch startup failures before serving requests
-        val _ = LibreOfficeConfig.getOfficeManager()
-    }.tapError(err =>
-      ZIO.logWarning(s"LibreOffice initialization failed: ${err.getMessage}")
-    ).catchAll(_ => ZIO.unit) // Non-fatal: server can still serve Aspose/Core conversions
+        // OfficeManager starts lazily on first conversion that needs it
+    }
 end Server

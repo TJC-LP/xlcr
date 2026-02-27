@@ -1,6 +1,7 @@
 package com.tjclp.xlcr.server.routes
 
 import com.tjclp.xlcr.cli.UnifiedTransforms
+import com.tjclp.xlcr.output.DocumentInfo
 import com.tjclp.xlcr.server.http.*
 import com.tjclp.xlcr.server.json.*
 import com.tjclp.xlcr.types.Mime
@@ -40,10 +41,19 @@ object InfoRoutes:
 
   private def handleInfo(request: Request): ZIO[Any, HttpError, Response] =
     for
-      // Extract input content
+      // Resolve MIME consistently with /convert and /split:
+      // header hint by default, Tika only when missing/generic or ?detect=tika.
       content <- RequestHandler.extractContent(request)
 
-      // Check split capability
+      // Extract Tika metadata headers only (skips body text / OCR)
+      // MIME hint follows the same semantics used by all request handlers.
+      metadataRaw <- ZIO
+        .attemptBlocking {
+          DocumentInfo.extractMetadataOnly(content.data.toArray, Some(content.mime.value))
+        }
+        .mapError(err => HttpError.internalError(s"Metadata extraction failed: ${err.getMessage}"))
+
+      // Check split capability using request MIME semantics
       canSplit = UnifiedTransforms.canSplit(content.mime)
 
       // Try to get fragment count if splittable (best effort)
@@ -55,8 +65,16 @@ object InfoRoutes:
       else
         ZIO.succeed(None)
 
-      // Find available conversions
+      // Find available conversions using request MIME semantics
       availableConversions = findAvailableConversions(content.mime)
+
+      // Coerce metadata values to strings for JSON
+      metadata = metadataRaw.map { case (k, v) =>
+        k ->
+          (v match
+            case list: List[?] => list.mkString(", ")
+            case other         => other.toString)
+      }
 
       // Build response
       info = InfoResponse(
@@ -64,7 +82,8 @@ object InfoRoutes:
         size = content.size.toLong,
         canSplit = canSplit,
         fragmentCount = fragmentCount,
-        availableConversions = availableConversions
+        availableConversions = availableConversions,
+        metadata = Some(metadata)
       )
     yield ResponseBuilder.json(info.toJson)
 

@@ -179,6 +179,7 @@ Each instance runs as a separate LibreOffice process on a dedicated port (starti
 | `to` | `/convert` | MIME type or extension | Target format (required) |
 | `detect` | `/convert`, `/split`, `/info` | `tika` | Force Tika content detection, ignore Content-Type header |
 | `backend` | `/convert`, `/split` | `aspose`, `libreoffice`, `xlcr` | Use specific backend instead of auto-fallback |
+| `check` | `/health` | `libreoffice` | Run on-demand LibreOffice runtime probe (starts LO lazily only for this probe) |
 
 Content-Type is optional on all endpoints. When missing, Tika automatically detects the format from content bytes. Use `?detect=tika` to force Tika even when Content-Type is present.
 
@@ -209,6 +210,9 @@ curl -X POST "http://localhost:8080/split" \
 
 # Check server health and LibreOffice pool status
 curl http://localhost:8080/health
+
+# Probe LibreOffice runtime readiness explicitly
+curl http://localhost:8080/health?check=libreoffice
 
 # List capabilities
 curl http://localhost:8080/capabilities
