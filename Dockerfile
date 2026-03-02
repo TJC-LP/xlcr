@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     fonts-liberation \
     fonts-dejavu-core \
+    fonts-urw-base35 \
     libreoffice-core \
     libreoffice-writer \
     libreoffice-calc \
