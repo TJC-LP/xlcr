@@ -11,6 +11,8 @@ import com.tjclp.xlcr.server.*
 import com.tjclp.xlcr.types.*
 
 import zio.*
+import zio.logging.*
+import zio.logging.slf4j.bridge.Slf4jBridge
 
 /**
  * XLCR CLI entry point with compile-time transform discovery.
@@ -60,6 +62,27 @@ object XlcrMain extends ZIOAppDefault:
       if !existing.contains(libDir) then
         java.lang.System.setProperty("java.library.path", libDir + ":" + existing)
   }
+
+  // ZIO-native logging: stderr console logger + SLF4J2 bridge (captures Tika/POI/Aspose logs).
+  // XLCR_LOG_LEVEL env var controls root log level (default: WARN for quiet CLI operation).
+  private val logLevel: LogLevel =
+    java.lang.System.getenv("XLCR_LOG_LEVEL") match
+      case "TRACE"   => LogLevel.Trace
+      case "DEBUG"   => LogLevel.Debug
+      case "INFO"    => LogLevel.Info
+      case "WARNING" => LogLevel.Warning
+      case "ERROR"   => LogLevel.Error
+      case _         => LogLevel.Warning
+
+  private val loggerConfig = ConsoleLoggerConfig(
+    LogFormat.default,
+    LogFilter.LogLevelByNameConfig(logLevel)
+  )
+
+  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    Runtime.removeDefaultLoggers >>> consoleErrLogger(loggerConfig) >+> Slf4jBridge.init(
+      loggerConfig.toFilter
+    )
 
   override def run: ZIO[ZIOAppArgs, Any, ExitCode] =
     for
