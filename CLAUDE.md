@@ -69,12 +69,10 @@ Aspose is included by default. Use `XLCR_NO_ASPOSE=1` only for lightweight deplo
 
 ## Module Structure
 The project is organized into these main modules:
-- `core` - Tika text extraction, document splitters (PDF/Excel/PowerPoint/Word/Email/Archives), XLSX->ODS conversion
+- `core` - Tika text extraction, document splitters (PDF/Excel/PowerPoint/Word/Email/Archives), XLSX->ODS conversion, CLI argument parsing (Decline)
 - `core-aspose` - Aspose-based document conversions (HIGH priority backend)
 - `core-libreoffice` - LibreOffice-based conversions via JODConverter (DEFAULT priority fallback)
-- `cli` - Command-line interface (`xlcr convert`, `xlcr server`)
-- `server` - HTTP server (ZIO HTTP)
-- `xlcr` - Unified assembly module wiring all backends together
+- `xlcr` - Unified assembly module: CLI entry point (`XlcrMain`), HTTP server, BackendWiring, UnifiedTransforms
 
 ## Conversion Dispatch: UnifiedTransforms
 
@@ -88,9 +86,21 @@ When a specific `backend` is requested, only that backend is used with no fallba
 
 ## CLI Usage
 
+Default-quiet output: stdout is clean for piping. Use `-v` / `--verbose` for progress messages.
+
 ```bash
 # Basic conversion
 xlcr convert -i input.docx -o output.pdf
+
+# Verbose output (progress + success messages)
+xlcr convert -i input.docx -o output.pdf -v
+
+# Document metadata (fast, metadata-only Tika extraction)
+xlcr info -i document.pdf
+xlcr info -i document.pdf --json
+
+# Version
+xlcr --version
 
 # PowerPoint to HTML with master slide removal
 xlcr convert -i presentation.pptx -o output.html --strip-masters
@@ -119,8 +129,17 @@ xlcr server start --port 8080
 | `--lo-restart-after` | `XLCR_LO_RESTART_AFTER` | `200` | Restart LO process after N conversions |
 | `--lo-task-timeout` | `XLCR_LO_TASK_TIMEOUT` | `120000` (2min) | LO task execution timeout (ms) |
 | `--lo-queue-timeout` | `XLCR_LO_QUEUE_TIMEOUT` | `30000` (30s) | LO task queue timeout (ms) |
+| `--license-aware-capabilities` | `XLCR_LICENSE_AWARE_CAPABILITIES` | `false` | Runtime Aspose license checks for capability queries |
 
 CLI flags take precedence over env vars, which take precedence over defaults.
+
+### Logging
+
+Logging uses `zio-logging` with SLF4J2 bridge — all logs (ZIO, Tika, POI, Aspose) route to stderr.
+
+| Variable | Default | Description |
+|---|---|---|
+| `XLCR_LOG_LEVEL` | `WARN` | Root log level: `TRACE`, `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
 ### Endpoints
 
