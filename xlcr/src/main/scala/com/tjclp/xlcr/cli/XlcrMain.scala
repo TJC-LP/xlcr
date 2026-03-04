@@ -161,8 +161,10 @@ object XlcrMain extends ZIOAppDefault:
         Console.printLine(s"Wrote ${result.size} bytes to ${args.output}")
       )
 
-      _ <- Console.printLine(
-        s"Successfully converted ${args.input.getFileName} to ${args.output.getFileName}"
+      _ <- ZIO.when(args.verbose)(
+        Console.printLine(
+          s"Successfully converted ${args.input.getFileName} to ${args.output.getFileName}"
+        )
       )
     yield ExitCode.success
 
@@ -214,8 +216,10 @@ object XlcrMain extends ZIOAppDefault:
         // Create ZIP file (default)
         writeFragmentsToZip(args.output, fragments, args.verbose)
 
-      _ <- Console.printLine(
-        s"Successfully split ${args.input.getFileName} into ${fragments.size} parts"
+      _ <- ZIO.when(args.verbose)(
+        Console.printLine(
+          s"Successfully split ${args.input.getFileName} into ${fragments.size} parts"
+        )
       )
     yield ExitCode.success
 
