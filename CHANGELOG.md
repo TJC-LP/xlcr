@@ -7,23 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-03-04
+
+### Added
+- Opt-in `--license-aware-capabilities` flag for CLI `info` and `server start` commands (env: `XLCR_LICENSE_AWARE_CAPABILITIES`) — enables runtime Aspose license checks for capability queries while keeping default fast static probing.
+- ZIO-native logging via `zio-logging` + `zio-logging-slf4j2-bridge` — all logs (ZIO, SLF4J from Tika/POI/Aspose) route to stderr through a single pipeline.
+- `XLCR_LOG_LEVEL` env var controls root log level (default: WARN).
+- `xlcr version` / `xlcr --version` prints version string.
+
+### Changed
+- CLI `info` command uses metadata-only Tika extraction (`WriteOutContentHandler(0)`) instead of full body parse — 208MB XLSX completes in <1s.
+- Capability queries (`canConvert`/`canSplit`) use static format lookups by default, avoiding Aspose license initialization on `info`, `/capabilities`, and convert/split pre-flight checks.
+- CLI output is default-quiet — success messages gated behind `--verbose` / `-v`. Stdout is clean for piping.
+
+### Removed
+- Logback dependency and `logback.xml` — replaced by zio-logging console-err logger.
+- Redundant shell-based `--backend-info` handler from wrapper script (was duplicating and disagreeing with Java CLI's runtime license detection).
+
+## [0.3.7] - 2026-03-01
+
+### Fixed
+- Native image: add URW Base35 fonts (Symbol, Courier, Helvetica) for PDF rendering.
+
+## [0.3.6] - 2026-02-28
+
+### Added
+- Native image: trace PDF→JPG/text metadata from real data room docs (#68).
+
+## [0.3.5] - 2026-02-28
+
+### Fixed
+- Native image: enable SharedArenaSupport, guard null error messages (#67).
+
+## [0.3.4] - 2026-02-27
+
+### Added
+- Server: lazy LibreOffice init, Tika metadata endpoint, backend guards (#66).
+
+## [0.3.3] - 2026-02-27
+
+### Added
+- Native image: trace Aspose.Cells split metadata for XLSX with charts.
+
+## [0.3.2] - 2026-02-27
+
+### Fixed
+- Native image: add Liberation/DejaVu fonts, fix Unicode in test fixture.
+- Native image: expand GraalVM metadata from real-world document tracing.
+
+## [0.3.1] - 2026-02-26
+
 ### Changed
 - Upgraded Scala 3.3.4 → 3.8.2 (latest stable).
-- Fixed deprecated `-Yresolve-term-conflict` scalac flag (now `-Xresolve-term-conflict`).
-- Upgraded scalafmt 3.8.2 → 3.10.7 with hypermodern Scala 3 formatting: braceless syntax, `then`/`do` control flow, `*` wildcard imports, automatic end markers.
-- Wired scalafix into Mill build via mill-scalafix 0.6.0 plugin (`./mill __.fix`).
-- Updated scalafix OrganizeImports to coalesce all imports to wildcards with Scala 3 dialect.
-- Added RedundantSyntax scalafix rule.
-- Added opt-in CLI flag `--license-aware-capabilities` (and `XLCR_LICENSE_AWARE_CAPABILITIES` for server mode) to enable runtime Aspose license-aware capability checks while keeping default fast probing.
+- Upgraded scalafmt 3.8.2 → 3.10.7 with hypermodern Scala 3 formatting.
+- Wired scalafix into Mill build via mill-scalafix 0.6.0 plugin.
+- Project now targets Scala 3 only — removed Scala 2.13 cross-build.
+
+### Added
+- 35 Tier 1 Aspose conversion routes, expanded capabilities (#63).
+- Smart MIME detection, query params, LibreOffice pooling for server (#62).
+- CI: build on Modal, publish runtime Docker image to GHCR (#64, #65).
 
 ### Removed
 - `core-spark` module and all Spark pipeline sources/tests/docs.
 - All v1 architecture: bridges, splitters, parsers, renderers, registries, legacy CLI, pipeline system.
 - Scala 2.13.17 cross-build support.
-
-### Changed
-- Project now targets Scala 3 only (upgraded from 3.3.4 to 3.8.2).
-- Simplified build: removed cross-compilation — `./mill __.compile` and `./mill __.test` just work (no `[3.3.4]` specifier needed).
 
 ## [0.2.2] - 2026-02-25
 
@@ -144,6 +192,14 @@ First stable release. XLCR provides document conversion and splitting across PDF
 - PowerPoint slide dimension loss during splitting
 - Word heading splitter overlapping content and empty headings
 
+[0.3.8]: https://github.com/TJC-LP/xlcr/releases/tag/v0.3.8
+[0.3.7]: https://github.com/TJC-LP/xlcr/releases/tag/v0.3.7
+[0.3.6]: https://github.com/TJC-LP/xlcr/releases/tag/v0.3.6
+[0.3.5]: https://github.com/TJC-LP/xlcr/releases/tag/v0.3.5
+[0.3.4]: https://github.com/TJC-LP/xlcr/releases/tag/v0.3.4
+[0.3.3]: https://github.com/TJC-LP/xlcr/releases/tag/v0.3.3
+[0.3.2]: https://github.com/TJC-LP/xlcr/releases/tag/v0.3.2
+[0.3.1]: https://github.com/TJC-LP/xlcr/releases/tag/v0.3.1
 [0.2.2]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.2
 [0.2.1]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.1
 [0.2.0]: https://github.com/TJC-LP/xlcr/releases/tag/v0.2.0

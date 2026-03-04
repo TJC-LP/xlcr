@@ -96,8 +96,8 @@ object XlcrMain extends ZIOAppDefault:
     args match
       case "--backend-info" :: _ =>
         showBackendInfo().as(ExitCode.success)
-      case "--version" :: _ =>
-        Console.printLine("xlcr version 0.1.3").as(ExitCode.success)
+      case "--version" :: _ | "version" :: _ =>
+        Console.printLine("0.3.8").as(ExitCode.success)
       case _ =>
         parseAndExecute(args)
 

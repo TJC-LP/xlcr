@@ -69,7 +69,7 @@ trait XLCRModule extends XLCRModuleBase with PublishModule {
 
   /** Version derived from PUBLISH_VERSION env var (set by CI), or default for local dev */
   override def publishVersion: T[String] =
-    sys.env.getOrElse("PUBLISH_VERSION", "0.3.0-SNAPSHOT")
+    sys.env.getOrElse("PUBLISH_VERSION", "0.3.8")
 
   override def pomSettings: T[PomSettings] = PomSettings(
     description = artifactDescription,
