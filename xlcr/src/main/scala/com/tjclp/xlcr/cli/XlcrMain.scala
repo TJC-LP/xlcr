@@ -10,10 +10,6 @@ import com.tjclp.xlcr.output.*
 import com.tjclp.xlcr.server.*
 import com.tjclp.xlcr.types.*
 
-import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.*
-import org.apache.tika.parser.AutoDetectParser
-import org.apache.tika.sax.BodyContentHandler
 import zio.*
 
 /**
@@ -440,15 +436,13 @@ object XlcrMain extends ZIOAppDefault:
     if data.isEmpty then Map.empty
     else
       try
-        val metadata = new Metadata()
-        metadata.set(HttpHeaders.CONTENT_LOCATION, filename)
-        val parser  = new AutoDetectParser()
-        val handler = new BodyContentHandler(-1)
-        Using.resource(TikaInputStream.get(new java.io.ByteArrayInputStream(data.toArray))) {
-          stream =>
-            parser.parse(stream, handler, metadata)
+        val mime = Mime.detectLazily(data, filename)
+        DocumentInfo.extractMetadataOnly(data.toArray, mime).map { case (k, v) =>
+          k ->
+            (v match
+              case list: List[?] => list.mkString(", ")
+              case other         => other.toString)
         }
-        metadata.names().toList.map(name => name -> metadata.get(name)).toMap
       catch
         case _: Throwable => Map.empty
 
