@@ -29,10 +29,10 @@ object BackendWiring:
     AsposeTransforms.split(input, options)
 
   def asposeCanConvert(from: Mime, to: Mime): Boolean =
-    AsposeTransforms.canConvertLicensed(from, to)
+    AsposeTransforms.canConvert(from, to)
 
   def asposeCanSplit(mime: Mime): Boolean =
-    AsposeTransforms.canSplitLicensed(mime)
+    AsposeTransforms.canSplit(mime)
 
   def checkAsposeStatus(): Unit =
     if AsposeLicenseV2.licenseAvailable then
