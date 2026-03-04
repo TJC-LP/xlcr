@@ -17,6 +17,9 @@ package com.tjclp.xlcr.server
  *   LibreOffice task execution timeout in ms (default: 120000)
  * @param loQueueTimeout
  *   LibreOffice task queue timeout in ms (default: 30000)
+ * @param licenseAwareCapabilities
+ *   Enable runtime Aspose license checks for capability probing and preflight checks (default:
+ *   false)
  */
 final case class ServerConfig(
   host: String = "0.0.0.0",
@@ -25,7 +28,8 @@ final case class ServerConfig(
   loInstances: Int = 1,
   loRestartAfter: Int = 200,
   loTaskTimeout: Long = 120000L, // 2 minutes
-  loQueueTimeout: Long = 30000L  // 30 seconds
+  loQueueTimeout: Long = 30000L, // 30 seconds
+  licenseAwareCapabilities: Boolean = false
 )
 
 object ServerConfig:
@@ -44,6 +48,8 @@ object ServerConfig:
    *   - XLCR_LO_RESTART_AFTER: Restart after N conversions (default: 200)
    *   - XLCR_LO_TASK_TIMEOUT: Task execution timeout in ms (default: 120000)
    *   - XLCR_LO_QUEUE_TIMEOUT: Task queue timeout in ms (default: 30000)
+   *   - XLCR_LICENSE_AWARE_CAPABILITIES: Enable runtime license-aware capability checks (default:
+   *     false)
    */
   def fromEnv: ServerConfig =
     ServerConfig(
@@ -68,7 +74,11 @@ object ServerConfig:
       loQueueTimeout = sys.env
         .get("XLCR_LO_QUEUE_TIMEOUT")
         .flatMap(_.toLongOption)
-        .getOrElse(30000L)
+        .getOrElse(30000L),
+      licenseAwareCapabilities = sys.env
+        .get("XLCR_LICENSE_AWARE_CAPABILITIES")
+        .flatMap(parseBooleanEnv)
+        .getOrElse(false)
     )
 
   /**
@@ -83,7 +93,8 @@ object ServerConfig:
     loInstances: Option[Int] = None,
     loRestartAfter: Option[Int] = None,
     loTaskTimeout: Option[Long] = None,
-    loQueueTimeout: Option[Long] = None
+    loQueueTimeout: Option[Long] = None,
+    licenseAwareCapabilities: Boolean = false
   ): ServerConfig =
     val envConfig = fromEnv
     ServerConfig(
@@ -93,7 +104,15 @@ object ServerConfig:
       loInstances = loInstances.getOrElse(envConfig.loInstances),
       loRestartAfter = loRestartAfter.getOrElse(envConfig.loRestartAfter),
       loTaskTimeout = loTaskTimeout.getOrElse(envConfig.loTaskTimeout),
-      loQueueTimeout = loQueueTimeout.getOrElse(envConfig.loQueueTimeout)
+      loQueueTimeout = loQueueTimeout.getOrElse(envConfig.loQueueTimeout),
+      licenseAwareCapabilities =
+        if licenseAwareCapabilities then true else envConfig.licenseAwareCapabilities
     )
   end fromArgs
+
+  private def parseBooleanEnv(value: String): Option[Boolean] =
+    value.trim.toLowerCase match
+      case "1" | "true" | "yes" | "on"  => Some(true)
+      case "0" | "false" | "no" | "off" => Some(false)
+      case _                            => None
 end ServerConfig

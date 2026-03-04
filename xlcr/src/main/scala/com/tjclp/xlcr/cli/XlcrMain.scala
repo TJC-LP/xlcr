@@ -132,7 +132,8 @@ object XlcrMain extends ZIOAppDefault:
       loInstances = args.loInstances,
       loRestartAfter = args.loRestartAfter,
       loTaskTimeout = args.loTaskTimeout,
-      loQueueTimeout = args.loQueueTimeout
+      loQueueTimeout = args.loQueueTimeout,
+      licenseAwareCapabilities = args.licenseAwareCapabilities
     )
     Server.start(config).as(ExitCode.success)
 
@@ -337,8 +338,11 @@ object XlcrMain extends ZIOAppDefault:
         ZIO.attemptBlocking(extractMetadata(inputChunk, args.input.getFileName.toString))
 
       // Check available conversions and splittability
-      availableTargets = findAvailableConversions(inputMime)
-      canSplitFile     = UnifiedTransforms.canSplit(inputMime)
+      availableTargets = findAvailableConversions(inputMime, args.licenseAwareCapabilities)
+      canSplitFile     = UnifiedTransforms.canSplit(
+        inputMime,
+        licenseAwareCapabilities = args.licenseAwareCapabilities
+      )
 
       // Output based on format
       _ <- args.format match
@@ -435,7 +439,10 @@ object XlcrMain extends ZIOAppDefault:
     else if bytes < 1024 * 1024 * 1024 then f"${bytes / (1024.0 * 1024)}%.1f MB"
     else f"${bytes / (1024.0 * 1024 * 1024)}%.1f GB"
 
-  private def findAvailableConversions(from: Mime): List[Mime] =
+  private def findAvailableConversions(
+    from: Mime,
+    licenseAwareCapabilities: Boolean = false
+  ): List[Mime] =
     // Check common target formats
     val targets = List(
       Mime.pdf,
@@ -452,7 +459,13 @@ object XlcrMain extends ZIOAppDefault:
       Mime.png,
       Mime.jpeg
     )
-    targets.filter(target => target != from && UnifiedTransforms.canConvert(from, target))
+    targets.filter(target =>
+      target != from && UnifiedTransforms.canConvert(
+        from,
+        target,
+        licenseAwareCapabilities = licenseAwareCapabilities
+      )
+    )
   end findAvailableConversions
 
   // ============================================================================

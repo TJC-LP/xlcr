@@ -101,6 +101,9 @@ xlcr split -i message.eml -d attachments/
 # Show document metadata
 xlcr info -i document.pdf
 
+# Show metadata/capabilities with runtime Aspose license checks (opt-in, slower)
+xlcr info -i document.pdf --license-aware-capabilities
+
 # List all supported conversions
 xlcr --backend-info
 
@@ -147,6 +150,7 @@ docker compose up server
 | `--lo-restart-after` | `XLCR_LO_RESTART_AFTER` | `200` | Restart LO after N conversions |
 | `--lo-task-timeout` | `XLCR_LO_TASK_TIMEOUT` | `120000` | Conversion timeout (ms) |
 | `--lo-queue-timeout` | `XLCR_LO_QUEUE_TIMEOUT` | `30000` | Queue wait timeout (ms) |
+| `--license-aware-capabilities` | `XLCR_LICENSE_AWARE_CAPABILITIES` | `false` | Use runtime Aspose license checks for `/capabilities`, `/info`, and convert/split preflight checks |
 
 ### LibreOffice Process Pooling
 
@@ -158,6 +162,9 @@ xlcr server start --lo-instances 4 --lo-restart-after 100
 
 # Or via environment variables
 XLCR_LO_INSTANCES=4 XLCR_LO_RESTART_AFTER=100 xlcr server start
+
+# Enable runtime license-aware capability checks (opt-in)
+xlcr server start --license-aware-capabilities
 ```
 
 Each instance runs as a separate LibreOffice process on a dedicated port (starting from 2002). JODConverter handles round-robin task distribution and automatic process restarts. Budget ~200-300MB RAM per instance.

@@ -31,15 +31,21 @@ object InfoRoutes:
 
   import Codecs.given
 
-  val routes: Routes[Any, Response] = Routes(
+  def routes: Routes[Any, Response] =
+    routes(licenseAwareCapabilities = false)
+
+  def routes(licenseAwareCapabilities: Boolean): Routes[Any, Response] = Routes(
     Method.POST / "info" -> handler { (request: Request) =>
-      handleInfo(request).catchAll { error =>
+      handleInfo(request, licenseAwareCapabilities).catchAll { error =>
         ZIO.succeed(ResponseBuilder.error(error))
       }
     }
   )
 
-  private def handleInfo(request: Request): ZIO[Any, HttpError, Response] =
+  private def handleInfo(
+    request: Request,
+    licenseAwareCapabilities: Boolean
+  ): ZIO[Any, HttpError, Response] =
     for
       // Resolve MIME consistently with /convert and /split:
       // header hint by default, Tika only when missing/generic or ?detect=tika.
@@ -54,7 +60,10 @@ object InfoRoutes:
         .mapError(err => HttpError.internalError(s"Metadata extraction failed: ${err.getMessage}"))
 
       // Check split capability using request MIME semantics
-      canSplit = UnifiedTransforms.canSplit(content.mime)
+      canSplit = UnifiedTransforms.canSplit(
+        content.mime,
+        licenseAwareCapabilities = licenseAwareCapabilities
+      )
 
       // Try to get fragment count if splittable (best effort)
       fragmentCount <- if canSplit then
@@ -66,7 +75,7 @@ object InfoRoutes:
         ZIO.succeed(None)
 
       // Find available conversions using request MIME semantics
-      availableConversions = findAvailableConversions(content.mime)
+      availableConversions = findAvailableConversions(content.mime, licenseAwareCapabilities)
 
       // Coerce metadata values to strings for JSON
       metadata = metadataRaw.map { case (k, v) =>
@@ -90,7 +99,10 @@ object InfoRoutes:
   /**
    * Find all MIME types that this input can be converted to.
    */
-  private def findAvailableConversions(inputMime: Mime): List[String] =
+  private def findAvailableConversions(
+    inputMime: Mime,
+    licenseAwareCapabilities: Boolean
+  ): List[String] =
     // Check against common output types
     val commonOutputs = List(
       Mime.plain,
@@ -109,7 +121,13 @@ object InfoRoutes:
     )
 
     commonOutputs
-      .filter(output => UnifiedTransforms.canConvert(inputMime, output))
+      .filter(output =>
+        UnifiedTransforms.canConvert(
+          inputMime,
+          output,
+          licenseAwareCapabilities = licenseAwareCapabilities
+        )
+      )
       .map(_.value)
   end findAvailableConversions
 end InfoRoutes

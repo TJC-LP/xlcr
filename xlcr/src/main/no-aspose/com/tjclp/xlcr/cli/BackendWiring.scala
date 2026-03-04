@@ -28,9 +28,16 @@ object BackendWiring:
   ): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     ZIO.fail(UnsupportedConversion(input.mime, input.mime))
 
-  def asposeCanConvert(from: Mime, to: Mime): Boolean = false
+  def asposeCanConvert(
+    from: Mime,
+    to: Mime,
+    licenseAwareCapabilities: Boolean = false
+  ): Boolean = false
 
-  def asposeCanSplit(mime: Mime): Boolean = false
+  def asposeCanSplit(
+    mime: Mime,
+    licenseAwareCapabilities: Boolean = false
+  ): Boolean = false
 
   def checkAsposeStatus(): Unit =
     println("    Status: Not included in this build (no Aspose license detected at build time)")

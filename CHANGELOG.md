@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wired scalafix into Mill build via mill-scalafix 0.6.0 plugin (`./mill __.fix`).
 - Updated scalafix OrganizeImports to coalesce all imports to wildcards with Scala 3 dialect.
 - Added RedundantSyntax scalafix rule.
+- Added opt-in CLI flag `--license-aware-capabilities` (and `XLCR_LICENSE_AWARE_CAPABILITIES` for server mode) to enable runtime Aspose license-aware capability checks while keeping default fast probing.
 
 ### Removed
 - `core-spark` module and all Spark pipeline sources/tests/docs.

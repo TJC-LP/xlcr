@@ -198,6 +198,26 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
       case _ => fail("Expected Info command")
   }
 
+  it should "parse info command with --license-aware-capabilities" in {
+    val result = parse(Seq("info", "-i", "document.pdf", "--license-aware-capabilities"))
+
+    result.isRight shouldBe true
+    result.toOption.get match
+      case CliCommand.Info(args) =>
+        args.licenseAwareCapabilities shouldBe true
+      case _ => fail("Expected Info command")
+  }
+
+  it should "parse server start with --license-aware-capabilities" in {
+    val result = parse(Seq("server", "start", "--license-aware-capabilities"))
+
+    result.isRight shouldBe true
+    result.toOption.get match
+      case CliCommand.Server(args) =>
+        args.licenseAwareCapabilities shouldBe true
+      case _ => fail("Expected Server command")
+  }
+
   // ============================================================================
   // Path Handling Tests
   // ============================================================================

@@ -80,14 +80,20 @@ object UnifiedTransforms:
    * When `backend` is None, returns true if ANY backend supports it. When a specific backend is
    * given, checks only that backend.
    */
-  def canConvert(from: Mime, to: Mime, backend: Option[Backend] = None): Boolean =
+  def canConvert(
+    from: Mime,
+    to: Mime,
+    backend: Option[Backend] = None,
+    licenseAwareCapabilities: Boolean = false
+  ): Boolean =
     backend match
-      case Some(Backend.Aspose)      => BackendWiring.asposeCanConvert(from, to)
+      case Some(Backend.Aspose) =>
+        BackendWiring.asposeCanConvert(from, to, licenseAwareCapabilities)
       case Some(Backend.LibreOffice) => libreOfficeAvailable &&
         LibreOfficeTransforms.canConvert(from, to)
       case Some(Backend.Xlcr) => XlcrTransforms.canConvert(from, to)
       case None               =>
-        BackendWiring.asposeCanConvert(from, to) ||
+        BackendWiring.asposeCanConvert(from, to, licenseAwareCapabilities) ||
         (libreOfficeAvailable && LibreOfficeTransforms.canConvert(from, to)) ||
         XlcrTransforms.canConvert(from, to)
 
@@ -127,13 +133,18 @@ object UnifiedTransforms:
    * When `backend` is None, returns true if ANY backend supports it. When a specific backend is
    * given, checks only that backend.
    */
-  def canSplit(mime: Mime, backend: Option[Backend] = None): Boolean =
+  def canSplit(
+    mime: Mime,
+    backend: Option[Backend] = None,
+    licenseAwareCapabilities: Boolean = false
+  ): Boolean =
     backend match
-      case Some(Backend.Aspose)      => BackendWiring.asposeCanSplit(mime)
+      case Some(Backend.Aspose) =>
+        BackendWiring.asposeCanSplit(mime, licenseAwareCapabilities)
       case Some(Backend.LibreOffice) => libreOfficeAvailable && LibreOfficeTransforms.canSplit(mime)
       case Some(Backend.Xlcr)        => XlcrTransforms.canSplit(mime)
       case None                      =>
-        BackendWiring.asposeCanSplit(mime) ||
+        BackendWiring.asposeCanSplit(mime, licenseAwareCapabilities) ||
         (libreOfficeAvailable && LibreOfficeTransforms.canSplit(mime)) ||
         XlcrTransforms.canSplit(mime)
 
