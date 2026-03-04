@@ -10,11 +10,9 @@ import com.tjclp.xlcr.output.*
 import com.tjclp.xlcr.server.*
 import com.tjclp.xlcr.types.*
 
-import org.apache.tika.io.TikaInputStream
-import org.apache.tika.metadata.*
-import org.apache.tika.parser.AutoDetectParser
-import org.apache.tika.sax.BodyContentHandler
 import zio.*
+import zio.logging.*
+import zio.logging.slf4j.bridge.Slf4jBridge
 
 /**
  * XLCR CLI entry point with compile-time transform discovery.
@@ -65,6 +63,27 @@ object XlcrMain extends ZIOAppDefault:
         java.lang.System.setProperty("java.library.path", libDir + ":" + existing)
   }
 
+  // ZIO-native logging: stderr console logger + SLF4J2 bridge (captures Tika/POI/Aspose logs).
+  // XLCR_LOG_LEVEL env var controls root log level (default: WARN for quiet CLI operation).
+  private val logLevel: LogLevel =
+    java.lang.System.getenv("XLCR_LOG_LEVEL") match
+      case "TRACE"   => LogLevel.Trace
+      case "DEBUG"   => LogLevel.Debug
+      case "INFO"    => LogLevel.Info
+      case "WARNING" => LogLevel.Warning
+      case "ERROR"   => LogLevel.Error
+      case _         => LogLevel.Warning
+
+  private val loggerConfig = ConsoleLoggerConfig(
+    LogFormat.default,
+    LogFilter.LogLevelByNameConfig(logLevel)
+  )
+
+  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    Runtime.removeDefaultLoggers >>> consoleErrLogger(loggerConfig) >+> Slf4jBridge.init(
+      loggerConfig.toFilter
+    )
+
   override def run: ZIO[ZIOAppArgs, Any, ExitCode] =
     for
       // No TransformInit.initialize() - zero startup overhead!
@@ -113,7 +132,8 @@ object XlcrMain extends ZIOAppDefault:
       loInstances = args.loInstances,
       loRestartAfter = args.loRestartAfter,
       loTaskTimeout = args.loTaskTimeout,
-      loQueueTimeout = args.loQueueTimeout
+      loQueueTimeout = args.loQueueTimeout,
+      licenseAwareCapabilities = args.licenseAwareCapabilities
     )
     Server.start(config).as(ExitCode.success)
 
@@ -165,8 +185,10 @@ object XlcrMain extends ZIOAppDefault:
         Console.printLine(s"Wrote ${result.size} bytes to ${args.output}")
       )
 
-      _ <- Console.printLine(
-        s"Successfully converted ${args.input.getFileName} to ${args.output.getFileName}"
+      _ <- ZIO.when(args.verbose)(
+        Console.printLine(
+          s"Successfully converted ${args.input.getFileName} to ${args.output.getFileName}"
+        )
       )
     yield ExitCode.success
 
@@ -218,8 +240,10 @@ object XlcrMain extends ZIOAppDefault:
         // Create ZIP file (default)
         writeFragmentsToZip(args.output, fragments, args.verbose)
 
-      _ <- Console.printLine(
-        s"Successfully split ${args.input.getFileName} into ${fragments.size} parts"
+      _ <- ZIO.when(args.verbose)(
+        Console.printLine(
+          s"Successfully split ${args.input.getFileName} into ${fragments.size} parts"
+        )
       )
     yield ExitCode.success
 
@@ -314,8 +338,11 @@ object XlcrMain extends ZIOAppDefault:
         ZIO.attemptBlocking(extractMetadata(inputChunk, args.input.getFileName.toString))
 
       // Check available conversions and splittability
-      availableTargets = findAvailableConversions(inputMime)
-      canSplitFile     = UnifiedTransforms.canSplit(inputMime)
+      availableTargets = findAvailableConversions(inputMime, args.licenseAwareCapabilities)
+      canSplitFile     = UnifiedTransforms.canSplit(
+        inputMime,
+        licenseAwareCapabilities = args.licenseAwareCapabilities
+      )
 
       // Output based on format
       _ <- args.format match
@@ -412,7 +439,10 @@ object XlcrMain extends ZIOAppDefault:
     else if bytes < 1024 * 1024 * 1024 then f"${bytes / (1024.0 * 1024)}%.1f MB"
     else f"${bytes / (1024.0 * 1024 * 1024)}%.1f GB"
 
-  private def findAvailableConversions(from: Mime): List[Mime] =
+  private def findAvailableConversions(
+    from: Mime,
+    licenseAwareCapabilities: Boolean = false
+  ): List[Mime] =
     // Check common target formats
     val targets = List(
       Mime.pdf,
@@ -429,7 +459,13 @@ object XlcrMain extends ZIOAppDefault:
       Mime.png,
       Mime.jpeg
     )
-    targets.filter(target => target != from && UnifiedTransforms.canConvert(from, target))
+    targets.filter(target =>
+      target != from && UnifiedTransforms.canConvert(
+        from,
+        target,
+        licenseAwareCapabilities = licenseAwareCapabilities
+      )
+    )
   end findAvailableConversions
 
   // ============================================================================
@@ -440,15 +476,13 @@ object XlcrMain extends ZIOAppDefault:
     if data.isEmpty then Map.empty
     else
       try
-        val metadata = new Metadata()
-        metadata.set(HttpHeaders.CONTENT_LOCATION, filename)
-        val parser  = new AutoDetectParser()
-        val handler = new BodyContentHandler(-1)
-        Using.resource(TikaInputStream.get(new java.io.ByteArrayInputStream(data.toArray))) {
-          stream =>
-            parser.parse(stream, handler, metadata)
+        val mime = Mime.detectLazily(data, filename)
+        DocumentInfo.extractMetadataOnly(data.toArray, mime).map { case (k, v) =>
+          k ->
+            (v match
+              case list: List[?] => list.mkString(", ")
+              case other         => other.toString)
         }
-        metadata.names().toList.map(name => name -> metadata.get(name)).toMap
       catch
         case _: Throwable => Map.empty
 

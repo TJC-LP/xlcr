@@ -45,39 +45,5 @@ MEMORY_OPTS=(
     "-Xmx2g"
 )
 
-# Show backend status if requested
-if [[ "$1" == "--backend-info" ]]; then
-    echo "XLCR Backend Status:"
-    echo "  JAR: $XLCR_JAR"
-    echo ""
-
-    # Check for bundled license in JAR
-    if unzip -l "$XLCR_JAR" 2>/dev/null | grep -q "Aspose.Total.Java.lic"; then
-        echo "  Aspose: Licensed (bundled in JAR)"
-    elif [[ -n "$ASPOSE_TOTAL_LICENSE_B64" ]]; then
-        echo "  Aspose: Licensed (env ASPOSE_TOTAL_LICENSE_B64)"
-    elif [[ -f "Aspose.Total.Java.lic" ]]; then
-        echo "  Aspose: Licensed (local file)"
-    else
-        echo "  Aspose: Evaluation mode (no license found)"
-    fi
-
-    # Check LibreOffice
-    if [[ -d "/Applications/LibreOffice.app" ]]; then
-        LO_VERSION=$(/Applications/LibreOffice.app/Contents/MacOS/soffice --version 2>/dev/null | head -1 || echo "version unknown")
-        echo "  LibreOffice: Available (macOS app - $LO_VERSION)"
-    elif command -v soffice &> /dev/null; then
-        LO_VERSION=$(soffice --version 2>/dev/null | head -1 || echo "version unknown")
-        echo "  LibreOffice: Available ($LO_VERSION)"
-    elif [[ -d "${LIBREOFFICE_HOME:-/usr/lib/libreoffice}" ]]; then
-        echo "  LibreOffice: Available at ${LIBREOFFICE_HOME:-/usr/lib/libreoffice}"
-    else
-        echo "  LibreOffice: Not found"
-    fi
-
-    echo ""
-    # Continue to also show Java-side backend info
-fi
-
 # Run XLCR (filter out JVM module warnings)
 java "${JVM_OPTS[@]}" "${MEMORY_OPTS[@]}" ${JAVA_OPTS:-} -jar "$XLCR_JAR" "$@" 2> >(grep -v "^WARNING: package sun.misc not in java.base$" >&2)

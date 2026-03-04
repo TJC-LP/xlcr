@@ -73,7 +73,12 @@ object Server:
         _ <- ZIO.logInfo("  POST /info               - Get document info")
         _ <- ZIO.logInfo("  GET  /capabilities       - List capabilities")
         _ <- ZIO.logInfo("  GET  /health             - Health check")
-        _ <- zio.http.Server.serve(Routes.all)
+        _ <- ZIO.logInfo(
+          s"Capability probing mode: ${
+              if config.licenseAwareCapabilities then "license-aware" else "fast"
+            }"
+        )
+        _ <- zio.http.Server.serve(Routes.all(config.licenseAwareCapabilities))
       yield ()
 
     program.forever.provide(

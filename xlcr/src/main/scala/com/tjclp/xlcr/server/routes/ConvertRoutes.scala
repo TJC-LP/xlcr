@@ -34,15 +34,21 @@ import zio.http.*
  */
 object ConvertRoutes:
 
-  val routes: Routes[Any, Response] = Routes(
+  def routes: Routes[Any, Response] =
+    routes(licenseAwareCapabilities = false)
+
+  def routes(licenseAwareCapabilities: Boolean): Routes[Any, Response] = Routes(
     Method.POST / "convert" -> handler { (request: Request) =>
-      handleConvert(request).catchAll { error =>
+      handleConvert(request, licenseAwareCapabilities).catchAll { error =>
         ZIO.succeed(ResponseBuilder.error(error))
       }
     }
   )
 
-  private def handleConvert(request: Request): ZIO[Any, HttpError, Response] =
+  private def handleConvert(
+    request: Request,
+    licenseAwareCapabilities: Boolean
+  ): ZIO[Any, HttpError, Response] =
     for
       // Extract input content (handles ?detect=tika)
       content <- RequestHandler.extractContent(request)
@@ -63,7 +69,12 @@ object ConvertRoutes:
       )
 
       // Check if conversion is supported
-      _ <- ZIO.unless(UnifiedTransforms.canConvert(content.mime, targetMime, backend))(
+      _ <- ZIO.unless(UnifiedTransforms.canConvert(
+        content.mime,
+        targetMime,
+        backend,
+        licenseAwareCapabilities
+      ))(
         ZIO.fail(HttpError.unsupportedMediaType(
           s"Cannot convert ${content.mime.value} to ${targetMime.value}" +
             backend.fold("")(b => s" with backend ${b.toString.toLowerCase}")

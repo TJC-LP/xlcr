@@ -26,21 +26,33 @@ object CapabilitiesRoutes:
 
   import Codecs.given
 
-  // Cache the capabilities response since it's static
-  private lazy val cachedCapabilities: CapabilitiesResponse = buildCapabilities()
+  // Cache both modes since these matrices are static per process.
+  private lazy val cachedFastCapabilities: CapabilitiesResponse =
+    buildCapabilities(licenseAwareCapabilities = false)
 
-  val routes: Routes[Any, Response] = Routes(
-    Method.GET / "capabilities" -> handler { (_: Request) =>
-      ZIO.succeed(ResponseBuilder.json(cachedCapabilities.toJson))
-    }
-  )
+  private lazy val cachedLicenseAwareCapabilities: CapabilitiesResponse =
+    buildCapabilities(licenseAwareCapabilities = true)
+
+  def routes: Routes[Any, Response] =
+    routes(licenseAwareCapabilities = false)
+
+  def routes(licenseAwareCapabilities: Boolean): Routes[Any, Response] =
+    Routes(
+      Method.GET / "capabilities" -> handler { (_: Request) =>
+        val capabilities = if licenseAwareCapabilities then
+          cachedLicenseAwareCapabilities
+        else
+          cachedFastCapabilities
+        ZIO.succeed(ResponseBuilder.json(capabilities.toJson))
+      }
+    )
 
   /**
    * Build the full capabilities matrix.
    *
    * Tests all combinations of input/output MIME types to find supported conversions.
    */
-  private def buildCapabilities(): CapabilitiesResponse =
+  private def buildCapabilities(licenseAwareCapabilities: Boolean): CapabilitiesResponse =
     // Common document types to test
     val documentTypes: List[Mime] = List(
       // Text
@@ -104,12 +116,18 @@ object CapabilitiesRoutes:
       for
         from <- documentTypes
         to   <- outputTypes
-        if from != to && UnifiedTransforms.canConvert(from, to)
+        if from != to && UnifiedTransforms.canConvert(
+          from,
+          to,
+          licenseAwareCapabilities = licenseAwareCapabilities
+        )
       yield ConversionCapability(from.value, to.value)
 
     // Find all splittable types
     val splits = documentTypes
-      .filter(m => UnifiedTransforms.canSplit(m))
+      .filter(m =>
+        UnifiedTransforms.canSplit(m, licenseAwareCapabilities = licenseAwareCapabilities)
+      )
       .map { mime =>
         // For most splits, output type is same as input
         // (sheets from XLSX, pages from PDF, etc.)

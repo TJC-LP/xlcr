@@ -99,8 +99,12 @@ object Routes:
   /**
    * All routes for the server.
    */
-  val all: zio.http.Routes[Any, Response] =
-    healthRoutes ++ ConvertRoutes.routes ++ SplitRoutes.routes ++
-      InfoRoutes
-        .routes ++ CapabilitiesRoutes.routes
+  def all: zio.http.Routes[Any, Response] =
+    all(licenseAwareCapabilities = false)
+
+  def all(licenseAwareCapabilities: Boolean): zio.http.Routes[Any, Response] =
+    healthRoutes ++ ConvertRoutes.routes(licenseAwareCapabilities) ++
+      SplitRoutes.routes(licenseAwareCapabilities) ++
+      InfoRoutes.routes(licenseAwareCapabilities) ++
+      CapabilitiesRoutes.routes(licenseAwareCapabilities)
 end Routes

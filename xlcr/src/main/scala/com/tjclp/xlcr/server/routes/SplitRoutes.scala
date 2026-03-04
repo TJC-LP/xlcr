@@ -34,15 +34,21 @@ import zio.http.*
  */
 object SplitRoutes:
 
-  val routes: Routes[Any, Response] = Routes(
+  def routes: Routes[Any, Response] =
+    routes(licenseAwareCapabilities = false)
+
+  def routes(licenseAwareCapabilities: Boolean): Routes[Any, Response] = Routes(
     Method.POST / "split" -> handler { (request: Request) =>
-      handleSplit(request).catchAll { error =>
+      handleSplit(request, licenseAwareCapabilities).catchAll { error =>
         ZIO.succeed(ResponseBuilder.error(error))
       }
     }
   )
 
-  private def handleSplit(request: Request): ZIO[Any, HttpError, Response] =
+  private def handleSplit(
+    request: Request,
+    licenseAwareCapabilities: Boolean
+  ): ZIO[Any, HttpError, Response] =
     for
       // Extract input content (handles ?detect=tika)
       content <- RequestHandler.extractContent(request)
@@ -51,7 +57,11 @@ object SplitRoutes:
       backend <- RequestHandler.parseBackend(request)
 
       // Check if splitting is supported
-      _ <- ZIO.unless(UnifiedTransforms.canSplit(content.mime, backend))(
+      _ <- ZIO.unless(UnifiedTransforms.canSplit(
+        content.mime,
+        backend,
+        licenseAwareCapabilities
+      ))(
         ZIO.fail(HttpError.unsupportedMediaType(
           s"Cannot split ${content.mime.value}" +
             backend.fold("")(b => s" with backend ${b.toString.toLowerCase}")

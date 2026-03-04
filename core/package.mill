@@ -18,9 +18,10 @@ trait CoreModule extends build.XLCRModule {
   def testResources = Task.Sources(moduleDir / "test" / "resources")
 
   override def mvnDeps = Seq(
-    // Logging
+    // Logging: ZIO-native logging with SLF4J2 bridge (captures Tika/POI/Aspose logs)
     mvn"org.slf4j:slf4j-api:2.0.17",
-    mvn"ch.qos.logback:logback-classic:1.5.32",
+    mvn"dev.zio::zio-logging:2.5.3",
+    mvn"dev.zio::zio-logging-slf4j2-bridge:2.5.3",
     mvn"org.apache.logging.log4j:log4j-to-slf4j:2.25.3", // Bridge Log4j2 (from Tika) to SLF4J
     // ZIO
     mvn"dev.zio::zio:2.1.24",

@@ -43,7 +43,8 @@ object Commands:
   case class InfoArgs(
     input: Path,
     extensionOnly: Boolean = false,
-    format: OutputFormat = OutputFormat.Text
+    format: OutputFormat = OutputFormat.Text,
+    licenseAwareCapabilities: Boolean = false
   )
 
   /** Arguments for the server command (pure data — no HTTP imports) */
@@ -54,7 +55,8 @@ object Commands:
     loInstances: Option[Int] = None,
     loRestartAfter: Option[Int] = None,
     loTaskTimeout: Option[Long] = None,
-    loQueueTimeout: Option[Long] = None
+    loQueueTimeout: Option[Long] = None,
+    licenseAwareCapabilities: Boolean = false
   )
 
   /** Output format for the info command */
@@ -139,6 +141,12 @@ object Commands:
       else if xml then OutputFormat.Xml
       else OutputFormat.Text
     }
+
+  private val licenseAwareCapabilitiesFlag: Opts[Boolean] =
+    Opts.flag(
+      long = "license-aware-capabilities",
+      help = "Run runtime Aspose license checks when probing capabilities (slower, more accurate)"
+    ).orFalse
 
   private val backendOpt: Opts[Option[Backend]] =
     Opts.option[String](
@@ -279,7 +287,9 @@ object Commands:
     )(splitOpts.map(CliCommand.Split.apply))
 
   private val infoOpts: Opts[InfoArgs] =
-    (inputOpt, extensionOnlyFlag, outputFormatOpt).mapN(InfoArgs.apply)
+    (inputOpt, extensionOnlyFlag, outputFormatOpt, licenseAwareCapabilitiesFlag).mapN(
+      InfoArgs.apply
+    )
 
   val infoCmd: Opts[CliCommand] =
     Opts.subcommand(
@@ -353,7 +363,8 @@ object Commands:
       loInstancesOpt,
       loRestartAfterOpt,
       loTaskTimeoutOpt,
-      loQueueTimeoutOpt
+      loQueueTimeoutOpt,
+      licenseAwareCapabilitiesFlag
     ).mapN(ServerArgs.apply)
 
   private val serverStartCmd: Opts[CliCommand] =

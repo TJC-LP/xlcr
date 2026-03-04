@@ -28,11 +28,20 @@ object BackendWiring:
   ): ZIO[Any, TransformError, Chunk[DynamicFragment]] =
     AsposeTransforms.split(input, options)
 
-  def asposeCanConvert(from: Mime, to: Mime): Boolean =
-    AsposeTransforms.canConvertLicensed(from, to)
+  def asposeCanConvert(
+    from: Mime,
+    to: Mime,
+    licenseAwareCapabilities: Boolean = false
+  ): Boolean =
+    if licenseAwareCapabilities then AsposeTransforms.canConvertLicensed(from, to)
+    else AsposeTransforms.canConvert(from, to)
 
-  def asposeCanSplit(mime: Mime): Boolean =
-    AsposeTransforms.canSplitLicensed(mime)
+  def asposeCanSplit(
+    mime: Mime,
+    licenseAwareCapabilities: Boolean = false
+  ): Boolean =
+    if licenseAwareCapabilities then AsposeTransforms.canSplitLicensed(mime)
+    else AsposeTransforms.canSplit(mime)
 
   def checkAsposeStatus(): Unit =
     if AsposeLicenseV2.licenseAvailable then
