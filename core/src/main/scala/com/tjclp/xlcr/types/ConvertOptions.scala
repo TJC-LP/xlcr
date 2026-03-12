@@ -24,7 +24,10 @@ final case class ConvertOptions(
 
   // --- PDF -> HTML options (Aspose.PDF) ---
   flowingLayout: Boolean = true,
-  embedResources: Boolean = true
+  embedResources: Boolean = true,
+
+  // --- PDF processing options (Aspose.PDF) ---
+  removeWatermarks: Boolean = false
 ):
 
   /** True when every field matches the default `ConvertOptions()`. */
@@ -43,6 +46,7 @@ final case class ConvertOptions(
     if stripMasters then parts += "strip-masters"
     if !flowingLayout then parts += "fixed-layout"
     if !embedResources then parts += "no-embed-resources"
+    if removeWatermarks then parts += "remove-watermarks"
     parts.result().mkString(", ")
 end ConvertOptions
 

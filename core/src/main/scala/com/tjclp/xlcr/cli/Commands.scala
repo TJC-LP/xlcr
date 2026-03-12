@@ -215,6 +215,9 @@ object Commands:
       .flag("no-embed-resources", help = "Don't embed resources into HTML output")
       .orFalse
 
+  private val removeWatermarksFlag: Opts[Boolean] =
+    Opts.flag("remove-watermarks", help = "Remove watermark artifacts from PDF").orFalse
+
   private val convertOptionsOpts: Opts[ConvertOptions] =
     (
       passwordOpt,
@@ -226,7 +229,8 @@ object Commands:
       excludeHiddenFlag,
       stripMastersFlag,
       fixedLayoutFlag,
-      noEmbedResourcesFlag
+      noEmbedResourcesFlag,
+      removeWatermarksFlag
     ).mapN {
       (
         password,
@@ -238,7 +242,8 @@ object Commands:
         exclHidden,
         stripM,
         fixedLayout,
-        noEmbed
+        noEmbed,
+        removeWm
       ) =>
         ConvertOptions(
           password = password,
@@ -250,7 +255,8 @@ object Commands:
           excludeHidden = exclHidden,
           stripMasters = stripM,
           flowingLayout = !fixedLayout,
-          embedResources = !noEmbed
+          embedResources = !noEmbed,
+          removeWatermarks = removeWm
         )
     }
 

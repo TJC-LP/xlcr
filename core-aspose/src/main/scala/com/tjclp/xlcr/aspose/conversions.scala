@@ -391,6 +391,124 @@ private[aspose] def convertPdfToHtml(
     }
   }.mapError(TransformError.fromThrowable)
 
+/**
+ * Remove trailing vector-path watermark blocks from a page's content stream.
+ *
+ * Some PDF generators (e.g., CorpTax) render watermark text as glyph outlines (Bezier path
+ * operators) appended after all real page content. This method finds the last text operator (ET)
+ * and removes all trailing path-only operators.
+ *
+ * Uses `suppressUpdate` / `resumeUpdate` to batch operator collection changes, avoiding the
+ * per-operation content stream re-parse overhead.
+ */
+private[aspose] def removeTrailingPathBlock(page: com.aspose.pdf.Page): Unit =
+  val ops   = page.getContents
+  val total = ops.size()
+  if total == 0 then return
+
+  // Scan backwards to find the last text-end operator (ET)
+  // Use iterator to build a lightweight snapshot of operator strings near the end,
+  // avoiding repeated get_Item calls across the full collection.
+  var lastET = -1
+  var o      = total
+  while o >= 1 && lastET < 0 do
+    val s = ops.get_Item(o).toString.trim
+    if s == "ET" then lastET = o
+    o -= 1
+
+  if lastET < 0 || lastET >= total then return
+
+  // Verify all operators after lastET are safe to remove (path/graphics-state only)
+  val safePathOps =
+    Set("q", "Q", "h", "f", "f*", "F", "S", "s", "B", "B*", "b", "b*", "n", "W", "W*")
+  var allSafe    = true
+  var hasPathOps = false
+  var idx        = lastET + 1
+  while idx <= total && allSafe do
+    val s      = ops.get_Item(idx).toString.trim
+    val isSafe = safePathOps.contains(s) ||
+      s.endsWith(" gs") || s.endsWith(" rg") || s.endsWith(" RG") ||
+      s.endsWith(" m") || s.endsWith(" c") || s.endsWith(" l") ||
+      s.endsWith(" re") || s.endsWith(" cm") || s.endsWith(" w") ||
+      s.endsWith(" j") || s.endsWith(" J") || s.endsWith(" M") ||
+      s.endsWith(" d") || s.endsWith(" i") || s.endsWith(" ri")
+    if !isSafe then allSafe = false
+    if s.endsWith(" m") || s.endsWith(" c") || s.endsWith(" l") then hasPathOps = true
+    idx += 1
+
+  if !allSafe || !hasPathOps then return
+
+  // Batch-remove trailing operators using suppressUpdate for performance
+  ops.suppressUpdate()
+  try
+    var removeIdx = total
+    while removeIdx > lastET do
+      ops.delete(removeIdx)
+      removeIdx -= 1
+  finally ops.resumeUpdate()
+end removeTrailingPathBlock
+
+// Options-aware PDF -> PDF processing helper (watermark removal, etc.)
+private[aspose] def processPdf(
+  input: Content[Mime.Pdf],
+  options: ConvertOptions
+): ZIO[Any, TransformError, Content[Mime.Pdf]] =
+  ZIO.attempt {
+    AsposeLicenseV2.require[Pdf]
+    Scope.global.scoped { scope =>
+      import scope.*
+      val stream   = new ByteArrayInputStream(input.data.toArray)
+      val document = allocate(pdfDocResource(
+        options.password match
+          case Some(pwd) => new com.aspose.pdf.Document(stream, pwd)
+          case None      => new com.aspose.pdf.Document(stream)
+      ))
+
+      if options.removeWatermarks then
+        $(document) { doc =>
+          if doc.isEncrypted then doc.decrypt()
+
+          val pages = doc.getPages
+          var i     = 1
+          while i <= pages.size() do
+            val page = pages.get_Item(i)
+
+            // Strategy 1: Remove watermark artifacts (reverse-iterate for safe deletion)
+            val artifacts = page.getArtifacts
+            var j         = artifacts.size()
+            while j >= 1 do
+              val artifact = artifacts.get_Item(j)
+              if artifact.getSubtype == com.aspose.pdf.Artifact.ArtifactSubtype.Watermark then
+                artifacts.delete(j)
+              j -= 1
+
+            // Strategy 2: Remove watermark annotations
+            val annotations = page.getAnnotations
+            var k           = annotations.size()
+            while k >= 1 do
+              val ann = annotations.get_Item(k)
+              if ann.isInstanceOf[com.aspose.pdf.WatermarkAnnotation] then
+                annotations.delete(k)
+              k -= 1
+
+            // Strategy 3: Remove trailing vector-path watermark blocks from content stream.
+            // Some tools (e.g., CorpTax) append watermark text as glyph outlines (path
+            // operators) after all real page content. We detect this by finding the last
+            // text-rendering operator (ET) and checking whether all remaining operators
+            // are purely path/graphics-state ops in q/Q blocks. If so, remove them.
+            removeTrailingPathBlock(page)
+
+            i += 1
+          end while
+        }
+      end if
+
+      val out = new ByteArrayOutputStream()
+      $(document)(_.save(out))
+      Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
+    }
+  }.mapError(TransformError.fromThrowable)
+
 given asposeXlsToXlsx: Conversion[Mime.Xls, Mime.Xlsx] with
   override def name                     = "Aspose.Cells.XlsToXlsx"
   def convert(input: Content[Mime.Xls]) =
