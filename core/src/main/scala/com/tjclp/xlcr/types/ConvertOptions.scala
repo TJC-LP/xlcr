@@ -27,7 +27,8 @@ final case class ConvertOptions(
   embedResources: Boolean = true,
 
   // --- PDF processing options (Aspose.PDF) ---
-  removeWatermarks: Boolean = false
+  removeWatermarks: Boolean = false,
+  removeWatermarksAggressive: Boolean = false
 ):
 
   /** True when every field matches the default `ConvertOptions()`. */
@@ -47,7 +48,9 @@ final case class ConvertOptions(
     if !flowingLayout then parts += "fixed-layout"
     if !embedResources then parts += "no-embed-resources"
     if removeWatermarks then parts += "remove-watermarks"
+    if removeWatermarksAggressive then parts += "remove-watermarks-aggressive"
     parts.result().mkString(", ")
+  end nonDefaultSummary
 end ConvertOptions
 
 /**

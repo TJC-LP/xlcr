@@ -530,8 +530,12 @@ end countTrailingPathOps
  * Remove trailing path-only operators from a page's content stream.
  *
  * Assumes the caller has already validated this page is safe to strip (via cross-page consistency).
+ *
+ * @param opsToRemove
+ *   number of trailing operators to remove (from end). If 0, removes ALL trailing ops after last
+ *   ET.
  */
-private[aspose] def stripTrailingPathOps(page: com.aspose.pdf.Page): Unit =
+private[aspose] def stripTrailingPathOps(page: com.aspose.pdf.Page, opsToRemove: Int = 0): Unit =
   val ops   = page.getContents
   val total = ops.size()
   if total == 0 then return
@@ -544,54 +548,99 @@ private[aspose] def stripTrailingPathOps(page: com.aspose.pdf.Page): Unit =
 
   if lastET < 0 || lastET >= total then return
 
+  val cutPoint = if opsToRemove > 0 then lastET + opsToRemove else total
+
   ops.suppressUpdate()
   try
-    var removeIdx = total
+    var removeIdx = cutPoint
     while removeIdx > lastET do
       ops.delete(removeIdx)
       removeIdx -= 1
   finally ops.resumeUpdate()
 end stripTrailingPathOps
 
+/** Find the index of the last ET operator on a page (1-based), or -1 if none. */
+private def findLastET(page: com.aspose.pdf.Page): Int =
+  val ops   = page.getContents
+  val total = ops.size()
+  var o     = total
+  while o >= 1 do
+    if commandName(ops.get_Item(o)) == "ET" then return o
+    o -= 1
+  -1
+
 /**
- * Remove unmarked trailing vector watermark blocks using cross-page consistency.
+ * Get trailing operator strings (after last ET) for a page, with graphics state names normalized
+ * (e.g., "/G0 gs" and "/G1 gs" both become "/GX gs") so cross-page comparison isn't foiled by
+ * per-page graphics state numbering.
+ */
+private def getTrailingOpsNormalized(page: com.aspose.pdf.Page): Array[String] =
+  val ops    = page.getContents
+  val total  = ops.size()
+  val lastET = findLastET(page)
+  if lastET < 0 || lastET >= total then return Array.empty
+  val count  = total - lastET
+  val result = new Array[String](count)
+  var i      = 0
+  while i < count do
+    val s = ops.get_Item(lastET + 1 + i).toString.trim
+    // Normalize graphics state refs: "/G0 gs" -> "/GX gs"
+    result(i) = if s.endsWith(" gs") then s.replaceAll("/G\\d+", "/GX") else s
+    i += 1
+  result
+
+/**
+ * Remove unmarked trailing vector watermark blocks using cross-page common prefix detection.
  *
  * Some generators (e.g., CorpTax) append watermark text as glyph outlines after all real page
- * content WITHOUT marked-content tags. Blindly removing all trailing path ops would damage
- * legitimate page-specific vector art.
+ * content WITHOUT marked-content tags. The watermark is identical across pages, but pages may also
+ * have page-specific vector art appended after the watermark.
  *
- * Safety heuristic: count trailing path operators on every page. A stamped watermark produces an
- * identical count across all stamped pages. Only strip pages whose trailing count matches the mode
- * (most common count), and only when at least 2 pages share that count. Single-page documents or
- * pages with unique trailing art are left untouched.
+ * Safety heuristic: collect trailing operator strings from all pages that have them, find the
+ * longest common prefix (the watermark signature). Only strip the common prefix portion, preserving
+ * any page-specific vector art that follows. Requires at least 2 pages with matching prefix.
+ * Single-page documents are left untouched.
  */
 private[aspose] def removeTrailingUnmarkedWatermarkBlocks(doc: com.aspose.pdf.Document): Unit =
   val pages = doc.getPages
   val total = pages.size()
-  if total < 2 then return // Single-page docs: no cross-page signal, skip
+  if total < 2 then return
 
-  // Count trailing path ops per page
-  val counts = new Array[Int](total)
-  var pi     = 0
-  while pi < total do
-    counts(pi) = countTrailingPathOps(pages.get_Item(pi + 1))
-    pi += 1
+  // Collect normalized trailing ops for pages that have them
+  case class PageTrailing(pageIdx: Int, ops: Array[String])
+  val trailing = (0 until total)
+    .map(i => PageTrailing(i, getTrailingOpsNormalized(pages.get_Item(i + 1))))
+    .filter(_.ops.nonEmpty)
+    .toArray
 
-  // Find the mode (most common non-zero count)
-  val nonZero = counts.filter(_ > 0)
-  if nonZero.length < 2 then return // Need at least 2 pages with trailing path ops
+  if trailing.length < 2 then return
 
-  val freq                  = nonZero.groupBy(identity).view.mapValues(_.length)
-  val (modeCount, modeFreq) = freq.maxBy(_._2)
+  // Find the longest common prefix across all pages with trailing ops
+  var commonLen = trailing(0).ops.length
+  var ti        = 1
+  while ti < trailing.length do
+    val other  = trailing(ti).ops
+    val maxLen = Math.min(commonLen, other.length)
+    var newLen = 0
+    while newLen < maxLen && trailing(0).ops(newLen) == other(newLen) do newLen += 1
+    commonLen = newLen
+    ti += 1
 
-  // Only strip if at least 2 pages share the same trailing count (watermark signature)
-  if modeFreq < 2 then return
+  // Need a meaningful common prefix (at least ~10 ops with path content)
+  if commonLen < 10 then return
 
-  // Strip trailing path ops from pages that match the mode
-  pi = 0
-  while pi < total do
-    if counts(pi) == modeCount then stripTrailingPathOps(pages.get_Item(pi + 1))
-    pi += 1
+  // Verify the common prefix contains path ops (not just q/Q/gs)
+  var hasPathOps = false
+  var ci         = 0
+  while ci < commonLen do
+    val s = trailing(0).ops(ci)
+    if s.endsWith(" m") || s.endsWith(" c") || s.endsWith(" l") then hasPathOps = true
+    ci += 1
+  if !hasPathOps then return
+
+  // Strip only the common prefix portion from each page
+  for pt <- trailing do
+    stripTrailingPathOps(pages.get_Item(pt.pageIdx + 1), commonLen)
 end removeTrailingUnmarkedWatermarkBlocks
 
 // Options-aware PDF -> PDF processing helper (watermark removal, etc.)
@@ -644,30 +693,70 @@ private[aspose] def processPdf(
 
         }
 
-        // Strategy 3b: Remove unmarked trailing vector watermark blocks using cross-page
-        // consistency. Only strips when multiple pages share the same trailing path op count
-        // (watermark stamp signature). Single-page docs and unique trailing art are preserved.
+        // Strategy 3b: Remove unmarked trailing vector watermark blocks.
+        // Aggressive mode: strip ALL trailing path ops on every page.
+        // Normal mode: find common trailing prefix across pages (watermark signature) and
+        // strip only that, preserving page-specific vector art.
         $(document) { doc =>
-          val pages = doc.getPages
-          val total = pages.size()
-          if total >= 2 then
-            // Count trailing path ops per page
-            val counts = new Array[Int](total)
-            var pi     = 0
+          val pgs   = doc.getPages
+          val total = pgs.size()
+          if options.removeWatermarksAggressive then
+            var pi = 0
             while pi < total do
-              counts(pi) = countTrailingPathOps(pages.get_Item(pi + 1))
+              stripTrailingPathOps(pgs.get_Item(pi + 1))
               pi += 1
+          else if total >= 2 then
+            // Normal mode: two heuristics for unmarked vector watermarks.
+            //
+            // Heuristic A: Common-prefix — find the longest identical trailing op sequence
+            // across all pages. Strips only the shared prefix, preserving per-page art.
+            // Works when the watermark is byte-identical across pages.
+            //
+            // Heuristic B: Mode-count — if all trailing sections have the same length,
+            // strip them entirely. Works when watermark content varies per page (e.g.,
+            // different glyph coordinates) but the size is always the same.
+            case class PT(pageIdx: Int, ops: Array[String], count: Int)
+            val trailing = (0 until total)
+              .map { i =>
+                val pg = pgs.get_Item(i + 1)
+                PT(i, getTrailingOpsNormalized(pg), countTrailingPathOps(pg))
+              }
+              .filter(pt => pt.ops.nonEmpty && pt.count > 0)
+              .toArray
 
-            // Find mode (most common non-zero count)
-            val nonZero = counts.filter(_ > 0)
-            if nonZero.length >= 2 then
-              val freq               = nonZero.groupBy(identity).view.mapValues(_.length)
-              val (modeCount, modeN) = freq.maxBy(_._2)
-              if modeN >= 2 then
-                pi = 0
-                while pi < total do
-                  if counts(pi) == modeCount then stripTrailingPathOps(pages.get_Item(pi + 1))
-                  pi += 1
+            if trailing.length >= 2 then
+              // Heuristic A: common prefix
+              var commonLen = trailing(0).ops.length
+              var ti        = 1
+              while ti < trailing.length do
+                val other  = trailing(ti).ops
+                val maxLen = Math.min(commonLen, other.length)
+                var newLen = 0
+                while newLen < maxLen && trailing(0).ops(newLen) == other(newLen) do newLen += 1
+                commonLen = newLen
+                ti += 1
+
+              if commonLen >= 10 then
+                var hasPath = false
+                var ci      = 0
+                while ci < commonLen do
+                  val s = trailing(0).ops(ci)
+                  if s.endsWith(" m") || s.endsWith(" c") || s.endsWith(" l") then hasPath = true
+                  ci += 1
+                if hasPath then
+                  for pt <- trailing do
+                    stripTrailingPathOps(pgs.get_Item(pt.pageIdx + 1), commonLen)
+              else
+                // Heuristic B: mode-count fallback — strip pages whose trailing count
+                // matches the most common count (at least 2 pages must share it)
+                val counts             = trailing.map(_.count)
+                val freq               = counts.groupBy(identity).view.mapValues(_.length)
+                val (modeCount, modeN) = freq.maxBy(_._2)
+                if modeN >= 2 then
+                  for pt <- trailing if pt.count == modeCount do
+                    stripTrailingPathOps(pgs.get_Item(pt.pageIdx + 1))
+              end if
+            end if
           end if
         }
       end if

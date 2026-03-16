@@ -142,7 +142,9 @@ object RequestHandler:
       stripMasters = boolParam("strip-masters"),
       flowingLayout = !boolParam("fixed-layout"),
       embedResources = !boolParam("no-embed-resources"),
-      removeWatermarks = boolParam("remove-watermarks")
+      removeWatermarks =
+        boolParam("remove-watermarks") || boolParam("remove-watermarks-aggressive"),
+      removeWatermarksAggressive = boolParam("remove-watermarks-aggressive")
     )
   end parseConvertOptions
 
