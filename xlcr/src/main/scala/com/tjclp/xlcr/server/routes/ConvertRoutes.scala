@@ -59,6 +59,9 @@ object ConvertRoutes:
       // Parse optional backend override
       backend <- RequestHandler.parseBackend(request)
 
+      // Parse conversion options from query params
+      options = RequestHandler.parseConvertOptions(request)
+
       // Explicit LibreOffice backend requires runtime availability
       _ <- ZIO.when(backend.contains(Backend.LibreOffice) && !LibreOfficeConfig.isAvailable())(
         ZIO.fail(HttpError(
@@ -83,7 +86,7 @@ object ConvertRoutes:
 
       // Perform conversion
       result <- UnifiedTransforms
-        .convert(content, targetMime, backend = backend)
+        .convert(content, targetMime, options, backend = backend)
         .mapError(HttpError.fromTransformError)
     yield ResponseBuilder.fromContent(result)
 end ConvertRoutes

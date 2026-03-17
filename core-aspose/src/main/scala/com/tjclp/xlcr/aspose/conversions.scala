@@ -391,6 +391,382 @@ private[aspose] def convertPdfToHtml(
     }
   }.mapError(TransformError.fromThrowable)
 
+private val SafeTrailingWatermarkWrapperCommands =
+  Set("q", "Q", "cm", "w", "J", "j", "M", "d", "i", "ri", "gs", "g", "G", "rg", "RG")
+
+private val SafeTrailingWatermarkPathCommands =
+  Set("m", "l", "c", "v", "y", "h", "re")
+
+private val SafeTrailingWatermarkPaintCommands =
+  Set("S", "s", "f", "F", "f*", "B", "B*", "b", "b*", "n", "W", "W*")
+
+private def normalizeMarkedContentTag(tag: String): String =
+  Option(tag).map(_.trim.stripPrefix("/")).getOrElse("")
+
+private def hasExplicitWatermarkMarker(tag: String, rendered: String): Boolean =
+  normalizeMarkedContentTag(tag).equalsIgnoreCase("Watermark") ||
+    Option(rendered).exists(text =>
+      text.contains("/Subtype /Watermark") ||
+        text.contains("/Type /Watermark") ||
+        text.contains("/Watermark")
+    )
+
+private def commandName(op: com.aspose.pdf.Operator): String =
+  Option(op.getCommandName).map(_.trim).getOrElse("")
+
+private def isSafeTrailingWatermarkCommand(cmd: String): Boolean =
+  SafeTrailingWatermarkWrapperCommands.contains(cmd) ||
+    SafeTrailingWatermarkPathCommands.contains(cmd) ||
+    SafeTrailingWatermarkPaintCommands.contains(cmd)
+
+private def isWatermarkPathCommand(cmd: String): Boolean =
+  SafeTrailingWatermarkPathCommands.contains(cmd) ||
+    SafeTrailingWatermarkPaintCommands.contains(cmd)
+
+/**
+ * Remove a trailing vector watermark block only when the content stream explicitly marks it as a
+ * watermark.
+ *
+ * Some generators append vector watermark outlines after the last text block. Deleting any trailing
+ * path-only suffix is unsafe because legitimate page graphics can be emitted there too. This helper
+ * only removes the suffix when every remaining operator is a safe graphics/path command and the
+ * drawable content is wrapped in marked-content operators that explicitly mention watermark
+ * semantics.
+ *
+ * Uses `suppressUpdate` / `resumeUpdate` to batch operator collection changes, avoiding the
+ * per-operation content stream re-parse overhead.
+ */
+private[aspose] def removeTrailingMarkedWatermarkBlock(page: com.aspose.pdf.Page): Unit =
+  val ops   = page.getContents
+  val total = ops.size()
+  if total == 0 then return
+
+  // Scan backwards to find the last text-end operator (ET).
+  var lastET = -1
+  var o      = total
+  while o >= 1 && lastET < 0 do
+    if commandName(ops.get_Item(o)) == "ET" then lastET = o
+    o -= 1
+
+  if lastET < 0 || lastET >= total then return
+
+  var allSafe           = true
+  var hasWatermarkBlock = false
+  var watermarkDepth    = 0
+  var hasPathOps        = false
+  var idx               = lastET + 1
+  while idx <= total && allSafe do
+    val op = ops.get_Item(idx)
+    op match
+      case marker: com.aspose.pdf.operators.BMC =>
+        if hasExplicitWatermarkMarker(marker.getTag, marker.toString) then
+          hasWatermarkBlock = true
+          watermarkDepth += 1
+        else allSafe = false
+      case marker: com.aspose.pdf.operators.BDC =>
+        if hasExplicitWatermarkMarker(marker.getTag, marker.toString) then
+          hasWatermarkBlock = true
+          watermarkDepth += 1
+        else allSafe = false
+      case _: com.aspose.pdf.operators.EMC =>
+        if watermarkDepth == 0 then allSafe = false
+        else watermarkDepth -= 1
+      case _ =>
+        val cmd = commandName(op)
+        if !isSafeTrailingWatermarkCommand(cmd) then allSafe = false
+        else if isWatermarkPathCommand(cmd) then
+          if watermarkDepth == 0 then allSafe = false
+          else hasPathOps = true
+    end match
+    idx += 1
+  end while
+
+  if !allSafe || !hasWatermarkBlock || watermarkDepth != 0 || !hasPathOps then return
+
+  // Batch-remove trailing operators using suppressUpdate for performance
+  ops.suppressUpdate()
+  try
+    var removeIdx = total
+    while removeIdx > lastET do
+      ops.delete(removeIdx)
+      removeIdx -= 1
+  finally ops.resumeUpdate()
+end removeTrailingMarkedWatermarkBlock
+
+/**
+ * Count trailing path-only operators after the last text block on a page.
+ *
+ * Returns the count of operators after the last ET that are all safe path/graphics-state commands,
+ * or 0 if the trailing content contains unsafe operators (text, images, marked content) or has no
+ * path ops.
+ */
+private[aspose] def countTrailingPathOps(page: com.aspose.pdf.Page): Int =
+  val ops   = page.getContents
+  val total = ops.size()
+  if total == 0 then return 0
+
+  var lastET = -1
+  var o      = total
+  while o >= 1 && lastET < 0 do
+    if commandName(ops.get_Item(o)) == "ET" then lastET = o
+    o -= 1
+
+  if lastET < 0 || lastET >= total then return 0
+
+  var allSafe    = true
+  var hasPathOps = false
+  var idx        = lastET + 1
+  while idx <= total && allSafe do
+    val cmd = commandName(ops.get_Item(idx))
+    if !isSafeTrailingWatermarkCommand(cmd) then allSafe = false
+    else if isWatermarkPathCommand(cmd) then hasPathOps = true
+    idx += 1
+
+  if !allSafe || !hasPathOps then 0
+  else total - lastET
+end countTrailingPathOps
+
+/**
+ * Remove trailing path-only operators from a page's content stream.
+ *
+ * Assumes the caller has already validated this page is safe to strip (via cross-page consistency).
+ *
+ * @param opsToRemove
+ *   number of trailing operators to remove (from end). If 0, removes ALL trailing ops after last
+ *   ET.
+ */
+private[aspose] def stripTrailingPathOps(page: com.aspose.pdf.Page, opsToRemove: Int = 0): Unit =
+  val ops   = page.getContents
+  val total = ops.size()
+  if total == 0 then return
+
+  var lastET = -1
+  var o      = total
+  while o >= 1 && lastET < 0 do
+    if commandName(ops.get_Item(o)) == "ET" then lastET = o
+    o -= 1
+
+  if lastET < 0 || lastET >= total then return
+
+  val cutPoint = if opsToRemove > 0 then lastET + opsToRemove else total
+
+  ops.suppressUpdate()
+  try
+    var removeIdx = cutPoint
+    while removeIdx > lastET do
+      ops.delete(removeIdx)
+      removeIdx -= 1
+  finally ops.resumeUpdate()
+end stripTrailingPathOps
+
+/** Find the index of the last ET operator on a page (1-based), or -1 if none. */
+private def findLastET(page: com.aspose.pdf.Page): Int =
+  val ops   = page.getContents
+  val total = ops.size()
+  var o     = total
+  while o >= 1 do
+    if commandName(ops.get_Item(o)) == "ET" then return o
+    o -= 1
+  -1
+
+/**
+ * Get trailing operator strings (after last ET) for a page, with graphics state names normalized
+ * (e.g., "/G0 gs" and "/G1 gs" both become "/GX gs") so cross-page comparison isn't foiled by
+ * per-page graphics state numbering.
+ */
+private def getTrailingOpsNormalized(page: com.aspose.pdf.Page): Array[String] =
+  val ops    = page.getContents
+  val total  = ops.size()
+  val lastET = findLastET(page)
+  if lastET < 0 || lastET >= total then return Array.empty
+  val count  = total - lastET
+  val result = new Array[String](count)
+  var i      = 0
+  while i < count do
+    val s = ops.get_Item(lastET + 1 + i).toString.trim
+    // Normalize graphics state refs: "/G0 gs" -> "/GX gs"
+    result(i) = if s.endsWith(" gs") then s.replaceAll("/G\\d+", "/GX") else s
+    i += 1
+  result
+
+/**
+ * Remove unmarked trailing vector watermark blocks using cross-page common prefix detection.
+ *
+ * Some generators (e.g., CorpTax) append watermark text as glyph outlines after all real page
+ * content WITHOUT marked-content tags. The watermark is identical across pages, but pages may also
+ * have page-specific vector art appended after the watermark.
+ *
+ * Safety heuristic: collect trailing operator strings from all pages that have them, find the
+ * longest common prefix (the watermark signature). Only strip the common prefix portion, preserving
+ * any page-specific vector art that follows. Requires at least 2 pages with matching prefix.
+ * Single-page documents are left untouched.
+ */
+private[aspose] def removeTrailingUnmarkedWatermarkBlocks(doc: com.aspose.pdf.Document): Unit =
+  val pages = doc.getPages
+  val total = pages.size()
+  if total < 2 then return
+
+  // Collect normalized trailing ops for pages that have them
+  case class PageTrailing(pageIdx: Int, ops: Array[String])
+  val trailing = (0 until total)
+    .map(i => PageTrailing(i, getTrailingOpsNormalized(pages.get_Item(i + 1))))
+    .filter(_.ops.nonEmpty)
+    .toArray
+
+  if trailing.length < 2 then return
+
+  // Find the longest common prefix across all pages with trailing ops
+  var commonLen = trailing(0).ops.length
+  var ti        = 1
+  while ti < trailing.length do
+    val other  = trailing(ti).ops
+    val maxLen = Math.min(commonLen, other.length)
+    var newLen = 0
+    while newLen < maxLen && trailing(0).ops(newLen) == other(newLen) do newLen += 1
+    commonLen = newLen
+    ti += 1
+
+  // Need a meaningful common prefix (at least ~10 ops with path content)
+  if commonLen < 10 then return
+
+  // Verify the common prefix contains path ops (not just q/Q/gs)
+  var hasPathOps = false
+  var ci         = 0
+  while ci < commonLen do
+    val s = trailing(0).ops(ci)
+    if s.endsWith(" m") || s.endsWith(" c") || s.endsWith(" l") then hasPathOps = true
+    ci += 1
+  if !hasPathOps then return
+
+  // Strip only the common prefix portion from each page
+  for pt <- trailing do
+    stripTrailingPathOps(pages.get_Item(pt.pageIdx + 1), commonLen)
+end removeTrailingUnmarkedWatermarkBlocks
+
+// Options-aware PDF -> PDF processing helper (watermark removal, etc.)
+private[aspose] def processPdf(
+  input: Content[Mime.Pdf],
+  options: ConvertOptions
+): ZIO[Any, TransformError, Content[Mime.Pdf]] =
+  ZIO.attempt {
+    AsposeLicenseV2.require[Pdf]
+    Scope.global.scoped { scope =>
+      import scope.*
+      val stream   = new ByteArrayInputStream(input.data.toArray)
+      val document = allocate(pdfDocResource(
+        options.password match
+          case Some(pwd) => new com.aspose.pdf.Document(stream, pwd)
+          case None      => new com.aspose.pdf.Document(stream)
+      ))
+
+      if options.removeWatermarks then
+        $(document) { doc =>
+          val pages = doc.getPages
+          var i     = 1
+          while i <= pages.size() do
+            val page = pages.get_Item(i)
+
+            // Strategy 1: Remove watermark artifacts (reverse-iterate for safe deletion)
+            val artifacts = page.getArtifacts
+            var j         = artifacts.size()
+            while j >= 1 do
+              val artifact = artifacts.get_Item(j)
+              if artifact.getSubtype == com.aspose.pdf.Artifact.ArtifactSubtype.Watermark then
+                artifacts.delete(j)
+              j -= 1
+
+            // Strategy 2: Remove watermark annotations
+            val annotations = page.getAnnotations
+            var k           = annotations.size()
+            while k >= 1 do
+              val ann = annotations.get_Item(k)
+              if ann.isInstanceOf[com.aspose.pdf.WatermarkAnnotation] then
+                annotations.delete(k)
+              k -= 1
+
+            // Strategy 3a: Remove trailing vector watermark blocks when the content stream
+            // explicitly marks them as watermarks via BMC/BDC tags.
+            removeTrailingMarkedWatermarkBlock(page)
+
+            i += 1
+          end while
+
+        }
+
+        // Strategy 3b: Remove unmarked trailing vector watermark blocks.
+        // Aggressive mode: strip ALL trailing path ops on every page.
+        // Normal mode: find common trailing prefix across pages (watermark signature) and
+        // strip only that, preserving page-specific vector art.
+        $(document) { doc =>
+          val pgs   = doc.getPages
+          val total = pgs.size()
+          if options.removeWatermarksAggressive then
+            var pi = 0
+            while pi < total do
+              stripTrailingPathOps(pgs.get_Item(pi + 1))
+              pi += 1
+          else if total >= 2 then
+            // Normal mode: two heuristics for unmarked vector watermarks.
+            //
+            // Heuristic A: Common-prefix — find the longest identical trailing op sequence
+            // across all pages. Strips only the shared prefix, preserving per-page art.
+            // Works when the watermark is byte-identical across pages.
+            //
+            // Heuristic B: Mode-count — if all trailing sections have the same length,
+            // strip them entirely. Works when watermark content varies per page (e.g.,
+            // different glyph coordinates) but the size is always the same.
+            case class PT(pageIdx: Int, ops: Array[String], count: Int)
+            val trailing = (0 until total)
+              .map { i =>
+                val pg = pgs.get_Item(i + 1)
+                PT(i, getTrailingOpsNormalized(pg), countTrailingPathOps(pg))
+              }
+              .filter(pt => pt.ops.nonEmpty && pt.count > 0)
+              .toArray
+
+            if trailing.length >= 2 then
+              // Heuristic A: common prefix
+              var commonLen = trailing(0).ops.length
+              var ti        = 1
+              while ti < trailing.length do
+                val other  = trailing(ti).ops
+                val maxLen = Math.min(commonLen, other.length)
+                var newLen = 0
+                while newLen < maxLen && trailing(0).ops(newLen) == other(newLen) do newLen += 1
+                commonLen = newLen
+                ti += 1
+
+              if commonLen >= 10 then
+                var hasPath = false
+                var ci      = 0
+                while ci < commonLen do
+                  val s = trailing(0).ops(ci)
+                  if s.endsWith(" m") || s.endsWith(" c") || s.endsWith(" l") then hasPath = true
+                  ci += 1
+                if hasPath then
+                  for pt <- trailing do
+                    stripTrailingPathOps(pgs.get_Item(pt.pageIdx + 1), commonLen)
+              else
+                // Heuristic B: mode-count fallback — strip pages whose trailing count
+                // matches the most common count (at least 2 pages must share it)
+                val counts             = trailing.map(_.count)
+                val freq               = counts.groupBy(identity).view.mapValues(_.length)
+                val (modeCount, modeN) = freq.maxBy(_._2)
+                if modeN >= 2 then
+                  for pt <- trailing if pt.count == modeCount do
+                    stripTrailingPathOps(pgs.get_Item(pt.pageIdx + 1))
+              end if
+            end if
+          end if
+        }
+      end if
+
+      val out = new ByteArrayOutputStream()
+      $(document)(_.save(out))
+      Content[Mime.Pdf](out.toByteArray, Mime.pdf, input.metadata)
+    }
+  }.mapError(TransformError.fromThrowable)
+
 given asposeXlsToXlsx: Conversion[Mime.Xls, Mime.Xlsx] with
   override def name                     = "Aspose.Cells.XlsToXlsx"
   def convert(input: Content[Mime.Xls]) =

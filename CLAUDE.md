@@ -105,6 +105,9 @@ xlcr --version
 # PowerPoint to HTML with master slide removal
 xlcr convert -i presentation.pptx -o output.html --strip-masters
 
+# Remove watermarks from PDF
+xlcr convert -i watermarked.pdf -o clean.pdf --remove-watermarks
+
 # Two-stage PDF -> editable PowerPoint (recommended)
 xlcr convert -i document.pdf -o intermediate.html
 xlcr convert -i intermediate.html -o presentation.pptx
@@ -159,6 +162,11 @@ Logging uses `zio-logging` with SLF4J2 bridge — all logs (ZIO, Tika, POI, Aspo
 | `to` (required) | `/convert` | Target format: MIME type, extension, or alias (`pdf`, `text/plain`, `html`, etc.) |
 | `backend` | `/convert`, `/split` | Force specific backend: `aspose`, `libreoffice`, or `xlcr` (no fallback) |
 | `detect=tika` | `/convert`, `/split` | Force Tika content detection, ignore Content-Type header |
+| `remove-watermarks` | `/convert` | Remove watermark artifacts from PDF (PDF-to-PDF only) |
+| `password` | `/convert`, `/split` | Password for encrypted documents |
+| `strip-masters` | `/convert` | Strip master/layout slides from PowerPoint |
+| `fixed-layout` | `/convert` | Use fixed layout for PDF to HTML |
+| `no-embed-resources` | `/convert` | Don't embed resources into HTML output |
 
 **Content-Type handling**: `application/octet-stream` and `application/x-www-form-urlencoded` are treated as unknown and trigger automatic Tika detection.
 

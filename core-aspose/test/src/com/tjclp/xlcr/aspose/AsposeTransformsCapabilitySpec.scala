@@ -104,6 +104,29 @@ class AsposeTransformsCapabilitySpec extends AnyWordSpec with Matchers:
       AsposeTransforms.canConvert(Mime.msg, Mime.eml) shouldBe true
     }
 
+    "support PDF -> PDF (watermark removal)" in {
+      AsposeTransforms.canConvert(Mime.pdf, Mime.pdf) shouldBe true
+    }
+
+    "require Pdf product for PDF -> PDF" in {
+      val result = AsposeTransforms.canConvertLicensed(
+        Mime.pdf,
+        Mime.pdf,
+        {
+          case AsposeProduct.Pdf => true
+          case _                 => false
+        }
+      )
+      result shouldBe true
+
+      val unlicensed = AsposeTransforms.canConvertLicensed(
+        Mime.pdf,
+        Mime.pdf,
+        _ => false
+      )
+      unlicensed shouldBe false
+    }
+
     "support Word/Slides -> Images" in {
       AsposeTransforms.canConvert(Mime.docx, Mime.png) shouldBe true
       AsposeTransforms.canConvert(Mime.docx, Mime.jpeg) shouldBe true

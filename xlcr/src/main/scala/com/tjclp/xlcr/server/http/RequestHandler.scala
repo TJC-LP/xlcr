@@ -123,10 +123,42 @@ object RequestHandler:
       case ext => Mime.fromExtension(ext)
 
   /**
+   * Parse conversion options from query parameters.
+   *
+   * Mirrors the CLI flags in Commands.scala. Boolean flags are activated by `?flag=true`.
+   */
+  def parseConvertOptions(request: Request): ConvertOptions =
+    def boolParam(name: String): Boolean =
+      getQueryParam(request, name).exists(_.equalsIgnoreCase("true"))
+
+    ConvertOptions(
+      password = getQueryParam(request, "password"),
+      evaluateFormulas = !boolParam("no-evaluate-formulas"),
+      oneSheetPerPage = boolParam("one-sheet-per-page"),
+      landscape = getQueryParam(request, "landscape").map(_.equalsIgnoreCase("true")),
+      paperSize = getQueryParam(request, "paper-size").flatMap(PaperSize.fromString),
+      sheetNames = getQueryParams(request, "sheet").flatMap(_.split(",").toList),
+      excludeHidden = boolParam("exclude-hidden"),
+      stripMasters = boolParam("strip-masters"),
+      flowingLayout = !boolParam("fixed-layout"),
+      embedResources = !boolParam("no-embed-resources"),
+      removeWatermarks =
+        boolParam("remove-watermarks") || boolParam("remove-watermarks-aggressive"),
+      removeWatermarksAggressive = boolParam("remove-watermarks-aggressive")
+    )
+  end parseConvertOptions
+
+  /**
    * Get optional query parameter.
    */
   def getQueryParam(request: Request, name: String): Option[String] =
     request.url.queryParams.queryParam(name)
+
+  /**
+   * Get all query parameter values for a repeated key.
+   */
+  def getQueryParams(request: Request, name: String): List[String] =
+    request.url.queryParams.getAll(name).toList
 
   /**
    * Get required query parameter.

@@ -56,6 +56,9 @@ object SplitRoutes:
       // Parse optional backend override
       backend <- RequestHandler.parseBackend(request)
 
+      // Parse conversion options from query params
+      options = RequestHandler.parseConvertOptions(request)
+
       // Check if splitting is supported
       _ <- ZIO.unless(UnifiedTransforms.canSplit(
         content.mime,
@@ -70,7 +73,7 @@ object SplitRoutes:
 
       // Perform split
       fragments <- UnifiedTransforms
-        .split(content, backend = backend)
+        .split(content, options, backend = backend)
         .mapError(HttpError.fromTransformError)
 
       // Build ZIP response

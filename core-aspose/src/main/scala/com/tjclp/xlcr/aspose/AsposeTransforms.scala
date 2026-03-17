@@ -73,7 +73,7 @@ object AsposeTransforms:
           ) =>
         Set(AsposeProduct.Cells)
       // PDF-based conversions
-      case (PDF, HTML | PNG | JPEG | DOCX | DOC | XLSX) | (PNG | JPEG | HTML, PDF) =>
+      case (PDF, HTML | PNG | JPEG | DOCX | DOC | XLSX | PDF) | (PNG | JPEG | HTML, PDF) =>
         Set(AsposeProduct.Pdf)
       case _ =>
         Set.empty
@@ -249,6 +249,11 @@ object AsposeTransforms:
       // PDF -> HTML/PowerPoint (options-aware)
       case (PDF, HTML) =>
         convertPdfToHtml(input.asInstanceOf[Content[Mime.Pdf]], options).map(widen)
+      // PDF -> PDF (processing: watermark removal, etc.)
+      case (PDF, PDF) if options.removeWatermarks =>
+        processPdf(input.asInstanceOf[Content[Mime.Pdf]], options).map(widen)
+      case (PDF, PDF) =>
+        ZIO.fail(UnsupportedConversion(input.mime, to))
       case (PDF, PPTX) =>
         asposePdfToPptx.convert(input.asInstanceOf[Content[Mime.Pdf]]).map(widen)
       case (PDF, PPT) =>
@@ -467,6 +472,8 @@ object AsposeTransforms:
     (PDF, HTML),
     (PDF, PPTX),
     (PDF, PPT),
+    // PDF -> PDF (processing: watermark removal)
+    (PDF, PDF),
     // PDF -> DOCX / DOC / XLSX
     (PDF, DOCX),
     (PDF, DOC),
