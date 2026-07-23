@@ -108,6 +108,9 @@ xlcr convert -i presentation.pptx -o output.html --strip-masters
 # Remove watermarks from PDF
 xlcr convert -i watermarked.pdf -o clean.pdf --remove-watermarks
 
+# Aggressive mode: also strip ALL trailing vector art (may remove legitimate artwork)
+xlcr convert -i stubborn.pdf -o clean.pdf --remove-watermarks --aggressive
+
 # Two-stage PDF -> editable PowerPoint (recommended)
 xlcr convert -i document.pdf -o intermediate.html
 xlcr convert -i intermediate.html -o presentation.pptx
@@ -163,6 +166,7 @@ Logging uses `zio-logging` with SLF4J2 bridge — all logs (ZIO, Tika, POI, Aspo
 | `backend` | `/convert`, `/split` | Force specific backend: `aspose`, `libreoffice`, or `xlcr` (no fallback) |
 | `detect=tika` | `/convert`, `/split` | Force Tika content detection, ignore Content-Type header |
 | `remove-watermarks` | `/convert` | Remove watermark artifacts from PDF (PDF-to-PDF only) |
+| `aggressive` | `/convert` | With `remove-watermarks`: strip all trailing vector art after page text (may remove legitimate art) |
 | `password` | `/convert`, `/split` | Password for encrypted documents |
 | `strip-masters` | `/convert` | Strip master/layout slides from PowerPoint |
 | `fixed-layout` | `/convert` | Use fixed layout for PDF to HTML |

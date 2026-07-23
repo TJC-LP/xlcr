@@ -28,7 +28,8 @@ final case class ConvertOptions(
 
   // --- PDF processing options (Aspose.PDF) ---
   removeWatermarks: Boolean = false,
-  removeWatermarksAggressive: Boolean = false
+  // modifier for removeWatermarks: strip ALL trailing vector art, not just detected watermarks
+  aggressive: Boolean = false
 ):
 
   /** True when every field matches the default `ConvertOptions()`. */
@@ -48,7 +49,7 @@ final case class ConvertOptions(
     if !flowingLayout then parts += "fixed-layout"
     if !embedResources then parts += "no-embed-resources"
     if removeWatermarks then parts += "remove-watermarks"
-    if removeWatermarksAggressive then parts += "remove-watermarks-aggressive"
+    if aggressive then parts += "aggressive"
     parts.result().mkString(", ")
   end nonDefaultSummary
 end ConvertOptions

@@ -218,12 +218,12 @@ object Commands:
   private val removeWatermarksFlag: Opts[Boolean] =
     Opts.flag("remove-watermarks", help = "Remove watermark artifacts from PDF").orFalse
 
-  private val removeWatermarksAggressiveFlag: Opts[Boolean] =
+  private val aggressiveFlag: Opts[Boolean] =
     Opts
       .flag(
-        "remove-watermarks-aggressive",
+        "aggressive",
         help =
-          "Aggressively remove all trailing vector watermarks from PDF (may strip legitimate art)"
+          "Use aggressive heuristics with --remove-watermarks (strips all trailing vector art; may remove legitimate artwork)"
       )
       .orFalse
 
@@ -240,7 +240,7 @@ object Commands:
       fixedLayoutFlag,
       noEmbedResourcesFlag,
       removeWatermarksFlag,
-      removeWatermarksAggressiveFlag
+      aggressiveFlag
     ).mapN {
       (
         password,
@@ -254,7 +254,7 @@ object Commands:
         fixedLayout,
         noEmbed,
         removeWm,
-        removeWmAggressive
+        aggressive
       ) =>
         ConvertOptions(
           password = password,
@@ -267,9 +267,11 @@ object Commands:
           stripMasters = stripM,
           flowingLayout = !fixedLayout,
           embedResources = !noEmbed,
-          removeWatermarks = removeWm || removeWmAggressive,
-          removeWatermarksAggressive = removeWmAggressive
+          removeWatermarks = removeWm,
+          aggressive = aggressive
         )
+    }.validate("--aggressive requires --remove-watermarks") { o =>
+      o.removeWatermarks || !o.aggressive
     }
 
   // ============================================================================

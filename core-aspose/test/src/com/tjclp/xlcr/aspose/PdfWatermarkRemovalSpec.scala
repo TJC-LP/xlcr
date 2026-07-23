@@ -227,6 +227,22 @@ class PdfWatermarkRemovalSpec extends AnyWordSpec with Matchers:
     }
   }
 
+  "processPdf with aggressive=true" should {
+    "strip trailing vector artwork that normal mode preserves" in {
+      val pdfWithTrailingVector = createPdfWithTrailingVectorLine()
+      hasTrailingVectorCommandsAfterLastText(pdfWithTrailingVector) shouldBe true
+
+      val input = Content.fromChunk[Mime.Pdf](
+        Chunk.fromArray(pdfWithTrailingVector),
+        Mime.pdf
+      )
+      val options = ConvertOptions(removeWatermarks = true, aggressive = true)
+      val result  = run(processPdf(input, options))
+
+      hasTrailingVectorCommandsAfterLastText(result.data.toArray) shouldBe false
+    }
+  }
+
   "AsposeTransforms.convert PDF->PDF" should {
     "reject bare PDF->PDF with no processing flags" in {
       val watermarked = createWatermarkedPdf()
