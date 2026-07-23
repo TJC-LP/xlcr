@@ -700,7 +700,7 @@ private[aspose] def processPdf(
         $(document) { doc =>
           val pgs   = doc.getPages
           val total = pgs.size()
-          if options.removeWatermarksAggressive then
+          if options.aggressive then
             var pi = 0
             while pi < total do
               stripTrailingPathOps(pgs.get_Item(pi + 1))

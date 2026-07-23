@@ -29,4 +29,20 @@ class RequestHandlerSpec extends AnyWordSpec with Matchers:
 
       options.sheetNames shouldBe List("Q1", "Q2", "Q3")
     }
+
+    "parse watermark removal params" in {
+      val options = RequestHandler.parseConvertOptions(
+        request("/convert?remove-watermarks=true&aggressive=true")
+      )
+
+      options.removeWatermarks shouldBe true
+      options.aggressive shouldBe true
+    }
+
+    "default watermark removal params to false" in {
+      val options = RequestHandler.parseConvertOptions(request("/convert"))
+
+      options.removeWatermarks shouldBe false
+      options.aggressive shouldBe false
+    }
   }

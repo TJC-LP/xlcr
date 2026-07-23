@@ -60,6 +60,36 @@ class CommandsSpec extends AnyFlatSpec with Matchers:
       case _ => fail("Expected Convert command")
   }
 
+  it should "parse watermark removal flags" in {
+    val result = parse(
+      Seq("convert", "-i", "in.pdf", "-o", "out.pdf", "--remove-watermarks", "--aggressive")
+    )
+
+    result.isRight shouldBe true
+    result.toOption.get match
+      case CliCommand.Convert(args) =>
+        args.options.removeWatermarks shouldBe true
+        args.options.aggressive shouldBe true
+      case _ => fail("Expected Convert command")
+  }
+
+  it should "parse --remove-watermarks without --aggressive" in {
+    val result = parse(Seq("convert", "-i", "in.pdf", "-o", "out.pdf", "--remove-watermarks"))
+
+    result.isRight shouldBe true
+    result.toOption.get match
+      case CliCommand.Convert(args) =>
+        args.options.removeWatermarks shouldBe true
+        args.options.aggressive shouldBe false
+      case _ => fail("Expected Convert command")
+  }
+
+  it should "reject --aggressive without --remove-watermarks" in {
+    val result = parse(Seq("convert", "-i", "in.pdf", "-o", "out.pdf", "--aggressive"))
+
+    result.isLeft shouldBe true
+  }
+
   it should "parse convert command with backend option" in {
     val result = parse(Seq("convert", "-i", "in.pdf", "-o", "out.pptx", "-b", "aspose"))
 
